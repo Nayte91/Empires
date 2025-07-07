@@ -1,0 +1,44 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Empires - Destiny manager{% endblock %}
+
+{% block body %}
+    <h1>Destiny manager: calculate your empire's advances!</h1>
+
+    <main
+        style="display: grid; grid-template-columns: 1fr 2fr 1fr; font: 1.25rem sans-serif"
+        {{ stimulus_action('owned-advances-bridge:add-to-owned', 'owned-advances-bridge', 'addAdvance') }}
+        {{ stimulus_action('wanted-advances:add-to-owned', 'owned-advances-bridge', 'addAdvance') }}
+        {{ stimulus_action('available-advances:add-to-owned', 'owned-advances-bridge', 'addAdvance') }}
+        {{ stimulus_action('available-advances:add-to-wanted', 'wanted-advances', 'add') }}
+    >
+        {{ component('OwnedAdvances', { ownedAdvanceNames: []}) }}
+
+        <section {{ stimulus_controller('available-advances', {advances: advances|json_encode}) }}>
+            <h2>Advance list</h2>
+            <p>
+                <button {{ stimulus_action('available-advances', 'openAll') }}>Open All Details</button>
+                <button {{ stimulus_action('available-advances', 'closeAll') }}>Close All Details</button>
+            </p>
+            <div
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem"
+                {{ stimulus_target('available-advances', 'list') }}
+            ></div>
+        </section>
+
+        <aside id="wanted-section"
+            {{ stimulus_controller('wanted-advances') }}>
+            <h2>You want... <span {{ stimulus_target('wanted-advances', 'count') }}>0</span></h2>
+            <label>
+                <span>Your value</span>
+                <input type="number" {{ stimulus_target('wanted-advances', 'valueInput') }} />
+            </label>
+            <p>Value left: <span {{ stimulus_target('wanted-advances', 'valueLeft') }}>0</span></p>
+            <ul {{ stimulus_target('wanted-advances', 'list') }}>
+            </ul>
+            <p>
+                <button {{ stimulus_action('wanted-advances', 'clearAll') }}>Clear All</button>
+            </p>
+        </aside>
+    </main>
+{% endblock %}

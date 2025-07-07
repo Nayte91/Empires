@@ -1,0 +1,180 @@
+civilizations:
+    minoa:
+        position: 1
+        name: "minoa"
+        demonym: "minoans"
+        adjective: "minoan"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#a4ce53"
+
+    saba:
+        position: 2
+        name: "saba"
+        demonym: "sabaeans"
+        adjective: "sabaean"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#eb6727"
+
+    assyria:
+        position: 3
+        name: "assyria"
+        demonym: "assyrians"
+        adjective: "assyrian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#51cbf1"
+
+    maurya:
+        position: 4
+        name: "maurya"
+        demonym: "mauryans"
+        adjective: "mauryan"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#e32123"
+
+    celt:
+        position: 5
+        name: "celt"
+        demonym: "celts"
+        adjective: "celtic"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#46a73a"
+
+    babylon:
+        position: 6
+        name: "babylon"
+        demonym: "babylonians"
+        adjective: "babylonian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#7d7e80"
+
+    carthage:
+        position: 7
+        name: "carthage"
+        demonym: "carthaginians"
+        adjective: "carthaginian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#ec920d"
+
+    dravidia:
+        position: 8
+        name: "dravidia"
+        demonym: "dravidians"
+        adjective: "dravidian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#302f88"
+
+    hatti:
+        position: 9
+        name: "hatti"
+        demonym: "hattians"
+        adjective: "hattian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#f08eba"
+
+    kushan:
+        position: 10
+        name: "kushan"
+        demonym: "kushans"
+        adjective: "kushan"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#5a0b0e"
+
+    rome:
+        position: 11
+        name: "rome"
+        demonym: "romans"
+        adjective: "roman"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#e50082"
+
+    persia:
+        position: 12
+        name: "persia"
+        demonym: "persians"
+        adjective: "persian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#89228c"
+
+    iberia:
+        position: 13
+        name: "iberia"
+        demonym: "iberians"
+        adjective: "iberian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#dddddd"
+
+    nubia:
+        position: 14
+        name: "nubia"
+        demonym: "nubians"
+        adjective: "nubian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#31a79c"
+
+    hellas:
+        position: 15
+        name: "hellas"
+        demonym: "hellenes"
+        adjective: "hellenic"
+        people_icon: "hellas_people.webp"
+        ship_icon: "hellas_ship.webp"
+        city_icon: "hellas_city.webp"
+        color: "#f6ef51"
+
+    indus:
+        position: 16
+        name: "indus"
+        demonym: "indus people"
+        adjective: "indus"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#248a47"
+
+    egypt:
+        position: 17
+        name: "egypt"
+        demonym: "egyptians"
+        adjective: "egyptian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#fbddc2"
+
+    parthia:
+        position: 18
+        name: "parthia"
+        demonym: "parthians"
+        adjective: "parthian"
+        people_icon:
+        ship_icon:
+        city_icon:
+        color: "#524f22"

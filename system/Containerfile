@@ -1,0 +1,39 @@
+###> Backend
+FROM php:8.4.2-fpm-alpine AS backend__php
+
+COPY --from=mlocati/php-extension-installer /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN install-php-extensions @composer zip intl pdo_pgsql apcu yaml
+
+WORKDIR /app
+
+FROM backend__php AS backend__php--dev
+
+RUN install-php-extensions xdebug
+
+FROM backend__php AS backend__php--prod
+
+COPY --link system/backend/php-custom.ini /usr/local/etc/php/php.ini
+###< Backend
+
+###> Server
+FROM caddy:builder-alpine AS webserver__caddy--build
+
+RUN apk update && apk add brotli-dev gcc musl-dev && CGO_ENABLED=1 xcaddy build \
+    --with github.com/dunglas/caddy-cbrotli \
+    --with github.com/dunglas/vulcain/caddy
+
+FROM caddy:alpine AS webserver__caddy
+
+RUN apk add --no-cache brotli-libs
+
+COPY --from=webserver__caddy--build /usr/bin/caddy /usr/bin/caddy
+
+WORKDIR /app
+
+FROM webserver__caddy AS webserver__caddy--dev
+
+FROM webserver__caddy AS webserver__caddy--prod
+
+COPY --link system/webserver/Caddyfile /etc/caddy/Caddyfile
+###< Server

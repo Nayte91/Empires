@@ -1,0 +1,36 @@
+<fieldset
+    class="player-info"
+    {{ attributes.defaults({
+        'data-controller': 'player-info',
+        'data-player-info-color-value': this.selectedCivilization ? this.selectedCivilization.color
+    }) }}
+>
+    <legend>Player Information</legend>
+    <label>
+        <span>Name</span>
+        <input
+            type="text"
+            data-model="debounce(1000)|playerName"
+            value="{{ this.playerName }}"
+        />
+    </label>
+    <label>
+        <span>Civilization</span>
+        <select data-model="selectedCivilization">
+            <option value="0">-- Choose a tribe --</option>
+        {% for civilization in this.civilizations %}
+            <option value="{{ civilization.position }}" {{ civilization.name == this.selectedCivilization ? 'selected' }}>{{ civilization.name|capitalize }}</option>
+        {% endfor %}
+        </select>
+    </label>
+    <label>
+        <span>Turn</span>
+        <input
+            type="number"
+            min="1"
+            max="18"
+            data-model="debounce(1000)|currentTurn"
+            value="{{ this.currentTurn }}"
+        />
+    </label>
+</fieldset>

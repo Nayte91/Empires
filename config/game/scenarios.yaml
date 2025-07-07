@@ -1,0 +1,42 @@
+scenarios:
+    3:
+        credits: { art: 10, civic: 10, craft: 10, religion: 10, science: 10 }
+    3_east: ["indus", "kushan", "parthia"]
+    3_west: ["hatti", "hellas", "minoa"]
+    4:
+        credits: { art: 5, civic: 5, craft: 5, religion: 5, science: 5 }
+    4_east: ["indus", "kushan", "parthia", "persia"]
+    4_west: ["assyria", "hatti", "hellas", "minoa"]
+    5_east: ["babylon", "nubia", "parthia", "persia", "saba"]
+    5_west: ["assyria", "egypt", "hatti", "hellas", "minoa"]
+    6_east: ["babylon", "indus", "kushan", "parthia", "persia", "saba"]
+    6_west: ["carthage", "hatti", "hellas", "iberia", "minoa", "rome"]
+    7_east: ["babylon", "indus", "kushan", "nubia", "parthia", "persia", "saba" ]
+    7_west: ["assyria", "carthage", "egypt", "hatti", "hellas", "minoa", "rome"]
+    8_east: ["babylon", "dravidia", "indus", "kushan", "maurya", "parthia", "persia", "saba"]
+    8_west: ["assyria", "carthage", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    9_east: ["babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
+    9_west: ["assyria", "carthage", "celt", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    10: ["assyria", "egypt", "hatti", "hellas", "minoa", "babylon", "nubia", "parthia", "persia", "saba"]
+    11: ["assyria", "egypt", "babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
+    12:
+        east: ["assyria", "babylon", "nubia", "parthia", "persia", "saba"]
+        west: ["carthage", "egypt", "hatti", "hellas", "minoa", "rome"]
+    13:
+        east: ["assyria", "egypt", "babylon", "nubia", "parthia", "persia", "saba"]
+        west: ["carthage", "hatti", "hellas", "iberia", "minoa", "rome"]
+    14:
+        east: ["assyria", "egypt", "babylon", "nubia", "parthia", "persia", "saba"]
+        west: ["carthage", "celt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    15:
+        east: ["assyria", "babylon", "indus", "kushan", "nubia", "parthia", "persia", "saba"]
+        west: ["carthage", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    16:
+        east: ["assyria", "babylon", "indus", "kushan", "nubia", "parthia", "persia", "saba"]
+        west: ["carthage", "celt", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    17:
+        east: ["babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
+        west: ["assyria", "carthage", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+    18:
+        east: ["babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
+        west: ["assyria", "carthage", "celt", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]

@@ -1,0 +1,24 @@
+services:
+  webserver:
+    build:
+      target: webserver__caddy--prod
+    labels:
+      - "traefik.http.routers.${GAME}.rule=Host(`${SUBDOMAIN}.anagraph.org`)"
+    volumes:
+      - ./public:/app/public:ro
+    networks:
+      - proxy
+      - default
+
+  backend:
+    build:
+      target: backend__php--prod
+    environment:
+      - "CORS_ALLOW_ORIGIN=https?://.*\\.anagraph\\.org"
+    volumes:
+      - .:/app
+
+networks:
+  proxy:
+    external: true
+    name: reverse_proxy_network

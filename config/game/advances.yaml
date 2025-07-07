@@ -1,0 +1,607 @@
+advances:
+    advanced_military:
+        cost: 240
+        points: 6
+        categories:
+            - civic
+        credits:
+            civic: 20
+            science: 5
+        aggravation:
+            - civil_disorder
+
+    agriculture:
+        cost: 120
+        points: 3
+        categories:
+            - craft
+        credits:
+            craft: 10
+            science: 5
+            democracy: 20
+        aggravation:
+            - famine
+
+    anatomy:
+        cost: 270
+        points: 6
+        categories:
+            - science
+        credits:
+            craft: 5
+            science: 20
+        pack:
+            science: 100
+        mitigation:
+            - epidemic
+
+    architecture:
+        cost: 140
+        points: 3
+        categories:
+            - art
+        credits:
+            art: 10
+            science: 5
+            mining: 20
+
+    astronavigation:
+        cost: 80
+        points: 1
+        categories:
+            - science
+        credits:
+            religion: 5
+            science: 10
+            calendar: 10
+
+    calendar:
+        cost: 180
+        points: 3
+        categories:
+            - science
+        credits:
+            civic: 5
+            science: 10
+            public_works: 20
+        mitigation:
+            - famine
+            - cyclone
+
+    cartography:
+        cost: 160
+        points: 3
+        categories:
+            - science
+        credits:
+            art: 5
+            science: 10
+            library: 20
+        aggravation:
+            - piracy
+
+    cloth_making:
+        cost: 50
+        points: 1
+        categories:
+            - craft
+        credits:
+            art: 5
+            craft: 10
+            naval_warfare: 10
+
+    coinage:
+        cost: 90
+        points: 1
+        categories:
+            - science
+        credits:
+            civic: 5
+            science: 10
+            trade_routes: 10
+        aggravation:
+            - corruption
+
+    cultural_ascendancy:
+        cost: 280
+        points: 6
+        categories:
+            - art
+        credits:
+            art: 20
+            religion: 5
+
+    deism:
+        cost: 70
+        points: 1
+        categories:
+            - religion
+        credits:
+            craft: 5
+            religion: 10
+            fundamentalism: 10
+        mitigation:
+            - superstition
+
+    democracy:
+        cost: 220
+        points: 6
+        categories:
+            - civic
+        credits:
+            art: 5
+            civic: 20
+        mitigation:
+            - civil_war
+            - civil_disorder
+
+    diaspora:
+        cost: 270
+        points: 6
+        categories:
+            - religion
+        credits:
+            art: 5
+            religion: 20
+
+    diplomacy:
+        cost: 160
+        points: 3
+        categories:
+            - art
+        credits:
+            art: 10
+            civic: 5
+            provincial_empire: 20
+        aggravation:
+            - treachery
+
+    drama_and_poetry:
+        cost: 80
+        points: 1
+        categories:
+            - art
+        credits:
+            art: 10
+            religion: 5
+            rhetoric: 10
+        mitigation:
+            - civil_war
+            - civil_disorder
+
+    empiricism:
+        cost: 60
+        points: 1
+        categories:
+            - science
+        credits:
+            art: 5
+            civic: 5
+            craft: 5
+            religion: 5
+            science: 10
+            medicine: 10
+
+    engineering:
+        cost: 160
+        points: 3
+        categories:
+            - craft
+            - science
+        credits:
+            craft: 10
+            science: 10
+            roadbuilding: 20
+        mitigation:
+            - earthquake
+            - flood
+
+    enlightenment:
+        cost: 160
+        points: 3
+        categories:
+            - religion
+        credits:
+            craft: 5
+            religion: 10
+            philosophy: 20
+        mitigation:
+            - superstition
+            - slave_revolt
+            - epidemic
+            - regression
+
+    fundamentalism:
+        cost: 150
+        points: 3
+        categories:
+            - religion
+        credits:
+            art: 5
+            religion: 10
+            monotheism: 20
+        aggravation:
+            - regression
+
+    law:
+        cost: 150
+        points: 3
+        categories:
+            - civic
+        credits:
+            religion: 5
+            civic: 10
+            cultural_ascendancy: 20
+        mitigation:
+            - tyranny
+            - civil_disorder
+            - corruption
+
+    library:
+        cost: 220
+        points: 6
+        categories:
+            - science
+        credits:
+            art: 5
+            science: 20
+        promotion:
+            any: 40
+        mitigation:
+            - regression
+
+    literacy:
+        cost: 110
+        points: 3
+        categories:
+            - art
+            - civic
+        credits:
+            art: 10
+            civic: 10
+            craft: 5
+            religion: 5
+            science: 5
+            mathematics: 20
+
+    masonry:
+        cost: 60
+        points: 1
+        categories:
+            - craft
+        credits:
+            craft: 10
+            science: 5
+            engineering: 10
+        mitigation:
+            - cyclone
+
+    mathematics:
+        cost: 250
+        points: 6
+        categories:
+            - art
+            - science
+        credits:
+            art: 20
+            civic: 10
+            craft: 10
+            religion: 10
+            science: 20
+
+    medicine:
+        cost: 140
+        points: 3
+        categories:
+            - science
+        credits:
+            craft: 5
+            science: 10
+            anatomy: 20
+        mitigation:
+            - epidemic
+
+    metalworking:
+        cost: 90
+        points: 1
+        categories:
+            - craft
+        credits:
+            craft: 10
+            civic: 5
+            military: 10
+
+    military:
+        cost: 170
+        points: 3
+        categories:
+            - civic
+        credits:
+            civic: 10
+            craft: 5
+            advanced_military: 20
+        aggravation:
+            - civil_war
+
+    mining:
+        cost: 230
+        points: 6
+        categories:
+            - craft
+        credits:
+            craft: 20
+            science: 5
+        aggravation:
+            - slave_revolt
+
+    monarchy:
+        cost: 60
+        points: 1
+        categories:
+            - civic
+        credits:
+            religion: 5
+            civic: 10
+            law: 10
+        mitigation:
+            - barbarian_hordes
+        aggravation:
+            - tyranny
+
+    monument:
+        cost: 180
+        points: 3
+        categories:
+            - religion
+        credits:
+            craft: 10
+            religion: 10
+            special: 20
+            wonder_of_the_world: 20
+
+    monotheism:
+        cost: 240
+        points: 6
+        categories:
+            - religion
+        credits:
+            civic: 5
+            religion: 20
+        mitigation:
+            - iconoclasm_and_heresy
+
+    music:
+        cost: 80
+        points: 1
+        categories:
+            - art
+        credits:
+            art: 10
+            religion: 5
+            enlightenment: 10
+        mitigation:
+            - civil_war
+            - civil_disorder
+
+    mysticism:
+        cost: 50
+        points: 1
+        categories:
+            - religion
+            - art
+        credits:
+            art: 5
+            religion: 5
+            monument: 10
+        mitigation:
+            - superstition
+
+    mythology:
+        cost: 60
+        points: 1
+        categories:
+            - religion
+        credits:
+            art: 5
+            religion: 10
+            literacy: 10
+        mitigation:
+            - slave_revolt
+
+    naval_warfare:
+        cost: 160
+        points: 3
+        categories:
+            - civic
+        credits:
+            civic: 10
+            craft: 5
+            diaspora: 20
+        aggravation:
+            - civil_disorder
+        mitigation:
+            - piracy
+
+    philosophy:
+        cost: 220
+        points: 6
+        categories:
+            - religion
+            - science
+        credits:
+            religion: 20
+            science: 20
+        aggravation:
+            - civil_war
+        mitigation:
+            - iconoclasm_and_heresy
+
+    politics:
+        cost: 230
+        points: 6
+        categories:
+            - art
+        credits:
+            art: 20
+            religion: 5
+            agriculture: 10
+        aggravation:
+            - barbarian_hordes
+
+    pottery:
+        cost: 60
+        points: 1
+        categories:
+            - craft
+        credits:
+            art: 5
+            craft: 10
+            agriculture: 10
+        mitigation:
+            - famine
+
+    provincial_empire:
+        cost: 260
+        points: 6
+        categories:
+            - civic
+        credits:
+            religion: 5
+            civic: 20
+        aggravation:
+            - barbarian_hordes
+            - tyranny
+
+    public_works:
+        cost: 230
+        points: 6
+        categories:
+            - civic
+        credits:
+            craft: 5
+            civic: 20
+
+    rhetoric:
+        cost: 130
+        points: 3
+        categories:
+            - art
+        credits:
+            art: 10
+            civic: 5
+            politics: 20
+
+    roadbuilding:
+        cost: 220
+        points: 6
+        categories:
+            - craft
+        credits:
+            craft: 20
+            science: 5
+        aggravation:
+            - epidemic
+
+    sculpture:
+        cost: 50
+        points: 1
+        categories:
+            - art
+        credits:
+            art: 10
+            civic: 5
+            architecture: 10
+        mitigation:
+            - tyranny
+
+    theocracy:
+        cost: 80
+        points: 1
+        categories:
+            - civic
+            - religion
+        credits:
+            religion: 5
+            civic: 5
+            universal_doctrine: 10
+        mitigation:
+            - iconoclasm_and_heresy
+
+    theology:
+        cost: 250
+        points: 6
+        categories:
+            - religion
+        credits:
+            religion: 20
+            science: 5
+        mitigation:
+            - iconoclasm_and_heresy
+
+    trade_empire:
+        cost: 260
+        points: 6
+        categories:
+            - craft
+        credits:
+            craft: 20
+            civic: 5
+        aggravation:
+            - cyclone
+            - epidemic
+
+    trade_routes:
+        cost: 180
+        points: 3
+        categories:
+            - craft
+        credits:
+            craft: 10
+            religion: 5
+            trade_empire: 20
+
+    universal_doctrine:
+        cost: 160
+        points: 3
+        categories:
+            - religion
+        credits:
+            religion: 10
+            civic: 5
+            theology: 20
+        aggravation:
+            - superstition
+
+    urbanism:
+        cost: 50
+        points: 1
+        categories:
+            - civic
+        credits:
+            civic: 10
+            science: 5
+            diplomacy: 10
+
+    wonder_of_the_world:
+        cost: 290
+        points: 6
+        categories:
+            - art
+            - craft
+        credits:
+            art: 20
+            craft: 20
+        aggravation:
+            - corruption
+
+    written_record:
+        cost: 60
+        points: 1
+        categories:
+            - civic
+            - science
+        credits:
+            civic: 5
+            science: 10
+            special: 10
+            cartography: 10

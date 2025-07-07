@@ -1,0 +1,8 @@
+:80 {
+	root * /app/public
+	push
+	vulcain
+	php_fastcgi backend:9000
+	encode zstd br gzip
+	file_server
+}

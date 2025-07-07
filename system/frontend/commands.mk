@@ -1,0 +1,1 @@
+FRONTEND = docker compose run --rm -u node frontend

@@ -1,0 +1,8 @@
+providers:
+  docker: {}
+
+entryPoints:
+  https:
+    address: :443
+    http:
+      tls: {}

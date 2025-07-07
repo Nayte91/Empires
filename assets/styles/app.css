@@ -1,3 +1,8 @@
 body {
-    background-color: skyblue;
+    background-color: color-mix(in srgb, var(--civilization-color, #aaa) 80%, white 20%);
+}
+
+.player-info {
+    display: flex;
+    gap: 2rem;
 }

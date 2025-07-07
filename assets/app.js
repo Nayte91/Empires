@@ -1,4 +1,6 @@
-import './bootstrap.js';
+import { startStimulusApp } from '@symfony/stimulus-bundle';
+
+const app = startStimulusApp();
 /*
  * Welcome to your app's main JavaScript file!
  *
@@ -6,5 +8,3 @@ import './bootstrap.js';
  * which should already be in your base.html.twig.
  */
 import './styles/app.css';
-
-console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');
