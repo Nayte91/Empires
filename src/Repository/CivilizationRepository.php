@@ -3,10 +3,11 @@
 namespace App\Repository;
 
 use App\Entity\Civilization;
+use App\Manager\ScenarioLoader;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-class Civilizations {
+class CivilizationRepository {
     public const string SORT_BY_POSITION = 'position';
     public const string SORT_BY_NAME = 'name';
 
@@ -14,10 +15,11 @@ class Civilizations {
 
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/game/civilizations.yaml')]
-        private readonly string $civilizationsConfigPath
+        private readonly string $civilizationsConfigPath,
+        private readonly ScenarioLoader $scenarioLoader,
     ) {}
 
-    public function getCivilizations(string $sortBy = self::SORT_BY_POSITION): array {
+    public function findAll(string $sortBy = self::SORT_BY_POSITION): array {
         $civilizationsArray = $this->getCivilizationsData();
 
         if ($sortBy === 'name') {
@@ -30,7 +32,7 @@ class Civilizations {
         );
     }
 
-    public function getCivilizationByPosition(int $position): ?Civilization
+    public function findByPosition(int $position): ?Civilization
     {
         $civilizationsArray = $this->getCivilizationsData();
 
@@ -41,6 +43,27 @@ class Civilizations {
         }
 
         return null;
+    }
+
+    public function findByName(string $name): ?Civilization
+    {
+        $civilizationsArray = $this->getCivilizationsData();
+
+        foreach ($civilizationsArray as $civilizationData) {
+            if ($civilizationData['name'] === $name) return $this->hydrateCivilization($civilizationData);
+        }
+
+        return null;
+    }
+
+    public function findByPlayerCountAndRegion(int $playerCount, ?string $region): array
+    {
+        $civilizations = $this->scenarioLoader->getCivilizationsByPlayersAndRegion($playerCount, $region);
+
+        return array_map(
+            fn(string $data): Civilization => $this->findByName($data),
+            $civilizations
+        );
     }
 
     private function getCivilizationsData(): array

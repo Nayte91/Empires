@@ -20,6 +20,12 @@
         {% endblock %}
     </head>
     <body>
-        {% block body %}{% endblock %}
+        <header>
+            {{ component('GameInfo') }}
+        </header>
+
+        <main>
+            {% block body %}{% endblock %}
+        </main>
     </body>
 </html>

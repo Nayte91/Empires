@@ -1,0 +1,6 @@
+<button
+    type="button"
+    onclick="
+        fetch('{{ path('game_session_delete') }}', {method:'DELETE', headers:{'X-Requested-With':'XMLHttpRequest'}})
+        // .then(() => location.reload())
+">Reset</button>

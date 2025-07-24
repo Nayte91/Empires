@@ -6,15 +6,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final readonly class GameData
 {
-    public function __construct(
-        #[Autowire('%kernel.project_dir%/config/game/game_data.yaml')]
-        private string $gameDataPath
-    ) {}
+    public function __construct(#[Autowire('%kernel.project_dir%/config/game/game_data.yaml')] private string $gameDataPath) {}
 
     public function getLimits(): array
     {
-        $data = $this->loadGameData();
-        return $data['limits'] ?? [];
+        return $this->loadGameData()['limits'] ?? [];
     }
 
     public function getRegions(): ?array
@@ -23,7 +19,7 @@ final readonly class GameData
         return $data['regions'] ?? [];
     }
 
-    public function getCivilizationsByRegion(string $region): array
+    public function getCivilizationsByRegionAndPlayers(string $region): array
     {
         $regions = $this->getRegions();
         return $regions[$region]['civilizations'] ?? [];
