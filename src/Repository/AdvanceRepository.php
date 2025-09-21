@@ -7,7 +7,7 @@ use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-final class Advances {
+final class AdvanceRepository {
     private const string IMAGES_PATH = 'images/advances/';
     private const string IMAGE_EXTENSION = '.webp';
 
