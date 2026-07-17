@@ -1,0 +1,33 @@
+services:
+  app:
+    mem_limit: 512m
+    build:
+      target: frankenphp_prod
+    # .env.local (uncommitted) MUST define MERCURE_PUBLISHER_JWT_KEY and
+    # MERCURE_SUBSCRIBER_JWT_KEY (real secrets, distinct from the dev defaults in
+    # compose.dev.yml) — env_file passes them through as container env vars, read
+    # by the Caddyfile's `mercure` block via {env.MERCURE_PUBLISHER_JWT_KEY} /
+    # {env.MERCURE_SUBSCRIBER_JWT_KEY}.
+    env_file: .env.local
+    # Placeholder: no public domain assigned yet, labels left inert until one exists.
+    # labels:
+    #   traefik.enable: true
+    #   traefik.http.routers.empires.rule: Host(`empires.example.org`)
+    environment:
+      SERVER_NAME: ":80"
+      TRUSTED_PROXIES: REMOTE_ADDR
+    volumes:
+      # SQLite needs write access to the directory (for -journal/-wal files), not
+      # just the .db file. Named volume persists across deploys/recreates.
+      - db_data:/app/system/database
+    networks:
+      - proxy
+      - default
+
+volumes:
+  db_data:
+
+networks:
+  proxy:
+    external: true
+    name: reverse_proxy_network

@@ -1,0 +1,14 @@
+services:
+  app:
+    image: empires-app
+    build:
+      context: .
+      dockerfile: system/Containerfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

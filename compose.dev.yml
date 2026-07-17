@@ -1,0 +1,21 @@
+services:
+  app:
+    build:
+      target: frankenphp_dev
+    volumes:
+      - .:/app
+      - ./system/webserver/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./system/backend/php.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+      - ./.xdebug:/.xdebug:ro
+    environment:
+      SERVER_NAME: ":80"
+      XDEBUG_MODE: debug
+      PHP_IDE_CONFIG: serverName=empires
+      APP_ENV: dev
+      # Mercure hub JWT keys read by the Caddyfile's `mercure` block (publisher_jwt /
+      # subscriber_jwt). Dev default, matches .env's MERCURE_JWT_SECRET. Prod overrides
+      # both via .env.local — never commit a real secret here.
+      MERCURE_PUBLISHER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
+      MERCURE_SUBSCRIBER_JWT_KEY: "!ChangeThisMercureHubJWTSecretKey!"
+    ports:
+      - "8020:80"

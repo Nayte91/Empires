@@ -1,19 +1,15 @@
-BACKEND = docker compose exec backend
+BACKEND = docker compose exec app
 PHP = $(BACKEND) php
 CONSOLE = $(PHP) bin/console
 
-.PHONY: back-install
-back-install: ## [Back] Composer install
+.PHONY: back-deps-install
+back-deps-install: ## [Backend] composer install
 	$(BACKEND) composer install
 
-.PHONY: back-update
-back-update: ## [Back] Composer update
+.PHONY: back-deps-update
+back-deps-update: ## [Backend] composer update
 	$(BACKEND) composer update
 
-.PHONY: back-tests
-back-tests: ## [Back] Create test database and launch PHPUnit
-	$(CONSOLE) --env=test cache:clear
-	$(CONSOLE) --env=test doctrine:database:drop --force
-	$(CONSOLE) --env=test doctrine:database:create
-	$(CONSOLE) --env=test doctrine:schema:create
-	$(PHP) bin/phpunit
+.PHONY: migrate
+migrate: ## [Backend] Run Doctrine migrations
+	$(CONSOLE) doctrine:migrations:migrate -n

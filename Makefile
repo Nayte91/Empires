@@ -1,9 +1,11 @@
-DATESTAMP = ${shell date +%d-%m-%G}
+PROD = docker compose --env-file .env --env-file .env.local -f compose.yml -f compose.prod.yml
+DEV = docker compose -f compose.yml -f compose.dev.yml
 COLOR_RESET = \033[0m
 COLOR_CYAN = \033[36m
 .DEFAULT_GOAL := help
 
-include system/components.mk
+include system/backend/commands.mk
+include tools/pipeline.mk
 
 .PHONY: help
 help: ## [Help] This help
@@ -11,34 +13,25 @@ help: ## [Help] This help
 	grep -hE '^[2a-zA-Z_-]+:.*?## .*$$' $$makefiles | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(COLOR_CYAN)%-30s$(COLOR_RESET) %s\n", $$1, $$2}'
 
 .PHONY: clean
-clean: ## [Deployment] Stop containers and clean caches & assets
-	docker compose down
-	rm -rf var/cache/
-	#rm -rf vendor/
-	rm -rf public/assets/
-	rm -rf config/secrets/
-
-.PHONY: pull
-pull: ## [Deployment] git pull, the right way
-	git stash
-	git pull -r origin production
-	git stash pop
+clean: ## [Deployment] Stop containers and clean caches & deps
+	$(PROD) down --remove-orphans
+	$(PROD) run --rm --no-deps -u 0 app rm -rf \
+		var/cache/ \
+		vendor/
 
 .PHONY: deploy
-deploy: ## [Deployment] Start containers and launch startup commands
-	docker compose -f compose.yaml -f compose.prod.yaml up --build -d
-	$(BACKEND) composer install --ignore-platform-reqs --no-interaction --prefer-dist --no-dev
-	$(BACKEND) composer dump-autoload --classmap-authoritative --optimize
-	$(CONSOLE) secrets:generate-keys
-	$(CONSOLE) importmap:install
-	$(CONSOLE) asset-map:compile
-	$(CONSOLE) doctrine:migrations:migrate -n
-	$(CONSOLE) cache:warmup
+deploy: ## [Deployment] Start containers
+	$(PROD) up --build --detach
+
+.PHONY: deploy-migrate
+deploy-migrate: ## [Deployment] Run Doctrine migrations on prod (after make deploy)
+	$(PROD) exec app php bin/console doctrine:migrations:migrate -n
 
 .PHONY: dev
 dev: ## [Deployment] start containers for local dev
-	docker compose -f compose.yaml -f compose.dev.yaml up -d --build --remove-orphans --force-recreate
+	$(DEV) up --detach --build --remove-orphans --force-recreate
+	@echo "\n$(COLOR_CYAN)Local IP:$(COLOR_RESET) $$(hostname -I | awk '{print $$1}')"
 
 .PHONY: down
 down: ## [Deployment] close containers on local dev
-	docker compose -f compose.yaml -f compose.dev.yaml -f compose.prod.yaml down --remove-orphans
+	docker compose --env-file .env --env-file .env.local -f compose.yml -f compose.dev.yml -f compose.prod.yml down

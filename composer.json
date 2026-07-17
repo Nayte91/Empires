@@ -4,40 +4,46 @@
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
-        "php": ">=8.4",
+        "php": ">=8.5",
         "ext-ctype": "*",
         "ext-iconv": "*",
         "ext-yaml": "*",
-        "phpdocumentor/reflection-docblock": "^5.6.3",
-        "phpstan/phpdoc-parser": "^2.3",
-        "symfony/asset": "7.3.*",
-        "symfony/asset-mapper": "7.3.*",
-        "symfony/console": "7.3.*",
-        "symfony/dotenv": "7.3.*",
-        "symfony/expression-language": "7.3.*",
-        "symfony/flex": "^2.8.2",
-        "symfony/form": "7.3.*",
-        "symfony/framework-bundle": "7.3.*",
-        "symfony/http-client": "7.3.*",
-        "symfony/intl": "7.3.*",
-        "symfony/mime": "7.3.*",
-        "symfony/monolog-bundle": "^3.10",
-        "symfony/notifier": "7.3.*",
-        "symfony/process": "7.3.*",
-        "symfony/property-access": "7.3.*",
-        "symfony/property-info": "7.3.*",
-        "symfony/runtime": "7.3.*",
-        "symfony/serializer": "7.3.*",
-        "symfony/stimulus-bundle": "^2.30",
-        "symfony/string": "7.3.*",
-        "symfony/translation": "7.3.*",
-        "symfony/twig-bundle": "7.3.*",
-        "symfony/ux-live-component": "^2.30",
-        "symfony/validator": "7.3.*",
-        "symfony/web-link": "7.3.*",
-        "symfony/yaml": "7.3.*",
-        "twig/extra-bundle": "^2.12|^3.21",
-        "twig/twig": "^2.12|^3.21.1"
+        "doctrine/doctrine-bundle": "^3.2",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
+        "doctrine/orm": "^3.6",
+        "endroid/qr-code": "^6.1",
+        "phpdocumentor/reflection-docblock": "^6.0.3",
+        "phpstan/phpdoc-parser": "^2.3.3",
+        "symfony/asset": "8.1.*",
+        "symfony/asset-mapper": "8.1.*",
+        "symfony/console": "8.1.*",
+        "symfony/dotenv": "8.1.*",
+        "symfony/expression-language": "8.1.*",
+        "symfony/flex": "^2.11.0",
+        "symfony/form": "8.1.*",
+        "symfony/framework-bundle": "8.1.*",
+        "symfony/http-client": "8.1.*",
+        "symfony/intl": "8.1.*",
+        "symfony/mercure-bundle": "^0.4.2",
+        "symfony/mime": "8.1.*",
+        "symfony/monolog-bundle": "^4.0.2",
+        "symfony/notifier": "8.1.*",
+        "symfony/process": "8.1.*",
+        "symfony/property-access": "8.1.*",
+        "symfony/property-info": "8.1.*",
+        "symfony/runtime": "8.1.*",
+        "symfony/serializer": "8.1.*",
+        "symfony/stimulus-bundle": "^3.3",
+        "symfony/string": "8.1.*",
+        "symfony/translation": "8.1.*",
+        "symfony/twig-bundle": "8.1.*",
+        "symfony/uid": "8.1.*",
+        "symfony/ux-live-component": "^3.3",
+        "symfony/validator": "8.1.*",
+        "symfony/web-link": "8.1.*",
+        "symfony/yaml": "8.1.*",
+        "twig/extra-bundle": "^2.12|^3.24",
+        "twig/twig": "^2.12|^3.28.0"
     },
     "config": {
         "allow-plugins": {
@@ -50,7 +56,15 @@
     },
     "autoload": {
         "psr-4": {
-            "App\\": "src/"
+            "App\\": "src/",
+            "App\\AdvancedCiv\\": "sources/civ.rol-play.com/php/AdvancedCiv/",
+            "System\\": "system/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/",
+            "System\\": "system/"
         }
     },
     "replace": {
@@ -74,7 +88,17 @@
         ],
         "post-update-cmd": [
             "@auto-scripts"
-        ]
+        ],
+        "rector": "vendor/bin/rector process --config=tools/rector.php",
+        "phpcs": "vendor/bin/php-cs-fixer fix --config=tools/php-cs-fixer.php",
+        "phpstan": "vendor/bin/phpstan analyse --configuration=tools/phpstan.php --memory-limit=1G",
+        "phpunit": "vendor/bin/phpunit --configuration=tools/phpunit.xml"
+    },
+    "scripts-descriptions": {
+        "rector": "Apply Rector modernization sources/rules (defaults to src/ — pass paths after --)",
+        "phpcs": "Run PHP-CS-Fixer code style fix (defaults to src/ — pass paths after --)",
+        "phpstan": "Run PHPStan static analysis (defaults to src/ — pass paths after --)",
+        "phpunit": "Run PHPUnit test suite (defaults to tests/ — pass paths after --)"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -82,16 +106,24 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.3.*",
+            "require": "8.1.*",
             "docker": false
         }
     },
     "require-dev": {
-        "symfony/browser-kit": "7.3.*",
-        "symfony/css-selector": "7.3.*",
-        "symfony/debug-bundle": "7.3.*",
-        "symfony/maker-bundle": "^1.64",
-        "symfony/stopwatch": "7.3.*",
-        "symfony/web-profiler-bundle": "7.3.*"
+        "dama/doctrine-test-bundle": "^8.6",
+        "doctrine/deprecations": "^1.1.6",
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.2",
+        "rector/rector": "^2.4",
+        "symfony/browser-kit": "8.1.*",
+        "symfony/css-selector": "8.1.*",
+        "symfony/debug-bundle": "8.1.*",
+        "symfony/maker-bundle": "^1.67",
+        "symfony/stopwatch": "8.1.*",
+        "symfony/web-profiler-bundle": "8.1.*"
     }
 }

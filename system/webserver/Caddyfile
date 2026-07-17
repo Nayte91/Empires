@@ -1,8 +1,59 @@
-:80 {
-	root * /app/public
-	push
-	vulcain
-	php_fastcgi backend:9000
+{
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$CADDY_EXTRA_CONFIG}
+
+{$SERVER_NAME:localhost} {
+	log {
+		{$CADDY_SERVER_LOG_OPTIONS}
+
+		format filter {
+			request>uri query {
+				replace authorization REDACTED
+			}
+		}
+	}
+
+	root /app/public
 	encode zstd br gzip
-	file_server
+
+	# Real-time refresh pings for Live Components (empires/game/{uuid} topic).
+	# No data transits Mercure: the client re-renders on event receipt.
+	mercure {
+		transport local
+		publisher_jwt {env.MERCURE_PUBLISHER_JWT_KEY}
+		subscriber_jwt {env.MERCURE_SUBSCRIBER_JWT_KEY}
+		anonymous
+	}
+
+	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	header ?Permissions-Policy "browsing-topics=()"
+	header ?X-Frame-Options "DENY"
+	header ?Referrer-Policy "strict-origin-when-cross-origin"
+
+	@phpRoute {
+		not path /.well-known/mercure*
+		not file {path}
+	}
+	rewrite @phpRoute index.php
+
+	@frontController path index.php
+	php @frontController {
+		{$FRANKENPHP_SITE_CONFIG}
+	}
+
+	@staticAssets path /assets/* /media/*
+	# In dev, AssetMapper serves fingerprinted files via PHP and sets Cache-Control: max-age=604800.
+	# The > prefix overrides it. In prod, files are pre-compiled on disk and served by file_server directly.
+	header @staticAssets >Cache-Control "public, max-age=31536000, immutable"
+
+	file_server {
+		hide *.php
+	}
 }
