@@ -1,0 +1,8 @@
+<div {{ stimulus_controller('modal') }} {{ attributes }}>
+    <button type="button" {{ stimulus_action('modal', 'open') }}>
+        {% block button %}{% endblock %}
+    </button>
+    <dialog class="modal" {{ stimulus_target('modal', 'dialog') }}>
+        {% block content %}{% endblock %}
+    </dialog>
+</div>

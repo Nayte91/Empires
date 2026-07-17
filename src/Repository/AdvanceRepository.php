@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use App\Entity\Advance;
@@ -7,24 +9,42 @@ use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-final class AdvanceRepository {
+final class AdvanceRepository
+{
     private const string IMAGES_PATH = 'images/advances/';
     private const string IMAGE_EXTENSION = '.webp';
 
+    /**
+     * @var null|array<string, array{
+     *     cost: int,
+     *     points: int,
+     *     categories: list<string>,
+     *     credits: array<string, int>,
+     *     mitigation?: list<string>,
+     *     aggravation?: list<string>,
+     * }>
+     */
     private ?array $advancesData = null;
+
+    /** @var null|array<string, string> */
+    private ?array $categoryColors = null;
+
+    /** @var null|array{advances?: mixed, categories?: mixed} */
+    private ?array $rawData = null;
 
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/game/advances.yaml')]
-        private string $advancesDataPath,
-        private Packages $packages,
+        private readonly string $advancesDataPath,
+        private readonly Packages $packages,
     ) {}
 
+    /** @return list<Advance> */
     public function getAdvances(): array
     {
         $advancesData = $this->getAdvancesData();
 
         $advances = array_map(
-            fn(string $name, array $data): Advance => $this->hydrateAdvance($name, $data),
+            fn (string $name, array $data): Advance => $this->hydrateAdvance($name, $data),
             array_keys($advancesData),
             $advancesData
         );
@@ -34,78 +54,160 @@ final class AdvanceRepository {
 
     public function getAdvanceByName(string $name): ?Advance
     {
-        $normalizedName = str_replace(' ', '_', strtolower($name));
+        $key = str_replace(' ', '_', strtolower($name));
         $advancesData = $this->getAdvancesData();
 
-        if (!isset($advancesData[$normalizedName])) {
+        if (!isset($advancesData[$key])) {
             return null;
         }
 
-        return $this->hydrateAdvance($normalizedName, $advancesData[$normalizedName]);
+        return $this->hydrateAdvance($key, $advancesData[$key]);
     }
 
+    /**
+     * @param list<string> $names
+     *
+     * @return array<int, Advance>
+     */
     public function getAdvancesByNames(array $names): array
     {
         return array_filter(
             array_map(
-                fn(string $name): ?Advance => $this->getAdvanceByName($name),
+                $this->getAdvanceByName(...),
                 $names
             )
         );
     }
 
+    /**
+     * @param list<string> $categories
+     *
+     * @return array<int, Advance>
+     */
     public function getAdvancesByCategories(array $categories): array
     {
         $advances = $this->getAdvances();
 
         return array_filter(
             $advances,
-            static fn(Advance $advance): bool => !empty(array_intersect($advance->categories, $categories))
+            static fn (Advance $advance): bool => [] !== array_intersect($advance->categories, $categories)
         );
     }
 
+    /** @return array<int, Advance> */
     public function getAdvancesByCostRange(int $minCost, int $maxCost): array
     {
         $advances = $this->getAdvances();
 
         return array_filter(
             $advances,
-            static fn(Advance $advance): bool => $advance->cost >= $minCost && $advance->cost <= $maxCost
+            static fn (Advance $advance): bool => $advance->cost >= $minCost && $advance->cost <= $maxCost
         );
     }
 
+    /** @return array<string, string> */
+    public function getCategoryColors(): array
+    {
+        if (null === $this->categoryColors) {
+            $data = $this->getRootData();
+
+            if (!isset($data['categories']) || !is_array($data['categories'])) {
+                throw new \RuntimeException('Invalid advances configuration file');
+            }
+
+            /** @var array<string, array{color: string}> $categories */
+            $categories = $data['categories'];
+            $this->categoryColors = array_map(
+                static fn (array $category): string => $category['color'],
+                $categories
+            );
+        }
+
+        return $this->categoryColors;
+    }
+
+    /**
+     * @return array<string, array{
+     *     cost: int,
+     *     points: int,
+     *     categories: list<string>,
+     *     credits: array<string, int>,
+     *     mitigation?: list<string>,
+     *     aggravation?: list<string>,
+     * }>
+     */
     private function getAdvancesData(): array
     {
-        if ($this->advancesData === null) {
-            $data = Yaml::parseFile($this->advancesDataPath);
+        if (null === $this->advancesData) {
+            $data = $this->getRootData();
 
             if (!isset($data['advances']) || !is_array($data['advances'])) {
                 throw new \RuntimeException('Invalid advances configuration file');
             }
 
-            $this->advancesData = $data['advances'];
+            /**
+             * @var array<string, array{
+             *     cost: int,
+             *     points: int,
+             *     categories: list<string>,
+             *     credits: array<string, int>,
+             *     mitigation?: list<string>,
+             *     aggravation?: list<string>,
+             * }> $advances
+             */
+            $advances = $data['advances'];
+            $this->advancesData = $advances;
         }
 
         return $this->advancesData;
     }
 
+    /** @return array{advances?: mixed, categories?: mixed} */
+    private function getRootData(): array
+    {
+        if (null === $this->rawData) {
+            /** @var array{advances?: mixed, categories?: mixed} $data */
+            $data = Yaml::parseFile($this->advancesDataPath);
+            $this->rawData = $data;
+        }
+
+        return $this->rawData;
+    }
+
+    /**
+     * @param array{
+     *     cost: int,
+     *     points: int,
+     *     categories: list<string>,
+     *     credits: array<string, int>,
+     *     mitigation?: list<string>,
+     *     aggravation?: list<string>,
+     * } $data
+     */
     private function hydrateAdvance(string $key, array $data): Advance
     {
+        // The 'pack' and 'promotion' YAML keys exist but are intentionally not read (out of scope for v1 shop).
         return new Advance(
+            key: $key,
             name: str_replace('_', ' ', $key),
-            fileName: $this->packages->getUrl(self::IMAGES_PATH . $key . self::IMAGE_EXTENSION),
+            fileName: $this->packages->getUrl(self::IMAGES_PATH.$key.self::IMAGE_EXTENSION),
             cost: $data['cost'],
             points: $data['points'],
             categories: $data['categories'],
             credits: $data['credits'],
-            mitigations: $data['mitigations'] ?? [],
-            aggravations: $data['aggravations'] ?? [],
+            mitigations: $data['mitigation'] ?? [],
+            aggravations: $data['aggravation'] ?? [],
         );
     }
 
+    /**
+     * @param list<Advance> $advances
+     *
+     * @return list<Advance>
+     */
     private function sortByCost(array $advances): array
     {
-        usort($advances, static fn(Advance $a, Advance $b): int => $a->cost <=> $b->cost);
+        usort($advances, static fn (Advance $a, Advance $b): int => $a->cost <=> $b->cost);
 
         return $advances;
     }
