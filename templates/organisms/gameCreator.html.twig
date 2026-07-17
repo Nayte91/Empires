@@ -1,0 +1,173 @@
+<div {{ attributes }} class="game-creator">
+    <header class="game-creator__header">
+        <h1>Create a new game</h1>
+    </header>
+
+    {% if error %}
+        <p class="game-creator__error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <fieldset class="game-creator__scenario">
+        <legend>Scenario</legend>
+
+        <label>
+            Players
+            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="playerCount" value="{{ playerCount }}">
+        </label>
+
+        <label>
+            Region
+            <select data-model="region" {{ playerCount >= 10 ? 'disabled' }}>
+                <option value="west" {{ region == 'west' ? 'selected' }}>West</option>
+                <option value="east" {{ region == 'east' ? 'selected' }}>East</option>
+                <option value="" {{ region is null ? 'selected' }} {{ playerCount < 10 ? 'disabled' }}>Combined maps</option>
+            </select>
+        </label>
+
+        <label>
+            AST type
+            <select data-model="astType">
+                <option value="basic" {{ astType == 'basic' ? 'selected' }}>Basic</option>
+                <option value="expert" {{ astType == 'expert' ? 'selected' }}>Expert</option>
+            </select>
+        </label>
+    </fieldset>
+
+    <section class="game-creator__players">
+        <h2>Players</h2>
+
+        <div class="game-creator__add-player">
+            <label>
+                New player name
+                <input type="text" data-model="newPlayerName" value="{{ newPlayerName }}" {{ this.isPlayerLimitReached ? 'disabled' }}>
+            </label>
+
+            <label>
+                Empire
+                <select data-model="newPlayerEmpire" {{ this.isPlayerLimitReached ? 'disabled' }}>
+                    <option value="" {{ newPlayerEmpire == '' ? 'selected' }}>— no empire —</option>
+                    {% for empire in this.availableEmpires %}
+                        <option value="{{ empire.name }}" {{ newPlayerEmpire == empire.name ? 'selected' }}>{{ empire.name|capitalize }}</option>
+                    {% else %}
+                        <option value="" disabled>No empire available for the current settings.</option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <button
+                type="button"
+                {{ live_action('addPlayer') }}
+                data-loading="addAttribute(disabled)"
+                {{ this.isPlayerLimitReached ? 'disabled' }}
+            >
+                Add
+            </button>
+        </div>
+
+        {% if this.isPlayerLimitReached %}
+            <p class="game-creator__hint">Player limit reached ({{ players|length }}/{{ playerCount }}).</p>
+        {% endif %}
+
+        <table>
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Empire</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                    {% set playerColor = this.getPlayerColor(player.empire) %}
+                    <tr{% if playerColor %} style="--player-color: {{ playerColor }}"{% endif %}>
+                        <td>{{ player.name }}</td>
+                        <td>{{ player.empire != '' ? player.empire : '—' }}</td>
+                        <td>
+                            {% if player.empire == '' %}
+                                <button
+                                    type="button"
+                                    class="game-creator__random-player"
+                                    {{ live_action('assignRandomEmpire', {index: loop.index0}) }}
+                                    data-loading="addAttribute(disabled)"
+                                    aria-label="Assign a random empire"
+                                    title="Assign a random empire"
+                                >
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <rect x="3" y="3" width="18" height="18" rx="3" />
+                                        <circle cx="8" cy="8" r="1" fill="currentColor" stroke="none" />
+                                        <circle cx="16" cy="8" r="1" fill="currentColor" stroke="none" />
+                                        <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+                                        <circle cx="8" cy="16" r="1" fill="currentColor" stroke="none" />
+                                        <circle cx="16" cy="16" r="1" fill="currentColor" stroke="none" />
+                                    </svg>
+                                </button>
+                            {% endif %}
+                            <button
+                                type="button"
+                                class="game-creator__delete-player"
+                                {{ live_action('removePlayer', {index: loop.index0}) }}
+                                data-loading="addAttribute(disabled)"
+                                aria-label="Delete player"
+                                title="Delete player"
+                            >
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6" />
+                                    <path d="M10 11v6M14 11v6" />
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3">No players yet.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <button
+            type="button"
+            class="game-creator__random-all"
+            {{ live_action('assignRandomEmpires') }}
+            data-loading="addAttribute(disabled)"
+            {{ not this.canAssignRandomEmpires ? 'disabled' }}
+        >
+            RANDOM
+        </button>
+    </section>
+
+    <fieldset class="game-creator__launch-block">
+        <legend>Launch</legend>
+
+        <label>
+            Game name
+            <input type="text" data-model="debounce(300)|slug" value="{{ slug }}">
+            {% if this.isSlugAvailable %}
+                <span class="game-creator__slug-status game-creator__slug-status--available" aria-label="Slug available">✓</span>
+            {% else %}
+                <span class="game-creator__slug-status game-creator__slug-status--taken" aria-label="Slug unavailable">✗</span>
+            {% endif %}
+        </label>
+
+        {% if slug %}
+            <p class="game-creator__slug-preview">{{ url('app_game_dashboard', {slug: slug}) }}</p>
+        {% endif %}
+
+        <button
+            type="button"
+            class="game-creator__launch"
+            {{ live_action('launch') }}
+            data-loading="addAttribute(disabled)"
+            {{ not this.isReadyToCreate ? 'disabled' }}
+        >
+            Create the game
+        </button>
+    </fieldset>
+
+    {% set issues = this.conformityIssues %}
+    {% if issues is empty %}
+        <p class="game-creator__conformity game-creator__conformity--ok">Everything is fine.</p>
+    {% else %}
+        <p class="game-creator__conformity game-creator__conformity--error" role="alert">{{ issues|join(' ') }}</p>
+    {% endif %}
+</div>
