@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repository;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -8,28 +10,59 @@ final readonly class GameData
 {
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/game_data.yaml')] private string $gameDataPath) {}
 
+    /**
+     * @return array{
+     *     max_cities?: int,
+     *     max_population?: int,
+     *     max_ships?: int,
+     *     modes?: list<string>,
+     *     min_players?: int,
+     *     max_players?: int,
+     * }
+     */
     public function getLimits(): array
     {
         return $this->loadGameData()['limits'] ?? [];
     }
 
-    public function getRegions(): ?array
+    /**
+     * @return array<string, array{
+     *     name: string,
+     *     name2019: string,
+     *     name2024: string,
+     *     empires: list<string>,
+     * }>
+     */
+    public function getRegions(): array
     {
         $data = $this->loadGameData();
+
         return $data['regions'] ?? [];
     }
 
-    public function getCivilizationsByRegionAndPlayers(string $region): array
-    {
-        $regions = $this->getRegions();
-        return $regions[$region]['civilizations'] ?? [];
-    }
-
+    /**
+     * @return array{
+     *     regions?: array<string, array{
+     *         name: string,
+     *         name2019: string,
+     *         name2024: string,
+     *         empires: list<string>,
+     *     }>,
+     *     limits?: array{
+     *         max_cities?: int,
+     *         max_population?: int,
+     *         max_ships?: int,
+     *         modes?: list<string>,
+     *         min_players?: int,
+     *         max_players?: int,
+     *     },
+     * }
+     */
     private function loadGameData(): array
     {
         static $cache = null;
 
-        if ($cache === null) {
+        if (null === $cache) {
             $cache = yaml_parse_file($this->gameDataPath);
         }
 
