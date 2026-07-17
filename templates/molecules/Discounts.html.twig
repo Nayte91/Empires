@@ -1,0 +1,22 @@
+<table class="discounts">
+    <thead>
+        <tr>
+            <th scope="col">Category</th>
+            <th scope="col">Credit</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category, amount in this.credits.categories %}
+            <tr class="discounts__category" style="--category-color: {{ this.categoryColors[category] }}">
+                <td>{{ category|capitalize }}</td>
+                <td><b>{{ amount }}</b></td>
+            </tr>
+        {% endfor %}
+        {% for name, amount in this.credits.named %}
+            <tr>
+                <td>{{ name|replace({'_': ' '})|capitalize }}</td>
+                <td><b>{{ amount }}</b></td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

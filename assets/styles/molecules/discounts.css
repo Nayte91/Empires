@@ -1,0 +1,22 @@
+.discounts {
+    inline-size: min(100%, 25rem);
+
+    border: 1px solid gainsboro;
+    border-radius: 0.5rem;
+    border-spacing: 0;
+    background: white;
+    padding: 1rem;
+
+    th, td {
+        padding: 0.5rem;
+        border-block-end: 1px solid gainsboro;
+    }
+
+    th {
+        color: dimgray;
+        text-transform: uppercase;
+    }
+
+    tbody tr:nth-child(even) { background: whitesmoke }
+    tbody tr.discounts__category { color: var(--category-color) }
+}

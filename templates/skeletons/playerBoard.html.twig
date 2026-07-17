@@ -1,0 +1,16 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Empires - {{ player.name }}'s board{% endblock %}
+
+{% block body_attr %}{% if empireColor %}style="background-color: {{ empireColor }}"{% endif %}{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/operator.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/playerBoard.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}">
+{% endblock %}
+
+{% block body %}
+    {{ component('PlayerBoard', {player}) }}
+{% endblock %}

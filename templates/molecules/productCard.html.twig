@@ -1,0 +1,44 @@
+{# Product Card Molecule Template #}
+<article
+    id="product-{{ product.advance.key }}"
+    class="product-card{{ product.owned ? ' product-card--owned' }}{{ product.inCart ? ' product-card--in-cart' }}"
+>
+    {% if product.advance.fileName %}
+        <div class="product-card__image">
+            <img src="{{ product.advance.fileName }}" alt="{{ product.advance.name }} card" loading="lazy">
+        </div>
+    {% endif %}
+
+    <header class="product-card__header">
+        <h3 class="product-card__title">{{ product.advance.name|capitalize }}</h3>
+
+        <div class="product-card__categories">
+            {% for category in product.advance.categories %}
+                <span class="product-card__badge product-card__badge--category">{{ category|capitalize }}</span>
+            {% endfor %}
+        </div>
+    </header>
+
+    {% if product.owned %}
+        <span class="product-card__badge product-card__badge--owned">Owned</span>
+    {% endif %}
+
+    {% if not readonly|default(false) %}
+        <div class="product-card__price">
+            {% if product.netCost < product.advance.cost %}
+                <span class="product-card__price-original">{{ product.advance.cost }}</span>
+            {% endif %}
+            <span class="product-card__price-net">{{ product.netCost }}</span>
+        </div>
+
+        <button
+            type="button"
+            {{ live_action(action|default('addToCart'), {key: product.advance.key}) }}
+            {{ (product.owned or product.inCart or locked) ? 'disabled' }}
+            data-loading="addAttribute(disabled)"
+            class="product-card__add"
+        >
+            {{ product.inCart ? 'In cart' : (product.owned ? 'Owned' : 'Add') }}
+        </button>
+    {% endif %}
+</article>
