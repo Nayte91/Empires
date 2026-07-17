@@ -3,17 +3,17 @@ regions:
         name: "west"
         name2019: "Western Empires"
         name2024: "Mega Empires: The West"
-        civilizations: ["assyria", "carthage", "celt", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
+        empires: ["assyria", "carthage", "celt", "egypt", "hatti", "hellas", "iberia", "minoa", "rome"]
     east:
         name: "east"
         name2019: "Eastern Empires"
         name2024: "Mega Empires: The East"
-        civilizations: ["babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
+        empires: ["babylon", "dravidia", "indus", "kushan", "maurya", "nubia", "parthia", "persia", "saba"]
 
 limits:
     max_cities: 9
     max_population: 55
     max_ships: 4
     modes: ["basic", "expert"]
-    min_players: 5
+    min_players: 3
     max_players: 18

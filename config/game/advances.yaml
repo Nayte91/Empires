@@ -1,3 +1,10 @@
+categories:
+    art:      { color: "#27AAE1" }
+    civic:    { color: "#F04E56" }
+    craft:    { color: "#F7941E" }
+    religion: { color: "#FFF200" }
+    science:  { color: "#39B54A" }
+
 advances:
     advanced_military:
         cost: 240
