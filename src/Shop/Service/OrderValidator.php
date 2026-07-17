@@ -1,0 +1,72 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Shop\Service;
+
+use App\Entity\Advance;
+use App\Entity\Order;
+use App\Enumeration\OrderStatus;
+use App\Repository\AdvanceRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
+
+final readonly class OrderValidator
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager,
+        private AdvanceRepository $advanceRepository,
+        private PriceCalculator $priceCalculator,
+        private HubInterface $hub,
+    ) {}
+
+    public function validate(Order $order, int $money): void
+    {
+        if (OrderStatus::Validated === $order->status) {
+            throw new \DomainException('Order is already validated.');
+        }
+
+        $player = $order->player;
+        $ownedSlugs = $player->advances;
+
+        /** @var list<string> $slugs */
+        $slugs = $order->lines;
+
+        foreach ($slugs as $slug) {
+            if (in_array($slug, $ownedSlugs, true)) {
+                throw new \DomainException(sprintf('Advance "%s" is already owned.', $slug));
+            }
+        }
+
+        /** @var list<Advance> $advances */
+        $advances = $this->advanceRepository->getAdvancesByNames($slugs);
+
+        /** @var list<Advance> $ownedAdvances */
+        $ownedAdvances = $this->advanceRepository->getAdvancesByNames($ownedSlugs);
+
+        $frozenLines = [];
+        $total = 0;
+
+        foreach ($advances as $advance) {
+            $netCost = $this->priceCalculator->netCost($advance, $ownedAdvances);
+            $frozenLines[] = ['key' => $advance->key, 'netCost' => $netCost];
+            $total += $netCost;
+        }
+
+        if ($money < $total) {
+            throw new \DomainException(sprintf('Insufficient money: total is %d, given %d.', $total, $money));
+        }
+
+        $hub = $this->hub;
+
+        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $money, $player, $slugs, $hub): void {
+            $order->validate($frozenLines, $total, $money);
+            $player->ownAdvances($slugs);
+            $hub->publish(new Update(
+                'empires/game/'.$player->game->id,
+                '{"event":"order-validated"}',
+            ));
+        });
+    }
+}

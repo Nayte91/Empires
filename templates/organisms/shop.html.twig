@@ -1,0 +1,100 @@
+<div
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['turn-changed', 'order-validated']})) }}
+    class="shop"
+>
+    <header class="shop__header">
+        <h1>{{ player.name }}'s shop — Turn {{ player.game.currentTurn }}</h1>
+
+        {% if this.isLockedForTurn %}
+            <p class="shop__locked-banner" role="status">Order validated for this turn.</p>
+        {% endif %}
+    </header>
+
+    {% if error %}
+        <p class="shop__error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <section>
+        <h2>Your discounts</h2>
+
+        <twig:molecules:Discounts :player="player" />
+    </section>
+
+    <div class="shop__layout">
+        <section class="shop__products" aria-label="Available advances">
+            {% for product in computed.products %}
+                {% include 'molecules/productCard.html.twig' with {product, locked: this.isLockedForTurn} only %}
+            {% endfor %}
+        </section>
+
+        <aside class="shop__cart">
+            <h2>Your cart</h2>
+
+            <ul class="shop__cart-lines">
+                {% for line in this.cartLines %}
+                    <li class="shop__cart-line">
+                        <span class="shop__cart-line-name">{{ line.advance.name|capitalize }}</span>
+                        <span class="shop__cart-line-cost">{{ line.netCost }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('removeFromCart', {key: line.advance.key}) }}
+                            data-loading="addAttribute(disabled)"
+                            class="shop__cart-line-remove"
+                        >
+                            ×
+                        </button>
+                    </li>
+                {% else %}
+                    <li class="shop__cart-empty">Your cart is empty.</li>
+                {% endfor %}
+            </ul>
+
+            <p class="shop__cart-total">Total: {{ this.cartTotal }}</p>
+
+            <div class="shop__cart-actions">
+                <button
+                    type="button"
+                    {{ live_action('clearCart') }}
+                    data-loading="addAttribute(disabled)"
+                    {{ this.cartLines is empty ? 'disabled' }}
+                >
+                    Clear cart
+                </button>
+                <button
+                    type="button"
+                    {{ live_action('submitOrder') }}
+                    data-loading="addAttribute(disabled)"
+                    {{ (this.isLockedForTurn or this.cartLines is empty) ? 'disabled' }}
+                    class="shop__submit"
+                >
+                    Submit my order
+                </button>
+            </div>
+
+            {% if this.pendingOrder %}
+                <div class="shop__pending-order">
+                    <h3>Pending order — turn {{ this.pendingOrder.turn }}</h3>
+
+                    <ul>
+                        {% for line in this.pendingOrderLines %}
+                            <li>
+                                <span>{{ line.advance.name|capitalize }}</span>
+                                <span>{{ line.netCost }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <p class="shop__pending-order-total">Indicative total: {{ this.pendingOrderTotal }}</p>
+
+                    <button
+                        type="button"
+                        {{ live_action('editPendingOrder') }}
+                        data-loading="addAttribute(disabled)"
+                    >
+                        Modify
+                    </button>
+                </div>
+            {% endif %}
+        </aside>
+    </div>
+</div>

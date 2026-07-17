@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Empires - Operator console{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/operator.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/shop.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}">
+{% endblock %}
+
+{% block body %}
+    {{ component('OperatorConsole', {game}) }}
+{% endblock %}

@@ -1,0 +1,331 @@
+/* Shop kiosk organism & product-card molecule styles — populated by Ozoux */
+
+.shop {
+    display: grid;
+    max-inline-size: 75rem;
+    margin-inline: auto;
+    gap: var(--operator-gap);
+    padding: clamp(1rem, 4vw, 1.5rem);
+    font-size: 0.9375rem;
+
+    & h1 {
+        margin: 0;
+        font-size: clamp(1.25rem, 1vw + 1rem, 1.5rem);
+    }
+
+    & h2 {
+        margin-block: 0 0.75rem;
+        font-size: 1.125rem;
+    }
+
+    & h3 {
+        margin-block: 0 0.5rem;
+        font-size: 1rem;
+    }
+
+    & button {
+        border: 1px solid var(--operator-border);
+        border-radius: var(--operator-radius);
+        padding: 0.5em 0.9em;
+        background: white;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.15s;
+
+        &:hover {
+            background: var(--operator-bg-subtle)
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--operator-accent);
+            outline-offset: 2px;
+        }
+
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    .shop__header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .shop__locked-banner {
+        border: 1px solid var(--operator-success);
+        border-radius: var(--operator-radius);
+        margin: 0;
+        padding: 0.75em 1em;
+        background: var(--operator-success-bg);
+        color: var(--operator-success);
+    }
+
+    .shop__error {
+        border: 1px solid var(--operator-error);
+        border-radius: var(--operator-radius);
+        margin: 0;
+        padding: 0.75em 1em;
+        background: var(--operator-error-bg);
+        color: var(--operator-error);
+    }
+
+    .shop__layout {
+        display: grid;
+        align-items: start;
+        grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem);
+        gap: var(--operator-gap);
+
+        @media (max-width: 48em) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .shop__products {
+        --grid-min-col-size: 14rem;
+        display: grid;
+        align-content: start;
+        grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min-col-size), 100%), 1fr));
+        gap: var(--operator-gap);
+    }
+
+    .shop__cart {
+        position: sticky;
+        inset-block-start: 1rem;
+        align-self: start;
+        border: 1px solid var(--operator-border);
+        border-radius: var(--operator-radius);
+        display: grid;
+        gap: 0.75rem;
+        padding: 1rem;
+        background: white;
+
+        @media (max-width: 48em) {
+            position: static;
+        }
+    }
+
+    .shop__cart-lines {
+        display: grid;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .shop__cart-line {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .shop__cart-line-name {
+        flex: 1;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .shop__cart-line-cost {
+        font-variant-numeric: tabular-nums;
+        color: var(--operator-text-muted)
+    }
+
+    .shop__cart-line-remove {
+        aspect-ratio: 1;
+        inline-size: 1.75rem;
+        border-radius: 50%;
+        padding: 0;
+        display: inline-grid;
+        place-content: center;
+        font-size: 1rem;
+        line-height: 1;
+        color: var(--operator-text-muted);
+
+        &:hover {
+            background: var(--operator-error-bg);
+            color: var(--operator-error);
+        }
+    }
+
+    .shop__cart-empty {
+        margin: 0;
+        color: var(--operator-text-muted)
+    }
+
+    .shop__cart-total {
+        border-block-start: 1px solid var(--operator-border);
+        margin: 0;
+        padding-block-start: 0.5rem;
+        font-weight: bold;
+    }
+
+    .shop__cart-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .shop__submit {
+        background: var(--operator-accent);
+        color: white;
+
+        &:hover {
+            background: hsl(from var(--operator-accent) h s calc(l - 8%))
+        }
+
+        &:disabled {
+            background: var(--operator-border);
+            color: var(--operator-text-muted);
+        }
+    }
+
+    .shop__pending-order {
+        border-block-start: 1px solid var(--operator-border);
+        margin: 0;
+        padding-block-start: 0.75rem;
+        display: grid;
+        gap: 0.5rem;
+
+        & ul {
+            display: grid;
+            gap: 0.35rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+
+            & li {
+                display: flex;
+                justify-content: space-between;
+                gap: 1rem;
+            }
+        }
+    }
+
+    .shop__pending-order-total {
+        margin: 0;
+        color: var(--operator-text-muted);
+        font-style: italic;
+    }
+}
+
+.product-card {
+    overflow: hidden;
+    border: 1px solid var(--operator-border);
+    border-radius: var(--operator-radius);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    background: white;
+    transition: box-shadow 0.15s, border-color 0.15s;
+
+    &:hover {
+        box-shadow: 0 2px 8px rgb(0 0 0 / 0.08)
+    }
+
+    &.product-card--owned {
+        border-color: var(--operator-success)
+    }
+
+    &.product-card--in-cart {
+        border-color: var(--operator-accent)
+    }
+
+    & .product-card__image {
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+
+        & img {
+            inline-size: 100%;
+            block-size: 100%;
+            object-fit: cover;
+        }
+    }
+
+    & .product-card__header {
+        padding: 0.75rem 0.75rem 0;
+        display: grid;
+        gap: 0.35rem;
+    }
+
+    & .product-card__title {
+        margin: 0;
+        font-size: 1rem;
+    }
+
+    & .product-card__categories {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    & .product-card__badge {
+        border-radius: 1em;
+        padding: 0.15em 0.6em;
+        display: inline-grid;
+        place-content: center;
+        background: var(--operator-bg-subtle);
+        color: var(--operator-text-muted);
+        font-size: 0.75rem;
+
+        &.product-card__badge--category {
+            background: color-mix(in oklab, var(--operator-accent) 12%, white);
+            color: hsl(from var(--operator-accent) h s calc(l - 15%));
+        }
+
+        &.product-card__badge--owned {
+            margin-inline: 0.75rem;
+            justify-self: start;
+            background: var(--operator-success-bg);
+            color: var(--operator-success);
+        }
+    }
+
+    & .product-card__price {
+        padding: 0.5rem 0.75rem 0;
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    & .product-card__price-original {
+        color: color-mix(in oklab, var(--operator-text-muted) 70%, transparent);
+        font-size: 0.8125rem;
+        text-decoration: line-through;
+    }
+
+    & .product-card__price-net {
+        font-size: 1.0625rem;
+        font-weight: bold;
+    }
+
+    & .product-card__add {
+        margin: 0.75rem;
+        border: 1px solid var(--operator-accent);
+        border-radius: var(--operator-radius);
+        padding: 0.5em 0.9em;
+        background: var(--operator-accent);
+        font-size: 0.875rem;
+        cursor: pointer;
+        color: white;
+        transition: background-color 0.15s;
+
+        &:hover {
+            background: hsl(from var(--operator-accent) h s calc(l - 8%))
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--operator-accent);
+            outline-offset: 2px;
+        }
+
+        &:disabled {
+            border-color: var(--operator-border);
+            background: var(--operator-bg-subtle);
+            color: var(--operator-text-muted);
+            cursor: not-allowed;
+        }
+    }
+}

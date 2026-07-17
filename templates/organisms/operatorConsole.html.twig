@@ -1,0 +1,256 @@
+<div
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id})) }}
+    class="operator-console"
+>
+    <header class="operator-console__header">
+        <h1>{{ game.slug }} — Turn {{ game.currentTurn }}</h1>
+
+        <div class="operator-console__turn-controls">
+            {% if game.finished %}
+                <span class="operator-console__finished-badge">Finished</span>
+            {% else %}
+                <button
+                    type="button"
+                    {{ live_action('previousTurn') }}
+                    {{ game.currentTurn == 1 ? 'disabled' }}
+                >
+                    « Previous turn
+                </button>
+                <button
+                    type="button"
+                    {{ live_action('nextTurn') }}
+                    data-loading="addAttribute(disabled)"
+                >
+                    Next turn »
+                </button>
+                <button
+                    type="button"
+                    {{ live_action('finishGame') }}
+                    data-loading="addAttribute(disabled)"
+                >
+                    Finish game
+                </button>
+            {% endif %}
+        </div>
+    </header>
+
+    {% if error and not creatingOrder %}
+        <p class="operator-console__error" role="alert">{{ error }}</p>
+    {% endif %}
+
+    <section class="operator-console__players">
+        <h2>Players</h2>
+
+        <ul class="operator-console__player-stats">
+            {% for player in game.players %}
+                <li class="operator-console__player-stat">
+                    <span class="operator-console__player-stat-name">{{ player.name }} — {{ player.empire ?? '—' }}</span>
+
+                    <span class="operator-console__stepper">
+                        Cities
+                        <button
+                            type="button"
+                            {{ live_action('adjustCities', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >−</button>
+                        <span class="operator-console__stepper-value">{{ player.cities }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustCities', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >+</button>
+                    </span>
+
+                    <span class="operator-console__stepper">
+                        Census
+                        <button
+                            type="button"
+                            {{ live_action('adjustCensus', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >−</button>
+                        <span class="operator-console__stepper-value">{{ player.census }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustCensus', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >+</button>
+                    </span>
+
+                    <span class="operator-console__stepper">
+                        Treasury
+                        <button
+                            type="button"
+                            {{ live_action('adjustTreasury', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >−</button>
+                        <span class="operator-console__stepper-value">{{ player.treasury }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustTreasury', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >+</button>
+                    </span>
+                </li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="operator-console__orders">
+        <div class="operator-console__orders-header">
+            <h2>Orders — turn {{ game.currentTurn }}</h2>
+
+            {% if not creatingOrder and not game.finished %}
+                <button
+                    type="button"
+                    {{ live_action('startOrder') }}
+                    data-loading="addAttribute(disabled)"
+                    class="operator-console__create-order"
+                >
+                    Create order
+                </button>
+            {% endif %}
+        </div>
+
+        <div class="operator-console__tabs" role="tablist">
+            {% for order in this.orders %}
+                <div id="order-{{ order.id }}" class="operator-console__order-entry">
+                    {% if order.status.value == 'pending' %}
+                        {{ component('OrderTab', {order}) }}
+                    {% else %}
+                        <article class="order-tab" role="tabpanel">
+                            <h3 class="order-tab__title">{{ order.player.name }} — Turn {{ order.turn }}</h3>
+                            <p class="order-tab__validated">Order validated.</p>
+                            <ul class="order-tab__lines">
+                                {% for line in order.lines %}
+                                    <li>
+                                        <span class="order-tab__line-name">{{ line.key|replace({'_': ' '})|capitalize }}</span>
+                                        <span class="order-tab__line-cost">{{ line.netCost }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <p class="order-tab__total">Total: {{ order.total }}</p>
+                        </article>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p>No order yet.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if creatingOrder %}
+        <section class="operator-console__pos" aria-label="New order">
+            <div class="operator-console__pos-header">
+                <h2>New order</h2>
+                <button
+                    type="button"
+                    {{ live_action('cancelOrder') }}
+                    data-loading="addAttribute(disabled)"
+                >
+                    Cancel
+                </button>
+            </div>
+
+            {% if error %}
+                <p class="operator-console__error" role="alert">{{ error }}</p>
+            {% endif %}
+
+            <div class="operator-console__player-picker">
+                <label>
+                    Player
+                    <select data-model="selectedPlayerId">
+                        <option value="">Choose a player…</option>
+                        {% for entry in this.selectablePlayers %}
+                            <option
+                                value="{{ entry.player.id }}"
+                                {{ entry.locked ? 'disabled' }}
+                                {{ selectedPlayerId == entry.player.id ? 'selected' }}
+                            >
+                                {{ entry.player.name }} — {{ entry.player.empire ?? '—' }}{{ entry.locked ? ' (order validated this turn)' }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <ul class="operator-console__kiosk-links">
+                    {% for entry in this.selectablePlayers %}
+                        <li>
+                            <span>{{ entry.player.name }}</span>
+                            <a
+                                class="operator-console__kiosk-link"
+                                href="{{ url('app_player_shop', {gameSlug: game.slug, playerSlug: entry.player.slug}) }}"
+                                target="_blank"
+                                rel="noopener"
+                            >
+                                kiosk
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% set selectedPlayer = this.getSelectedPlayer() %}
+            {% if selectedPlayer %}
+                <h3>Discounts</h3>
+
+                <twig:molecules:Discounts :player="selectedPlayer" />
+
+                <div class="operator-console__pos-layout">
+                    <div class="operator-console__products" aria-label="Available advances">
+                        {% for product in computed.products %}
+                            {% include 'molecules/productCard.html.twig' with {product, locked: false, action: 'addToTicket'} only %}
+                        {% endfor %}
+                    </div>
+
+                    <aside class="operator-console__ticket">
+                        <h3>Ticket</h3>
+
+                        <ul class="operator-console__ticket-lines">
+                            {% for line in this.ticketLines %}
+                                <li class="operator-console__ticket-line">
+                                    <span class="operator-console__ticket-line-name">{{ line.advance.name|capitalize }}</span>
+                                    <span class="operator-console__ticket-line-cost">{{ line.netCost }}</span>
+                                    <button
+                                        type="button"
+                                        {{ live_action('removeFromTicket', {key: line.advance.key}) }}
+                                        data-loading="addAttribute(disabled)"
+                                        class="operator-console__ticket-line-remove"
+                                    >
+                                        ×
+                                    </button>
+                                </li>
+                            {% else %}
+                                <li class="operator-console__ticket-empty">Ticket is empty.</li>
+                            {% endfor %}
+                        </ul>
+
+                        <p class="operator-console__ticket-total">Total: {{ this.ticketTotal }}</p>
+
+                        <label>
+                            Money
+                            <input type="number" min="0" data-model="debounce(300)|money" value="{{ money }}">
+                        </label>
+
+                        <div class="operator-console__pos-actions">
+                            <button
+                                type="button"
+                                {{ live_action('cancelOrder') }}
+                                data-loading="addAttribute(disabled)"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                {{ live_action('checkout') }}
+                                {{ this.ticketLines is empty ? 'disabled' }}
+                                class="operator-console__checkout"
+                            >
+                                Confirm purchase
+                            </button>
+                        </div>
+                    </aside>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+</div>

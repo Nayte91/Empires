@@ -1,0 +1,38 @@
+<div {{ attributes }} class="order-tab" role="tabpanel" data-order-id="{{ order.id }}">
+    <h3 class="order-tab__title">{{ order.player.name }} — Turn {{ order.turn }}</h3>
+
+    {% if this.isValidated %}
+        <p class="order-tab__validated">Order validated.</p>
+    {% else %}
+        <ul class="order-tab__lines">
+            {% for line in this.pricedLines %}
+                <li>
+                    <span class="order-tab__line-name">{{ line.slug|replace({'_': ' '})|capitalize }}</span>
+                    <span class="order-tab__line-cost">{{ line.netCost }}</span>
+                </li>
+            {% else %}
+                <li>No advances ordered.</li>
+            {% endfor %}
+        </ul>
+
+        <p class="order-tab__total">Total: {{ this.total }}</p>
+
+        {% if error %}
+            <p class="order-tab__error" role="alert">{{ error }}</p>
+        {% endif %}
+
+        <label>
+            Money
+            <input type="number" min="0" data-model="money" value="{{ money }}">
+        </label>
+
+        <button
+            type="button"
+            {{ live_action('validate') }}
+            data-loading="addAttribute(disabled)"
+            class="order-tab__validate"
+        >
+            Validate
+        </button>
+    {% endif %}
+</div>
