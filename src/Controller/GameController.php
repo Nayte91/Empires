@@ -1,41 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
-use App\Repository\Civilizations;
-use App\Repository\GameData;
-use App\Repository\GameRepository;
+use App\Entity\Game;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class GameController extends AbstractController
 {
-    #[Route('/game', name: 'app_game')]
-    public function index(): Response
+    #[Route('/game/create', name: 'app_game_create', methods: ['GET'])]
+    public function create(): Response
     {
-        return $this->render('game/index.html.twig', [
-            'controller_name' => 'GameController',
-        ]);
+        return $this->render('skeletons/gameCreate.html.twig');
     }
 
-    #[Route('/ast', name: 'app_game_ast')]
-    public function ast(GameData $gameDataService, Civilizations $civilizationsService): Response
+    #[Route('/game/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    public function dashboard(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
     {
-        $regions = $gameDataService->getRegions();
-
-        return $this->render('game/ast.html.twig', [
-            'regions' => $regions,
-            'civilizations' => $civilizationsService->getCivilizations(),
-        ]);
+        return $this->render('skeletons/gameDashboard.html.twig', ['game' => $game]);
     }
 
-    #[Route('/game/session', name: 'game_session_delete', methods: ['DELETE'])]
-    public function deleteSession(GameRepository $gameRepository): JsonResponse
+    #[Route('/game/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
     {
-        $gameRepository->clear();
-        
-        return new JsonResponse(['status' => 'success']);
+        return $this->render('skeletons/gameOperator.html.twig', ['game' => $game]);
     }
 }

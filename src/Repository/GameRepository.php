@@ -5,36 +5,25 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use App\Entity\Game;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
 
-/** @extends SessionManager<\App\Entity\Game> */
-final class GameRepository extends SessionManager
+/** @extends ServiceEntityRepository<Game> */
+final class GameRepository extends ServiceEntityRepository
 {
-    public function findOrCreate(): Game
+    public function __construct(ManagerRegistry $registry)
     {
-        return $this->find() ?? new Game;
+        parent::__construct($registry, Game::class);
     }
 
-    public function updatePlayerInfo(): Game
+    /** @return list<Game> */
+    public function findInProgress(): array
     {
-        $gameSession = $this->findOrCreate();
-        $this->save($gameSession);
-
-        return $gameSession;
-    }
-
-    public function updateGameSettings(): Game
-    {
-        $gameSession = $this->findOrCreate();
-        $this->save($gameSession);
-
-        return $gameSession;
-    }
-
-    public function updateAdvances(): Game
-    {
-        $gameSession = $this->findOrCreate();
-        $this->save($gameSession);
-
-        return $gameSession;
+        return $this->createQueryBuilder('g')
+            ->andWhere('g.finishedAt IS NULL')
+            ->addOrderBy('g.id', 'DESC')
+            ->getQuery()
+            ->getResult()
+        ;
     }
 }

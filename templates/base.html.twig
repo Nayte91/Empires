@@ -13,19 +13,17 @@
         <link rel="icon" href="{{ asset('images/favicon.avif') }}" type="image/avif">
 
         {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}">
         {% endblock %}
 
         {% block javascripts %}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
-        <header>
-            {{ component('GameInfo') }}
-        </header>
-
-        <main>
-            {% block body %}{% endblock %}
-        </main>
+    <body {% block body_attr %}{% endblock %}>
+        <header></header>
+        {% block body %}{% endblock %}
+        <footer></footer>
     </body>
 </html>

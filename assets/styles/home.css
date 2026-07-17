@@ -1,0 +1,54 @@
+/* Home page — games grid */
+
+.game-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--operator-gap);
+    max-inline-size: 75rem;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+
+    @media (min-width: 48rem) {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.game-tile {
+    display: block;
+    border: 1px solid var(--operator-border);
+    border-radius: var(--operator-radius);
+    padding: 1rem;
+    background: white;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+
+    &:hover {
+        border-color: var(--operator-accent);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--operator-accent);
+        outline-offset: 2px;
+    }
+
+    & .game-tile__title {
+        display: block;
+        margin: 0 0 0.35rem;
+        font-size: 1.0625rem;
+        font-weight: bold;
+    }
+
+    & .game-tile__turn {
+        display: block;
+        color: var(--operator-text-muted);
+        font-size: 0.875rem;
+    }
+
+    & .game-tile__players {
+        display: block;
+        color: var(--operator-text-muted);
+        font-size: 0.875rem;
+    }
+}

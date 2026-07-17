@@ -2,11 +2,3 @@ body {
     margin: 0;
     background-color: #aaa;
 }
-
-.game-info {
-    padding: 0.5rem;
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    background-color: attr(data-color type(<color>));
-}
