@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace App\Game;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
+// REFACTOR-WHEN: a 3rd responsibility joins limits/regions — split them (regions -> ScenarioCatalog,
+// limits -> a dedicated class) instead of growing this class further.
 final readonly class GameData
 {
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/game_data.yaml')] private string $gameDataPath) {}

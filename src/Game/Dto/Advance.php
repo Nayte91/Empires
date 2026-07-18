@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Entity;
+namespace App\Game\Dto;
 
-class Advance
+final readonly class Advance
 {
     /**
      * @param list<string>       $categories

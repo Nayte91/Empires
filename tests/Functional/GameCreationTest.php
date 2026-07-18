@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,7 +21,7 @@ final class GameCreationTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
+        $game = new GameSession();
         $entityManager->persist($game);
         $entityManager->flush();
 
@@ -36,7 +36,7 @@ final class GameCreationTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
+        $game = new GameSession();
         $player = new Player($game, 'Alice');
         $entityManager->persist($game);
         $entityManager->flush();

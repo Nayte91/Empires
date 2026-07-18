@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\Advance;
+use App\Game\Dto\Advance;
 use App\Shop\Service\PriceCalculator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

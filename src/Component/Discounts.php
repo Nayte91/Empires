@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\Advance;
 use App\Entity\Player;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
 use App\Shop\Service\PriceCalculator;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
@@ -17,14 +17,14 @@ final class Discounts
 
     public function __construct(
         private readonly PriceCalculator $priceCalculator,
-        private readonly AdvanceRepository $advanceRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
     ) {}
 
     /** @return array{categories: array<string, int>, named: array<string, int>} */
     public function getCredits(): array
     {
         /** @var list<Advance> $owned */
-        $owned = array_values($this->advanceRepository->getAdvancesByNames($this->player->advances));
+        $owned = array_values($this->advanceCatalog->getAdvancesByNames($this->player->advances));
 
         return $this->priceCalculator->creditsFor($owned);
     }
@@ -32,6 +32,6 @@ final class Discounts
     /** @return array<string, string> */
     public function getCategoryColors(): array
     {
-        return $this->advanceRepository->getCategoryColors();
+        return $this->advanceCatalog->getCategoryColors();
     }
 }

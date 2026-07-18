@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\Advance;
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
 use App\Shop\Dto\Product;
+use App\Shop\OrderStatus;
 use App\Shop\Service\DirectSale;
 use App\Shop\Service\PriceCalculator;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -31,7 +31,7 @@ final class OperatorConsole
     use DefaultActionTrait;
 
     #[LiveProp]
-    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     #[LiveProp]
     public bool $creatingOrder = false;
@@ -55,7 +55,7 @@ final class OperatorConsole
         private readonly EntityManagerInterface $entityManager,
         private readonly OrderRepository $orderRepository,
         private readonly PlayerRepository $playerRepository,
-        private readonly AdvanceRepository $advanceRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
         private readonly PriceCalculator $priceCalculator,
         private readonly DirectSale $directSale,
         private readonly HubInterface $hub,
@@ -319,7 +319,7 @@ final class OperatorConsole
         }
 
         /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceRepository->getAdvancesByNames($player->advances);
+        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($player->advances);
 
         $this->products = array_values(array_filter(array_map(
             fn (Advance $advance): ?Product => \in_array($advance->key, $player->advances, true)
@@ -330,7 +330,7 @@ final class OperatorConsole
                     owned: false,
                     inCart: \in_array($advance->key, $this->ticket, true),
                 ),
-            $this->advanceRepository->getAdvances(),
+            $this->advanceCatalog->getAdvances(),
         )));
 
         return $this->products;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\DTO\AstEraDefinition;
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\Dto\AstEraDefinition;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
@@ -18,7 +18,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersTheSevenEraHeadersSpanningTheFullTrackLength(): void
     {
-        $game = new Game();
+        $game = new GameSession();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -32,7 +32,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersTrackLengthCellsPerPlayerRow(): void
     {
-        $game = new Game();
+        $game = new GameSession();
         new Player($game, 'Alice');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
@@ -45,7 +45,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function emptyStateColspanMatchesTrackLengthPlusOne(): void
     {
-        $game = new Game();
+        $game = new GameSession();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -56,7 +56,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function playerAtPositionZeroGetsAMarkerTitledWithTheirNameAndEraName(): void
     {
-        $game = new Game();
+        $game = new GameSession();
         new Player($game, 'Alice');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
@@ -67,7 +67,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function markerCarriesThePlayersAstPositionAsACssCustomPropertyForTransformAnimation(): void
     {
-        $game = new Game();
+        $game = new GameSession();
         $player = new Player($game, 'Alice');
         $player->astPosition = 4;
 
@@ -85,7 +85,7 @@ final class AstTest extends WebTestCase
         // so the arrow is always in the markup too — CSS (position + z-index)
         // is what visually covers it when a marker sits at position 0, not
         // Twig conditionally omitting it.
-        $game = new Game();
+        $game = new GameSession();
         $atStart = new Player($game, 'Alice');
         $atStart->astPosition = 0;
         $elsewhere = new Player($game, 'Bob');
@@ -100,7 +100,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function cellsMarkTheColumnMatchingTheCurrentTurnOncePerPlayerRowPlusTfoot(): void
     {
-        $game = new Game();
+        $game = new GameSession();
         new Player($game, 'Alice');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
@@ -116,7 +116,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersATfootWithVictoryPointsForEachPosition(): void
     {
-        $game = new Game();
+        $game = new GameSession();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tfoot = $this->extractTag($rendered, 'tfoot');

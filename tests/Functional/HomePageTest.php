@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -27,8 +27,8 @@ final class HomePageTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $inProgressGame = new Game('in-progress-game');
-        $finishedGame = new Game('finished-game');
+        $inProgressGame = new GameSession('in-progress-game');
+        $finishedGame = new GameSession('finished-game');
         $finishedGame->finishedAt = new \DateTimeImmutable();
         $entityManager->persist($inProgressGame);
         $entityManager->persist($finishedGame);

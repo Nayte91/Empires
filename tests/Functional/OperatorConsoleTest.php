@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
+use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -344,16 +344,16 @@ final class OperatorConsoleTest extends WebTestCase
         self::assertStringContainsString('Insufficient money', $rendered->toString());
     }
 
-    private function createGame(): Game
+    private function createGame(): GameSession
     {
-        $game = new Game();
+        $game = new GameSession();
         $this->entityManager->persist($game);
         $this->entityManager->flush();
 
         return $game;
     }
 
-    private function createPlayer(Game $game, string $name): Player
+    private function createPlayer(GameSession $game, string $name): Player
     {
         $player = new Player($game, $name);
         $this->entityManager->persist($player);
@@ -381,10 +381,10 @@ final class OperatorConsoleTest extends WebTestCase
         return self::getContainer()->get(EntityManagerInterface::class);
     }
 
-    private function reloadGame(Game $game): Game
+    private function reloadGame(GameSession $game): GameSession
     {
-        $reloaded = $this->freshEntityManager()->find(Game::class, $game->id);
-        self::assertInstanceOf(Game::class, $reloaded);
+        $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
+        self::assertInstanceOf(GameSession::class, $reloaded);
 
         return $reloaded;
     }

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\DTO\Empire;
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\Dto\Empire;
+use App\Game\EmpireCatalog;
+use App\Game\GameData;
 use App\Game\ScenarioCatalog;
-use App\Repository\EmpireRepository;
-use App\Repository\GameData;
-use App\Repository\GameRepository;
+use App\Repository\GameSessionRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -55,8 +55,8 @@ final class GameCreator
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly GameRepository $gameRepository,
-        private readonly EmpireRepository $empireRepository,
+        private readonly GameSessionRepository $gameRepository,
+        private readonly EmpireCatalog $empireCatalog,
         private readonly ScenarioCatalog $scenarioCatalog,
         private readonly GameData $gameData,
         private readonly SluggerInterface $slugger,
@@ -84,7 +84,7 @@ final class GameCreator
 
     /**
      * Enforces the region/player-count invariant (§ scenario setup) in memory,
-     * no flush: the Game entity does not exist yet at this stage.
+     * no flush: the GameSession entity does not exist yet at this stage.
      */
     public function onScenarioUpdated(): void
     {
@@ -201,7 +201,7 @@ final class GameCreator
 
         try {
             $this->entityManager->wrapInTransaction(function (): void {
-                $game = new Game($this->slug);
+                $game = new GameSession($this->slug);
                 $game->playerCount = $this->playerCount;
                 $game->region = $this->region;
                 $game->setAstTypeValue($this->astType);
@@ -287,7 +287,7 @@ final class GameCreator
     public function getAvailableEmpires(): array
     {
         return array_values(array_filter(
-            array_map($this->empireRepository->findByName(...), $this->remainingEmpires()),
+            array_map($this->empireCatalog->findByName(...), $this->remainingEmpires()),
             static fn (?Empire $empire): bool => $empire instanceof Empire,
         ));
     }

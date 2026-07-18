@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace App\Game;
 
-use App\Entity\Advance;
+use App\Game\Dto\Advance;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-final class AdvanceRepository
+final class AdvanceCatalog
 {
     private const string IMAGES_PATH = 'images/advances/';
     private const string IMAGE_EXTENSION = '.webp';

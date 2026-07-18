@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\DTO\AstEraDefinition;
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\AdvanceCatalog;
+use App\Game\AstCatalog;
+use App\Game\Dto\AstEraDefinition;
 use App\Game\Service\ScoreCalculator;
-use App\Repository\AdvanceRepository;
-use App\Repository\AstRepository;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -27,15 +27,15 @@ final class GameDashboard
     use DefaultActionTrait;
 
     #[LiveProp]
-    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     /** @var array<string, string> */
     private array $qrCache = [];
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly AdvanceRepository $advanceRepository,
-        private readonly AstRepository $astRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
+        private readonly AstCatalog $astCatalog,
         private readonly ScoreCalculator $scoreCalculator,
     ) {}
 
@@ -56,7 +56,7 @@ final class GameDashboard
     /** @return list<AstEraDefinition> */
     public function getAstEras(): array
     {
-        return $this->astRepository->getEras();
+        return $this->astCatalog->getEras();
     }
 
     public function getPlayerUrl(Player $player): string
@@ -95,7 +95,7 @@ final class GameDashboard
     {
         return $this->scoreCalculator->scoreFor(
             $player,
-            array_values($this->advanceRepository->getAdvancesByNames($player->advances)),
+            array_values($this->advanceCatalog->getAdvancesByNames($player->advances)),
         );
     }
 

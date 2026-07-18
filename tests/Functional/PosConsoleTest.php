@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
 use App\Repository\OrderRepository;
+use App\Shop\OrderStatus;
 use App\Shop\Service\OrderValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -175,10 +175,10 @@ final class PosConsoleTest extends WebTestCase
         self::assertStringContainsString('already owned', $rendered);
     }
 
-    /** @return array{Game, Player, Player} */
+    /** @return array{GameSession, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
-        $game = new Game();
+        $game = new GameSession();
         $alice = new Player($game, 'Alice');
         $alice->ownAdvances(['agriculture']);
         $bob = new Player($game, 'Bob');

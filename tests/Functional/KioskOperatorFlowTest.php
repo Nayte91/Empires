@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
 use App\Repository\OrderRepository;
+use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -220,10 +220,10 @@ final class KioskOperatorFlowTest extends WebTestCase
         self::assertStringContainsString('Your cart is empty.', $bobRendered);
     }
 
-    /** @return array{Game, Player, Player} */
+    /** @return array{GameSession, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
-        $game = new Game();
+        $game = new GameSession();
         $alice = new Player($game, 'Alice');
         $alice->ownAdvances(['agriculture']);
         $bob = new Player($game, 'Bob');
@@ -252,7 +252,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         ;
     }
 
-    private function submitAndValidateAliceOrder(Player $alice, Game $game): void
+    private function submitAndValidateAliceOrder(Player $alice, GameSession $game): void
     {
         $this->submitAliceDemocracyAndPotteryOrder($alice);
         $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
@@ -279,10 +279,10 @@ final class KioskOperatorFlowTest extends WebTestCase
         return $reloaded;
     }
 
-    private function reloadGame(Game $game): Game
+    private function reloadGame(GameSession $game): GameSession
     {
-        $reloaded = $this->freshEntityManager()->find(Game::class, $game->id);
-        self::assertInstanceOf(Game::class, $reloaded);
+        $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
+        self::assertInstanceOf(GameSession::class, $reloaded);
 
         return $reloaded;
     }

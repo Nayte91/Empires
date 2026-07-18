@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Shop\Service;
 
-use App\Entity\Advance;
 use App\Entity\Order;
-use App\Enumeration\OrderStatus;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
+use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
@@ -16,7 +16,7 @@ final readonly class OrderValidator
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private AdvanceRepository $advanceRepository,
+        private AdvanceCatalog $advanceCatalog,
         private PriceCalculator $priceCalculator,
         private HubInterface $hub,
     ) {}
@@ -40,10 +40,10 @@ final readonly class OrderValidator
         }
 
         /** @var list<Advance> $advances */
-        $advances = $this->advanceRepository->getAdvancesByNames($slugs);
+        $advances = $this->advanceCatalog->getAdvancesByNames($slugs);
 
         /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceRepository->getAdvancesByNames($ownedSlugs);
+        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($ownedSlugs);
 
         $frozenLines = [];
         $total = 0;

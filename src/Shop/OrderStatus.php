@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Enumeration;
+namespace App\Shop;
 
 enum OrderStatus: string
 {

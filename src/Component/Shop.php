@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\Advance;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
 use App\Shop\Dto\Product;
+use App\Shop\OrderStatus;
 use App\Shop\Service\OrderSubmitter;
 use App\Shop\Service\PriceCalculator;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -38,7 +38,7 @@ final class Shop
     private ?Order $currentOrder = null;
 
     public function __construct(
-        private readonly AdvanceRepository $advanceRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
         private readonly PriceCalculator $priceCalculator,
         private readonly CartRepository $cartRepository,
         private readonly OrderRepository $orderRepository,
@@ -125,7 +125,7 @@ final class Shop
         }
 
         /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceRepository->getAdvancesByNames($this->player->advances);
+        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->player->advances);
         $cart = $this->getCart();
 
         $this->products = array_map(
@@ -135,7 +135,7 @@ final class Shop
                 owned: \in_array($advance->key, $this->player->advances, true),
                 inCart: $cart->has($advance->key),
             ),
-            $this->advanceRepository->getAdvances(),
+            $this->advanceCatalog->getAdvances(),
         );
 
         return $this->products;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
+use App\Shop\OrderStatus;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -20,7 +20,7 @@ final class OrderRepository extends ServiceEntityRepository
     }
 
     /** @return list<Order> */
-    public function findPendingByGameAndTurn(Game $game, int $turn): array
+    public function findPendingByGameAndTurn(GameSession $game, int $turn): array
     {
         return $this->createQueryBuilder('o')
             ->join('o.player', 'p')
@@ -48,7 +48,7 @@ final class OrderRepository extends ServiceEntityRepository
     }
 
     /** @return list<Order> */
-    public function findByGameAndTurn(Game $game, int $turn): array
+    public function findByGameAndTurn(GameSession $game, int $turn): array
     {
         return $this->createQueryBuilder('o')
             ->join('o.player', 'p')

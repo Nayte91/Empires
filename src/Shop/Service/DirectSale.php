@@ -6,8 +6,8 @@ namespace App\Shop\Service;
 
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
 use App\Repository\OrderRepository;
+use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DirectSale

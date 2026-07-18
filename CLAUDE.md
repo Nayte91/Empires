@@ -46,20 +46,22 @@ src/
 ├── Component/    # Twig/Live Components (Ast, GameCreator, GameDashboard, OperatorConsole,
 │                 #   PlayerBoard, Shop, OrderTab, Discounts, ThemeColors)
 ├── Controller/   # GameController, HomeController, PlayerController
-├── DTO/          # Empire, AstEraDefinition (config-hydrated read models)
-├── Entity/       # Game, Player, Order (Doctrine) + Advance (config-hydrated, not mapped)
-├── Enumeration/  # ASTType (basic/expert), Category, OrderStatus
-├── Game/         # ScenarioCatalog
-├── Mapper/, Shop/
-└── Repository/   # Doctrine repos + yaml config readers (see below)
+├── Entity/       # GameSession, Player, Order (Doctrine) — technical persistence layer only
+├── Game/         # bounded context: ScenarioCatalog, AdvanceCatalog, AstCatalog, EmpireCatalog,
+│                 #   GameData (yaml config readers), ASTType/Category enums, Dto/ (Advance, Empire,
+│                 #   AstEraDefinition read models), Service/ (ScoreCalculator)
+├── Repository/   # Doctrine repos (GameSessionRepository, PlayerRepository, OrderRepository)
+└── Shop/         # bounded context: Cart, CartRepository, OrderStatus enum, Dto/ (Product),
+                  #   Service/ (DirectSale, OrderSubmitter, OrderValidator, PriceCalculator)
 ```
+**Governing rule**: `Entity/` & `Repository/` are the technical Doctrine layer, shared across the app. Each bounded context (`Game/`, `Shop/`) owns everything else that belongs to it — value objects, enums, non-persisted state, services.
 
 ### Config-driven game data
 ```
 config/game/
-├── advances.yaml    # advances + categories (colors)  → AdvanceRepository
-├── ast.yaml         # AST eras, spans, basic/expert requirements → AstRepository
-├── empires.yaml     # empires (name, color, icons)    → EmpireRepository
+├── advances.yaml    # advances + categories (colors)  → AdvanceCatalog
+├── ast.yaml         # AST eras, spans, basic/expert requirements → AstCatalog
+├── empires.yaml     # empires (name, color, icons)    → EmpireCatalog
 ├── game_data.yaml   # regions, limits                 → GameData
 └── scenarios.yaml   # empires per player count/region → Game\ScenarioCatalog
 ```
@@ -78,7 +80,7 @@ templates/
 
 ## 🎮 Business Domain
 
-- **Game**: session (slug, currentTurn 1–20, region, `astType` basic/expert, players)
+- **GameSession**: session (slug, currentTurn 1–20, region, `astType` basic/expert, players)
 - **Player**: empire slug, advances (json), cities (0–9), census, treasury, `astPosition` (0–15)
 - **AST**: 16-position track across 6 eras (Stone → Late Iron); era boundaries/requirements in `ast.yaml`; read-only board on the game dashboard
 - **Shop/Orders**: player cart → pending order → operator validation (POS console)
@@ -114,7 +116,7 @@ make quality            # before committing
 
 ### Adding features
 1. Entities / config yaml → migration (`doctrine:migrations:diff`, lands in `system/database/migrations/`)
-2. Repository / DTO following the yaml-reader pattern
+2. Repository / bounded-context Dto following the yaml-reader pattern
 3. Component + template (atomic design tier)
 4. Tests (mirror the existing per-directory conventions)
 

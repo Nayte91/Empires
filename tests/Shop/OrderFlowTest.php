@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
-use App\Enumeration\OrderStatus;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
+use App\Shop\OrderStatus;
 use App\Shop\Service\OrderSubmitter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
@@ -51,7 +51,7 @@ final class OrderFlowTest extends WebTestCase
         $this->orderSubmitter = new OrderSubmitter($this->entityManager, $this->cartRepository, $this->orderRepository, new NullHub());
         $this->orderValidator = new OrderValidator(
             $this->entityManager,
-            self::getContainer()->get(AdvanceRepository::class),
+            self::getContainer()->get(AdvanceCatalog::class),
             new PriceCalculator(),
             new NullHub(),
         );
@@ -173,7 +173,7 @@ final class OrderFlowTest extends WebTestCase
 
     private function createPlayer(): Player
     {
-        $game = new Game();
+        $game = new GameSession();
         $player = new Player($game, 'Alice');
 
         $this->entityManager->persist($game);

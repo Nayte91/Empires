@@ -4,29 +4,29 @@ declare(strict_types=1);
 
 namespace App\Tests\Repository;
 
-use App\Entity\Game;
-use App\Repository\GameRepository;
+use App\Entity\GameSession;
+use App\Repository\GameSessionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class GameRepositoryTest extends WebTestCase
+final class GameSessionRepositoryTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
-    private GameRepository $gameRepository;
+    private GameSessionRepository $gameRepository;
 
     protected function setUp(): void
     {
         self::bootKernel();
 
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-        $this->gameRepository = self::getContainer()->get(GameRepository::class);
+        $this->gameRepository = self::getContainer()->get(GameSessionRepository::class);
     }
 
     #[Test]
     public function persistedGameIsFoundWithItsDefaultValues(): void
     {
-        $game = new Game();
+        $game = new GameSession();
 
         $this->entityManager->persist($game);
         $this->entityManager->flush();
@@ -48,7 +48,7 @@ final class GameRepositoryTest extends WebTestCase
     #[Test]
     public function setCurrentTurnClampsToTheOneToTwentyRange(): void
     {
-        $game = new Game();
+        $game = new GameSession();
 
         $game->currentTurn = 0;
         self::assertSame(1, $game->currentTurn);
@@ -60,15 +60,15 @@ final class GameRepositoryTest extends WebTestCase
     #[Test]
     public function findInProgressReturnsUnfinishedGamesOrderedFromMostToLeastRecent(): void
     {
-        $oldest = new Game();
+        $oldest = new GameSession();
         $this->entityManager->persist($oldest);
         $this->entityManager->flush();
 
-        $middle = new Game();
+        $middle = new GameSession();
         $this->entityManager->persist($middle);
         $this->entityManager->flush();
 
-        $finished = new Game();
+        $finished = new GameSession();
         $finished->finishedAt = new \DateTimeImmutable();
         $this->entityManager->persist($finished);
         $this->entityManager->flush();

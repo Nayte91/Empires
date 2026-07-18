@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\Advance;
 use App\Entity\Player;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
 use App\Shop\Dto\Product;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Mercure\HubInterface;
@@ -34,7 +34,7 @@ final class PlayerBoard
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly AdvanceRepository $advanceRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
         private readonly HubInterface $hub,
         private readonly UrlGeneratorInterface $urlGenerator,
     ) {}
@@ -73,7 +73,7 @@ final class PlayerBoard
     /** @return list<Advance> */
     public function getOwnedAdvances(): array
     {
-        return array_values($this->advanceRepository->getAdvancesByNames($this->player->advances));
+        return array_values($this->advanceCatalog->getAdvancesByNames($this->player->advances));
     }
 
     /**

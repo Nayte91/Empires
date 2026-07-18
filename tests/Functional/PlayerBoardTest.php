@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -62,7 +62,8 @@ final class PlayerBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
             ->set('treasury', 99)
             ->render()
-            ->toString();
+            ->toString()
+        ;
 
         self::assertSame(55, $this->reloadPlayer($player)->treasury);
         self::assertStringContainsString('value="55"', $rendered);
@@ -91,7 +92,8 @@ final class PlayerBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
             ->set('census', 99)
             ->render()
-            ->toString();
+            ->toString()
+        ;
 
         self::assertSame(55, $this->reloadPlayer($player)->census);
         self::assertStringContainsString('value="55"', $rendered);
@@ -201,7 +203,7 @@ final class PlayerBoardTest extends WebTestCase
 
     private function createPlayer(string $name = 'Alice'): Player
     {
-        $game = new Game();
+        $game = new GameSession();
         $player = new Player($game, $name);
 
         $this->entityManager->persist($game);

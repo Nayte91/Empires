@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
@@ -165,7 +165,7 @@ final class ShopComponentTest extends WebTestCase
 
     private function createPlayer(): Player
     {
-        $game = new Game();
+        $game = new GameSession();
         $player = new Player($game, 'Alice');
 
         $this->entityManager->persist($game);

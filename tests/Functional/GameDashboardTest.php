@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -187,16 +187,16 @@ final class GameDashboardTest extends WebTestCase
         self::assertStringNotContainsString('order-submitted', $rendered);
     }
 
-    private function createGame(): Game
+    private function createGame(): GameSession
     {
-        $game = new Game();
+        $game = new GameSession();
         $this->entityManager->persist($game);
         $this->entityManager->flush();
 
         return $game;
     }
 
-    private function createPlayer(Game $game, string $name): Player
+    private function createPlayer(GameSession $game, string $name): Player
     {
         $player = new Player($game, $name);
         $this->entityManager->persist($player);

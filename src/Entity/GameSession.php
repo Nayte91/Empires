@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Enumeration\ASTType;
+use App\Game\ASTType;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -13,7 +13,7 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
-class Game
+class GameSession
 {
     #[ORM\Id, ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;

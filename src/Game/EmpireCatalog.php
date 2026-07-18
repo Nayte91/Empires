@@ -2,14 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace App\Game;
 
-use App\DTO\Empire;
-use App\Game\ScenarioCatalog;
+use App\Game\Dto\Empire;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-class EmpireRepository
+final class EmpireCatalog
 {
     public const string SORT_BY_POSITION = 'position';
     public const string SORT_BY_NAME = 'name';
@@ -140,16 +139,15 @@ class EmpireRepository
      */
     private function hydrateEmpire(array $data): Empire
     {
-        $empire = new Empire();
-        $empire->position = $data['position'];
-        $empire->name = $data['name'];
-        $empire->demonym = $data['demonym'];
-        $empire->adjective = $data['adjective'];
-        $empire->peopleIcon = $data['people_icon'];
-        $empire->shipIcon = $data['ship_icon'];
-        $empire->cityIcon = $data['city_icon'];
-        $empire->color = $data['color'];
-
-        return $empire;
+        return new Empire(
+            position: $data['position'],
+            name: $data['name'],
+            demonym: $data['demonym'],
+            adjective: $data['adjective'],
+            peopleIcon: $data['people_icon'],
+            shipIcon: $data['ship_icon'],
+            cityIcon: $data['city_icon'],
+            color: $data['color'],
+        );
     }
 }

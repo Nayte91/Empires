@@ -2,32 +2,32 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Repository;
+namespace App\Tests\Game;
 
-use App\DTO\AstEraDefinition;
-use App\Repository\AstRepository;
+use App\Game\AstCatalog;
+use App\Game\Dto\AstEraDefinition;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class AstRepositoryTest extends TestCase
+final class AstCatalogTest extends TestCase
 {
-    private AstRepository $astRepository;
+    private AstCatalog $astCatalog;
 
     protected function setUp(): void
     {
-        $this->astRepository = new AstRepository(\dirname(__DIR__, 2).'/config/game/ast.yaml');
+        $this->astCatalog = new AstCatalog(\dirname(__DIR__, 2).'/config/game/ast.yaml');
     }
 
     #[Test]
     public function getTrackLengthReturnsSixteen(): void
     {
-        self::assertSame(16, $this->astRepository->getTrackLength());
+        self::assertSame(16, $this->astCatalog->getTrackLength());
     }
 
     #[Test]
     public function getErasReturnsTheSevenErasInFileOrder(): void
     {
-        $eras = $this->astRepository->getEras();
+        $eras = $this->astCatalog->getEras();
 
         self::assertCount(7, $eras);
         self::assertSame(['start', 'stone_age', 'early_bronze_age', 'middle_bronze_age', 'late_bronze_age', 'early_iron_age', 'late_iron_age'], array_map(static fn (AstEraDefinition $era): string => $era->key, $eras));
@@ -36,7 +36,7 @@ final class AstRepositoryTest extends TestCase
     #[Test]
     public function stoneAgeHasEmptyRequirementsForBothModes(): void
     {
-        $stoneAge = $this->astRepository->getEras()[1];
+        $stoneAge = $this->astCatalog->getEras()[1];
 
         self::assertSame([], $stoneAge->basicRequirements);
         self::assertSame([], $stoneAge->expertRequirements);
@@ -45,7 +45,7 @@ final class AstRepositoryTest extends TestCase
     #[Test]
     public function lateIronAgeHasItsFullBasicAndExpertRequirements(): void
     {
-        $lateIronAge = $this->astRepository->getEraForPosition(15);
+        $lateIronAge = $this->astCatalog->getEraForPosition(15);
 
         self::assertSame('late_iron_age', $lateIronAge->key);
         self::assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
@@ -55,36 +55,36 @@ final class AstRepositoryTest extends TestCase
     #[Test]
     public function getEraForPositionZeroReturnsStart(): void
     {
-        self::assertSame('start', $this->astRepository->getEraForPosition(0)->key);
+        self::assertSame('start', $this->astCatalog->getEraForPosition(0)->key);
     }
 
     #[Test]
     public function getEraForPositionFourReturnsStoneAge(): void
     {
-        self::assertSame('stone_age', $this->astRepository->getEraForPosition(4)->key);
+        self::assertSame('stone_age', $this->astCatalog->getEraForPosition(4)->key);
     }
 
     #[Test]
     public function getEraForPositionFiveReturnsEarlyBronzeAge(): void
     {
-        self::assertSame('early_bronze_age', $this->astRepository->getEraForPosition(5)->key);
+        self::assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(5)->key);
     }
 
     #[Test]
     public function getEraForPositionFifteenReturnsLateIronAge(): void
     {
-        self::assertSame('late_iron_age', $this->astRepository->getEraForPosition(15)->key);
+        self::assertSame('late_iron_age', $this->astCatalog->getEraForPosition(15)->key);
     }
 
     #[Test]
     public function getEraForPositionClampsNegativePositionToStart(): void
     {
-        self::assertSame('start', $this->astRepository->getEraForPosition(-3)->key);
+        self::assertSame('start', $this->astCatalog->getEraForPosition(-3)->key);
     }
 
     #[Test]
     public function getEraForPositionClampsOutOfBoundsPositionToLateIronAge(): void
     {
-        self::assertSame('late_iron_age', $this->astRepository->getEraForPosition(99)->key);
+        self::assertSame('late_iron_age', $this->astCatalog->getEraForPosition(99)->key);
     }
 }

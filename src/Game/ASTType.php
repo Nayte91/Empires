@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Enumeration;
+namespace App\Game;
 
 enum ASTType: string
 {

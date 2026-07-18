@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\Advance;
 use App\Entity\Order;
-use App\Enumeration\OrderStatus;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
+use App\Shop\OrderStatus;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -30,7 +30,7 @@ final class OrderTab
 
     public function __construct(
         private readonly OrderValidator $orderValidator,
-        private readonly AdvanceRepository $advanceRepository,
+        private readonly AdvanceCatalog $advanceCatalog,
         private readonly PriceCalculator $priceCalculator,
     ) {}
 
@@ -73,11 +73,11 @@ final class OrderTab
         $slugs = $this->order->lines;
 
         /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceRepository->getAdvancesByNames($this->order->player->advances);
+        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->order->player->advances);
 
         return array_map(
             function (string $slug) use ($ownedAdvances): array {
-                $advance = $this->advanceRepository->getAdvanceByName($slug);
+                $advance = $this->advanceCatalog->getAdvanceByName($slug);
                 $netCost = $advance instanceof Advance ? $this->priceCalculator->netCost($advance, $ownedAdvances) : 0;
 
                 return ['slug' => $slug, 'netCost' => $netCost];

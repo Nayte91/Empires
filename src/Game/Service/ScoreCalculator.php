@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Game\Service;
 
-use App\Entity\Advance;
 use App\Entity\Player;
+use App\Game\Dto\Advance;
 
 final class ScoreCalculator
 {

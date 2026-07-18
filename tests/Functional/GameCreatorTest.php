@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\Game;
+use App\Entity\GameSession;
 use App\Entity\Player;
-use App\Enumeration\ASTType;
+use App\Game\ASTType;
+use App\Game\GameData;
 use App\Game\ScenarioCatalog;
-use App\Repository\GameData;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -92,7 +92,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function addingPlayersDoesNotPersistAnythingButRendersTheTable(): void
     {
-        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
         $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
 
         $component = $this->createLiveComponent('GameCreator')
@@ -111,7 +111,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertStringContainsString('Bob', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
         self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
@@ -169,7 +169,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertStringContainsString('/game/launch-game/operator', (string) $response->headers->get('Location'));
 
         $freshEntityManager = $this->freshEntityManager();
-        $game = $freshEntityManager->getRepository(Game::class)->findOneBy(['slug' => 'launch-game']);
+        $game = $freshEntityManager->getRepository(GameSession::class)->findOneBy(['slug' => 'launch-game']);
 
         self::assertNotNull($game);
         self::assertSame(9, $game->playerCount);
@@ -196,7 +196,7 @@ final class GameCreatorTest extends WebTestCase
     {
         $this->createGame('race-slug');
 
-        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
 
         $component = $this->createLiveComponent('GameCreator')
             ->set('slug', 'Race Slug')
@@ -216,7 +216,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertStringContainsString('is not available', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
     }
 
     #[Test]
@@ -362,7 +362,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function launchIsRefusedServerSideWhenPlayerCountMismatchesAndNothingIsCreated(): void
     {
-        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
         $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
 
         $component = $this->createLiveComponent('GameCreator')
@@ -376,7 +376,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertStringContainsString('Add 9 more players.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
         self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
@@ -513,7 +513,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function launchIsRefusedServerSideWhenAPlayerHasNoEmpireEvenIfThePlayerCountMatches(): void
     {
-        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
         $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
 
         $component = $this->createLiveComponent('GameCreator')
@@ -532,13 +532,13 @@ final class GameCreatorTest extends WebTestCase
         self::assertStringContainsString('1 player still needs an empire.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
         self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
-    private function createGame(string $slug): Game
+    private function createGame(string $slug): GameSession
     {
-        $game = new Game($slug);
+        $game = new GameSession($slug);
         $this->entityManager->persist($game);
         $this->entityManager->flush();
 

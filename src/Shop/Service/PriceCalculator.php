@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Shop\Service;
 
-use App\Entity\Advance;
-use App\Enumeration\Category;
+use App\Game\Category;
+use App\Game\Dto\Advance;
 
 final class PriceCalculator
 {

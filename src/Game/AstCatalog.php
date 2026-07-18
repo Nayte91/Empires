@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Repository;
+namespace App\Game;
 
-use App\DTO\AstEraDefinition;
+use App\Game\Dto\AstEraDefinition;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final class AstRepository
+final class AstCatalog
 {
     /**
      * @var null|array{

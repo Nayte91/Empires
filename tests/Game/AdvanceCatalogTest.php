@@ -2,28 +2,28 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Repository;
+namespace App\Tests\Game;
 
-use App\Enumeration\Category;
-use App\Repository\AdvanceRepository;
+use App\Game\AdvanceCatalog;
+use App\Game\Category;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class AdvanceRepositoryTest extends WebTestCase
+final class AdvanceCatalogTest extends WebTestCase
 {
-    private AdvanceRepository $advanceRepository;
+    private AdvanceCatalog $advanceCatalog;
 
     protected function setUp(): void
     {
         self::bootKernel();
 
-        $this->advanceRepository = self::getContainer()->get(AdvanceRepository::class);
+        $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
     }
 
     #[Test]
     public function getAdvancesLoadsAllFiftyOneAdvances(): void
     {
-        $advances = $this->advanceRepository->getAdvances();
+        $advances = $this->advanceCatalog->getAdvances();
 
         self::assertCount(51, $advances);
     }
@@ -31,7 +31,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function anatomyHasItsKeyCostAndMitigation(): void
     {
-        $advance = $this->advanceRepository->getAdvanceByName('anatomy');
+        $advance = $this->advanceCatalog->getAdvanceByName('anatomy');
 
         self::assertSame('anatomy', $advance->key);
         self::assertSame(['epidemic'], $advance->mitigations);
@@ -41,7 +41,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function agricultureHasItsAggravationAndNamedCredit(): void
     {
-        $advance = $this->advanceRepository->getAdvanceByName('agriculture');
+        $advance = $this->advanceCatalog->getAdvanceByName('agriculture');
 
         self::assertSame(['famine'], $advance->aggravations);
         self::assertArrayHasKey('democracy', $advance->credits);
@@ -51,7 +51,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function monarchyHasBothMitigationAndAggravation(): void
     {
-        $advance = $this->advanceRepository->getAdvanceByName('monarchy');
+        $advance = $this->advanceCatalog->getAdvanceByName('monarchy');
 
         self::assertSame(['barbarian_hordes'], $advance->mitigations);
         self::assertSame(['tyranny'], $advance->aggravations);
@@ -60,7 +60,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function architectureHasNoMitigationNorAggravation(): void
     {
-        $advance = $this->advanceRepository->getAdvanceByName('architecture');
+        $advance = $this->advanceCatalog->getAdvanceByName('architecture');
 
         self::assertSame([], $advance->mitigations);
         self::assertSame([], $advance->aggravations);
@@ -69,7 +69,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function getCategoryColorsReturnsExactlyTheFiveEnumCategoriesWithValidHexColors(): void
     {
-        $colors = $this->advanceRepository->getCategoryColors();
+        $colors = $this->advanceCatalog->getCategoryColors();
 
         $expectedKeys = array_map(static fn (Category $category): string => $category->value, Category::cases());
         self::assertSame($expectedKeys, array_keys($colors));
@@ -82,7 +82,7 @@ final class AdvanceRepositoryTest extends WebTestCase
     #[Test]
     public function getCategoryColorsReturnsTheOfficialHexValues(): void
     {
-        $colors = $this->advanceRepository->getCategoryColors();
+        $colors = $this->advanceCatalog->getCategoryColors();
 
         self::assertSame('#27AAE1', $colors['art']);
         self::assertSame('#F04E56', $colors['civic']);
