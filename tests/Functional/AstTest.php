@@ -38,7 +38,7 @@ final class AstTest extends WebTestCase
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
 
-        self::assertSame(16, substr_count($tbody, '<td class="'));
+        self::assertSame(16, substr_count($tbody, '<td'));
         self::assertStringContainsString('Alice', $rendered);
     }
 

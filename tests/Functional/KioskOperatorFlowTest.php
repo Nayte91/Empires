@@ -43,8 +43,8 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $rendered = $shop->render()->toString();
 
-        self::assertMatchesRegularExpression('/id="product-democracy".*?product-card__price-net">200</s', $rendered);
-        self::assertMatchesRegularExpression('/id="product-pottery".*?product-card__price-net">50</s', $rendered);
+        self::assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>200</s', $rendered);
+        self::assertMatchesRegularExpression('/id="product-pottery".*?data-price-net>50</s', $rendered);
         self::assertStringContainsString('Total: 250', $rendered);
     }
 
@@ -139,13 +139,13 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $aliceRendered = $aliceShop->render()->toString();
         self::assertStringContainsString('Order validated for this turn.', $aliceRendered);
-        self::assertMatchesRegularExpression('/id="product-democracy".*?product-card--owned/s', $aliceRendered);
+        self::assertMatchesRegularExpression('/id="product-democracy".*?data-owned/s', $aliceRendered);
 
         $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
         self::assertFalse($this->getShopComponent($bobShop)->isLockedForTurn());
 
         $bobRendered = $bobShop->render()->toString();
-        self::assertMatchesRegularExpression('/id="product-democracy".*?product-card__price-net">220</s', $bobRendered);
+        self::assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>220</s', $bobRendered);
     }
 
     #[Test]
@@ -165,7 +165,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         // category (civic) receives a 20-point credit from the democracy she
         // now owns: 150 - 20 = 130.
         $rendered = $aliceShop->render()->toString();
-        self::assertMatchesRegularExpression('/id="product-law".*?product-card__price-net">130</s', $rendered);
+        self::assertMatchesRegularExpression('/id="product-law".*?data-price-net>130</s', $rendered);
     }
 
     #[Test]
@@ -216,7 +216,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
         $bobRendered = $bobShop->render()->toString();
 
-        self::assertStringNotContainsString('product-card--in-cart', $bobRendered);
+        self::assertStringNotContainsString('data-in-cart', $bobRendered);
         self::assertStringContainsString('Your cart is empty.', $bobRendered);
     }
 

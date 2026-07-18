@@ -211,9 +211,9 @@ final class GameDashboardTest extends WebTestCase
      */
     private function extractPlayersTable(string $html): string
     {
-        // The players table carries class="score-board": the embedded
-        // AST molecule's table always carries class="ast" instead.
-        $start = strpos($html, '<table class="score-board">');
+        // The players table carries the data-players marker: the embedded
+        // AST molecule's table has no such attribute.
+        $start = strpos($html, '<table data-players');
         self::assertNotFalse($start, 'Players <table> not found in rendered output.');
 
         $end = strpos($html, '</table>', $start);

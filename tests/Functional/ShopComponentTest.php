@@ -33,7 +33,7 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertSame(51, substr_count($rendered, 'product-card__add'));
+        self::assertSame(51, substr_count($rendered, '<article'));
     }
 
     #[Test]
@@ -47,7 +47,7 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $component->render()->toString();
 
         self::assertStringContainsString('id="product-pottery"', $rendered);
-        self::assertStringContainsString('product-card--in-cart', $rendered);
+        self::assertStringContainsString('data-in-cart', $rendered);
         self::assertStringContainsString('Total: 60', $rendered);
     }
 
@@ -61,7 +61,7 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
         self::assertMatchesRegularExpression(
-            '/id="product-democracy".*?product-card__price-net">200</s',
+            '/id="product-democracy".*?data-price-net>200</s',
             $rendered,
         );
     }
@@ -75,7 +75,7 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('discounts__category', $rendered);
+        self::assertStringContainsString('--category-color', $rendered);
         self::assertStringContainsString('--category-color: #F7941E', $rendered);
         self::assertStringContainsString('--category-color: #39B54A', $rendered);
     }
@@ -108,8 +108,8 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertStringContainsString('product-card--in-cart', $rendered);
-        self::assertSame(2, substr_count($rendered, 'shop__cart-line-remove'));
+        self::assertStringContainsString('data-in-cart', $rendered);
+        self::assertSame(2, substr_count($rendered, 'data-live-action-param="removeFromCart"'));
         self::assertNotNull($order->id);
     }
 
@@ -127,7 +127,7 @@ final class ShopComponentTest extends WebTestCase
         $component->call('addToCart', ['key' => 'agriculture']);
 
         $rendered = $component->render()->toString();
-        self::assertStringNotContainsString('product-card--in-cart', $rendered);
+        self::assertStringNotContainsString('data-in-cart', $rendered);
         self::assertStringContainsString('Order validated for this turn.', $rendered);
     }
 

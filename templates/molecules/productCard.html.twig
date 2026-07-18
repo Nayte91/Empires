@@ -2,6 +2,8 @@
 <article
     id="product-{{ product.advance.key }}"
     class="product-card{{ product.owned ? ' product-card--owned' }}{{ product.inCart ? ' product-card--in-cart' }}"
+    {{ product.owned ? 'data-owned' }}
+    {{ product.inCart ? 'data-in-cart' }}
 >
     {% if product.advance.fileName %}
         <div class="product-card__image">
@@ -28,7 +30,7 @@
             {% if product.netCost < product.advance.cost %}
                 <span class="product-card__price-original">{{ product.advance.cost }}</span>
             {% endif %}
-            <span class="product-card__price-net">{{ product.netCost }}</span>
+            <span class="product-card__price-net" data-price-net>{{ product.netCost }}</span>
         </div>
 
         <button

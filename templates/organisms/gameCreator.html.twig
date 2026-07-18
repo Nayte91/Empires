@@ -4,7 +4,7 @@
     </header>
 
     {% if error %}
-        <p class="game-creator__error" role="alert">{{ error }}</p>
+        <p class="game-creator__error" data-error role="alert">{{ error }}</p>
     {% endif %}
 
     <fieldset class="game-creator__scenario">
@@ -165,8 +165,8 @@
 
     {% set issues = this.conformityIssues %}
     {% if issues is empty %}
-        <p class="game-creator__conformity game-creator__conformity--ok">Everything is fine.</p>
+        <p class="game-creator__conformity game-creator__conformity--ok" data-conformity="ok">Everything is fine.</p>
     {% else %}
-        <p class="game-creator__conformity game-creator__conformity--error" role="alert">{{ issues|join(' ') }}</p>
+        <p class="game-creator__conformity game-creator__conformity--error" data-conformity="error" role="alert">{{ issues|join(' ') }}</p>
     {% endif %}
 </div>

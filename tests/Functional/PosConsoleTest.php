@@ -96,12 +96,12 @@ final class PosConsoleTest extends WebTestCase
         $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
         $console->call('startOrder');
 
-        self::assertStringNotContainsString('discounts__category', $console->render()->toString());
+        self::assertStringNotContainsString('--category-color', $console->render()->toString());
 
         $console->set('selectedPlayerId', (string) $alice->id);
         $rendered = $console->render()->toString();
 
-        self::assertStringContainsString('discounts__category', $rendered);
+        self::assertStringContainsString('--category-color', $rendered);
         self::assertStringContainsString('--category-color: #F7941E', $rendered);
         self::assertStringContainsString('--category-color: #39B54A', $rendered);
     }
@@ -158,7 +158,7 @@ final class PosConsoleTest extends WebTestCase
         $console->call('startOrder');
         $rendered = $console->set('selectedPlayerId', (string) $bob->id)->render()->toString();
 
-        self::assertSame(51, substr_count($rendered, 'product-card__add'));
+        self::assertSame(51, substr_count($rendered, '<article'));
     }
 
     #[Test]

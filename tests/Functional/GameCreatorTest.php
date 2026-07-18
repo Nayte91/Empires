@@ -60,7 +60,7 @@ final class GameCreatorTest extends WebTestCase
         ;
 
         self::assertStringContainsString('value="super-game-de-nayte"', $rendered->toString());
-        self::assertStringContainsString('game-creator__slug-status--available', $rendered->toString());
+        self::assertStringContainsString('aria-label="Slug available"', $rendered->toString());
     }
 
     #[Test]
@@ -74,7 +74,7 @@ final class GameCreatorTest extends WebTestCase
         ;
 
         self::assertStringContainsString('value="taken-slug"', $rendered->toString());
-        self::assertStringContainsString('game-creator__slug-status--taken', $rendered->toString());
+        self::assertStringContainsString('aria-label="Slug unavailable"', $rendered->toString());
     }
 
     #[Test]
@@ -290,7 +290,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->render()->toString();
 
         self::assertTrue(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--error', $rendered);
+        self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString(
             'Add 3 more players, or lower the player count to 5.',
             $rendered,
@@ -307,7 +307,7 @@ final class GameCreatorTest extends WebTestCase
         ;
 
         self::assertTrue(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--error', $rendered);
+        self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Add 9 more players.', $rendered);
         self::assertStringNotContainsString('or lower the player count', $rendered);
     }
@@ -330,7 +330,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->set('playerCount', 3)->render()->toString();
 
         self::assertTrue(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--error', $rendered);
+        self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString(
             'Remove 2 players, or raise the player count to 5.',
             $rendered,
@@ -355,7 +355,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->render()->toString();
 
         self::assertFalse(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--ok', $rendered);
+        self::assertStringContainsString('data-conformity="ok"', $rendered);
         self::assertStringContainsString('Everything is fine.', $rendered);
     }
 
@@ -372,7 +372,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        self::assertStringContainsString('game-creator__conformity--error', $rendered->toString());
+        self::assertStringContainsString('data-conformity="error"', $rendered->toString());
         self::assertStringContainsString('Add 9 more players.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
@@ -389,7 +389,7 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render()->toString();
 
-        self::assertStringNotContainsString('game-creator__error', $rendered);
+        self::assertStringNotContainsString('data-error', $rendered);
         self::assertMatchesRegularExpression('/<td>Alice<\/td>\s*<td>—<\/td>/', $rendered);
     }
 
@@ -414,7 +414,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertNotSame('', $players[1]['empire']);
         self::assertContains($players[1]['empire'], $scenarioEmpires);
         self::assertNotSame('hatti', $players[1]['empire']);
-        self::assertStringNotContainsString('game-creator__random-player', $rendered);
+        self::assertStringNotContainsString('data-live-action-param="assignRandomEmpire"', $rendered);
     }
 
     #[Test]
@@ -487,7 +487,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->set('region', 'west')->render()->toString();
 
         self::assertTrue(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--error', $rendered);
+        self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Alice&#039;s empire &quot;kushan&quot; is not part of the current scenario.', $rendered);
     }
 
@@ -506,7 +506,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->render()->toString();
 
         self::assertTrue(self::isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('game-creator__conformity--error', $rendered);
+        self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
     }
 
@@ -557,7 +557,7 @@ final class GameCreatorTest extends WebTestCase
      */
     private static function isLaunchButtonDisabled(string $html): bool
     {
-        preg_match('/<button\b[^>]*class="game-creator__launch"[^>]*>/', $html, $matches);
+        preg_match('/<button\b[^>]*data-live-action-param="launch"[^>]*>/', $html, $matches);
         $tag = str_replace('addAttribute(disabled)', '', $matches[0] ?? '');
 
         return 1 === preg_match('/\bdisabled\b/', $tag);

@@ -136,7 +136,7 @@ final class PlayerBoardTest extends WebTestCase
 
         self::assertStringContainsString('id="product-pottery"', $rendered);
         self::assertStringContainsString('Pottery', $rendered);
-        self::assertStringNotContainsString('product-card__add', $rendered);
+        self::assertStringNotContainsString('<button', $this->extractProductCard($rendered, 'pottery'));
     }
 
     #[Test]
@@ -219,5 +219,23 @@ final class PlayerBoardTest extends WebTestCase
         self::assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
+    }
+
+    /**
+     * Scopes assertions to a single product's <article>, as opposed to the
+     * whole board (which renders other, unrelated <button> elements).
+     */
+    private function extractProductCard(string $html, string $key): string
+    {
+        $idPosition = strpos($html, 'id="product-'.$key.'"');
+        self::assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
+
+        $start = strrpos(substr($html, 0, $idPosition), '<article');
+        self::assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
+
+        $end = strpos($html, '</article>', $start);
+        self::assertNotFalse($end, '</article> not found in rendered output.');
+
+        return substr($html, $start, $end - $start);
     }
 }
