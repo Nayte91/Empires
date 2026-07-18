@@ -19,11 +19,10 @@
             <tr>
                 <th scope="row" style="background-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
                 {% for position in range(0, this.trackLength - 1) %}
-                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
-                        {% if position == player.astPosition %}
-                            <span class="marker" style="--ast-marker-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)" title="{{ player.name }} — {{ columnEras[position].name }}"></span>
-                        {% elseif columnEras[position].key == 'start' %}→{% endif %}
-                    </td>
+                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{%- if position == 0 -%}
+                        <twig:atoms:Marker :pos="player.astPosition" color="var(--empire-{{ player.empire ?? 'none' }}, dimgray)" title="{{ player.name }} — {{ columnEras[player.astPosition].name }}" />
+                    {%- endif -%}
+                    {%- if columnEras[position].key == 'start' -%}→{%- endif -%}</td>
                 {% endfor %}
             </tr>
         {% else %}

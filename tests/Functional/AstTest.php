@@ -65,28 +65,36 @@ final class AstTest extends WebTestCase
     }
 
     #[Test]
-    public function startColumnShowsAnArrowWhenNotOccupiedByAPlayerMarker(): void
+    public function markerCarriesThePlayersAstPositionAsACssCustomPropertyForTransformAnimation(): void
     {
         $game = new Game();
         $player = new Player($game, 'Alice');
-        $player->astPosition = 3;
+        $player->astPosition = 4;
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
-        $tbody = $this->extractTag($rendered, 'tbody');
 
-        self::assertStringContainsString('→', $tbody);
+        self::assertStringContainsString('--marker-pos: 4', $rendered);
+        self::assertStringContainsString('title="Alice — Stone Age"', $rendered);
     }
 
     #[Test]
-    public function startColumnHasNoArrowWhenOccupiedByAPlayerMarker(): void
+    public function startColumnAlwaysRendersTheArrowRegardlessOfPlayerPosition(): void
     {
+        // The marker is now a stable, always-rendered element in the start
+        // column (moved purely via CSS transform for the transition to work),
+        // so the arrow is always in the markup too — CSS (position + z-index)
+        // is what visually covers it when a marker sits at position 0, not
+        // Twig conditionally omitting it.
         $game = new Game();
-        new Player($game, 'Alice');
+        $atStart = new Player($game, 'Alice');
+        $atStart->astPosition = 0;
+        $elsewhere = new Player($game, 'Bob');
+        $elsewhere->astPosition = 3;
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
 
-        self::assertStringNotContainsString('→', $tbody);
+        self::assertSame(2, substr_count($tbody, '→'));
     }
 
     #[Test]

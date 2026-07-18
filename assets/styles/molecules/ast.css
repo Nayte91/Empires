@@ -1,5 +1,7 @@
 .ast {
-    --ast-cell-size: 2.5rem;
+    isolation: isolate;
+    --ast-cell-size: 3rem;
+    --marker-pitch: var(--ast-cell-size);
     --ast-band-tint: rgb(255 255 255 / 0.07);
     justify-self: center;
     border: 1px solid rgb(255 255 255 / 0.15);
@@ -8,7 +10,11 @@
 
     td[data-current-turn] { border: 1px double gold }
     td { inline-size: var(--ast-cell-size) }
-    th, td { border: 1px solid rgb(255 255 255 / 0.15) }
+    th, td {
+        box-sizing: border-box;
+        border: 1px solid rgb(255 255 255 / 0.15);
+        transition: border-color 0.4s linear;
+    }
     th {
         padding-inline: 1em;
         text-align: start;
@@ -17,6 +23,7 @@
     tfoot { color: goldenrod }
     tbody th { inline-size: 10rem }
     tbody td { inline-size: var(--ast-cell-size) }
+    tbody td:first-of-type { position: relative }
     tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
     .alt { background: var(--ast-band-tint) }
 
@@ -32,13 +39,7 @@
         overflow-wrap: break-word;
         hyphens: auto;
         text-align: center;
-    }
 
-    .marker {
-        aspect-ratio: 1;
-        inline-size: calc(var(--ast-cell-size) * 0.5);
-        border-radius: 50%;
-        display: inline-block;
-        background-color: var(--ast-marker-color);
+        &[colspan="1"] { padding: 0 }
     }
 }
