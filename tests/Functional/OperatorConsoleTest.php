@@ -162,6 +162,61 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
+    public function adjustAstPositionPersistsTheDelta(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => 1])
+        ;
+
+        self::assertSame(1, $this->reloadPlayer($player)->astPosition);
+    }
+
+    #[Test]
+    public function adjustAstPositionClampsAtFifteen(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+        $player->astPosition = 15;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => 1])
+        ;
+
+        self::assertSame(15, $this->reloadPlayer($player)->astPosition);
+    }
+
+    #[Test]
+    public function adjustAstPositionClampsAtZero(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => -1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($player)->astPosition);
+    }
+
+    #[Test]
+    public function adjustAstPositionOnAPlayerFromAnotherGameIsNoOp(): void
+    {
+        $game = $this->createGame();
+        $otherGame = $this->createGame();
+        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustAstPosition', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($otherPlayer)->astPosition);
+    }
+
+    #[Test]
     public function adjustCensusPersistsTheDelta(): void
     {
         $game = $this->createGame();

@@ -112,6 +112,20 @@ final class OperatorConsole
     }
 
     #[LiveAction]
+    public function adjustAstPosition(#[LiveArg] string $playerId, #[LiveArg] int $delta): void
+    {
+        $player = $this->findGamePlayer($playerId);
+
+        if (!$player instanceof Player) {
+            return;
+        }
+
+        $player->astPosition += $delta;
+        $this->entityManager->flush();
+        $this->publish('player-updated');
+    }
+
+    #[LiveAction]
     public function adjustCensus(#[LiveArg] string $playerId, #[LiveArg] int $delta): void
     {
         $player = $this->findGamePlayer($playerId);

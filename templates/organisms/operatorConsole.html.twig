@@ -62,6 +62,21 @@
                     </span>
 
                     <span class="operator-console__stepper">
+                        AST
+                        <button
+                            type="button"
+                            {{ live_action('adjustAstPosition', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >&lsaquo;</button>
+                        <span class="operator-console__stepper-value">{{ player.astPosition + 1 }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustAstPosition', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >&rsaquo;</button>
+                    </span>
+
+                    <span class="operator-console__stepper">
                         Census
                         <button
                             type="button"
