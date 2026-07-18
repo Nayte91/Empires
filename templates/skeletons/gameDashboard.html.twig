@@ -1,4 +1,4 @@
-{% extends 'base.html.twig' %}
+{% extends 'layout.html.twig' %}
 
 {% block title %}Empires - Game{% endblock %}
 
@@ -6,6 +6,9 @@
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/operator.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/scoreBoard.css') }}">
 {% endblock %}
 
 {% block body %}

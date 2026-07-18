@@ -1,0 +1,17 @@
+{% props eras, astType %}
+
+<section class="ast-requirements">
+    <h3>A.S.T. requirements ({{ astType }})</h3>
+    <ul>
+        {% for era in eras %}
+            {% set requirements = astType == 'expert' ? era.expertRequirements : era.basicRequirements %}
+            {% set parts = [] %}
+            {% for key, value in requirements %}
+                {% set parts = parts|merge([(key|replace({'_': ' '})|capitalize) ~ ': ' ~ value]) %}
+            {% endfor %}
+            <li>
+                <strong>{{ era.name }}:</strong> {{ parts is empty ? 'No requirements' : parts|join(', ') }}
+            </li>
+        {% endfor %}
+    </ul>
+</section>

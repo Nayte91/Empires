@@ -188,10 +188,12 @@ final class PlayerBoardTest extends WebTestCase
         $client = self::getClient(self::getContainer()->get('test.client'));
 
         $client->request('GET', '/game/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug);
-        self::assertStringContainsString('background-color: #a4ce53', (string) $client->getResponse()->getContent());
+        $boardContent = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', $boardContent);
+        self::assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
 
         $client->request('GET', '/game/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
-        self::assertStringContainsString('background-color: #a4ce53', (string) $client->getResponse()->getContent());
+        self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', (string) $client->getResponse()->getContent());
 
         $client->request('GET', '/game/'.$withoutEmpire->game->slug.'/player/'.$withoutEmpire->slug);
         self::assertStringNotContainsString('background-color', (string) $client->getResponse()->getContent());

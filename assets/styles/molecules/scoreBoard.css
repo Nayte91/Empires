@@ -1,0 +1,20 @@
+.score-board {
+    border-collapse: collapse;
+    font-size: clamp(1.125rem, 1vw + 0.875rem, 1.5rem);
+
+    & th, & td {
+        padding: clamp(0.5em, 1vw, 1em) clamp(1em, 2vw, 2em);
+        border-block-end: 1px solid dimgray;
+        text-align: start;
+    }
+
+    th {
+        border-block-end-width: 2px;
+        color: darkgray;
+        font-size: 0.7em;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
+    tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
+}

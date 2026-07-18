@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Component;
 
+use App\DTO\AstEraDefinition;
 use App\Entity\Advance;
 use App\Entity\Game;
 use App\Entity\Player;
 use App\Repository\AdvanceRepository;
+use App\Repository\AstRepository;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -33,6 +35,7 @@ final class GameDashboard
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly AdvanceRepository $advanceRepository,
+        private readonly AstRepository $astRepository,
     ) {}
 
     public function getOperatorUrl(): string
@@ -49,6 +52,12 @@ final class GameDashboard
         return $this->buildQr($this->getOperatorUrl());
     }
 
+    /** @return list<AstEraDefinition> */
+    public function getAstEras(): array
+    {
+        return $this->astRepository->getEras();
+    }
+
     public function getPlayerUrl(Player $player): string
     {
         return $this->urlGenerator->generate(
@@ -61,6 +70,20 @@ final class GameDashboard
     public function getPlayerQr(Player $player): string
     {
         return $this->buildQr($this->getPlayerUrl($player));
+    }
+
+    /** @return list<array{player: Player, url: string, qr: string, victoryPoints: int}> */
+    public function getPlayerRows(): array
+    {
+        return array_map(
+            fn (Player $player): array => [
+                'player' => $player,
+                'url' => $this->getPlayerUrl($player),
+                'qr' => $this->getPlayerQr($player),
+                'victoryPoints' => $this->getPlayerVictoryPoints($player),
+            ],
+            $this->game->players->toArray(),
+        );
     }
 
     // House rule: 1 VP per city (deliberately not the ÷2 formula in sources/rules/07-victory-conditions/scoring-system.md).

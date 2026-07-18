@@ -292,11 +292,6 @@ final class GameCreator
         ));
     }
 
-    public function getPlayerColor(string $empire): ?string
-    {
-        return $this->empireRepository->findByName($empire)?->color;
-    }
-
     /**
      * @return array<string, array{
      *     name: string,

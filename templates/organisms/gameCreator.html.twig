@@ -78,8 +78,7 @@
             </thead>
             <tbody>
                 {% for player in players %}
-                    {% set playerColor = this.getPlayerColor(player.empire) %}
-                    <tr{% if playerColor %} style="--player-color: {{ playerColor }}"{% endif %}>
+                    <tr{% if player.empire %} style="--player-color: var(--empire-{{ player.empire }}, dimgray)"{% endif %}>
                         <td>{{ player.name }}</td>
                         <td>{{ player.empire != '' ? player.empire : '—' }}</td>
                         <td>

@@ -1,0 +1,41 @@
+<table class="ast">
+    <colgroup>
+        <col>
+        {% for position in range(0, this.trackLength - 1) %}
+            <col>
+        {% endfor %}
+    </colgroup>
+    <thead>
+        <tr>
+            <th scope="col"></th>
+            {% for era in this.eras %}
+                <th scope="col" colspan="{{ era.span }}" class="{{ loop.index0 is odd ? 'alt' : '' }}">{{ era.name }}</th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% set columnEras = this.columnEras %}
+        {% for player in game.players %}
+            <tr>
+                <th scope="row" style="background-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
+                {% for position in range(0, this.trackLength - 1) %}
+                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
+                        {% if position == player.astPosition %}
+                            <span class="marker" style="--ast-marker-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)" title="{{ player.name }} — {{ columnEras[position].name }}"></span>
+                        {% elseif columnEras[position].key == 'start' %}→{% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% else %}
+            <tr><td colspan="{{ this.trackLength + 1 }}">No players yet.</td></tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+        <tr>
+            <th scope="row">Victory Points</th>
+            {% for position in range(0, this.trackLength - 1) %}
+                <td{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{{ constant('App\\Game\\Service\\ScoreCalculator::POINTS_PER_AST_POSITION') * position }}</td>
+            {% endfor %}
+        </tr>
+    </tfoot>
+</table>

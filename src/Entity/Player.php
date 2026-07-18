@@ -18,6 +18,12 @@ class Player
     public const int CENSUS_MAX = 55;
     public const int TREASURY_MIN = 0;
     public const int TREASURY_MAX = 55;
+    public const int AST_MIN = 0;
+
+    // REFACTOR-WHEN: track_length in ast.yaml diverges from 16 — AST_MAX duplicates track_length-1
+    // (same established pattern as CENSUS_MAX vs max_population); bind entity clamps to config in
+    // one move when any of them diverges.
+    public const int AST_MAX = 15;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -46,6 +52,11 @@ class Player
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $treasury = 0 {
         set => max(self::TREASURY_MIN, min(self::TREASURY_MAX, $value));
+    }
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    public int $astPosition = 0 {
+        set => max(self::AST_MIN, min(self::AST_MAX, $value));
     }
 
     #[ORM\Column(length: 50)]

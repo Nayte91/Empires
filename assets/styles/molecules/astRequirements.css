@@ -1,0 +1,15 @@
+.ast-requirements {
+    text-align: start;
+
+    ul {
+        margin: 0;
+        display: grid;
+        padding: 0;
+        gap: 0.5rem;
+        list-style: none;
+        color: darkgray;
+
+        strong { color: white }
+    }
+}
+

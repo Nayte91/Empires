@@ -1,0 +1,10 @@
+<style>
+    :root {
+        {% for slug, color in this.empireColors %}
+        --empire-{{ slug }}: {{ color }};
+        {% endfor %}
+        {% for category, color in this.advanceCategoryColors %}
+        --advance-{{ category }}: {{ color }};
+        {% endfor %}
+    }
+</style>

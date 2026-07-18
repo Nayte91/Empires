@@ -1,0 +1,45 @@
+{% props rows %}
+
+<table class="score-board">
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Empire</th>
+            <th scope="col">Advances</th>
+            <th scope="col">Cities</th>
+            <th scope="col">Census</th>
+            <th scope="col">Treasury</th>
+            <th scope="col">VP</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+            {% set player = row.player %}
+            <tr>
+                <td>
+                    <twig:molecules:Modal class="game-dashboard__name-modal">
+                        <twig:block name="button">
+                            {{ player.name }}
+                        </twig:block>
+                        <twig:block name="content">
+                            <h2>{{ player.name }}</h2>
+                            {{ row.qr|raw }}
+                            <p class="game-dashboard__qr-url"><a href="{{ row.url }}">{{ row.url }}</a></p>
+                            <button type="button" {{ stimulus_action('modal', 'close') }}>Close</button>
+                        </twig:block>
+                    </twig:molecules:Modal>
+                </td>
+                <td>{{ player.empire ?? '—' }}</td>
+                <td>{{ player.advances|length }}</td>
+                <td>{{ player.cities }}</td>
+                <td>{{ player.census }}</td>
+                <td>{{ player.treasury }}</td>
+                <td>{{ row.victoryPoints }}</td>
+            </tr>
+        {% else %}
+            <tr>
+                <td colspan="7">No players yet.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

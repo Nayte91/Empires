@@ -12,6 +12,8 @@
 
         <link rel="icon" href="{{ asset('images/favicon.avif') }}" type="image/avif">
 
+        {{ component('ThemeColors') }}
+
         {% block stylesheets %}
             <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
             <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}">

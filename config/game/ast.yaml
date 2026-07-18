@@ -1,0 +1,44 @@
+ast:
+    eras:
+        start:
+            name: "Start"
+            span: 1
+            requirements:
+                basic: {}
+                expert: {}
+        stone_age:
+            name: "Stone Age"
+            span: 4
+            requirements:
+                basic: {}
+                expert: {}
+        early_bronze_age:
+            name: "Early Bronze Age"
+            span: 3
+            requirements:
+                basic: { cities: 2 }
+                expert: { cities: 3 }
+        middle_bronze_age:
+            name: "Middle Bronze Age"
+            span: 2
+            requirements:
+                basic: { cities: 3, advances: 3 }
+                expert: { cities: 3, advance_points: 5 }
+        late_bronze_age:
+            name: "Late Bronze Age"
+            span: 2
+            requirements:
+                basic: { cities: 3, advances: 3, min_advance_cost: 100 }
+                expert: { cities: 4, advances: 12 }
+        early_iron_age:
+            name: "Early Iron Age"
+            span: 2
+            requirements:
+                basic: { cities: 4, advances: 2, min_advance_cost: 200 }
+                expert: { cities: 5, advances: 10, max_advance_cost: 99, advance_points: 38 }
+        late_iron_age:
+            name: "Late Iron Age"
+            span: 2
+            requirements:
+                basic: { cities: 5, advances: 3, min_advance_cost: 200 }
+                expert: { cities: 6, advances: 17, max_advance_cost: 99, advance_points: 56 }
