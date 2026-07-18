@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\DTO\AstEraDefinition;
-use App\Entity\Advance;
 use App\Entity\Game;
 use App\Entity\Player;
+use App\Game\Service\ScoreCalculator;
 use App\Repository\AdvanceRepository;
 use App\Repository\AstRepository;
 use Endroid\QrCode\Builder\Builder;
@@ -36,6 +36,7 @@ final class GameDashboard
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly AdvanceRepository $advanceRepository,
         private readonly AstRepository $astRepository,
+        private readonly ScoreCalculator $scoreCalculator,
     ) {}
 
     public function getOperatorUrl(): string
@@ -86,15 +87,12 @@ final class GameDashboard
         );
     }
 
-    // House rule: 1 VP per city (deliberately not the ÷2 formula in sources/rules/07-victory-conditions/scoring-system.md).
     public function getPlayerVictoryPoints(Player $player): int
     {
-        $advancePoints = array_sum(array_map(
-            static fn (Advance $advance): int => $advance->points,
-            $this->advanceRepository->getAdvancesByNames($player->advances)
-        ));
-
-        return $advancePoints + $player->cities;
+        return $this->scoreCalculator->scoreFor(
+            $player,
+            array_values($this->advanceRepository->getAdvancesByNames($player->advances)),
+        );
     }
 
     private function buildQr(string $url): string

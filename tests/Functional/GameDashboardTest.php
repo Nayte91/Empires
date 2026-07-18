@@ -34,10 +34,10 @@ final class GameDashboardTest extends WebTestCase
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
         $playersTable = $this->extractPlayersTable($rendered);
 
-        $this->assertStringContainsString('Cities', $playersTable);
-        $this->assertStringContainsString('Census', $playersTable);
-        $this->assertStringContainsString('Treasury', $playersTable);
-        $this->assertStringNotContainsString('Points', $playersTable);
+        self::assertStringContainsString('Cities', $playersTable);
+        self::assertStringContainsString('Census', $playersTable);
+        self::assertStringContainsString('Treasury', $playersTable);
+        self::assertStringNotContainsString('Points', $playersTable);
     }
 
     #[Test]
@@ -50,7 +50,7 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
+        self::assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
     }
 
     #[Test]
@@ -61,7 +61,7 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>/', $rendered);
+        self::assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>/', $rendered);
     }
 
     #[Test]
@@ -76,10 +76,10 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $rendered->render()->toString();
 
-        $this->assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
-        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
-        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
-        $this->assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
+        self::assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
+        self::assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
+        self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
+        self::assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
     }
 
     #[Test]
@@ -92,7 +92,7 @@ final class GameDashboardTest extends WebTestCase
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
         // One <svg> per generated QR code: 2 players + 1 operator = 3.
-        $this->assertSame(3, substr_count($rendered, '<svg'));
+        self::assertSame(3, substr_count($rendered, '<svg'));
     }
 
     #[Test]
@@ -107,9 +107,9 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $rendered->render()->toString();
 
-        $this->assertStringContainsString('<dialog', $html);
-        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
-        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
+        self::assertStringContainsString('<dialog', $html);
+        self::assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
+        self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
     }
 
     #[Test]
@@ -123,7 +123,7 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/<td>11<\/td>\s*<\/tr>/', $rendered);
+        self::assertMatchesRegularExpression('/<td>11<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -138,7 +138,7 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/<td>21<\/td>\s*<\/tr>/', $rendered);
+        self::assertMatchesRegularExpression('/<td>21<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -148,7 +148,7 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('colspan="7"', $rendered);
+        self::assertStringContainsString('colspan="7"', $rendered);
     }
 
     #[Test]
@@ -158,12 +158,12 @@ final class GameDashboardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        $this->assertStringContainsString('order-validated', $rendered);
-        $this->assertStringContainsString('turn-changed', $rendered);
-        $this->assertStringContainsString('game-finished', $rendered);
-        $this->assertStringContainsString('player-updated', $rendered);
-        $this->assertStringNotContainsString('order-submitted', $rendered);
+        self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
+        self::assertStringContainsString('order-validated', $rendered);
+        self::assertStringContainsString('turn-changed', $rendered);
+        self::assertStringContainsString('game-finished', $rendered);
+        self::assertStringContainsString('player-updated', $rendered);
+        self::assertStringNotContainsString('order-submitted', $rendered);
     }
 
     private function createGame(): Game
@@ -193,10 +193,10 @@ final class GameDashboardTest extends WebTestCase
         // The players table carries class="score-board": the embedded
         // AST molecule's table always carries class="ast" instead.
         $start = strpos($html, '<table class="score-board">');
-        $this->assertNotFalse($start, 'Players <table> not found in rendered output.');
+        self::assertNotFalse($start, 'Players <table> not found in rendered output.');
 
         $end = strpos($html, '</table>', $start);
-        $this->assertNotFalse($end, 'Players </table> not found in rendered output.');
+        self::assertNotFalse($end, 'Players </table> not found in rendered output.');
 
         return substr($html, $start, $end - $start);
     }
