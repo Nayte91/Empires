@@ -142,6 +142,27 @@ final class GameDashboardTest extends WebTestCase
     }
 
     #[Test]
+    public function playersAreSortedByVictoryPointsDescending(): void
+    {
+        $game = $this->createGame();
+        $bob = $this->createPlayer($game, 'Bob');
+        $alice = $this->createPlayer($game, 'Alice');
+        $bob->cities = 1;
+        $alice->cities = 5;
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
+        $playersTable = $this->extractPlayersTable($rendered);
+
+        $alicePosition = strpos($playersTable, 'Alice');
+        $bobPosition = strpos($playersTable, 'Bob');
+
+        self::assertNotFalse($alicePosition);
+        self::assertNotFalse($bobPosition);
+        self::assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
+    }
+
+    #[Test]
     public function emptyStateColspanMatchesTheSevenColumns(): void
     {
         $game = $this->createGame();

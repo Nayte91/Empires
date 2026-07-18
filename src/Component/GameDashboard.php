@@ -76,7 +76,7 @@ final class GameDashboard
     /** @return list<array{player: Player, url: string, qr: string, victoryPoints: int}> */
     public function getPlayerRows(): array
     {
-        return array_map(
+        $rows = array_map(
             fn (Player $player): array => [
                 'player' => $player,
                 'url' => $this->getPlayerUrl($player),
@@ -85,6 +85,10 @@ final class GameDashboard
             ],
             $this->game->players->toArray(),
         );
+
+        usort($rows, static fn (array $a, array $b): int => $b['victoryPoints'] <=> $a['victoryPoints']);
+
+        return $rows;
     }
 
     public function getPlayerVictoryPoints(Player $player): int
