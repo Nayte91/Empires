@@ -66,6 +66,13 @@
         color: var(--operator-error);
     }
 
+    .game-creator__field-error {
+        margin: 0;
+        padding: 0.25em 0.5em;
+        font-size: 0.8125rem;
+        color: var(--operator-error);
+    }
+
     .game-creator__launch-block {
         display: flex;
         flex-direction: column;

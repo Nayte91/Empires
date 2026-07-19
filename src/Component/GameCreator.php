@@ -4,62 +4,43 @@ declare(strict_types=1);
 
 namespace App\Component;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
+use App\Game\Command\CreateGame;
 use App\Game\Dto\Empire;
 use App\Game\EmpireCatalog;
 use App\Game\GameData;
 use App\Game\ScenarioCatalog;
-use App\Repository\GameSessionRepository;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\String\Slugger\SluggerInterface;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Symfony\UX\LiveComponent\ValidatableComponentTrait;
 
 #[AsLiveComponent(template: 'organisms/gameCreator.html.twig')]
 final class GameCreator
 {
     use DefaultActionTrait;
+    use ValidatableComponentTrait;
 
-    /**
-     * Governance rule: every first-level static path (e.g. /rules, /stats)
-     * must be added here BEFORE its route is created, and checked against
-     * existing game slugs in the database — otherwise it either shadows, or
-     * is shadowed by, the /{slug} wildcard (GameController::dashboard()).
-     *
-     * Slugs colliding with a static route declared before the /{slug}
-     * wildcard (e.g. app_game_create at /create), which would make the
-     * resulting game's dashboard unreachable.
-     *
-     * @var list<string>
-     */
-    private const array RESERVED_SLUGS = ['create'];
+    #[Assert\Valid]
+    #[LiveProp(writable: ['slug', 'playerCount', 'region', 'astVersion'], useSerializerForHydration: true, onUpdated: ['slug' => 'onSlugUpdated', 'playerCount' => 'onScenarioUpdated', 'region' => 'onScenarioUpdated'])]
+    public CreateGame $game; // @phpstan-ignore property.uninitialized (initialized in mount())
 
-    #[LiveProp(writable: true, onUpdated: 'onSlugUpdated')]
-    public string $slug = '';
-
-    #[LiveProp(writable: true, onUpdated: 'onScenarioUpdated')]
-    public int $playerCount = 9;
-
-    #[LiveProp(writable: true, onUpdated: 'onScenarioUpdated')]
-    public ?string $region = 'west';
-
-    #[LiveProp(writable: true)]
-    public string $astVersion = 'basic';
-
-    /** @var list<array{name: string, empire: string}> */
-    #[LiveProp]
-    public array $players = [];
-
-    #[LiveProp(writable: true)]
+    #[LiveProp(writable: true, onUpdated: 'onNewPlayerNameUpdated')]
+    #[Assert\Sequentially([
+        new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
+        new Assert\Expression('not this.hasPlayerNamed(value)', message: 'A player named {{ value }} already exists.'),
+    ])]
     public string $newPlayerName = '';
 
     #[LiveProp(writable: true)]
@@ -68,50 +49,61 @@ final class GameCreator
     public ?string $error = null;
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly GameSessionRepository $gameRepository,
         private readonly EmpireCatalog $empireCatalog,
         private readonly ScenarioCatalog $scenarioCatalog,
         private readonly GameData $gameData,
-        private readonly SluggerInterface $slugger,
         private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly MessageBusInterface $commandBus,
+        private readonly ValidatorInterface $validator,
     ) {}
 
     public function mount(): void
     {
-        $this->slug = (string) Uuid::v7();
+        $this->game = new CreateGame();
+        $this->game->slug = (string) Uuid::v7();
     }
 
     public function onSlugUpdated(): void
     {
-        $this->slug = $this->slugify($this->slug);
+        $this->game->slug = self::slugify($this->game->slug);
+        $this->validateField('game.slug', false);
     }
 
-    public function isSlugAvailable(): bool
+    public function onNewPlayerNameUpdated(): void
     {
-        if ('' === $this->slug || \in_array($this->slug, self::RESERVED_SLUGS, true)) {
-            return false;
-        }
-
-        return null === $this->gameRepository->findOneBy(['slug' => $this->slug]);
+        $this->validateField('newPlayerName', false);
     }
 
     /**
-     * Enforces the region/player-count invariant (§ scenario setup) in memory,
-     * no flush: the GameSession entity does not exist yet at this stage.
+     * Stateless, direct ValidatorInterface call (not the trait's isValid()/validate()):
+     * ComponentValidationErrors::count() counts tracked field keys, not violations, so
+     * it returns non-zero as soon as any field has ever been validated — even
+     * successfully. See canLaunch() for the same reasoning.
      */
+    public function isSlugAvailable(): bool
+    {
+        return 0 === \count($this->validator->validateProperty($this->game, 'slug'));
+    }
+
+    public function hasPlayerNamed(string $name): bool
+    {
+        $slug = self::slugify($name);
+
+        return array_any($this->game->players, static fn (array $player): bool => self::slugify($player['name']) === $slug);
+    }
+
     public function onScenarioUpdated(): void
     {
-        $regions = $this->scenarioCatalog->regionsFor($this->playerCount);
+        $regions = $this->scenarioCatalog->regionsFor($this->game->playerCount);
 
         if ([] === $regions) {
-            $this->region = null;
+            $this->game->region = null;
 
             return;
         }
 
-        if (null === $this->region || !\in_array($this->region, $regions, true)) {
-            $this->region = $this->getRegionChoices()[0]['value'];
+        if (null === $this->game->region || !\in_array($this->game->region, $regions, true)) {
+            $this->game->region = $this->getRegionChoices()[0]['value'];
         }
     }
 
@@ -119,33 +111,15 @@ final class GameCreator
     public function addPlayer(): void
     {
         if ($this->isPlayerLimitReached()) {
-            $this->error = sprintf('Player limit reached (%d/%d).', \count($this->players), $this->playerCount);
+            $this->error = sprintf('Player limit reached (%d/%d).', \count($this->game->players), $this->game->playerCount);
 
             return;
         }
 
-        $name = trim($this->newPlayerName);
+        $this->validateField('newPlayerName', false);
 
-        if ('' === $name) {
-            $this->error = 'Player name is required.';
-
+        if ([] !== $this->getErrors('newPlayerName')) {
             return;
-        }
-
-        $slug = $this->slugify($name);
-
-        if ('' === $slug) {
-            $this->error = 'Player name is required.';
-
-            return;
-        }
-
-        foreach ($this->players as $existing) {
-            if ($this->slugify($existing['name']) === $slug) {
-                $this->error = sprintf('A player named "%s" already exists.', $name);
-
-                return;
-            }
         }
 
         $empire = $this->newPlayerEmpire;
@@ -156,23 +130,30 @@ final class GameCreator
             return;
         }
 
-        $this->players[] = ['name' => $name, 'empire' => $empire];
+        $this->game->players[] = ['name' => trim($this->newPlayerName), 'empire' => $empire];
         $this->newPlayerName = '';
         $this->newPlayerEmpire = '';
         $this->error = null;
+
+        // De-track the scratch field: the trait's PostHydrate hook replays validation
+        // on every tracked field, which would fail NotBlank on the just-cleared name.
+        /** @var list<string> $validatedFields */
+        $validatedFields = $this->validatedFields;
+        $this->validatedFields = array_values(array_diff($validatedFields, ['newPlayerName']));
+        $this->getErrorsObject()->set('newPlayerName', []);
     }
 
     #[LiveAction]
     public function removePlayer(#[LiveArg] int $index): void
     {
-        unset($this->players[$index]);
-        $this->players = array_values($this->players);
+        unset($this->game->players[$index]);
+        $this->game->players = array_values($this->game->players);
     }
 
     #[LiveAction]
     public function assignRandomEmpire(#[LiveArg] int $index): void
     {
-        if (!isset($this->players[$index]) || '' !== $this->players[$index]['empire']) {
+        if (!isset($this->game->players[$index]) || '' !== $this->game->players[$index]['empire']) {
             return;
         }
 
@@ -182,7 +163,7 @@ final class GameCreator
             return;
         }
 
-        $this->players[$index]['empire'] = $remaining[random_int(0, \count($remaining) - 1)];
+        $this->game->players[$index]['empire'] = $remaining[random_int(0, \count($remaining) - 1)];
     }
 
     #[LiveAction]
@@ -191,7 +172,7 @@ final class GameCreator
         $remaining = $this->remainingEmpires();
         shuffle($remaining);
 
-        foreach ($this->players as $index => $player) {
+        foreach ($this->game->players as $index => $player) {
             if ([] === $remaining) {
                 break;
             }
@@ -200,7 +181,7 @@ final class GameCreator
                 continue;
             }
 
-            $this->players[$index]['empire'] = array_shift($remaining);
+            $this->game->players[$index]['empire'] = array_shift($remaining);
         }
     }
 
@@ -208,56 +189,51 @@ final class GameCreator
     public function launch(): ?Response
     {
         if (!$this->canLaunch()) {
+            $this->validateField('game.slug', false);
+
             $issues = $this->getConformityIssues();
 
             if ([] !== $issues) {
                 $this->error = implode(' ', $issues);
-            } elseif (\in_array($this->slug, self::RESERVED_SLUGS, true)) {
-                $this->error = 'This name is reserved.';
-            } else {
-                $this->error = sprintf('Slug "%s" is not available.', $this->slug);
             }
 
             return null;
         }
 
         try {
-            $this->entityManager->wrapInTransaction(function (): void {
-                $game = new GameSession($this->slug);
-                $game->playerCount = $this->playerCount;
-                $game->region = $this->region;
-                $game->setAstVersionValue($this->astVersion);
-
-                $this->entityManager->persist($game);
-
-                foreach ($this->players as $playerData) {
-                    $player = new Player($game, $playerData['name']);
-                    $player->empire = $playerData['empire'];
-                    $this->entityManager->persist($player);
+            $this->commandBus->dispatch($this->game);
+        } catch (HandlerFailedException $exception) {
+            foreach ($exception->getWrappedExceptions() as $wrappedException) {
+                if (!$wrappedException instanceof UniqueConstraintViolationException) {
+                    continue;
                 }
-            });
-        } catch (UniqueConstraintViolationException) {
-            $this->error = sprintf('Slug "%s" is not available.', $this->slug);
 
-            return null;
+                $this->error = sprintf('Slug "%s" is not available.', $this->game->slug);
+
+                return null;
+            }
+
+            throw $exception;
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_game_operator', ['slug' => $this->slug]));
+        return new RedirectResponse($this->urlGenerator->generate('app_game_operator', ['slug' => $this->game->slug]));
     }
 
     public function isPlayerLimitReached(): bool
     {
-        return \count($this->players) >= $this->playerCount;
+        return \count($this->game->players) >= $this->game->playerCount;
     }
 
     /**
      * Single source of truth for every launch() precondition (the DB unique-constraint
      * check is inherently racy and stays a defensive catch inside launch() itself):
      * drives both the "Create the game" button state and launch()'s entry guard.
+     *
+     * Stateless ValidatorInterface call, not the trait's isValid() — see isSlugAvailable().
      */
     public function canLaunch(): bool
     {
-        return [] === $this->getConformityIssues() && $this->isSlugAvailable();
+        return 0 === \count($this->validator->validate($this->game)) && [] === $this->getConformityIssues();
     }
 
     public function canAssignRandomEmpires(): bool
@@ -266,7 +242,7 @@ final class GameCreator
             return false;
         }
 
-        return array_any($this->players, static fn (array $player): bool => '' === $player['empire']);
+        return array_any($this->game->players, static fn (array $player): bool => '' === $player['empire']);
     }
 
     public function getMinPlayers(): int
@@ -279,15 +255,7 @@ final class GameCreator
         return $this->getLimits()['max_players'] ?? PHP_INT_MAX;
     }
 
-    /**
-     * Single source of truth for the launch guard: every reason the current state
-     * cannot be turned into a game, in priority order (§ scenario conformity):
-     * player-count mismatch, empires invalidated by a scenario change, duplicate
-     * empires (unreachable through the UI but kept as a safety net), then players
-     * still missing an empire.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function getConformityIssues(): array
     {
         $issues = [];
@@ -334,14 +302,14 @@ final class GameCreator
 
     /**
      * Backs the "Region" select: a genuinely single choice (combined map) once
-     * the scenario no longer splits into east/west, instead of a stale region
-     * choice merely disabled in the UI (§ scenario setup).
+     * the scenario no longer splits into east/west — the option list must change
+     * structurally, a stale option merely disabled would survive DOM morphing.
      *
      * @return list<array{value: string, label: string}>
      */
     public function getRegionChoices(): array
     {
-        if ([] === $this->scenarioCatalog->regionsFor($this->playerCount)) {
+        if ([] === $this->scenarioCatalog->regionsFor($this->game->playerCount)) {
             return [['value' => '', 'label' => 'East + West']];
         }
 
@@ -351,25 +319,29 @@ final class GameCreator
         );
     }
 
-    private function slugify(string $value): string
+    /**
+     * Public static: used both as the internal slug helper and as the NotBlank
+     * normalizer on $newPlayerName (Assert\NotBlank requires a static callable).
+     */
+    public static function slugify(string $value): string
     {
-        return strtolower((string) $this->slugger->slug($value));
+        return strtolower((string) new AsciiSlugger()->slug($value));
     }
 
     /**
-     * Empire slugs of the current scenario (§ scenario setup) minus those already
-     * taken by a player. Backs both the "Empire" select (getAvailableEmpires()) and
-     * the random-assignment actions, so the two stay consistent by construction.
+     * Empire slugs of the current scenario minus those already taken by a player.
+     * Backs both the "Empire" select (getAvailableEmpires()) and the
+     * random-assignment actions, so the two stay consistent by construction.
      *
      * @return list<string>
      */
     private function remainingEmpires(): array
     {
-        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->playerCount, $this->region);
+        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
 
         $taken = array_map(
             static fn (array $player): string => $player['empire'],
-            $this->players,
+            $this->game->players,
         );
 
         return array_values(array_filter(
@@ -378,15 +350,10 @@ final class GameCreator
         ));
     }
 
-    /**
-     * Explains how to unblock the player-count/playerCount mismatch, using
-     * GameData's min/max player bounds to decide whether lowering/raising the
-     * target is offered.
-     */
     private function getPlayerCountMismatchIssue(): ?string
     {
-        $count = \count($this->players);
-        $target = $this->playerCount;
+        $count = \count($this->game->players);
+        $target = $this->game->playerCount;
 
         if ($count === $target) {
             return null;
@@ -416,17 +383,18 @@ final class GameCreator
     }
 
     /**
-     * Names players whose empire is no longer part of the current scenario, e.g.
-     * after a player-count/region change (§ scenario setup) invalidates it.
+     * Names players whose empire is no longer part of the current scenario —
+     * only a player-count/region change can create that state, the UI never offers
+     * an invalid empire.
      *
      * @return list<string>
      */
     private function getInvalidEmpireIssues(): array
     {
-        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->playerCount, $this->region);
+        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
         $issues = [];
 
-        foreach ($this->players as $player) {
+        foreach ($this->game->players as $player) {
             if ('' !== $player['empire'] && !\in_array($player['empire'], $scenarioEmpires, true)) {
                 $issues[] = sprintf('%s\'s empire "%s" is not part of the current scenario.', $player['name'], $player['empire']);
             }
@@ -446,7 +414,7 @@ final class GameCreator
     {
         $namesByEmpire = [];
 
-        foreach ($this->players as $player) {
+        foreach ($this->game->players as $player) {
             if ('' !== $player['empire']) {
                 $namesByEmpire[$player['empire']][] = $player['name'];
             }
@@ -470,7 +438,7 @@ final class GameCreator
     {
         $missing = 0;
 
-        foreach ($this->players as $player) {
+        foreach ($this->game->players as $player) {
             if ('' === $player['empire']) {
                 ++$missing;
             }
@@ -486,9 +454,6 @@ final class GameCreator
     }
 
     /**
-     * Single read of GameData's limits, shared by getMinPlayers()/getMaxPlayers()
-     * and the player-count mismatch message.
-     *
      * @return array{
      *     max_cities?: int,
      *     max_population?: int,
