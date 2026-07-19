@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Entity\GameSession;
+use App\Entity\Player;
 use App\Game\AstCatalog;
 use App\Game\Dto\AstEraDefinition;
+use App\Game\EmpireCatalog;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -25,6 +27,7 @@ final class Ast
 
     public function __construct(
         private readonly AstCatalog $astCatalog,
+        private readonly EmpireCatalog $empireCatalog,
     ) {}
 
     public function getTrackLength(): int
@@ -42,5 +45,14 @@ final class Ast
     public function getColumnEras(): array
     {
         return $this->astCatalog->getColumnEras();
+    }
+
+    /** @return list<Player> ranked by empire position on the A.S.T. */
+    public function getRankedPlayers(): array
+    {
+        $players = $this->game->players->toArray();
+        usort($players, fn (Player $a, Player $b): int => $this->empireCatalog->positionOf($a->empire) <=> $this->empireCatalog->positionOf($b->empire));
+
+        return $players;
     }
 }

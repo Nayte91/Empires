@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
+use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -57,6 +58,29 @@ final class AstViewTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
         self::assertGreaterThan(0, $crawler->filter('section h3')->count(), 'Requirements section header should be present');
+    }
+
+    #[Test]
+    public function astViewListsPlayersRankedByEmpirePosition(): void
+    {
+        $client = self::createClient();
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+
+        $game = new GameSession();
+        $hellas = new Player($game, 'Bob');
+        $hellas->empire = 'hellas';
+        $minoa = new Player($game, 'Alice');
+        $minoa->empire = 'minoa';
+        $hatti = new Player($game, 'Kangoo');
+        $hatti->empire = 'hatti';
+        $entityManager->persist($game);
+        $entityManager->flush();
+
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+
+        self::assertResponseIsSuccessful();
+        $order = $crawler->filter('tbody tr[data-empire]')->each(static fn ($node) => $node->attr('data-empire'));
+        self::assertSame(['minoa', 'hatti', 'hellas'], $order);
     }
 
     #[Test]
