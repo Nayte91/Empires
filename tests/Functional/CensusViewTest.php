@@ -77,8 +77,10 @@ final class CensusViewTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $militaryRow = $crawler->filter('ol li[data-empire="minoa"]');
         self::assertGreaterThan(0, $militaryRow->filter('[title="Military"]')->count(), 'Military badge should be present on the Military player row');
+        self::assertGreaterThan(0, $crawler->filter('ol li[data-empire="minoa"][data-military]')->count(), 'data-military attribute should be present on the Military player row');
         $nonMilitaryRow = $crawler->filter('ol li[data-empire="saba"]');
         self::assertCount(0, $nonMilitaryRow->filter('[title="Military"]'), 'Military badge should be absent on the non-Military player row');
+        self::assertCount(0, $crawler->filter('ol li[data-empire="saba"][data-military]'), 'data-military attribute should be absent on the non-Military player row');
     }
 
     #[Test]

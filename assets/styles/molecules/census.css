@@ -9,6 +9,10 @@
     padding-inline-start: 0.75rem;
 }
 
+.census__order li[data-military] {
+    color: var(--advance-civic, red);
+}
+
 .census__military {
     opacity: 0.75;
     margin-inline-start: 0.5rem;

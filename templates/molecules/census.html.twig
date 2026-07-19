@@ -5,9 +5,13 @@
     {% if this.orderedPlayers is not empty %}
         <ol class="census__order">
             {% for player in this.orderedPlayers %}
-                <li data-empire="{{ player.empire }}" style="--player-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)">
+                {% set military = this.isMilitary(player) %}
+                <li data-empire="{{ player.empire }}"{{ military ? ' data-military' : '' }} style="--player-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)">
                     <b>{{ player.empire|capitalize }}</b> ({{ player.name }})
                     <data value="{{ player.census }}">{{ player.census }}</data>
+                    {% if military %}
+                        <span title="Military" class="census__military">⚔</span>
+                    {% endif %}
                 </li>
             {% endfor %}
         </ol>
