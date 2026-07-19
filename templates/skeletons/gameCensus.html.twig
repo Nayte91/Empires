@@ -1,0 +1,12 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - Census{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/gameCensus.css') }}">
+{% endblock %}
+
+{% block body %}
+    <twig:CensusView :game="game" />
+{% endblock %}

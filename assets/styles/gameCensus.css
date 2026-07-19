@@ -1,0 +1,26 @@
+.census-view {
+    min-block-size: 100vh;
+    display: grid;
+    align-content: center;
+    justify-items: center;
+    gap: 2rem;
+    padding: clamp(1.5rem, 4vw, 4rem);
+    background: #111;
+    color: white;
+}
+
+.census-view__order {
+    display: grid;
+    gap: 0.75rem;
+    padding-inline-start: 2ch;
+}
+
+.census-view__order li {
+    border-inline-start: 0.375rem solid var(--player-color, dimgray);
+    padding-inline-start: 0.75rem;
+}
+
+.census-view__military {
+    opacity: 0.75;
+    margin-inline-start: 0.5rem;
+}

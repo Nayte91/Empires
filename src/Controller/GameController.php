@@ -38,6 +38,12 @@ final class GameController extends AbstractController
         ]);
     }
 
+    #[Route('/game/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    public function census(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
+    {
+        return $this->render('skeletons/gameCensus.html.twig', ['game' => $game]);
+    }
+
     #[Route('/game/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
     {

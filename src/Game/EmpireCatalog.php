@@ -74,6 +74,11 @@ final class EmpireCatalog
         return null;
     }
 
+    public function positionOf(?string $name): int
+    {
+        return null === $name ? PHP_INT_MAX : ($this->findByName($name)->position ?? PHP_INT_MAX);
+    }
+
     /** @return list<Empire> */
     public function findByPlayerCountAndRegion(int $playerCount, ?string $region): array
     {
