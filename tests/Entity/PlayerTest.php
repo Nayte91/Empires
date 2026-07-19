@@ -56,4 +56,25 @@ final class PlayerTest extends TestCase
         $player->treasury = -1;
         self::assertSame(0, $player->treasury);
     }
+
+    #[Test]
+    public function shipsClampsToFourAndZero(): void
+    {
+        $player = new Player(new GameSession(), 'Bob');
+
+        $player->ships = 5;
+        self::assertSame(4, $player->ships);
+
+        $player->ships = -1;
+        self::assertSame(0, $player->ships);
+    }
+
+    #[Test]
+    public function cardsClampsToZero(): void
+    {
+        $player = new Player(new GameSession(), 'Bob');
+
+        $player->cards = -3;
+        self::assertSame(0, $player->cards);
+    }
 }

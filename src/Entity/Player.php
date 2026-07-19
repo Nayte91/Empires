@@ -18,6 +18,9 @@ class Player
     public const int CENSUS_MAX = 55;
     public const int TREASURY_MIN = 0;
     public const int TREASURY_MAX = 55;
+    public const int SHIPS_MIN = 0;
+    public const int SHIPS_MAX = 4;
+    public const int CARDS_MIN = 0;
     public const int AST_MIN = 0;
 
     // REFACTOR-WHEN: track_length in ast.yaml diverges from 16 — AST_MAX duplicates track_length-1
@@ -52,6 +55,16 @@ class Player
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $treasury = 0 {
         set => max(self::TREASURY_MIN, min(self::TREASURY_MAX, $value));
+    }
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    public int $ships = 0 {
+        set => max(self::SHIPS_MIN, min(self::SHIPS_MAX, $value));
+    }
+
+    #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
+    public int $cards = 0 {
+        set => max(self::CARDS_MIN, $value);
     }
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]

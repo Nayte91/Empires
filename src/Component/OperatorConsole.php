@@ -154,6 +154,34 @@ final class OperatorConsole
     }
 
     #[LiveAction]
+    public function adjustShips(#[LiveArg] string $playerId, #[LiveArg] int $delta): void
+    {
+        $player = $this->findGamePlayer($playerId);
+
+        if (!$player instanceof Player) {
+            return;
+        }
+
+        $player->ships += $delta;
+        $this->entityManager->flush();
+        $this->publish('player-updated');
+    }
+
+    #[LiveAction]
+    public function adjustCards(#[LiveArg] string $playerId, #[LiveArg] int $delta): void
+    {
+        $player = $this->findGamePlayer($playerId);
+
+        if (!$player instanceof Player) {
+            return;
+        }
+
+        $player->cards += $delta;
+        $this->entityManager->flush();
+        $this->publish('player-updated');
+    }
+
+    #[LiveAction]
     public function startOrder(): void
     {
         if ($this->game->finished) {

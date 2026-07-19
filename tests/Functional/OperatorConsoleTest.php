@@ -300,6 +300,101 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
+    public function adjustShipsPersistsTheDelta(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => 1])
+        ;
+
+        self::assertSame(1, $this->reloadPlayer($player)->ships);
+    }
+
+    #[Test]
+    public function adjustShipsClampsAtFour(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+        $player->ships = 4;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => 1])
+        ;
+
+        self::assertSame(4, $this->reloadPlayer($player)->ships);
+    }
+
+    #[Test]
+    public function adjustShipsClampsAtZero(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => -1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($player)->ships);
+    }
+
+    #[Test]
+    public function adjustShipsOnAPlayerFromAnotherGameIsNoOp(): void
+    {
+        $game = $this->createGame();
+        $otherGame = $this->createGame();
+        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustShips', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($otherPlayer)->ships);
+    }
+
+    #[Test]
+    public function adjustCardsPersistsTheDelta(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustCards', ['playerId' => (string) $player->id, 'delta' => 1])
+        ;
+
+        self::assertSame(1, $this->reloadPlayer($player)->cards);
+    }
+
+    #[Test]
+    public function adjustCardsClampsAtZero(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustCards', ['playerId' => (string) $player->id, 'delta' => -1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($player)->cards);
+    }
+
+    #[Test]
+    public function adjustCardsOnAPlayerFromAnotherGameIsNoOp(): void
+    {
+        $game = $this->createGame();
+        $otherGame = $this->createGame();
+        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('adjustCards', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
+        ;
+
+        self::assertSame(0, $this->reloadPlayer($otherPlayer)->cards);
+    }
+
+    #[Test]
     public function adjustCitiesOnAPlayerFromAnotherGameIsNoOp(): void
     {
         $game = $this->createGame();

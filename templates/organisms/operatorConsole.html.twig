@@ -105,6 +105,36 @@
                             data-loading="addAttribute(disabled)"
                         >+</button>
                     </span>
+
+                    <span class="operator-console__stepper">
+                        Ships
+                        <button
+                            type="button"
+                            {{ live_action('adjustShips', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >−</button>
+                        <span class="operator-console__stepper-value">{{ player.ships }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustShips', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >+</button>
+                    </span>
+
+                    <span class="operator-console__stepper">
+                        Cards
+                        <button
+                            type="button"
+                            {{ live_action('adjustCards', {playerId: player.id, delta: -1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >−</button>
+                        <span class="operator-console__stepper-value">{{ player.cards }}</span>
+                        <button
+                            type="button"
+                            {{ live_action('adjustCards', {playerId: player.id, delta: 1}) }}
+                            data-loading="addAttribute(disabled)"
+                        >+</button>
+                    </span>
                 </li>
             {% endfor %}
         </ul>

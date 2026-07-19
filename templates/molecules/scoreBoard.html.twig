@@ -8,10 +8,12 @@
         <tr>
             <th scope="col">Name</th>
             <th scope="col">Empire</th>
-            <th scope="col">Advances</th>
-            <th scope="col">Cities</th>
-            <th scope="col">Census</th>
             <th scope="col">Treasury</th>
+            <th scope="col">Census</th>
+            <th scope="col">Ships</th>
+            <th scope="col">Cities</th>
+            <th scope="col">Cards</th>
+            <th scope="col">Advances</th>
             <th scope="col">VP</th>
         </tr>
     </thead>
@@ -33,15 +35,17 @@
                     </twig:molecules:Modal>
                 </td>
                 <td>{{ player.empire ?? '—' }}</td>
-                <td>{{ player.advances|length }}</td>
-                <td>{{ player.cities }}</td>
-                <td>{{ player.census }}</td>
                 <td>{{ player.treasury }}</td>
+                <td>{{ player.census }}</td>
+                <td>{{ player.ships }}</td>
+                <td>{{ player.cities }}</td>
+                <td>{{ player.cards }}</td>
+                <td>{{ player.advances|length }}</td>
                 <td>{{ row.victoryPoints }}</td>
             </tr>
         {% else %}
             <tr>
-                <td colspan="7">No players yet.</td>
+                <td colspan="9">No players yet.</td>
             </tr>
         {% endfor %}
     </tbody>

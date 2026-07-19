@@ -32,6 +32,9 @@ final class PlayerBoard
     #[LiveProp(writable: true, onUpdated: 'onTreasuryUpdated')]
     public int $treasury = 0; // @phpstan-ignore property.uninitialized (initialized in mount())
 
+    #[LiveProp(writable: true, onUpdated: 'onCardsUpdated')]
+    public int $cards = 0; // @phpstan-ignore property.uninitialized (initialized in mount())
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly AdvanceCatalog $advanceCatalog,
@@ -44,6 +47,7 @@ final class PlayerBoard
         $this->player = $player;
         $this->census = $player->census;
         $this->treasury = $player->treasury;
+        $this->cards = $player->cards;
     }
 
     public function onCensusUpdated(): void
@@ -62,10 +66,26 @@ final class PlayerBoard
         $this->treasury = $this->player->treasury;
     }
 
+    public function onCardsUpdated(): void
+    {
+        $this->player->cards = $this->cards;
+        $this->entityManager->flush();
+        $this->publish();
+        $this->cards = $this->player->cards;
+    }
+
     #[LiveAction]
     public function adjustCities(#[LiveArg] int $delta): void
     {
         $this->player->cities += $delta;
+        $this->entityManager->flush();
+        $this->publish();
+    }
+
+    #[LiveAction]
+    public function adjustShips(#[LiveArg] int $delta): void
+    {
+        $this->player->ships += $delta;
         $this->entityManager->flush();
         $this->publish();
     }

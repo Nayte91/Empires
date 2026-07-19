@@ -126,6 +126,63 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     #[Test]
+    public function adjustShipsPersistsAndClamps(): void
+    {
+        $player = $this->createPlayer();
+
+        $component = $this->createLiveComponent('PlayerBoard', ['player' => $player]);
+        $component->call('adjustShips', ['delta' => -1]);
+
+        // Clamped at the lower bound (0), player starts at 0.
+        self::assertSame(0, $this->reloadPlayer($player)->ships);
+
+        $component->call('adjustShips', ['delta' => 3]);
+        self::assertSame(3, $this->reloadPlayer($player)->ships);
+
+        $component->call('adjustShips', ['delta' => 5]);
+        self::assertSame(4, $this->reloadPlayer($player)->ships);
+    }
+
+    #[Test]
+    public function cardsInputPersistsWithoutAnUpperClamp(): void
+    {
+        $player = $this->createPlayer();
+
+        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('cards', 30);
+
+        self::assertSame(30, $this->reloadPlayer($player)->cards);
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
+            ->set('cards', 999)
+            ->render()
+            ->toString()
+        ;
+
+        self::assertSame(999, $this->reloadPlayer($player)->cards);
+        self::assertStringContainsString('value="999"', $rendered);
+    }
+
+    #[Test]
+    public function cardsInputClampsAtZeroWhenNegative(): void
+    {
+        $player = $this->createPlayer();
+
+        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('cards', -5);
+
+        self::assertSame(0, $this->reloadPlayer($player)->cards);
+    }
+
+    #[Test]
+    public function cardsInputCarriesMinBoundButNoMax(): void
+    {
+        $player = $this->createPlayer();
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
+
+        self::assertMatchesRegularExpression('/<input type="number" min="0" data-model="debounce\(300\)\|cards" value="\d+">/', $rendered);
+    }
+
+    #[Test]
     public function ownedAdvancesAreRenderedWithoutAPurchaseButton(): void
     {
         $player = $this->createPlayer();

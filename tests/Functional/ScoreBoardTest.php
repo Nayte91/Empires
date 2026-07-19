@@ -53,14 +53,15 @@ final class ScoreBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function rendersDefaultCitiesAndCensusValues(): void
+    public function rendersDefaultStatColumnsInTheNewOrder(): void
     {
         $game = $this->createGame();
         $this->createPlayer($game, 'Alice');
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>/', $rendered);
+        // Treasury(0), Census(1), Ships(0), Cities(0), Cards(0), Advances(0), VP(0) — Name/Empire cells are not plain <td>value</td>.
+        self::assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -75,7 +76,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $html = $rendered->render()->toString();
 
-        self::assertStringNotContainsString('/shop', $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
+        self::assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
         self::assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
         self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
         self::assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
@@ -143,13 +144,13 @@ final class ScoreBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function emptyStateColspanMatchesTheSevenColumns(): void
+    public function emptyStateColspanMatchesTheNineColumns(): void
     {
         $game = $this->createGame();
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertStringContainsString('colspan="7"', $rendered);
+        self::assertStringContainsString('colspan="9"', $rendered);
     }
 
     #[Test]
