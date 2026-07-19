@@ -102,10 +102,16 @@ final class GameCreator
      */
     public function onScenarioUpdated(): void
     {
-        if ($this->playerCount >= 10) {
+        $regions = $this->scenarioCatalog->regionsFor($this->playerCount);
+
+        if ([] === $regions) {
             $this->region = null;
-        } elseif (null === $this->region) {
-            $this->region = 'west';
+
+            return;
+        }
+
+        if (null === $this->region || !\in_array($this->region, $regions, true)) {
+            $this->region = $this->getRegionChoices()[0]['value'];
         }
     }
 
@@ -201,20 +207,16 @@ final class GameCreator
     #[LiveAction]
     public function launch(): ?Response
     {
-        if ([] !== $issues = $this->getConformityIssues()) {
-            $this->error = implode(' ', $issues);
+        if (!$this->canLaunch()) {
+            $issues = $this->getConformityIssues();
 
-            return null;
-        }
-
-        if (\in_array($this->slug, self::RESERVED_SLUGS, true)) {
-            $this->error = 'This name is reserved.';
-
-            return null;
-        }
-
-        if (!$this->isSlugAvailable()) {
-            $this->error = sprintf('Slug "%s" is not available.', $this->slug);
+            if ([] !== $issues) {
+                $this->error = implode(' ', $issues);
+            } elseif (\in_array($this->slug, self::RESERVED_SLUGS, true)) {
+                $this->error = 'This name is reserved.';
+            } else {
+                $this->error = sprintf('Slug "%s" is not available.', $this->slug);
+            }
 
             return null;
         }
@@ -248,9 +250,14 @@ final class GameCreator
         return \count($this->players) >= $this->playerCount;
     }
 
-    public function isReadyToCreate(): bool
+    /**
+     * Single source of truth for every launch() precondition (the DB unique-constraint
+     * check is inherently racy and stays a defensive catch inside launch() itself):
+     * drives both the "Create the game" button state and launch()'s entry guard.
+     */
+    public function canLaunch(): bool
     {
-        return [] === $this->getConformityIssues();
+        return [] === $this->getConformityIssues() && $this->isSlugAvailable();
     }
 
     public function canAssignRandomEmpires(): bool
@@ -323,6 +330,25 @@ final class GameCreator
     public function getRegions(): array
     {
         return $this->gameData->getRegions();
+    }
+
+    /**
+     * Backs the "Region" select: a genuinely single choice (combined map) once
+     * the scenario no longer splits into east/west, instead of a stale region
+     * choice merely disabled in the UI (§ scenario setup).
+     *
+     * @return list<array{value: string, label: string}>
+     */
+    public function getRegionChoices(): array
+    {
+        if ([] === $this->scenarioCatalog->regionsFor($this->playerCount)) {
+            return [['value' => '', 'label' => 'East + West']];
+        }
+
+        return array_map(
+            static fn (string $region): array => ['value' => $region, 'label' => ucfirst($region)],
+            ['west', 'east'],
+        );
     }
 
     private function slugify(string $value): string

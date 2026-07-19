@@ -17,10 +17,10 @@
 
         <label>
             Region
-            <select data-model="region" {{ playerCount >= 10 ? 'disabled' }}>
-                <option value="west" {{ region == 'west' ? 'selected' }}>West</option>
-                <option value="east" {{ region == 'east' ? 'selected' }}>East</option>
-                <option value="" {{ region is null ? 'selected' }} {{ playerCount < 10 ? 'disabled' }}>Combined maps</option>
+            <select data-model="region" {{ this.regionChoices|length == 1 ? 'disabled' }}>
+                {% for choice in this.regionChoices %}
+                    <option value="{{ choice.value }}" {{ (region ?? '') == choice.value ? 'selected' }}>{{ choice.label }}</option>
+                {% endfor %}
             </select>
         </label>
 
@@ -156,8 +156,7 @@
             type="button"
             class="game-creator__launch"
             {{ live_action('launch') }}
-            data-loading="addAttribute(disabled)"
-            {{ not this.isReadyToCreate ? 'disabled' }}
+            {{ not this.canLaunch ? 'disabled' }}
         >
             Create the game
         </button>

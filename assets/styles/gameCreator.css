@@ -209,6 +209,11 @@
         color: white;
 
         &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8%)) }
+
+        &:disabled {
+            background: var(--operator-bg-subtle);
+            color: var(--operator-text-muted);
+        }
     }
 
     .game-creator__conformity {
@@ -219,5 +224,3 @@
     .game-creator__conformity--ok { color: var(--operator-success) }
     .game-creator__conformity--error { color: var(--operator-error) }
 }
-
-@media (prefers-reduced-motion: reduce) { #game-creator * { transition: none } }

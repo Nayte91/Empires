@@ -12,6 +12,7 @@ use App\Game\ScenarioCatalog;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -45,10 +46,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
 
-        self::assertStringContainsString(
-            sprintf('min="%d" max="%d"', $limits['min_players'], $limits['max_players']),
-            $rendered,
-        );
+        self::assertStringContainsString(sprintf('min="%d" max="%d"', $limits['min_players'], $limits['max_players']), $rendered);
     }
 
     #[Test]
@@ -85,8 +83,45 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('<option value="" selected >Combined maps</option>', $rendered->toString());
-        self::assertStringContainsString('<select data-model="region" disabled>', $rendered->toString());
+        $select = $rendered->crawler()->filter('select[data-model="region"]');
+        $options = $select->filter('option');
+
+        self::assertNotNull($select->attr('disabled'));
+        self::assertCount(1, $options);
+        self::assertSame('East + West', trim($options->text()));
+        self::assertSame('', $options->attr('value'));
+        self::assertNotNull($options->attr('selected'));
+    }
+
+    #[Test]
+    public function returningBelowTenAfterBeingAboveRestoresWestAsTheDefaultRegion(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('playerCount', 10)
+        ;
+
+        $component->set('playerCount', 9);
+
+        self::assertSame('west', $component->component()->region);
+    }
+
+    #[Test]
+    public function regionSelectShowsTheChosenRegionAndIsEnabledWhenPlayerCountIsNotAboveNine(): void
+    {
+        $rendered = $this->createLiveComponent('GameCreator')
+            ->set('playerCount', 9)
+            ->set('region', 'west')
+            ->render()
+        ;
+
+        $select = $rendered->crawler()->filter('select[data-model="region"]');
+        $options = $select->filter('option');
+
+        self::assertNull($select->attr('disabled'));
+        self::assertCount(2, $options);
+        self::assertSame(['West', 'East'], $options->each(static fn ($node): string => trim((string) $node->text())));
+        self::assertNotNull($select->filter('option[value="west"]')->attr('selected'));
+        self::assertNull($select->filter('option[value="east"]')->attr('selected'));
     }
 
     #[Test]
@@ -165,13 +200,13 @@ final class GameCreatorTest extends WebTestCase
         $component->call('launch');
 
         $response = $component->response();
-        self::assertSame(302, $response->getStatusCode());
+        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
         self::assertStringContainsString('/launch-game/operator', (string) $response->headers->get('Location'));
 
         $freshEntityManager = $this->freshEntityManager();
         $game = $freshEntityManager->getRepository(GameSession::class)->findOneBy(['slug' => 'launch-game']);
 
-        self::assertNotNull($game);
+        self::assertInstanceOf(GameSession::class, $game);
         self::assertSame(9, $game->playerCount);
         self::assertSame('west', $game->region);
         self::assertSame(ASTVersion::EXPERT, $game->astVersion);
@@ -315,12 +350,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue(self::isLaunchButtonDisabled($rendered));
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString(
-            'Add 3 more players, or lower the player count to 5.',
-            $rendered,
-        );
+        self::assertStringContainsString('Add 3 more players, or lower the player count to 5.', $rendered);
     }
 
     #[Test]
@@ -332,7 +364,7 @@ final class GameCreatorTest extends WebTestCase
             ->toString()
         ;
 
-        self::assertTrue(self::isLaunchButtonDisabled($rendered));
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Add 9 more players.', $rendered);
         self::assertStringNotContainsString('or lower the player count', $rendered);
@@ -355,12 +387,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('playerCount', 3)->render()->toString();
 
-        self::assertTrue(self::isLaunchButtonDisabled($rendered));
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString(
-            'Remove 2 players, or raise the player count to 5.',
-            $rendered,
-        );
+        self::assertStringContainsString('Remove 2 players, or raise the player count to 5.', $rendered);
     }
 
     #[Test]
@@ -380,9 +409,74 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertFalse(self::isLaunchButtonDisabled($rendered));
+        self::assertFalse($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="ok"', $rendered);
         self::assertStringContainsString('Everything is fine.', $rendered);
+    }
+
+    #[Test]
+    public function createButtonIsDisabledWhenTheSlugIsAlreadyTaken(): void
+    {
+        $this->createGame('taken-slug');
+
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('slug', 'Taken Slug')
+            ->set('playerCount', 3)
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component
+                ->set('newPlayerName', $name)
+                ->set('newPlayerEmpire', $empire)
+            ;
+            $component->call('addPlayer');
+        }
+
+        $rendered = $component->render()->toString();
+
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
+    }
+
+    #[Test]
+    public function createButtonIsDisabledWhenTheSlugIsReserved(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('slug', 'create')
+            ->set('playerCount', 3)
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component
+                ->set('newPlayerName', $name)
+                ->set('newPlayerEmpire', $empire)
+            ;
+            $component->call('addPlayer');
+        }
+
+        $rendered = $component->render()->toString();
+
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
+    }
+
+    #[Test]
+    public function createButtonIsEnabledWhenTheEntireFormIsValid(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('slug', 'Valid New Game')
+            ->set('playerCount', 3)
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component
+                ->set('newPlayerName', $name)
+                ->set('newPlayerEmpire', $empire)
+            ;
+            $component->call('addPlayer');
+        }
+
+        $rendered = $component->render()->toString();
+
+        self::assertFalse($this->isLaunchButtonDisabled($rendered));
     }
 
     #[Test]
@@ -512,7 +606,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('region', 'west')->render()->toString();
 
-        self::assertTrue(self::isLaunchButtonDisabled($rendered));
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Alice&#039;s empire &quot;kushan&quot; is not part of the current scenario.', $rendered);
     }
@@ -531,7 +625,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue(self::isLaunchButtonDisabled($rendered));
+        self::assertTrue($this->isLaunchButtonDisabled($rendered));
         self::assertStringContainsString('data-conformity="error"', $rendered);
         self::assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
     }
@@ -576,16 +670,10 @@ final class GameCreatorTest extends WebTestCase
         return self::getContainer()->get(EntityManagerInterface::class);
     }
 
-    /**
-     * The button always carries data-loading="addAttribute(disabled)" (loading-state
-     * directive), which itself contains the word "disabled". That decoy is stripped
-     * before checking for the actual HTML `disabled` attribute.
-     */
-    private static function isLaunchButtonDisabled(string $html): bool
+    private function isLaunchButtonDisabled(string $html): bool
     {
         preg_match('/<button\b[^>]*data-live-action-param="launch"[^>]*>/', $html, $matches);
-        $tag = str_replace('addAttribute(disabled)', '', $matches[0] ?? '');
 
-        return 1 === preg_match('/\bdisabled\b/', $tag);
+        return 1 === preg_match('/\bdisabled\b/', $matches[0] ?? '');
     }
 }
