@@ -8,6 +8,15 @@
     border-radius: var(--operator-radius);
     border-collapse: collapse;
 
+    & caption {
+        caption-side: top;
+        margin-block-end: 0.75rem;
+        color: darkgray;
+        font-size: 0.875rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+    }
+
     td[data-current-turn] { border: 1px double gold }
     td { inline-size: var(--ast-cell-size) }
     th, td {

@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\ASTType;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -81,6 +82,39 @@ final class AstViewTest extends WebTestCase
         self::assertResponseIsSuccessful();
         $order = $crawler->filter('tbody tr[data-empire]')->each(static fn ($node) => $node->attr('data-empire'));
         self::assertSame(['minoa', 'hatti', 'hellas'], $order);
+    }
+
+    #[Test]
+    public function astViewCaptionDisplaysBasicModeByDefault(): void
+    {
+        $client = self::createClient();
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+
+        $game = new GameSession();
+        $entityManager->persist($game);
+        $entityManager->flush();
+
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Basic mode', trim($crawler->filter('caption')->text()));
+    }
+
+    #[Test]
+    public function astViewCaptionDisplaysExpertModeForAnExpertGame(): void
+    {
+        $client = self::createClient();
+        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+
+        $game = new GameSession();
+        $game->astType = ASTType::EXPERT;
+        $entityManager->persist($game);
+        $entityManager->flush();
+
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+
+        self::assertResponseIsSuccessful();
+        self::assertSame('Expert mode', trim($crawler->filter('caption')->text()));
     }
 
     #[Test]
