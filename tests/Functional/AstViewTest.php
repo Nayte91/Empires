@@ -6,7 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
-use App\Game\ASTType;
+use App\Game\ASTVersion;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -85,7 +85,7 @@ final class AstViewTest extends WebTestCase
     }
 
     #[Test]
-    public function astViewCaptionDisplaysBasicModeByDefault(): void
+    public function astViewCaptionDisplaysBasicVersionByDefault(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -97,24 +97,24 @@ final class AstViewTest extends WebTestCase
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
-        self::assertSame('Basic mode', trim($crawler->filter('caption')->text()));
+        self::assertSame('Basic version', trim($crawler->filter('caption')->text()));
     }
 
     #[Test]
-    public function astViewCaptionDisplaysExpertModeForAnExpertGame(): void
+    public function astViewCaptionDisplaysExpertVersionForAnExpertGame(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $game = new GameSession();
-        $game->astType = ASTType::EXPERT;
+        $game->astVersion = ASTVersion::EXPERT;
         $entityManager->persist($game);
         $entityManager->flush();
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
-        self::assertSame('Expert mode', trim($crawler->filter('caption')->text()));
+        self::assertSame('Expert version', trim($crawler->filter('caption')->text()));
     }
 
     #[Test]

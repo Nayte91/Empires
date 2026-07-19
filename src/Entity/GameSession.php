@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Game\ASTType;
+use App\Game\ASTVersion;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -29,8 +29,8 @@ class GameSession
     #[ORM\Column(length: 16, nullable: true)]
     public ?string $region = 'west';
 
-    #[ORM\Column(enumType: ASTType::class)]
-    public ASTType $astType = ASTType::BASIC;
+    #[ORM\Column(enumType: ASTVersion::class)]
+    public ASTVersion $astVersion = ASTVersion::BASIC;
 
     #[ORM\Column(type: Types::SMALLINT)]
     public int $playerCount = 9;
@@ -56,9 +56,9 @@ class GameSession
      * requires a scalar and cannot hydrate a BackedEnum directly
      * (see App\Component\GameCreator).
      */
-    public function setAstTypeValue(string $astTypeValue): void
+    public function setAstVersionValue(string $astVersionValue): void
     {
-        $this->astType = ASTType::from($astTypeValue);
+        $this->astVersion = ASTVersion::from($astVersionValue);
     }
 
     public function addPlayer(Player $player): void

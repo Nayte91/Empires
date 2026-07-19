@@ -13,6 +13,6 @@
 {% block body %}
     <div class="ast-view">
         <twig:Ast :game="game" />
-        <twig:molecules:AstRequirements :eras="eras" :astType="game.astType.value" />
+        <twig:molecules:AstRequirements :eras="eras" :astVersion="game.astVersion.value" />
     </div>
 {% endblock %}

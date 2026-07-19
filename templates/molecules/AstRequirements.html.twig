@@ -1,10 +1,10 @@
-{% props eras, astType %}
+{% props eras, astVersion %}
 
 <section class="ast-requirements">
-    <h3>A.S.T. requirements ({{ astType }})</h3>
+    <h3>A.S.T. requirements ({{ astVersion }})</h3>
     <ul>
         {% for era in eras %}
-            {% set requirements = astType == 'expert' ? era.expertRequirements : era.basicRequirements %}
+            {% set requirements = astVersion == 'expert' ? era.expertRequirements : era.basicRequirements %}
             {% set parts = [] %}
             {% for key, value in requirements %}
                 {% set parts = parts|merge([(key|replace({'_': ' '})|capitalize) ~ ': ' ~ value]) %}

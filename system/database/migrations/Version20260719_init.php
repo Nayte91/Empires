@@ -16,7 +16,7 @@ final class Version20260719_init extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('CREATE TABLE game_session (id BLOB NOT NULL, slug VARCHAR(64) NOT NULL, current_turn SMALLINT NOT NULL, region VARCHAR(16) DEFAULT NULL, ast_type VARCHAR(255) NOT NULL, player_count SMALLINT NOT NULL, finished_at DATETIME DEFAULT NULL, PRIMARY KEY (id))');
+        $this->addSql('CREATE TABLE game_session (id BLOB NOT NULL, slug VARCHAR(64) NOT NULL, current_turn SMALLINT NOT NULL, region VARCHAR(16) DEFAULT NULL, ast_version VARCHAR(255) NOT NULL, player_count SMALLINT NOT NULL, finished_at DATETIME DEFAULT NULL, PRIMARY KEY (id))');
         $this->addSql('CREATE UNIQUE INDEX UNIQ_4586AAFB989D9B62 ON game_session (slug)');
         $this->addSql('CREATE TABLE player (id BLOB NOT NULL, slug VARCHAR(64) NOT NULL, empire VARCHAR(30) DEFAULT NULL, advances CLOB NOT NULL, cities SMALLINT DEFAULT 0 NOT NULL, census SMALLINT DEFAULT 1 NOT NULL, treasury SMALLINT DEFAULT 0 NOT NULL, ships SMALLINT DEFAULT 0 NOT NULL, cards SMALLINT DEFAULT 0 NOT NULL, ast_position SMALLINT DEFAULT 0 NOT NULL, name VARCHAR(50) NOT NULL, game_id BLOB NOT NULL, PRIMARY KEY (id), CONSTRAINT FK_98197A65E48FD905 FOREIGN KEY (game_id) REFERENCES game_session (id) NOT DEFERRABLE INITIALLY IMMEDIATE)');
         $this->addSql('CREATE INDEX IDX_98197A65E48FD905 ON player (game_id)');

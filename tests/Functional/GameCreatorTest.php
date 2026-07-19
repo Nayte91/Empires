@@ -6,7 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
-use App\Game\ASTType;
+use App\Game\ASTVersion;
 use App\Game\GameData;
 use App\Game\ScenarioCatalog;
 use Doctrine\ORM\EntityManagerInterface;
@@ -142,7 +142,7 @@ final class GameCreatorTest extends WebTestCase
             ->set('slug', 'Launch Game')
             ->set('playerCount', 9)
             ->set('region', 'west')
-            ->set('astType', 'expert')
+            ->set('astVersion', 'expert')
         ;
         foreach ([
             ['Alice', 'hatti'],
@@ -174,7 +174,7 @@ final class GameCreatorTest extends WebTestCase
         self::assertNotNull($game);
         self::assertSame(9, $game->playerCount);
         self::assertSame('west', $game->region);
-        self::assertSame(ASTType::EXPERT, $game->astType);
+        self::assertSame(ASTVersion::EXPERT, $game->astVersion);
 
         $players = $freshEntityManager->getRepository(Player::class)->findBy(['game' => $game->id]);
         self::assertCount(9, $players);

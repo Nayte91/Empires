@@ -2,7 +2,7 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'turn-changed', 'game-finished']})) }}
     class="ast"
 >
-    <caption>{{ game.astType.value|capitalize }} mode</caption>
+    <caption>{{ game.astVersion.value|capitalize }} version</caption>
     <colgroup>
         <col>
         {% for position in range(0, this.trackLength - 1) %}

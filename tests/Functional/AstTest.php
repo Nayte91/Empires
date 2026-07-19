@@ -129,14 +129,14 @@ final class AstTest extends WebTestCase
     }
 
     #[Test]
-    public function requirementsMoleculeListsEachEraInBasicModeWithNoRequirementsFallback(): void
+    public function requirementsMoleculeListsEachEraInBasicVersionWithNoRequirementsFallback(): void
     {
         $eras = [
             new AstEraDefinition('stone_age', 'Stone Age', 5, [], [], 0),
             new AstEraDefinition('early_bronze_age', 'Early Bronze Age', 3, ['cities' => 2, 'min_advance_cost' => 1], ['cities' => 3], 1),
         ];
 
-        $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astType' => 'basic'])->toString();
+        $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'basic'])->toString();
 
         self::assertStringContainsString('A.S.T. requirements (basic)', $rendered);
         self::assertStringContainsString('Stone Age:</strong> No requirements', $rendered);
@@ -144,13 +144,13 @@ final class AstTest extends WebTestCase
     }
 
     #[Test]
-    public function requirementsMoleculeSwitchesToExpertRequirementsWhenAstTypeIsExpert(): void
+    public function requirementsMoleculeSwitchesToExpertRequirementsWhenAstVersionIsExpert(): void
     {
         $eras = [
             new AstEraDefinition('early_bronze_age', 'Early Bronze Age', 3, ['cities' => 2], ['cities' => 3], 0),
         ];
 
-        $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astType' => 'expert'])->toString();
+        $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'expert'])->toString();
 
         self::assertStringContainsString('A.S.T. requirements (expert)', $rendered);
         self::assertStringContainsString('Early Bronze Age:</strong> Cities: 3', $rendered);

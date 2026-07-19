@@ -53,7 +53,7 @@ final class GameCreator
     public ?string $region = 'west';
 
     #[LiveProp(writable: true)]
-    public string $astType = 'basic';
+    public string $astVersion = 'basic';
 
     /** @var list<array{name: string, empire: string}> */
     #[LiveProp]
@@ -224,7 +224,7 @@ final class GameCreator
                 $game = new GameSession($this->slug);
                 $game->playerCount = $this->playerCount;
                 $game->region = $this->region;
-                $game->setAstTypeValue($this->astType);
+                $game->setAstVersionValue($this->astVersion);
 
                 $this->entityManager->persist($game);
 
