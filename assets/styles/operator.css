@@ -471,4 +471,9 @@
         font-family: monospace;
         overflow-wrap: anywhere;
     }
+
+    h2 a {
+        color: inherit;
+        text-decoration: none;
+    }
 }

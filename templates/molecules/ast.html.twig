@@ -1,4 +1,7 @@
-<table class="ast">
+<table
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'turn-changed', 'game-finished']})) }}
+    class="ast"
+>
     <colgroup>
         <col>
         {% for position in range(0, this.trackLength - 1) %}

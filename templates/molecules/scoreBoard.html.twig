@@ -1,6 +1,9 @@
-{% props rows %}
-
-<table data-players class="score-board">
+<table
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'order-validated', 'turn-changed', 'game-finished']})) }}
+    data-players
+    class="score-board"
+>
+    <caption>Turn {{ game.currentTurn }}</caption>
     <thead>
         <tr>
             <th scope="col">Name</th>
@@ -13,7 +16,7 @@
         </tr>
     </thead>
     <tbody>
-        {% for row in rows %}
+        {% for row in this.playerRows %}
             {% set player = row.player %}
             <tr>
                 <td>

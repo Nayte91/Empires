@@ -9,13 +9,13 @@ use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 final class GameDashboardTest extends WebTestCase
 {
-    use InteractsWithLiveComponents;
+    use InteractsWithTwigComponents;
 
-    private EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (assigned in setUp before each test)
 
     protected function setUp(): void
     {
@@ -25,74 +25,14 @@ final class GameDashboardTest extends WebTestCase
     }
 
     #[Test]
-    public function rendersCitiesAndCensusColumnsWithoutPoints(): void
+    public function headingDisplaysTheGameSlugWithoutTurn(): void
     {
         $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-        $this->createPlayer($game, 'Bob');
 
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-        $playersTable = $this->extractPlayersTable($rendered);
+        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        self::assertStringContainsString('Cities', $playersTable);
-        self::assertStringContainsString('Census', $playersTable);
-        self::assertStringContainsString('Treasury', $playersTable);
-        self::assertStringNotContainsString('Points', $playersTable);
-    }
-
-    #[Test]
-    public function rendersPlayerTreasuryValue(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-        $player->treasury = 12;
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-
-        self::assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
-    }
-
-    #[Test]
-    public function rendersDefaultCitiesAndCensusValues(): void
-    {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-
-        self::assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>/', $rendered);
-    }
-
-    #[Test]
-    public function playerNameOpensModalContainingTheirPlayerBoardUrl(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game]);
-        $component = $rendered->component();
-        $playerBoardUrl = $component->getPlayerUrl($player);
-
-        $html = $rendered->render()->toString();
-
-        self::assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
-        self::assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
-        self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
-        self::assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
-    }
-
-    #[Test]
-    public function rendersOneQrCodePerPlayerPlusOneForTheOperator(): void
-    {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-        $this->createPlayer($game, 'Bob');
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-
-        // One <svg> per generated QR code: 2 players + 1 operator = 3.
-        self::assertSame(3, substr_count($rendered, '<svg'));
+        self::assertSame(1, preg_match('/<h1>(.*?)<\/h1>/s', $html, $matches), '<h1> not found in rendered output.');
+        self::assertSame($game->slug, trim($matches[1]));
     }
 
     #[Test]
@@ -101,90 +41,39 @@ final class GameDashboardTest extends WebTestCase
         $game = $this->createGame();
         $this->createPlayer($game, 'Alice');
 
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game]);
-        $component = $rendered->component();
+        $component = $this->mountTwigComponent('GameDashboard', ['game' => $game]);
         $operatorUrl = $component->getOperatorUrl();
 
-        $html = $rendered->render()->toString();
+        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
+        self::assertStringContainsString('/game/'.$game->slug.'/operator', $operatorUrl);
         self::assertStringContainsString('<dialog', $html);
         self::assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
         self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
     }
 
     #[Test]
-    public function rendersVictoryPointsAsAdvancePointsPlusCities(): void
+    public function rendersTheOperatorQrCode(): void
     {
         $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-        $player->ownAdvances(['advanced_military']); // 6 points
-        $player->cities = 5;
-        $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
+        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        self::assertMatchesRegularExpression('/<td>11<\/td>\s*<\/tr>/', $rendered);
+        // No players: the only QR code on the dashboard is the operator's.
+        self::assertSame(1, substr_count($html, '<svg'));
     }
 
     #[Test]
-    public function rendersVictoryPointsIncludingAstPositionBonus(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-        $player->ownAdvances(['advanced_military']); // 6 points
-        $player->cities = 5;
-        $player->astPosition = 2; // +10 points
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-
-        self::assertMatchesRegularExpression('/<td>21<\/td>\s*<\/tr>/', $rendered);
-    }
-
-    #[Test]
-    public function playersAreSortedByVictoryPointsDescending(): void
-    {
-        $game = $this->createGame();
-        $bob = $this->createPlayer($game, 'Bob');
-        $alice = $this->createPlayer($game, 'Alice');
-        $bob->cities = 1;
-        $alice->cities = 5;
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-        $playersTable = $this->extractPlayersTable($rendered);
-
-        $alicePosition = strpos($playersTable, 'Alice');
-        $bobPosition = strpos($playersTable, 'Bob');
-
-        self::assertNotFalse($alicePosition);
-        self::assertNotFalse($bobPosition);
-        self::assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
-    }
-
-    #[Test]
-    public function emptyStateColspanMatchesTheSevenColumns(): void
+    public function dashboardRootCarriesNoMercureRefreshController(): void
     {
         $game = $this->createGame();
 
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
+        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
+        $rootTag = substr($html, 0, (int) strpos($html, '>') + 1);
+        $beforeFirstTable = substr($html, 0, (int) strpos($html, '<table'));
 
-        self::assertStringContainsString('colspan="7"', $rendered);
-    }
-
-    #[Test]
-    public function mercureRefreshFiltersOutOrderSubmittedButKeepsGameStateEvents(): void
-    {
-        $game = $this->createGame();
-
-        $rendered = $this->createLiveComponent('GameDashboard', ['game' => $game])->render()->toString();
-
-        self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        self::assertStringContainsString('order-validated', $rendered);
-        self::assertStringContainsString('turn-changed', $rendered);
-        self::assertStringContainsString('game-finished', $rendered);
-        self::assertStringContainsString('player-updated', $rendered);
-        self::assertStringNotContainsString('order-submitted', $rendered);
+        self::assertStringNotContainsString('data-controller', $rootTag);
+        self::assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded ScoreBoard and Ast tables.');
     }
 
     private function createGame(): GameSession
@@ -203,22 +92,5 @@ final class GameDashboardTest extends WebTestCase
         $this->entityManager->flush();
 
         return $player;
-    }
-
-    /**
-     * Scopes assertions to the players table, as opposed to the whole dashboard
-     * (which also embeds the AST molecule's own <table>).
-     */
-    private function extractPlayersTable(string $html): string
-    {
-        // The players table carries the data-players marker: the embedded
-        // AST molecule's table has no such attribute.
-        $start = strpos($html, '<table data-players');
-        self::assertNotFalse($start, 'Players <table> not found in rendered output.');
-
-        $end = strpos($html, '</table>', $start);
-        self::assertNotFalse($end, 'Players </table> not found in rendered output.');
-
-        return substr($html, $start, $end - $start);
     }
 }

@@ -1,11 +1,8 @@
-<div
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['order-validated', 'turn-changed', 'game-finished', 'player-updated']})) }}
-    class="game-dashboard"
->
+<div class="game-dashboard">
     {% set operatorUrl = this.operatorUrl %}
     {% set operatorQr = this.operatorQr %}
 
-    <h1>Game — turn {{ game.currentTurn }}</h1>
+    <h1>{{ game.slug }}</h1>
 
     <p class="game-dashboard__operator-link">
         <twig:molecules:Modal class="game-dashboard__name-modal">
@@ -21,8 +18,9 @@
         </twig:molecules:Modal>
     </p>
 
-    <twig:Ast :game="game" />
-    <twig:molecules:AstRequirements :eras="this.astEras" :astType="game.astType.value" />
+    <h2>Scoreboard</h2>
+    <twig:ScoreBoard :game="game" />
 
-    <twig:molecules:ScoreBoard :rows="this.playerRows" />
+    <h2><a href="{{ path('app_game_ast', {slug: game.slug}) }}">A.S.T.</a></h2>
+    <twig:Ast :game="game" />
 </div>

@@ -1,6 +1,7 @@
 import { Controller } from '@hotwired/stimulus';
 import { getComponent } from '@symfony/ux-live-component';
 
+// REFACTOR-WHEN: 4+ mercure-refresh instances on one page → share a single multi-topic EventSource
 export default class extends Controller {
     static values = {
         topic: String,
