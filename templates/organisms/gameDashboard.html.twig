@@ -25,4 +25,5 @@
     <twig:Ast :game="game" />
 
     <h2><a href="{{ path('app_game_census', {slug: game.slug}) }}">Census</a></h2>
+    <twig:CensusView :game="game" />
 </div>

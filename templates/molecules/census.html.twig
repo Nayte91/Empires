@@ -1,16 +1,13 @@
 <div
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['order-validated', 'turn-changed', 'game-finished', 'player-updated']})) }}
-    class="census-view"
+    class="census"
 >
     {% if this.orderedPlayers is not empty %}
-        <ol class="census-view__order">
+        <ol class="census__order">
             {% for player in this.orderedPlayers %}
                 <li data-empire="{{ player.empire }}" style="--player-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)">
                     <b>{{ player.empire|capitalize }}</b> ({{ player.name }})
                     <data value="{{ player.census }}">{{ player.census }}</data>
-                    {% if this.isMilitary(player) %}
-                        <span title="Military" class="census-view__military">⚔</span>
-                    {% endif %}
                 </li>
             {% endfor %}
         </ol>

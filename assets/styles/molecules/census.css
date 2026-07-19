@@ -1,0 +1,15 @@
+.census__order {
+    display: grid;
+    gap: 0.75rem;
+    padding-inline-start: 2ch;
+}
+
+.census__order li {
+    border-inline-start: 0.375rem solid var(--player-color, dimgray);
+    padding-inline-start: 0.75rem;
+}
+
+.census__military {
+    opacity: 0.75;
+    margin-inline-start: 0.5rem;
+}

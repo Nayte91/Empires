@@ -15,7 +15,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * Read-only display of the movement-phase play order: no writable prop, no action.
  * Re-rendered by a Mercure ping whenever the operator console changes the game.
  */
-#[AsLiveComponent(template: 'organisms/censusView.html.twig')]
+#[AsLiveComponent(template: 'molecules/census.html.twig')]
 final class CensusView
 {
     use DefaultActionTrait;

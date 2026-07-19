@@ -4,9 +4,12 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/molecules/census.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/gameCensus.css') }}">
 {% endblock %}
 
 {% block body %}
-    <twig:CensusView :game="game" />
+    <div class="census-view">
+        <twig:CensusView :game="game" />
+    </div>
 {% endblock %}
