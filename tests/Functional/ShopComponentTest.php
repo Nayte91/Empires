@@ -154,7 +154,7 @@ final class ShopComponentTest extends WebTestCase
         // the assertResponse*/assertSelector* helpers, exactly what createClient()
         // does under the hood.
         $client = self::getClient(self::getContainer()->get('test.client'));
-        $client->request('GET', '/game/'.$player->game->slug.'/player/'.$player->slug.'/shop');
+        $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug.'/shop');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('[data-controller~="live"]');

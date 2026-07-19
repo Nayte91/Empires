@@ -29,6 +29,20 @@ final class GameCreator
 {
     use DefaultActionTrait;
 
+    /**
+     * Governance rule: every first-level static path (e.g. /rules, /stats)
+     * must be added here BEFORE its route is created, and checked against
+     * existing game slugs in the database — otherwise it either shadows, or
+     * is shadowed by, the /{slug} wildcard (GameController::dashboard()).
+     *
+     * Slugs colliding with a static route declared before the /{slug}
+     * wildcard (e.g. app_game_create at /create), which would make the
+     * resulting game's dashboard unreachable.
+     *
+     * @var list<string>
+     */
+    private const array RESERVED_SLUGS = ['create'];
+
     #[LiveProp(writable: true, onUpdated: 'onSlugUpdated')]
     public string $slug = '';
 
@@ -75,7 +89,7 @@ final class GameCreator
 
     public function isSlugAvailable(): bool
     {
-        if ('' === $this->slug) {
+        if ('' === $this->slug || \in_array($this->slug, self::RESERVED_SLUGS, true)) {
             return false;
         }
 
@@ -189,6 +203,12 @@ final class GameCreator
     {
         if ([] !== $issues = $this->getConformityIssues()) {
             $this->error = implode(' ', $issues);
+
+            return null;
+        }
+
+        if (\in_array($this->slug, self::RESERVED_SLUGS, true)) {
+            $this->error = 'This name is reserved.';
 
             return null;
         }

@@ -15,19 +15,19 @@ final class GameController extends AbstractController
 {
     public function __construct(private readonly AstCatalog $astCatalog) {}
 
-    #[Route('/game/create', name: 'app_game_create', methods: ['GET'])]
+    #[Route('/create', name: 'app_game_create', methods: ['GET'], priority: 10)]
     public function create(): Response
     {
         return $this->render('skeletons/gameCreate.html.twig');
     }
 
-    #[Route('/game/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    #[Route('/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function dashboard(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
     {
         return $this->render('skeletons/gameDashboard.html.twig', ['game' => $game]);
     }
 
-    #[Route('/game/{slug}/ast', name: 'app_game_ast', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    #[Route('/{slug}/ast', name: 'app_game_ast', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function ast(
         #[MapEntity(mapping: ['slug' => 'slug'])]
         GameSession $game,
@@ -38,13 +38,13 @@ final class GameController extends AbstractController
         ]);
     }
 
-    #[Route('/game/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    #[Route('/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function census(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
     {
         return $this->render('skeletons/gameCensus.html.twig', ['game' => $game]);
     }
 
-    #[Route('/game/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
+    #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
     {
         return $this->render('skeletons/gameOperator.html.twig', ['game' => $game]);

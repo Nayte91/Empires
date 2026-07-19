@@ -30,7 +30,7 @@ final class PlayerBoardTest extends WebTestCase
         $player = $this->createPlayer();
 
         $client = self::getClient(self::getContainer()->get('test.client'));
-        $client->request('GET', '/game/'.$player->game->slug.'/player/'.$player->slug);
+        $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug);
 
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('[data-controller~="live"]');
@@ -45,7 +45,7 @@ final class PlayerBoardTest extends WebTestCase
         $player = $this->createPlayer();
 
         $client = self::getClient(self::getContainer()->get('test.client'));
-        $client->request('GET', '/game/'.$player->game->slug.'/player/does-not-exist');
+        $client->request('GET', '/'.$player->game->slug.'/player/does-not-exist');
 
         self::assertResponseStatusCodeSame(404);
     }
@@ -246,15 +246,15 @@ final class PlayerBoardTest extends WebTestCase
 
         $client = self::getClient(self::getContainer()->get('test.client'));
 
-        $client->request('GET', '/game/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug);
+        $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug);
         $boardContent = (string) $client->getResponse()->getContent();
         self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', $boardContent);
         self::assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
 
-        $client->request('GET', '/game/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
+        $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
         self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', (string) $client->getResponse()->getContent());
 
-        $client->request('GET', '/game/'.$withoutEmpire->game->slug.'/player/'.$withoutEmpire->slug);
+        $client->request('GET', '/'.$withoutEmpire->game->slug.'/player/'.$withoutEmpire->slug);
         self::assertStringNotContainsString('background-color', (string) $client->getResponse()->getContent());
     }
 

@@ -16,7 +16,7 @@ final class PlayerController extends AbstractController
         private readonly PlayerRepository $playerRepository,
     ) {}
 
-    #[Route('/game/{gameSlug}/player/{playerSlug}', name: 'app_player_board', methods: ['GET'])]
+    #[Route('/{gameSlug}/player/{playerSlug}', name: 'app_player_board', requirements: ['gameSlug' => '[a-z0-9-]+', 'playerSlug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function board(string $gameSlug, string $playerSlug): Response
     {
         $player = $this->findPlayer($gameSlug, $playerSlug);
@@ -26,7 +26,7 @@ final class PlayerController extends AbstractController
         ]);
     }
 
-    #[Route('/game/{gameSlug}/player/{playerSlug}/shop', name: 'app_player_shop', methods: ['GET'])]
+    #[Route('/{gameSlug}/player/{playerSlug}/shop', name: 'app_player_shop', requirements: ['gameSlug' => '[a-z0-9-]+', 'playerSlug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function shop(string $gameSlug, string $playerSlug): Response
     {
         $player = $this->findPlayer($gameSlug, $playerSlug);

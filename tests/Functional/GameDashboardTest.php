@@ -46,7 +46,7 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        self::assertStringContainsString('/game/'.$game->slug.'/operator', $operatorUrl);
+        self::assertStringContainsString('/'.$game->slug.'/operator', $operatorUrl);
         self::assertStringContainsString('<dialog', $html);
         self::assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
         self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);

@@ -39,7 +39,7 @@ final class HomePageTest extends WebTestCase
         self::assertResponseIsSuccessful();
         self::assertStringContainsString('in-progress-game', $crawler->text());
         self::assertStringNotContainsString('finished-game', $crawler->text());
-        self::assertCount(1, $crawler->filter('a[href="/game/in-progress-game"]'));
+        self::assertCount(1, $crawler->filter('a[href="/in-progress-game"]'));
     }
 
     #[Test]

@@ -24,7 +24,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
     }
@@ -39,7 +39,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
         self::assertGreaterThan(0, $crawler->filter('table')->count(), 'AST table should be present');
@@ -55,7 +55,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
         self::assertGreaterThan(0, $crawler->filter('section h3')->count(), 'Requirements section header should be present');
@@ -77,7 +77,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
         $order = $crawler->filter('tbody tr[data-empire]')->each(static fn ($node) => $node->attr('data-empire'));
@@ -94,7 +94,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
         self::assertSame('Basic mode', trim($crawler->filter('caption')->text()));
@@ -111,7 +111,7 @@ final class AstViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/ast');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         self::assertResponseIsSuccessful();
         self::assertSame('Expert mode', trim($crawler->filter('caption')->text()));
@@ -121,7 +121,7 @@ final class AstViewTest extends WebTestCase
     public function unknownGameSlugReturnsNotFound(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/game/does-not-exist/ast');
+        $client->request(Request::METHOD_GET, '/does-not-exist/ast');
 
         self::assertResponseStatusCodeSame(404);
     }

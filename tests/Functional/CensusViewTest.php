@@ -23,7 +23,7 @@ final class CensusViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/census');
+        $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
         self::assertResponseIsSuccessful();
     }
@@ -48,7 +48,7 @@ final class CensusViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/census');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
         self::assertResponseIsSuccessful();
         $order = $crawler->filter('ol li')->each(static fn ($node) => $node->attr('data-empire'));
@@ -72,7 +72,7 @@ final class CensusViewTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.'/census');
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
         self::assertResponseIsSuccessful();
         $militaryRow = $crawler->filter('ol li[data-empire="minoa"]');
@@ -87,7 +87,7 @@ final class CensusViewTest extends WebTestCase
     public function unknownGameSlugReturnsNotFound(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/game/does-not-exist/census');
+        $client->request(Request::METHOD_GET, '/does-not-exist/census');
 
         self::assertResponseStatusCodeSame(404);
     }

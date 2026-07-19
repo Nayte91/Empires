@@ -166,7 +166,7 @@ final class GameCreatorTest extends WebTestCase
 
         $response = $component->response();
         self::assertSame(302, $response->getStatusCode());
-        self::assertStringContainsString('/game/launch-game/operator', (string) $response->headers->get('Location'));
+        self::assertStringContainsString('/launch-game/operator', (string) $response->headers->get('Location'));
 
         $freshEntityManager = $this->freshEntityManager();
         $game = $freshEntityManager->getRepository(GameSession::class)->findOneBy(['slug' => 'launch-game']);
@@ -214,6 +214,32 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->call('launch')->render();
 
         self::assertStringContainsString('is not available', $rendered->toString());
+
+        $freshEntityManager = $this->freshEntityManager();
+        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+    }
+
+    #[Test]
+    public function launchWithTheReservedCreateSlugDisplaysAnErrorAndCreatesNothing(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
+
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('slug', 'create')
+            ->set('playerCount', 3)
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component
+                ->set('newPlayerName', $name)
+                ->set('newPlayerEmpire', $empire)
+            ;
+            $component->call('addPlayer');
+        }
+
+        $rendered = $component->call('launch')->render();
+
+        self::assertStringContainsString('This name is reserved.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
         self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));

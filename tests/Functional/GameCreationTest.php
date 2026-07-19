@@ -25,7 +25,7 @@ final class GameCreationTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $client->request('GET', '/game/'.$game->slug);
+        $client->request('GET', '/'.$game->slug);
 
         self::assertResponseIsSuccessful();
     }
@@ -53,7 +53,7 @@ final class GameCreationTest extends WebTestCase
         $link = $rendered->crawler()->filter('a[href*="'.$player->slug.'"]')->link();
         self::assertStringContainsString($player->slug, $link->getUri());
 
-        $client->request('GET', '/game/'.$game->slug.'/player/'.$player->slug.'/shop');
+        $client->request('GET', '/'.$game->slug.'/player/'.$player->slug.'/shop');
         self::assertResponseIsSuccessful();
     }
 
@@ -61,7 +61,7 @@ final class GameCreationTest extends WebTestCase
     public function unknownGameSlugReturnsNotFound(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/game/does-not-exist');
+        $client->request('GET', '/does-not-exist');
 
         self::assertResponseStatusCodeSame(404);
     }
