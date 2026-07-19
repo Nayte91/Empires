@@ -7,6 +7,7 @@ namespace App\Component;
 use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
+use App\Game\EmpireCatalog;
 use App\Game\Service\ScoreCalculator;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
@@ -34,6 +35,7 @@ final class ScoreBoard
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly AdvanceCatalog $advanceCatalog,
         private readonly ScoreCalculator $scoreCalculator,
+        private readonly EmpireCatalog $empireCatalog,
     ) {}
 
     public function getPlayerUrl(Player $player): string
@@ -74,6 +76,11 @@ final class ScoreBoard
             $player,
             array_values($this->advanceCatalog->getAdvancesByNames($player->advances)),
         );
+    }
+
+    public function empireAdjective(Player $player): ?string
+    {
+        return null === $player->empire ? null : $this->empireCatalog->findByName($player->empire)?->adjective;
     }
 
     private function buildQr(string $url): string

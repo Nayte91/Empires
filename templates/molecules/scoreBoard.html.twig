@@ -34,14 +34,14 @@
                         </twig:block>
                     </twig:molecules:Modal>
                 </td>
-                <td>{{ player.empire ?? '—' }}</td>
+                <td style="color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)">{{ this.empireAdjective(player) ?? '—' }}</td>
                 <td>{{ player.treasury }}</td>
                 <td>{{ player.census }}</td>
                 <td>{{ player.ships }}</td>
-                <td>{{ player.cities }}</td>
+                <td{{ player.cities > 0 ? ' data-scored' : '' }}>{{ player.cities }}</td>
                 <td>{{ player.cards }}</td>
-                <td>{{ player.advances|length }}</td>
-                <td>{{ row.victoryPoints }}</td>
+                <td{{ player.advances|length > 0 ? ' data-scored' : '' }}>{{ player.advances|length }}</td>
+                <td{{ row.victoryPoints > 0 ? ' data-scored' : '' }}>{{ row.victoryPoints }}</td>
             </tr>
         {% else %}
             <tr>

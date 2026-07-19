@@ -17,6 +17,10 @@
         text-align: start;
     }
 
+    & td[data-scored] {
+        color: goldenrod;
+    }
+
     th {
         border-block-end-width: 2px;
         color: darkgray;

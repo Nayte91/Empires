@@ -9,6 +9,7 @@ use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class ScoreBoardTest extends WebTestCase
@@ -50,6 +51,32 @@ final class ScoreBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
         self::assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
+    }
+
+    #[Test]
+    public function empireCellDisplaysTheEmpireAdjectiveInLowercase(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Alice');
+        $player->empire = 'minoa';
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $crawler = new Crawler($rendered);
+
+        self::assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+    }
+
+    #[Test]
+    public function empireCellDisplaysADashWhenPlayerHasNoEmpire(): void
+    {
+        $game = $this->createGame();
+        $this->createPlayer($game, 'Alice');
+
+        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $crawler = new Crawler($rendered);
+
+        self::assertSame('—', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
     }
 
     #[Test]
@@ -105,7 +132,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/<td>11<\/td>\s*<\/tr>/', $rendered);
+        self::assertMatchesRegularExpression('/<td data-scored>11<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -120,7 +147,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/<td>21<\/td>\s*<\/tr>/', $rendered);
+        self::assertMatchesRegularExpression('/<td data-scored>21<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -141,6 +168,23 @@ final class ScoreBoardTest extends WebTestCase
         self::assertNotFalse($alicePosition);
         self::assertNotFalse($bobPosition);
         self::assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
+    }
+
+    #[Test]
+    public function scoredCitiesAndVictoryPointsAreMarkedButZeroAdvancesIsNot(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Alice');
+        $player->cities = 3;
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $crawler = new Crawler($rendered);
+        $row = $crawler->filter('tbody tr');
+
+        self::assertNotNull($row->filter('td:nth-of-type(6)')->attr('data-scored'), 'Cities cell should be marked as scored.');
+        self::assertNull($row->filter('td:nth-of-type(8)')->attr('data-scored'), 'Advances cell should not be marked as scored when it is zero.');
+        self::assertNotNull($row->filter('td:nth-of-type(9)')->attr('data-scored'), 'Victory points cell should be marked as scored.');
     }
 
     #[Test]
