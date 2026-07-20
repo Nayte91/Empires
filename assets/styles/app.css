@@ -1,4 +1,29 @@
+:root {
+    --operator-border: gainsboro;
+    --operator-bg-subtle: whitesmoke;
+    --operator-text-muted: dimgray;
+    --operator-accent: steelblue;
+    --operator-error: crimson;
+    --operator-error-bg: color-mix(in oklab, crimson 10%, white);
+    --operator-success: seagreen;
+    --operator-success-bg: color-mix(in oklab, seagreen 10%, white);
+    --operator-warning: chocolate;
+    --operator-warning-bg: color-mix(in oklab, chocolate 10%, white);
+    --operator-radius: 0.375rem;
+    --operator-gap: 1.5rem;
+}
+
+/* Zero-specificity default: any component rule on the same properties opts out
+   without fighting the cascade (e.g. the POS dialog's h2). */
+:where(h1, h2) {
+    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', P052, serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 600;
+}
+
 body {
     margin: 0;
+    padding: 0;
     background-color: #aaa;
 }

@@ -1,38 +1,30 @@
-{# Product Card Molecule Template #}
+{% set cat1 = product.advance.categories[0] %}
+{% set cat2 = product.advance.categories[1] ?? cat1 %}
 <article
     id="product-{{ product.advance.key }}"
     class="product-card{{ product.owned ? ' product-card--owned' }}{{ product.inCart ? ' product-card--in-cart' }}"
+    style="--cat-1: var(--advance-{{ cat1 }}); --cat-2: var(--advance-{{ cat2 }})"
     {{ product.owned ? 'data-owned' }}
     {{ product.inCart ? 'data-in-cart' }}
 >
     {% if product.advance.fileName %}
-        <div class="product-card__image">
+        <header>
             <img src="{{ product.advance.fileName }}" alt="{{ product.advance.name }} card" loading="lazy">
-        </div>
+        </header>
     {% endif %}
 
-    <header class="product-card__header">
-        <h3 class="product-card__title">{{ product.advance.name|capitalize }}</h3>
+    <main>
+        <h3>{{ product.advance.name|capitalize }}</h3>
 
-        <div class="product-card__categories">
-            {% for category in product.advance.categories %}
-                <span class="product-card__badge product-card__badge--category">{{ category|capitalize }}</span>
-            {% endfor %}
-        </div>
-    </header>
-
-    {% if product.owned %}
-        <span class="product-card__badge product-card__badge--owned">Owned</span>
-    {% endif %}
-
-    {% if not readonly|default(false) %}
         <div class="product-card__price">
             {% if product.netCost < product.advance.cost %}
-                <span class="product-card__price-original">{{ product.advance.cost }}</span>
+                <small class="product-card__price-original">{{ product.advance.cost }}</small>
             {% endif %}
-            <span class="product-card__price-net" data-price-net>{{ product.netCost }}</span>
+            <b data-price-net>{{ product.netCost }}</b>
         </div>
+    </main>
 
+    {% if not readonly|default(false) %}
         <button
             type="button"
             {{ live_action(action|default('addToCart'), {key: product.advance.key}) }}
@@ -40,7 +32,7 @@
             data-loading="addAttribute(disabled)"
             class="product-card__add"
         >
-            {{ product.inCart ? 'In cart' : (product.owned ? 'Owned' : 'Add') }}
+            <span class="sr-only">Add {{ product.advance.name|capitalize }}</span>
         </button>
     {% endif %}
 </article>

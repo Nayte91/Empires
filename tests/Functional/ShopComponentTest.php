@@ -37,6 +37,18 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
+    public function ownedAdvancesAreExcludedFromTheKioskGrid(): void
+    {
+        $player = $this->createPlayer();
+        $player->ownAdvances(['pottery']);
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+
+        self::assertStringNotContainsString('id="product-pottery"', $rendered);
+    }
+
+    #[Test]
     public function addToCartMarksTheProductInCartAndUpdatesTheTotal(): void
     {
         $player = $this->createPlayer();
@@ -49,6 +61,31 @@ final class ShopComponentTest extends WebTestCase
         self::assertStringContainsString('id="product-pottery"', $rendered);
         self::assertStringContainsString('data-in-cart', $rendered);
         self::assertStringContainsString('Total: 60', $rendered);
+    }
+
+    #[Test]
+    public function theProductCardButtonIsAFullCardOverlayWithAnAccessibleAddLabel(): void
+    {
+        $player = $this->createPlayer();
+
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+        $card = $this->extractProductCard($rendered, 'pottery');
+
+        self::assertStringContainsString('<span class="sr-only">Add Pottery</span>', $card);
+        self::assertStringNotContainsString('>Add<', $card);
+    }
+
+    #[Test]
+    public function addingToCartDisablesTheOverlayButtonAndMarksTheCardInCart(): void
+    {
+        $player = $this->createPlayer();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $component->call('addToCart', ['key' => 'pottery']);
+        $card = $this->extractProductCard($component->render()->toString(), 'pottery');
+
+        self::assertStringContainsString('data-in-cart', $card);
+        self::assertMatchesRegularExpression('/<button[^>]*\bdisabled\b/', $card);
     }
 
     #[Test]
@@ -94,11 +131,28 @@ final class ShopComponentTest extends WebTestCase
         self::assertSame(['pottery'], $order->lines);
 
         $rendered = $component->render()->toString();
-        self::assertStringContainsString('Your cart is empty.', $rendered);
+        self::assertStringNotContainsString('Your cart', $rendered);
+        self::assertStringContainsString('Order pending for this turn.', $rendered);
+        self::assertStringContainsString('Pottery', $rendered);
+        self::assertStringContainsString('Modify', $rendered);
     }
 
     #[Test]
-    public function editPendingOrderReloadsItsLinesIntoTheCart(): void
+    public function pendingOrderHidesTheCartAndShowsTheOrderBlockWithModify(): void
+    {
+        $player = $this->createPlayer();
+        $this->createPendingOrder($player, 'pottery');
+
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+
+        self::assertStringNotContainsString('Your cart', $rendered);
+        self::assertStringContainsString('Order pending for this turn.', $rendered);
+        self::assertStringContainsString('Pottery', $rendered);
+        self::assertStringContainsString('Modify', $rendered);
+    }
+
+    #[Test]
+    public function editPendingOrderReloadsItsLinesIntoTheCartAndHidesTheOrderBlock(): void
     {
         $player = $this->createPlayer();
         $order = $this->createPendingOrder($player, 'pottery', 'agriculture');
@@ -108,8 +162,10 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
+        self::assertStringContainsString('Your cart', $rendered);
         self::assertStringContainsString('data-in-cart', $rendered);
         self::assertSame(2, substr_count($rendered, 'data-live-action-param="removeFromCart"'));
+        self::assertStringNotContainsString('Modify', $rendered);
         self::assertNotNull($order->id);
     }
 
@@ -118,7 +174,7 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = $this->createPlayer();
         $order = $this->createPendingOrder($player, 'pottery');
-        $order->validate([['key' => 'pottery', 'netCost' => 60]], 60, 60);
+        $order->validate([['key' => 'pottery', 'netCost' => 60]], 60);
         $this->entityManager->flush();
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
@@ -128,19 +184,37 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
         self::assertStringNotContainsString('data-in-cart', $rendered);
+        self::assertStringNotContainsString('Your cart', $rendered);
+        self::assertStringNotContainsString('Modify', $rendered);
         self::assertStringContainsString('Order validated for this turn.', $rendered);
+        self::assertStringContainsString('Pottery', $rendered);
     }
 
     #[Test]
-    public function mercureRefreshFiltersToTurnChangedAndOrderValidated(): void
+    public function validatedOrderShowsFrozenPricesRatherThanRecomputedOnes(): void
+    {
+        $player = $this->createPlayer();
+        $order = $this->createPendingOrder($player, 'pottery');
+        $order->validate([['key' => 'pottery', 'netCost' => 999]], 999);
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+
+        self::assertStringContainsString('999', $rendered);
+        self::assertStringNotContainsString('Modify', $rendered);
+        self::assertStringNotContainsString('Your cart', $rendered);
+    }
+
+    #[Test]
+    public function mercureRefreshFiltersToGameUpdatedAndOrderUpdated(): void
     {
         $player = $this->createPlayer();
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
         self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        self::assertStringContainsString('turn-changed', $rendered);
-        self::assertStringContainsString('order-validated', $rendered);
+        self::assertStringContainsString('game-updated', $rendered);
+        self::assertStringContainsString('order-updated', $rendered);
     }
 
     #[Test]
@@ -195,5 +269,23 @@ final class ShopComponentTest extends WebTestCase
         // InteractsWithLiveComponents' TestLiveComponent exposes the underlying
         // component instance via getComponent() to inspect non-rendered state.
         return $component->component();
+    }
+
+    /**
+     * Scopes assertions to a single product's <article>, as opposed to the
+     * whole shop grid (which renders every other product's markup too).
+     */
+    private function extractProductCard(string $html, string $key): string
+    {
+        $idPosition = strpos($html, 'id="product-'.$key.'"');
+        self::assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
+
+        $start = strrpos(substr($html, 0, $idPosition), '<article');
+        self::assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
+
+        $end = strpos($html, '</article>', $start);
+        self::assertNotFalse($end, '</article> not found in rendered output.');
+
+        return substr($html, $start, $end - $start);
     }
 }

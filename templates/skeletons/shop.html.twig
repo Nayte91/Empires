@@ -6,9 +6,10 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/operator.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/shop.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/productCard.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
 {% endblock %}
 
 {% block body %}

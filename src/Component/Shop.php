@@ -128,15 +128,17 @@ final class Shop
         $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->player->advances);
         $cart = $this->getCart();
 
-        $this->products = array_map(
-            fn (Advance $advance): Product => new Product(
-                advance: $advance,
-                netCost: $this->priceCalculator->netCost($advance, $ownedAdvances),
-                owned: \in_array($advance->key, $this->player->advances, true),
-                inCart: $cart->has($advance->key),
-            ),
+        $this->products = array_values(array_filter(array_map(
+            fn (Advance $advance): ?Product => \in_array($advance->key, $this->player->advances, true)
+                ? null
+                : new Product(
+                    advance: $advance,
+                    netCost: $this->priceCalculator->netCost($advance, $ownedAdvances),
+                    owned: false,
+                    inCart: $cart->has($advance->key),
+                ),
             $this->advanceCatalog->getAdvances(),
-        );
+        )));
 
         return $this->products;
     }
@@ -163,12 +165,16 @@ final class Shop
     }
 
     /** @return list<Product> */
-    public function getPendingOrderLines(): array
+    public function getOrderLines(): array
     {
-        $order = $this->getPendingOrder();
+        $order = $this->getCurrentTurnOrder();
 
         if (!$order instanceof Order) {
             return [];
+        }
+
+        if (OrderStatus::Validated === $order->status) {
+            return $this->getValidatedOrderLines($order);
         }
 
         /** @var list<string> $keys */
@@ -177,17 +183,35 @@ final class Shop
         return Product::filterByKeys($this->getProducts(), $keys);
     }
 
-    public function getPendingOrderTotal(): int
+    public function getOrderTotal(): int
     {
+        $order = $this->getCurrentTurnOrder();
+
+        if ($order instanceof Order && OrderStatus::Validated === $order->status) {
+            return $order->total ?? 0;
+        }
+
         return array_sum(array_map(
             static fn (Product $product): int => $product->netCost,
-            $this->getPendingOrderLines(),
+            $this->getOrderLines(),
         ));
     }
 
     public function isLockedForTurn(): bool
     {
         return OrderStatus::Validated === $this->getCurrentTurnOrder()?->status;
+    }
+
+    /** Cart is shown when there is no order for this turn, or while editing one (non-empty cart). */
+    public function isCartVisible(): bool
+    {
+        return !$this->getCurrentTurnOrder() instanceof Order || [] !== $this->getCartLines();
+    }
+
+    /** Order block is shown whenever an order exists and it isn't currently being edited in the cart. */
+    public function isOrderVisible(): bool
+    {
+        return $this->getCurrentTurnOrder() instanceof Order && !$this->isCartVisible();
     }
 
     private function getCurrentTurnOrder(): ?Order
@@ -206,5 +230,23 @@ final class Shop
     private function getCart(): Cart
     {
         return $this->cartRepository->findOrCreate($this->player->id);
+    }
+
+    /** @return list<Product> */
+    private function getValidatedOrderLines(Order $order): array
+    {
+        /** @var list<array{key: string, netCost: int}> $frozenLines */
+        $frozenLines = $order->lines;
+
+        return array_values(array_filter(array_map(
+            function (array $line): ?Product {
+                $advance = $this->advanceCatalog->getAdvanceByName($line['key']);
+
+                return $advance instanceof Advance
+                    ? new Product(advance: $advance, netCost: $line['netCost'], owned: true, inCart: false)
+                    : null;
+            },
+            $frozenLines,
+        )));
     }
 }
