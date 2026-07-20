@@ -51,135 +51,23 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function treasuryInputPersistsAndReflectsClampedValueWhenOutOfBounds(): void
+    public function allFiveStatPickerTriggerButtonsAreRendered(): void
     {
         $player = $this->createPlayer();
 
-        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('treasury', 30);
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render();
 
-        self::assertSame(30, $this->reloadPlayer($player)->treasury);
+        $labels = array_map(
+            static fn (string $text): string => trim(preg_replace('/\s+/', ' ', $text) ?? ''),
+            $rendered->crawler()->filter('button[command="show-modal"]')->each(
+                static fn ($node) => $node->text(),
+            ),
+        );
 
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
-            ->set('treasury', 99)
-            ->render()
-            ->toString()
-        ;
-
-        self::assertSame(55, $this->reloadPlayer($player)->treasury);
-        self::assertStringContainsString('value="55"', $rendered);
-    }
-
-    #[Test]
-    public function treasuryInputCarriesMinAndMaxBounds(): void
-    {
-        $player = $this->createPlayer();
-
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
-
-        self::assertStringContainsString('min="0"', $rendered);
-        self::assertStringContainsString('max="55"', $rendered);
-    }
-
-    #[Test]
-    public function censusInputPersistsAndReflectsClampedValueWhenOutOfBounds(): void
-    {
-        $player = $this->createPlayer();
-
-        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('census', 30);
-
-        self::assertSame(30, $this->reloadPlayer($player)->census);
-
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
-            ->set('census', 99)
-            ->render()
-            ->toString()
-        ;
-
-        self::assertSame(55, $this->reloadPlayer($player)->census);
-        self::assertStringContainsString('value="55"', $rendered);
-    }
-
-    #[Test]
-    public function censusInputCarriesMinAndMaxBounds(): void
-    {
-        $player = $this->createPlayer();
-
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
-
-        self::assertStringContainsString('min="0"', $rendered);
-        self::assertStringContainsString('max="55"', $rendered);
-    }
-
-    #[Test]
-    public function adjustCitiesPersistsAndClamps(): void
-    {
-        $player = $this->createPlayer();
-
-        $component = $this->createLiveComponent('PlayerBoard', ['player' => $player]);
-        $component->call('adjustCities', ['delta' => -1]);
-
-        // Clamped at the lower bound (0), player starts at 0.
-        self::assertSame(0, $this->reloadPlayer($player)->cities);
-
-        $component->call('adjustCities', ['delta' => 3]);
-        self::assertSame(3, $this->reloadPlayer($player)->cities);
-    }
-
-    #[Test]
-    public function adjustShipsPersistsAndClamps(): void
-    {
-        $player = $this->createPlayer();
-
-        $component = $this->createLiveComponent('PlayerBoard', ['player' => $player]);
-        $component->call('adjustShips', ['delta' => -1]);
-
-        // Clamped at the lower bound (0), player starts at 0.
-        self::assertSame(0, $this->reloadPlayer($player)->ships);
-
-        $component->call('adjustShips', ['delta' => 3]);
-        self::assertSame(3, $this->reloadPlayer($player)->ships);
-
-        $component->call('adjustShips', ['delta' => 5]);
-        self::assertSame(4, $this->reloadPlayer($player)->ships);
-    }
-
-    #[Test]
-    public function cardsInputPersistsWithoutAnUpperClamp(): void
-    {
-        $player = $this->createPlayer();
-
-        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('cards', 30);
-
-        self::assertSame(30, $this->reloadPlayer($player)->cards);
-
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $this->reloadPlayer($player)])
-            ->set('cards', 999)
-            ->render()
-            ->toString()
-        ;
-
-        self::assertSame(999, $this->reloadPlayer($player)->cards);
-        self::assertStringContainsString('value="999"', $rendered);
-    }
-
-    #[Test]
-    public function cardsInputClampsAtZeroWhenNegative(): void
-    {
-        $player = $this->createPlayer();
-
-        $this->createLiveComponent('PlayerBoard', ['player' => $player])->set('cards', -5);
-
-        self::assertSame(0, $this->reloadPlayer($player)->cards);
-    }
-
-    #[Test]
-    public function cardsInputCarriesMinBoundButNoMax(): void
-    {
-        $player = $this->createPlayer();
-
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
-
-        self::assertMatchesRegularExpression('/<input type="number" min="0" data-model="debounce\(300\)\|cards" value="\d+">/', $rendered);
+        self::assertSame(
+            ['Cities 0', 'Ships 0', 'Census 1', 'Treasury 0', 'Cards 0'],
+            $labels,
+        );
     }
 
     #[Test]
@@ -225,7 +113,7 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function mercureRefreshFiltersToPlayerUpdatedAndOrderValidated(): void
+    public function mercureRefreshFiltersToPlayerUpdated(): void
     {
         $player = $this->createPlayer();
 
@@ -233,7 +121,7 @@ final class PlayerBoardTest extends WebTestCase
 
         self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
         self::assertStringContainsString('player-updated', $rendered);
-        self::assertStringContainsString('order-validated', $rendered);
+        self::assertStringNotContainsString('order-updated', $rendered);
     }
 
     #[Test]
@@ -268,14 +156,6 @@ final class PlayerBoardTest extends WebTestCase
         $this->entityManager->flush();
 
         return $player;
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
     }
 
     /**

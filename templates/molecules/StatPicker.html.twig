@@ -1,0 +1,21 @@
+<div {{ attributes }} class="stat-picker">
+    <button type="button" commandfor="stat-picker-{{ stat.value }}-{{ player.id }}" command="show-modal">
+        {{ stat.label }} <span class="stat-picker__value">{{ stat.format(value) }}</span>
+    </button>
+    <dialog id="stat-picker-{{ stat.value }}-{{ player.id }}" class="modal stat-picker__dialog"
+            data-action="close->live#action" data-live-action-param="save">
+        <form method="dialog">
+            <fieldset class="stat-picker__tiles">
+                <legend>{{ stat.label }} — {{ player.name }}</legend>
+                {% for n in stat.min..stat.max %}
+                    <label class="stat-picker__tile">
+                        <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
+                               data-model="norender|value" {{ value == n ? 'checked' }}>
+                        <span>{{ stat.format(n) }}</span>
+                    </label>
+                {% endfor %}
+            </fieldset>
+            <button type="submit">OK</button>
+        </form>
+    </dialog>
+</div>

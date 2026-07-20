@@ -1,5 +1,5 @@
 <div
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['player-updated', 'order-validated']})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['player-updated']})) }}
     class="player-board"
 >
     <header class="player-board__header">
@@ -9,34 +9,15 @@
     </header>
 
     <section class="player-board__stats" aria-label="Stats">
-        <span class="player-board__stepper">
-            Cities
-            <button type="button" {{ live_action('adjustCities', {delta: -1}) }} data-loading="addAttribute(disabled)">−</button>
-            <span class="player-board__stepper-value">{{ player.cities }}</span>
-            <button type="button" {{ live_action('adjustCities', {delta: 1}) }} data-loading="addAttribute(disabled)">+</button>
-        </span>
+        <twig:molecules:StatPicker :player="player" stat="cities" :value="player.cities" />
 
-        <span class="player-board__stepper">
-            Ships
-            <button type="button" {{ live_action('adjustShips', {delta: -1}) }} data-loading="addAttribute(disabled)">−</button>
-            <span class="player-board__stepper-value">{{ player.ships }}</span>
-            <button type="button" {{ live_action('adjustShips', {delta: 1}) }} data-loading="addAttribute(disabled)">+</button>
-        </span>
+        <twig:molecules:StatPicker :player="player" stat="ships" :value="player.ships" />
 
-        <label class="player-board__stepper">
-            Census
-            <input type="number" min="{{ constant('App\\Entity\\Player::CENSUS_MIN') }}" max="{{ constant('App\\Entity\\Player::CENSUS_MAX') }}" data-model="debounce(300)|census" value="{{ census }}">
-        </label>
+        <twig:molecules:StatPicker :player="player" stat="census" :value="player.census" />
 
-        <label class="player-board__stepper">
-            Treasury
-            <input type="number" min="{{ constant('App\\Entity\\Player::TREASURY_MIN') }}" max="{{ constant('App\\Entity\\Player::TREASURY_MAX') }}" data-model="debounce(300)|treasury" value="{{ treasury }}">
-        </label>
+        <twig:molecules:StatPicker :player="player" stat="treasury" :value="player.treasury" />
 
-        <label class="player-board__stepper">
-            Cards
-            <input type="number" min="{{ constant('App\\Entity\\Player::CARDS_MIN') }}" data-model="debounce(300)|cards" value="{{ cards }}">
-        </label>
+        <twig:molecules:StatPicker :player="player" stat="cards" :value="player.cards" />
     </section>
 
     <h2>Discounts</h2>

@@ -1,5 +1,3 @@
-/* Player board organism styles — populated by Ozoux */
-
 .player-board {
     display: grid;
     max-inline-size: 75rem;
@@ -81,29 +79,6 @@
         gap: 1rem 2rem;
         padding: 1rem;
         background: white;
-    }
-
-    .player-board__stepper {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        color: var(--operator-text-muted);
-        font-size: 0.8125rem;
-
-        button {
-            aspect-ratio: 1;
-            inline-size: 1.5rem;
-            padding: 0;
-            display: inline-grid;
-            place-content: center;
-            line-height: 1;
-        }
-    }
-
-    .player-board__stepper-value {
-        min-inline-size: 1.5em;
-        font-variant-numeric: tabular-nums;
-        text-align: center;
     }
 
     .player-board__advances-grid {
