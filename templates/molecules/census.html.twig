@@ -1,5 +1,5 @@
 <div
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['order-validated', 'turn-changed', 'game-finished', 'player-updated']})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="census"
 >
     {% if this.orderedPlayers is not empty %}

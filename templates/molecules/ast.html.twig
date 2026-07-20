@@ -1,5 +1,5 @@
 <table
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'turn-changed', 'game-finished']})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="ast"
 >
     <caption>{{ game.astVersion.value|capitalize }} version</caption>

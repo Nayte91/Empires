@@ -97,6 +97,12 @@ class Player
         $this->advances = array_values(array_unique([...$this->advances, ...$keys]));
     }
 
+    /** @param list<string> $keys */
+    public function disownAdvances(array $keys): void
+    {
+        $this->advances = array_values(array_diff($this->advances, $keys));
+    }
+
     private function slugify(string $name): string
     {
         return strtolower((string) new AsciiSlugger()->slug($name));

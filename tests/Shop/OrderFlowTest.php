@@ -99,7 +99,7 @@ final class OrderFlowTest extends WebTestCase
     }
 
     #[Test]
-    public function validateWithSufficientMoneyFreezesLinesAndOwnsAdvances(): void
+    public function validateFreezesLinesAndOwnsAdvances(): void
     {
         $player = $this->createPlayer();
         $player->ownAdvances(['agriculture']);
@@ -108,37 +108,12 @@ final class OrderFlowTest extends WebTestCase
         $this->addToCart($player, 'democracy');
         $order = $this->orderSubmitter->submit($player);
 
-        $this->orderValidator->validate($order, 200);
+        $this->orderValidator->validate($order);
 
         self::assertSame(OrderStatus::Validated, $order->status);
         self::assertSame([['key' => 'democracy', 'netCost' => 200]], $order->lines);
         self::assertSame(200, $order->total);
-        self::assertSame(200, $order->money);
         self::assertContains('democracy', $player->advances);
-    }
-
-    #[Test]
-    public function validateWithInsufficientMoneyThrowsAndChangesNothing(): void
-    {
-        $player = $this->createPlayer();
-        $this->addToCart($player, 'pottery');
-        $order = $this->orderSubmitter->submit($player);
-
-        try {
-            $this->orderValidator->validate($order, 10);
-            self::fail('Expected DomainException was not thrown.');
-        } catch (\DomainException $exception) {
-            self::assertStringContainsString('60', $exception->getMessage());
-            self::assertStringContainsString('10', $exception->getMessage());
-        }
-
-        self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertSame([], $player->advances);
-
-        $this->entityManager->clear();
-        $reloadedOrder = $this->orderRepository->find($order->id);
-        self::assertNotNull($reloadedOrder);
-        self::assertSame(OrderStatus::Pending, $reloadedOrder->status);
     }
 
     #[Test]
@@ -147,7 +122,7 @@ final class OrderFlowTest extends WebTestCase
         $player = $this->createPlayer();
         $this->addToCart($player, 'pottery');
         $order = $this->orderSubmitter->submit($player);
-        $this->orderValidator->validate($order, 60);
+        $this->orderValidator->validate($order);
 
         $this->addToCart($player, 'democracy');
 

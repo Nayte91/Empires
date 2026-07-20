@@ -66,7 +66,7 @@ final class DirectSaleTest extends WebTestCase
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
-        $order = $this->directSale->sell($player, ['democracy', 'pottery'], 250);
+        $order = $this->directSale->sell($player, ['democracy', 'pottery']);
 
         self::assertSame(OrderStatus::Validated, $order->status);
         self::assertSame(
@@ -74,7 +74,6 @@ final class DirectSaleTest extends WebTestCase
             $order->lines,
         );
         self::assertSame(250, $order->total);
-        self::assertSame(250, $order->money);
         self::assertContains('democracy', $player->advances);
         self::assertContains('pottery', $player->advances);
 
@@ -85,19 +84,17 @@ final class DirectSaleTest extends WebTestCase
     }
 
     #[Test]
-    public function sellWithInsufficientMoneyThrowsAndPersistsNoOrder(): void
+    public function sellWithExplicitPastTurnCreatesAndValidatesTheOrderOnThatTurn(): void
     {
         $player = $this->createPlayer();
+        $player->game->currentTurn = 3;
+        $this->entityManager->flush();
 
-        try {
-            $this->directSale->sell($player, ['pottery'], 10);
-            self::fail('Expected DomainException was not thrown.');
-        } catch (\DomainException $exception) {
-            self::assertStringContainsString('60', $exception->getMessage());
-            self::assertStringContainsString('10', $exception->getMessage());
-        }
+        $order = $this->directSale->sell($player, ['pottery'], 1);
 
-        self::assertSame(0, $this->orderRepository->count([]));
+        self::assertSame(1, $order->turn);
+        self::assertSame(OrderStatus::Validated, $order->status);
+        self::assertContains('pottery', $player->advances);
     }
 
     #[Test]
@@ -107,7 +104,7 @@ final class DirectSaleTest extends WebTestCase
         $this->addToCart($player, 'pottery');
         $pendingOrder = $this->orderSubmitter->submit($player);
 
-        $order = $this->directSale->sell($player, ['democracy'], 220);
+        $order = $this->directSale->sell($player, ['democracy']);
 
         self::assertSame($pendingOrder->id->toRfc4122(), $order->id->toRfc4122());
         self::assertSame(1, $this->orderRepository->count([
@@ -121,11 +118,11 @@ final class DirectSaleTest extends WebTestCase
     public function sellAfterValidationOfTheTurnThrowsDomainException(): void
     {
         $player = $this->createPlayer();
-        $this->directSale->sell($player, ['pottery'], 60);
+        $this->directSale->sell($player, ['pottery']);
 
         $this->expectException(\DomainException::class);
 
-        $this->directSale->sell($player, ['democracy'], 220);
+        $this->directSale->sell($player, ['democracy']);
     }
 
     #[Test]
@@ -137,17 +134,17 @@ final class DirectSaleTest extends WebTestCase
         $this->entityManager->persist($playerTurnOne);
         $this->entityManager->flush();
 
-        $this->directSale->sell($playerTurnOne, ['pottery'], 60);
+        $this->directSale->sell($playerTurnOne, ['pottery']);
 
         $game->currentTurn = 2;
         $playerTurnTwo = new Player($game, 'Bob');
         $this->entityManager->persist($playerTurnTwo);
         $this->entityManager->flush();
 
-        $this->directSale->sell($playerTurnTwo, ['pottery'], 60);
+        $this->directSale->sell($playerTurnTwo, ['pottery']);
 
         $otherGamePlayer = $this->createPlayer();
-        $this->directSale->sell($otherGamePlayer, ['pottery'], 60);
+        $this->directSale->sell($otherGamePlayer, ['pottery']);
 
         $turnTwoOrders = $this->orderRepository->findByGameAndTurn($game, 2);
 

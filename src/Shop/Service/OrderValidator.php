@@ -21,7 +21,7 @@ final readonly class OrderValidator
         private HubInterface $hub,
     ) {}
 
-    public function validate(Order $order, int $money): void
+    public function validate(Order $order): void
     {
         if (OrderStatus::Validated === $order->status) {
             throw new \DomainException('Order is already validated.');
@@ -54,19 +54,16 @@ final readonly class OrderValidator
             $total += $netCost;
         }
 
-        if ($money < $total) {
-            throw new \DomainException(sprintf('Insufficient money: total is %d, given %d.', $total, $money));
-        }
-
         $hub = $this->hub;
 
-        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $money, $player, $slugs, $hub): void {
-            $order->validate($frozenLines, $total, $money);
+        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $hub): void {
+            $order->validate($frozenLines, $total);
             $player->ownAdvances($slugs);
-            $hub->publish(new Update(
-                'empires/game/'.$player->game->id,
-                '{"event":"order-validated"}',
-            ));
+
+            $topic = 'empires/game/'.$player->game->id;
+
+            $hub->publish(new Update($topic, '{"event":"order-updated"}'));
+            $hub->publish(new Update($topic, '{"event":"player-updated"}'));
         });
     }
 }

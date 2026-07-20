@@ -19,13 +19,13 @@ final readonly class DirectSale
     ) {}
 
     /** @param list<string> $keys */
-    public function sell(Player $player, array $keys, int $money): Order
+    public function sell(Player $player, array $keys, ?int $turn = null): Order
     {
         if ([] === $keys) {
             throw new \DomainException('Cart is empty.');
         }
 
-        $turn = $player->game->currentTurn;
+        $turn ??= $player->game->currentTurn;
         $order = $this->orderRepository->findOneByPlayerAndTurn($player, $turn);
 
         if (OrderStatus::Validated === $order?->status) {
@@ -39,7 +39,7 @@ final readonly class DirectSale
 
         $order->replaceLines($keys);
 
-        $this->orderValidator->validate($order, $money);
+        $this->orderValidator->validate($order);
 
         return $order;
     }

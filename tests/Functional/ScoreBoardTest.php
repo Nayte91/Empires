@@ -210,7 +210,7 @@ final class ScoreBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function mercureRefreshFiltersOutOrderSubmittedButKeepsGameStateEvents(): void
+    public function mercureRefreshFiltersOutOrderUpdatedButKeepsGameStateEvents(): void
     {
         $game = $this->createGame();
 
@@ -218,10 +218,8 @@ final class ScoreBoardTest extends WebTestCase
 
         self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
         self::assertStringContainsString('player-updated', $rendered);
-        self::assertStringContainsString('order-validated', $rendered);
-        self::assertStringContainsString('turn-changed', $rendered);
-        self::assertStringContainsString('game-finished', $rendered);
-        self::assertStringNotContainsString('order-submitted', $rendered);
+        self::assertStringContainsString('game-updated', $rendered);
+        self::assertStringNotContainsString('order-updated', $rendered);
     }
 
     private function createGame(): GameSession

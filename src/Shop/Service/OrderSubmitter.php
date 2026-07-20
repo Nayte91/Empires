@@ -56,7 +56,7 @@ final readonly class OrderSubmitter
 
         $this->hub->publish(new Update(
             'empires/game/'.$order->player->game->id,
-            '{"event":"order-submitted"}',
+            '{"event":"order-updated"}',
         ));
 
         $this->cartRepository->clear($player->id);

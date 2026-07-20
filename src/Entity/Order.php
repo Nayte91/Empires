@@ -30,9 +30,6 @@ class Order
     public private(set) ?int $total = null;
 
     #[ORM\Column(nullable: true)]
-    public private(set) ?int $money = null;
-
-    #[ORM\Column(nullable: true)]
     public private(set) ?\DateTimeImmutable $validatedAt = null;
 
     #[ORM\Column]
@@ -60,7 +57,7 @@ class Order
     }
 
     /** @param list<array{key: string, netCost: int}> $frozenLines */
-    public function validate(array $frozenLines, int $total, int $money): void
+    public function validate(array $frozenLines, int $total): void
     {
         if (OrderStatus::Validated === $this->status) {
             throw new \DomainException('Order is already validated.');
@@ -68,7 +65,6 @@ class Order
 
         $this->lines = $frozenLines;
         $this->total = $total;
-        $this->money = $money;
         $this->validatedAt = new \DateTimeImmutable();
         $this->status = OrderStatus::Validated;
     }
