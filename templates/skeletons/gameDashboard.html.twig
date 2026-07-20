@@ -6,13 +6,12 @@
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/skeletons/gameDashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/scoreBoard.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/census.css') }}">
 {% endblock %}
 
-{% block body %}
+{% block main %}
     {{ component('GameDashboard', {game}) }}
 {% endblock %}

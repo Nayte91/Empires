@@ -7,9 +7,11 @@
         : slugs|map(slug => slug|replace({'_': ' '})|capitalize)|join(', ') }}
     </p>
 
-    <p><strong>Total: {{ total }}</strong></p>
+    <div>
+        <p><strong>Total: {{ total }}</strong></p>
 
-    <small>VP: {{ vp }}</small>
+        <p><small>VP: {{ vp }}</small></p>
+    </div>
 
     {% block content %}{% endblock %}
 </article>

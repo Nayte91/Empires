@@ -4,11 +4,9 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/gameCreator.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/creation.css') }}">
 {% endblock %}
 
-{% block body %}
-    <main>
-        {{ component('GameCreator') }}
-    </main>
+{% block main %}
+    {{ component('GameCreator') }}
 {% endblock %}

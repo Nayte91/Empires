@@ -15,7 +15,8 @@
         {{ component('ThemeColors') }}
 
         {% block stylesheets %}
-            <link rel="stylesheet" href="{{ asset('styles/app.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/globals.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}">
             <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}">
         {% endblock %}
 
@@ -25,7 +26,9 @@
     </head>
     <body {% block body_attr %}{% endblock %}>
         <header></header>
-        {% block body %}{% endblock %}
+        <main>
+            {% block main %}{% endblock %}
+        </main>
         <footer></footer>
     </body>
 </html>

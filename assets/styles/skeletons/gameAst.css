@@ -1,4 +1,4 @@
-.ast-view {
+body > main {
     --operator-radius: 0.375rem;
     min-block-size: 100vh;
     display: grid;

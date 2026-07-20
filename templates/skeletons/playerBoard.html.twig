@@ -8,10 +8,9 @@
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/playerBoard.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/modal.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/statPicker.css') }}">
 {% endblock %}
 
-{% block body %}
+{% block main %}
     {{ component('PlayerBoard', {player}) }}
 {% endblock %}

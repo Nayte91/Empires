@@ -1,4 +1,4 @@
-.census-view {
+body > main {
     min-block-size: 100vh;
     display: grid;
     align-content: center;

@@ -12,15 +12,10 @@
     }
 
     section {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: start;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 18rem));
+        justify-content: center;
         gap: 1rem;
-
-        > .order-card {
-            flex: 1 1 min(100%, 14rem);
-            max-inline-size: 18rem;
-        }
 
         menu {
             display: flex;

@@ -7,12 +7,10 @@
     <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/gameAst.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/gameAst.css') }}">
 {% endblock %}
 
-{% block body %}
-    <div class="ast-view">
-        <twig:Ast :game="game" />
-        <twig:molecules:AstRequirements :eras="eras" :astVersion="game.astVersion.value" />
-    </div>
+{% block main %}
+    <twig:Ast :game="game" />
+    <twig:molecules:AstRequirements :eras="eras" :astVersion="game.astVersion.value" />
 {% endblock %}

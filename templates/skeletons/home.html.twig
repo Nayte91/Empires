@@ -4,21 +4,21 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/home.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/home.css') }}">
 {% endblock %}
 
-{% block body %}
+{% block main %}
     <h1>Games in progress</h1>
 
     <a class="button" href="{{ path('app_game_create') }}">Create a game</a>
 
     <ul class="game-grid">
-        {% for game in games %}
-            <li>
-                {% include 'molecules/gameTile.html.twig' with {game} only %}
-            </li>
-        {% else %}
-            <p>No game in progress. <a href="{{ path('app_game_create') }}">Create a game</a></p>
-        {% endfor %}
+    {% for game in games %}
+        <li>
+            {% include 'molecules/gameTile.html.twig' with {game} only %}
+        </li>
+    {% else %}
+        <p>No game in progress. <a href="{{ path('app_game_create') }}">Create a game</a></p>
+    {% endfor %}
     </ul>
 {% endblock %}

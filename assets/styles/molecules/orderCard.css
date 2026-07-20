@@ -16,19 +16,14 @@
         background: var(--operator-success-bg);
     }
 
-    > h4 {
-        margin: 0;
-        font-size: 0.9375rem;
-    }
-
-    > p { margin: 0 }
-
+    h4 { margin: 0 }
+    p { margin: 0 }
     &[data-status="empty"] > p:first-of-type { color: var(--operator-text-muted) }
 
-    > p:last-of-type {
+    div {
         border-block-start: 1px solid var(--operator-border);
-        padding-block-start: 0.35rem;
-    }
+        padding-block-start: 0.5rem;
 
-    > small { color: var(--operator-text-muted) }
+        small { color: var(--operator-text-muted) }
+    }
 }

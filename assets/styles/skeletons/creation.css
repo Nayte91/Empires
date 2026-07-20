@@ -6,16 +6,6 @@
     padding: 1.5rem;
     font-size: 0.9375rem;
 
-    h1 {
-        margin: 0;
-        font-size: 1.5rem;
-    }
-
-    h2 {
-        margin-block: 0 0.75rem;
-        font-size: 1.125rem;
-    }
-
     input, select {
         padding: 0.4em 0.6em;
         border: 1px solid var(--operator-border);
