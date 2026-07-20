@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
-use App\Entity\Order;
 use App\Entity\Player;
-use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -17,7 +15,7 @@ final class OperatorConsoleTest extends WebTestCase
 {
     use InteractsWithLiveComponents;
 
-    private EntityManagerInterface $entityManager;
+    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
 
     protected function setUp(): void
     {
@@ -58,6 +56,90 @@ final class OperatorConsoleTest extends WebTestCase
         );
 
         self::assertNotNull($button->attr('disabled'));
+    }
+
+    #[Test]
+    public function rendersOneDetailsTabPerPlayerPlusGeneralSharingTheSameGroupWithGeneralOpenByDefault(): void
+    {
+        $game = $this->createGame();
+        $this->createPlayer($game, 'Alice');
+        $this->createPlayer($game, 'Bob');
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $details = $rendered->crawler()->filter('details');
+
+        self::assertCount(3, $details);
+
+        $names = [];
+        foreach ($details as $node) {
+            $names[] = $node->getAttribute('name');
+        }
+        self::assertSame(['operator-tabs'], array_unique($names));
+
+        $generalDetails = $details->reduce(
+            static fn ($node): bool => 'General' === trim((string) $node->filter('summary')->text()),
+        );
+        self::assertNotNull($generalDetails->attr('open'));
+    }
+
+    #[Test]
+    public function generalPanelContainsTheTurnButtons(): void
+    {
+        $game = $this->createGame();
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $generalDetails = $rendered->crawler()->filter('details')->reduce(
+            static fn ($node): bool => 'General' === trim((string) $node->filter('summary')->text()),
+        );
+
+        $buttonTexts = $generalDetails->filter('button')->each(
+            static fn ($node): string => trim($node->text()),
+        );
+
+        self::assertContains('« Previous turn', $buttonTexts);
+        self::assertContains('Next turn »', $buttonTexts);
+        self::assertContains('Finish game', $buttonTexts);
+    }
+
+    #[Test]
+    public function aPlayerTabPanelContainsTheSixStatTriggerButtons(): void
+    {
+        $game = $this->createGame();
+        $this->createPlayer($game, 'Alice');
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $playerDetails = $rendered->crawler()->filter('details')->reduce(
+            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
+        );
+
+        self::assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
+    }
+
+    #[Test]
+    public function selectingAPlayerTabOpensItAndClosesGeneral(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Alice');
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])
+            ->call('selectTab', ['tab' => (string) $player->id])
+            ->render()
+        ;
+
+        $details = $rendered->crawler()->filter('details');
+
+        $generalDetails = $details->reduce(
+            static fn ($node): bool => 'General' === trim((string) $node->filter('summary')->text()),
+        );
+        $playerDetails = $details->reduce(
+            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
+        );
+
+        self::assertNull($generalDetails->attr('open'));
+        self::assertNotNull($playerDetails->attr('open'));
     }
 
     #[Test]
@@ -121,322 +203,65 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function adjustCitiesPersistsTheDelta(): void
+    public function aPlayerTabPanelContainsItsOrderCardsRegionWithAnEmptyCardForTheCurrentTurn(): void
     {
         $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $this->createPlayer($game, 'Alice');
 
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCities', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        self::assertSame(1, $this->reloadPlayer($player)->cities);
+        $playerDetails = $rendered->crawler()->filter('details')->reduce(
+            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
+        );
+
+        $card = $playerDetails->filter('article')->reduce(
+            static fn ($node): bool => str_contains((string) $node->text(), 'Turn 1'),
+        );
+
+        self::assertStringContainsString('Empty', $card->text());
     }
 
     #[Test]
-    public function adjustCitiesClampsAtNine(): void
+    public function ordersStampForChangesWhenTheCurrentTurnChangesEvenWithZeroOrders(): void
     {
         $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->cities = 9;
+        $player = $this->createPlayer($game, 'Alice');
+
+        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game])->component();
+        $stampAtTurnOne = $console->ordersStampFor($player);
+
+        $game->currentTurn = 2;
         $this->entityManager->flush();
 
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCities', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
+        $stampAtTurnTwo = $console->ordersStampFor($this->reloadPlayer($player));
 
-        self::assertSame(9, $this->reloadPlayer($player)->cities);
+        self::assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
     }
 
     #[Test]
-    public function adjustCitiesClampsAtZero(): void
+    public function advancingTurnsRendersOneOrderCardPerElapsedTurnInThePlayerTab(): void
     {
         $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $this->createPlayer($game, 'Alice');
 
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCities', ['playerId' => (string) $player->id, 'delta' => -1])
-        ;
+        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
+        $console->call('nextTurn');
+        $rendered = $console->call('nextTurn')->render();
 
-        self::assertSame(0, $this->reloadPlayer($player)->cities);
-    }
+        self::assertSame(3, $this->reloadGame($game)->currentTurn);
 
-    #[Test]
-    public function adjustAstPositionPersistsTheDelta(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $playerDetails = $rendered->crawler()->filter('details')->reduce(
+            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
+        );
 
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
+        $cardTexts = $playerDetails->filter('article')->each(
+            static fn ($node): string => trim($node->text()),
+        );
 
-        self::assertSame(1, $this->reloadPlayer($player)->astPosition);
-    }
-
-    #[Test]
-    public function adjustAstPositionClampsAtFifteen(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->astPosition = 15;
-        $this->entityManager->flush();
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(15, $this->reloadPlayer($player)->astPosition);
-    }
-
-    #[Test]
-    public function adjustAstPositionClampsAtZero(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustAstPosition', ['playerId' => (string) $player->id, 'delta' => -1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($player)->astPosition);
-    }
-
-    #[Test]
-    public function adjustAstPositionOnAPlayerFromAnotherGameIsNoOp(): void
-    {
-        $game = $this->createGame();
-        $otherGame = $this->createGame();
-        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustAstPosition', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($otherPlayer)->astPosition);
-    }
-
-    #[Test]
-    public function adjustCensusPersistsTheDelta(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCensus', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(2, $this->reloadPlayer($player)->census);
-    }
-
-    #[Test]
-    public function adjustCensusClampsAtFiftyFive(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->census = 55;
-        $this->entityManager->flush();
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCensus', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(55, $this->reloadPlayer($player)->census);
-    }
-
-    #[Test]
-    public function adjustTreasuryPersistsTheDelta(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustTreasury', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(1, $this->reloadPlayer($player)->treasury);
-    }
-
-    #[Test]
-    public function adjustTreasuryClampsAtFiftyFive(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->treasury = 55;
-        $this->entityManager->flush();
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustTreasury', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(55, $this->reloadPlayer($player)->treasury);
-    }
-
-    #[Test]
-    public function adjustTreasuryClampsAtZero(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustTreasury', ['playerId' => (string) $player->id, 'delta' => -1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($player)->treasury);
-    }
-
-    #[Test]
-    public function adjustTreasuryOnAPlayerFromAnotherGameIsNoOp(): void
-    {
-        $game = $this->createGame();
-        $otherGame = $this->createGame();
-        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustTreasury', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($otherPlayer)->treasury);
-    }
-
-    #[Test]
-    public function adjustShipsPersistsTheDelta(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(1, $this->reloadPlayer($player)->ships);
-    }
-
-    #[Test]
-    public function adjustShipsClampsAtFour(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->ships = 4;
-        $this->entityManager->flush();
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(4, $this->reloadPlayer($player)->ships);
-    }
-
-    #[Test]
-    public function adjustShipsClampsAtZero(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustShips', ['playerId' => (string) $player->id, 'delta' => -1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($player)->ships);
-    }
-
-    #[Test]
-    public function adjustShipsOnAPlayerFromAnotherGameIsNoOp(): void
-    {
-        $game = $this->createGame();
-        $otherGame = $this->createGame();
-        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustShips', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($otherPlayer)->ships);
-    }
-
-    #[Test]
-    public function adjustCardsPersistsTheDelta(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCards', ['playerId' => (string) $player->id, 'delta' => 1])
-        ;
-
-        self::assertSame(1, $this->reloadPlayer($player)->cards);
-    }
-
-    #[Test]
-    public function adjustCardsClampsAtZero(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCards', ['playerId' => (string) $player->id, 'delta' => -1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($player)->cards);
-    }
-
-    #[Test]
-    public function adjustCardsOnAPlayerFromAnotherGameIsNoOp(): void
-    {
-        $game = $this->createGame();
-        $otherGame = $this->createGame();
-        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCards', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($otherPlayer)->cards);
-    }
-
-    #[Test]
-    public function adjustCitiesOnAPlayerFromAnotherGameIsNoOp(): void
-    {
-        $game = $this->createGame();
-        $otherGame = $this->createGame();
-        $otherPlayer = $this->createPlayer($otherGame, 'Eve');
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('adjustCities', ['playerId' => (string) $otherPlayer->id, 'delta' => 1])
-        ;
-
-        self::assertSame(0, $this->reloadPlayer($otherPlayer)->cities);
-    }
-
-    #[Test]
-    public function validatingAnOrderWithSufficientMoneyValidatesItAndOwnsTheAdvance(): void
-    {
-        $order = $this->createPendingOrder('pottery');
-
-        $this->createLiveComponent('OrderTab', ['order' => $order])
-            ->set('money', 60)
-            ->call('validate')
-        ;
-
-        $reloadedOrder = $this->reloadOrder($order);
-
-        self::assertSame(OrderStatus::Validated, $reloadedOrder->status);
-        self::assertContains('pottery', $reloadedOrder->player->advances);
-    }
-
-    #[Test]
-    public function validatingAnOrderWithInsufficientMoneyDisplaysAnErrorAndKeepsItPending(): void
-    {
-        $order = $this->createPendingOrder('pottery');
-
-        $rendered = $this->createLiveComponent('OrderTab', ['order' => $order])
-            ->set('money', 10)
-            ->call('validate')
-            ->render()
-        ;
-
-        self::assertSame(OrderStatus::Pending, $this->reloadOrder($order)->status);
-        self::assertStringContainsString('Insufficient money', $rendered->toString());
+        self::assertCount(3, $cardTexts);
+        self::assertTrue((bool) preg_grep('/Turn 1\b/', $cardTexts));
+        self::assertTrue((bool) preg_grep('/Turn 2\b/', $cardTexts));
+        self::assertTrue((bool) preg_grep('/Turn 3\b/', $cardTexts));
     }
 
     private function createGame(): GameSession
@@ -457,20 +282,6 @@ final class OperatorConsoleTest extends WebTestCase
         return $player;
     }
 
-    private function createPendingOrder(string ...$slugs): Order
-    {
-        $game = $this->createGame();
-        $player = new Player($game, 'Bob');
-        $this->entityManager->persist($player);
-
-        $order = new Order($player, $game->currentTurn);
-        $order->replaceLines($slugs);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
-    }
-
     private function freshEntityManager(): EntityManagerInterface
     {
         return self::getContainer()->get(EntityManagerInterface::class);
@@ -480,14 +291,6 @@ final class OperatorConsoleTest extends WebTestCase
     {
         $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
         self::assertInstanceOf(GameSession::class, $reloaded);
-
-        return $reloaded;
-    }
-
-    private function reloadOrder(Order $order): Order
-    {
-        $reloaded = $this->freshEntityManager()->find(Order::class, $order->id);
-        self::assertInstanceOf(Order::class, $reloaded);
 
         return $reloaded;
     }

@@ -1,0 +1,72 @@
+{# Point-of-sale dialog — private partial of organisms/playerOrders, shares its
+   LiveComponent context (this, player, error, posTurn). Rendered `open` by the
+   server, promoted to the top layer by the modal controller; Esc and outside
+   clicks close it natively (closedby), and the close event syncs posOpen back. #}
+<dialog
+    open
+    closedby="any"
+    class="modal pos-dialog"
+    aria-labelledby="pos-heading-{{ player.id }}"
+    data-controller="modal"
+    data-action="close->live#action"
+    data-live-action-param="closePos"
+>
+    <h2 id="pos-heading-{{ player.id }}">Order — {{ player.name }} — Turn {{ posTurn }}</h2>
+
+    {% if error %}
+        <p role="alert">{{ error }}</p>
+    {% endif %}
+
+    <twig:molecules:Discounts :player="player" />
+
+    {% set posOrder = this.posOrder %}
+    {% if posOrder and posOrder.status.value == 'validated' %}
+        <p role="status">Order validated.</p>
+
+        <button type="button" {{ live_action('closePos') }} data-loading="addAttribute(disabled)">
+            Close
+        </button>
+    {% else %}
+        <div>
+            <menu aria-label="Available advances">
+                {% for product in computed.products %}
+                    <li>{% include 'molecules/productTile.html.twig' with {product, action: 'addToTicket'} only %}</li>
+                {% endfor %}
+            </menu>
+
+            <aside aria-label="Ticket">
+                <h3>Ticket</h3>
+
+                <ul>
+                    {% for line in this.ticketLines %}
+                        <li>
+                            <span>{{ line.advance.name|capitalize }}</span>
+                            <span>{{ line.netCost }}</span>
+                            <button
+                                type="button"
+                                {{ live_action('removeFromTicket', {key: line.advance.key}) }}
+                                data-loading="addAttribute(disabled)"
+                                title="Remove {{ line.advance.name|capitalize }}"
+                            >
+                                ×
+                            </button>
+                        </li>
+                    {% else %}
+                        <li>Ticket is empty.</li>
+                    {% endfor %}
+                </ul>
+
+                <p>Total: {{ this.ticketTotal }}</p>
+
+                <button
+                    type="button"
+                    {{ live_action('checkout') }}
+                    {{ this.ticketLines is empty ? 'disabled' }}
+                    data-loading="addAttribute(disabled)"
+                >
+                    Confirm purchase
+                </button>
+            </aside>
+        </div>
+    {% endif %}
+</dialog>

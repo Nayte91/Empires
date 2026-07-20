@@ -63,47 +63,41 @@ final class KioskOperatorFlowTest extends WebTestCase
     }
 
     #[Test]
-    public function thePendingOrderAppearsInOperatorConsolePendingOrdersForTheTurn(): void
+    public function thePendingOrderAppearsAsAPendingCardInThePlayersOrderHistory(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
         $this->submitAliceDemocracyAndPotteryOrder($alice);
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
 
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('PlayerOrders', [
+            'player' => $alice,
+            'ordersStamp' => '',
+        ])->render()->toString();
 
-        // The OrderTab sub-component's own live-component id is a framework-generated
-        // hash (not the 'tab-' ~ order.id default from orderTab.html.twig, which never
-        // applies: ComponentAttributes already carries an 'id' before attributes.defaults()
-        // runs). The order's UUID embedded in its data-live-props-value hydration payload
-        // is the stable, structural proof that this specific order's tab was rendered.
-        self::assertStringContainsString($order->id->toRfc4122(), $rendered);
+        self::assertStringContainsString('Turn '.$game->currentTurn, $rendered);
+        self::assertStringContainsString('Democracy', $rendered);
+        self::assertStringContainsString('Pottery', $rendered);
+        self::assertStringContainsString('pending', $rendered);
     }
 
     #[Test]
-    public function validatingWithInsufficientMoneyDisplaysAnErrorAndLeavesTheOrderAndAdvancesUntouched(): void
+    public function openingThePosOnAPendingCardPreloadsItsTicket(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
         $this->submitAliceDemocracyAndPotteryOrder($alice);
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
 
-        $rendered = $this->createLiveComponent('OrderTab', ['order' => $order])
-            ->set('money', 100)
-            ->call('validate')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->createLiveComponent('PlayerOrders', [
+            'player' => $alice,
+            'ordersStamp' => '',
+        ]);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
 
-        self::assertStringContainsString('Insufficient money', $rendered);
-        self::assertSame(OrderStatus::Pending, $this->reloadOrder($order)->status);
-        self::assertSame(['agriculture'], $this->reloadPlayer($alice)->advances);
+        self::assertSame(['democracy', 'pottery'], $component->component()->ticket);
     }
 
     #[Test]
-    public function validatingWithSufficientMoneyFreezesLinesGrantsAdvancesAndValidatesTheOrder(): void
+    public function validatingFreezesLinesGrantsAdvancesAndValidatesTheOrderAndTheCardShowsItsTotalAndVictoryPoints(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
@@ -111,7 +105,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
         self::assertInstanceOf(Order::class, $order);
 
-        $this->validateOrder($order, 250);
+        $this->validateOrder($order);
 
         $reloadedOrder = $this->reloadOrder($order);
 
@@ -125,6 +119,16 @@ final class KioskOperatorFlowTest extends WebTestCase
         );
         self::assertSame(250, $reloadedOrder->total);
         self::assertSame(['agriculture', 'democracy', 'pottery'], $this->reloadPlayer($alice)->advances);
+
+        $rendered = $this->createLiveComponent('PlayerOrders', [
+            'player' => $alice,
+            'ordersStamp' => '',
+        ])->render()->toString();
+
+        // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
+        self::assertStringContainsString('Total: 250', $rendered);
+        self::assertStringContainsString('VP: 7', $rendered);
+        self::assertStringContainsString('validated', $rendered);
     }
 
     #[Test]
@@ -139,7 +143,8 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $aliceRendered = $aliceShop->render()->toString();
         self::assertStringContainsString('Order validated for this turn.', $aliceRendered);
-        self::assertMatchesRegularExpression('/id="product-democracy".*?data-owned/s', $aliceRendered);
+        self::assertStringNotContainsString('id="product-democracy"', $aliceRendered);
+        self::assertStringContainsString('Democracy', $aliceRendered);
 
         $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
         self::assertFalse($this->getShopComponent($bobShop)->isLockedForTurn());
@@ -244,12 +249,14 @@ final class KioskOperatorFlowTest extends WebTestCase
         $shop->call('submitOrder');
     }
 
-    private function validateOrder(Order $order, int $money): void
+    private function validateOrder(Order $order): void
     {
-        $this->createLiveComponent('OrderTab', ['order' => $order])
-            ->set('money', $money)
-            ->call('validate')
-        ;
+        $component = $this->createLiveComponent('PlayerOrders', [
+            'player' => $order->player,
+            'ordersStamp' => '',
+        ]);
+        $component->call('openPos', ['turn' => $order->turn]);
+        $component->call('checkout');
     }
 
     private function submitAndValidateAliceOrder(Player $alice, GameSession $game): void
@@ -258,7 +265,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
         self::assertInstanceOf(Order::class, $order);
 
-        $this->validateOrder($order, 250);
+        $this->validateOrder($order);
     }
 
     private function freshEntityManager(): EntityManagerInterface

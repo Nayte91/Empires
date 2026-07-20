@@ -9,12 +9,9 @@ use App\Entity\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class GameCreationTest extends WebTestCase
 {
-    use InteractsWithLiveComponents;
-
     #[Test]
     public function dashboardIsAccessibleForAnExistingGame(): void
     {
@@ -31,7 +28,7 @@ final class GameCreationTest extends WebTestCase
     }
 
     #[Test]
-    public function operatorConsoleOrderCreationPanelListsPlayersWithALinkToTheirShop(): void
+    public function playerShopRouteIsDirectlyAccessible(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -41,18 +38,8 @@ final class GameCreationTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        // The kiosk link only appears once an order is being created (the
-        // console's cashier panel is the sole remaining surface for it).
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game], $client)
-            ->call('startOrder')
-            ->render()
-        ;
-
-        self::assertStringContainsString('Alice', $rendered->toString());
-
-        $link = $rendered->crawler()->filter('a[href*="'.$player->slug.'"]')->link();
-        self::assertStringContainsString($player->slug, $link->getUri());
-
+        // The operator console no longer links to the kiosk (PO decision): the
+        // shop route itself must still be reachable directly (e.g. via a QR code).
         $client->request('GET', '/'.$game->slug.'/player/'.$player->slug.'/shop');
         self::assertResponseIsSuccessful();
     }

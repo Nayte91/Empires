@@ -20,7 +20,12 @@
         block-size: auto;
     }
 
-    & button {
+}
+
+/* Generic button look inside modals; layered so any component's own button
+   styling (POS product tiles, checkout…) wins regardless of specificity. */
+@layer modal-defaults {
+    .modal[open] button {
         justify-self: start;
         border: 1px solid gainsboro;
         border-radius: 0.375rem;

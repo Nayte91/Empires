@@ -1,0 +1,36 @@
+.operator-console {
+    display: grid;
+    max-inline-size: 75rem;
+    margin-inline: auto;
+    gap: var(--operator-gap);
+    background-color: hsl(40 85% 95%);
+
+    .operator-console__turn-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .operator-console__finished-badge {
+        border-radius: var(--operator-radius);
+        padding: 0.4em 0.9em;
+        display: inline-block;
+        background: var(--operator-success-bg);
+        color: var(--operator-success);
+        font-size: 0.875rem;
+        font-weight: bold;
+    }
+
+    .operator-console__players {
+        border: 1px solid var(--operator-border);
+        border-radius: var(--operator-radius);
+        padding-inline: 1rem;
+    }
+
+    .operator-console__player-stat {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.75rem 1.5rem;
+    }
+}

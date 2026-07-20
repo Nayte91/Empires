@@ -16,10 +16,11 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 /**
- * Acceptance tests for the operator console's cashier (POS) flow: an operator
- * picks a player, builds a ticket of advances and checks it out directly
- * (App\Shop\Service\DirectSale), without the player ever using their own
- * kiosk (App\Component\Shop).
+ * Acceptance tests for the per-player cashier (POS) flow: an operator opens a
+ * player's order card for a given turn, builds a ticket of advances and
+ * checks it out directly (App\Shop\Service\DirectSale), or erases an already
+ * validated order (App\Shop\Service\OrderEraser cascade), all from the
+ * per-player PlayerOrders LiveComponent (organisms/playerOrders).
  */
 final class PosConsoleTest extends WebTestCase
 {
@@ -35,130 +36,28 @@ final class PosConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function directSaleValidatesTheOrderAndCreditsTheDiscountedAdvancesThenClosesThePosPanel(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $console->set('selectedPlayerId', (string) $alice->id);
-        $console->call('addToTicket', ['key' => 'democracy']);
-        $console->call('addToTicket', ['key' => 'pottery']);
-        $console->set('money', 250);
-        $console->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertSame(
-            [
-                ['key' => 'democracy', 'netCost' => 200],
-                ['key' => 'pottery', 'netCost' => 50],
-            ],
-            $order->lines,
-        );
-        self::assertSame(['agriculture', 'democracy', 'pottery'], $this->reloadPlayer($alice)->advances);
-
-        $consoleComponent = $console->component();
-        self::assertFalse($consoleComponent->creatingOrder);
-        self::assertSame('', $consoleComponent->selectedPlayerId);
-        self::assertSame([], $consoleComponent->ticket);
-    }
-
-    #[Test]
-    public function selectingAPlayerWithAPendingOrderPreloadsTheTicketAndCheckoutConcludesTheSameOrder(): void
+    public function openPosPreloadsThePendingOrdersTicket(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $pendingOrder = $this->createPendingOrderFor($bob, ['pottery']);
+        $this->createPendingOrderFor($bob, ['pottery']);
 
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $console->set('selectedPlayerId', (string) $bob->id);
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
 
-        self::assertSame(['pottery'], $console->component()->ticket);
-
-        // Bob owns nothing, so pottery is at full price (60), unlike Alice's
-        // agriculture-discounted 50 used elsewhere in this file.
-        $console->set('money', 60);
-        $console->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
-        self::assertSame($pendingOrder->id->toRfc4122(), $order->id->toRfc4122());
-        self::assertSame(OrderStatus::Validated, $order->status);
+        self::assertSame(['pottery'], $component->component()->ticket);
+        self::assertTrue($component->component()->posOpen);
+        self::assertSame($game->currentTurn, $component->component()->posTurn);
     }
 
     #[Test]
-    public function discountsAppearOnlyAfterPlayerSelectionWithTheSelectedPlayersColors(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-
-        self::assertStringNotContainsString('--category-color', $console->render()->toString());
-
-        $console->set('selectedPlayerId', (string) $alice->id);
-        $rendered = $console->render()->toString();
-
-        self::assertStringContainsString('--category-color', $rendered);
-        self::assertStringContainsString('--category-color: #F7941E', $rendered);
-        self::assertStringContainsString('--category-color: #39B54A', $rendered);
-    }
-
-    #[Test]
-    public function aPlayerValidatedThisTurnIsDisabledInTheSelectAndCannotBeSoldTo(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-        $this->validateOrderFor($alice, ['democracy'], 200);
-
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('startOrder')
-            ->render()
-            ->toString()
-        ;
-        self::assertMatchesRegularExpression(
-            '/<option[^>]*value="'.preg_quote((string) $alice->id, '/').'"[^>]*disabled[^>]*>/',
-            $rendered,
-        );
-        self::assertStringContainsString('(order validated this turn)', $rendered);
-
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $console->set('selectedPlayerId', (string) $alice->id);
-        $console->call('addToTicket', ['key' => 'pottery']);
-        $console->set('money', 50);
-        $rendered = $console->call('checkout')->render()->toString();
-
-        self::assertStringContainsString('already been validated', $rendered);
-    }
-
-    #[Test]
-    public function insufficientMoneyDisplaysAnErrorAndPersistsNothing(): void
+    public function openPosOnAnEmptyTurnStartsWithAnEmptyTicket(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
 
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $console->set('selectedPlayerId', (string) $bob->id);
-        $console->call('addToTicket', ['key' => 'pottery']);
-        $console->set('money', 10);
-        $rendered = $console->call('checkout')->render()->toString();
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
 
-        self::assertStringContainsString('Insufficient money', $rendered);
-        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn));
-    }
-
-    #[Test]
-    public function theCreateOrderPanelShowsAllFiftyOneAdvancesForASelectedPlayer(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $rendered = $console->set('selectedPlayerId', (string) $bob->id)->render()->toString();
-
-        self::assertSame(51, substr_count($rendered, '<article'));
+        self::assertSame([], $component->component()->ticket);
     }
 
     #[Test]
@@ -166,13 +65,222 @@ final class PosConsoleTest extends WebTestCase
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('startOrder');
-        $console->set('selectedPlayerId', (string) $alice->id);
-        $rendered = $console->call('addToTicket', ['key' => 'agriculture'])->render()->toString();
+        $component = $this->createPlayerOrders($alice);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $rendered = $component->call('addToTicket', ['key' => 'agriculture'])->render()->toString();
 
-        self::assertSame([], $console->component()->ticket);
+        self::assertSame([], $component->component()->ticket);
         self::assertStringContainsString('already owned', $rendered);
+    }
+
+    #[Test]
+    public function addingTheSameAdvanceTwiceIsDeduped(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $component->call('addToTicket', ['key' => 'pottery']);
+        $component->call('addToTicket', ['key' => 'pottery']);
+
+        self::assertSame(['pottery'], $component->component()->ticket);
+    }
+
+    #[Test]
+    public function removeFromTicketRemovesTheGivenKey(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $component->call('addToTicket', ['key' => 'pottery']);
+        $component->call('addToTicket', ['key' => 'democracy']);
+        $component->call('removeFromTicket', ['key' => 'pottery']);
+
+        self::assertSame(['democracy'], $component->component()->ticket);
+    }
+
+    #[Test]
+    public function checkoutValidatesThePosTurnOrderAndOwnsTheAdvances(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $component->call('addToTicket', ['key' => 'pottery']);
+        $component->call('addToTicket', ['key' => 'democracy']);
+        $component->call('checkout');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn);
+        self::assertInstanceOf(Order::class, $order);
+        self::assertSame(OrderStatus::Validated, $order->status);
+        self::assertSame(['pottery', 'democracy'], $this->reloadPlayer($bob)->advances);
+        self::assertSame([], $component->component()->ticket);
+    }
+
+    #[Test]
+    public function checkoutOnAPastTurnValidatesThatTurnsOrderNotTheCurrentOne(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $game->currentTurn = 3;
+        $this->entityManager->flush();
+
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => 1]);
+        $component->call('addToTicket', ['key' => 'pottery']);
+        $component->call('checkout');
+
+        $pastOrder = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, 1);
+        self::assertInstanceOf(Order::class, $pastOrder);
+        self::assertSame(OrderStatus::Validated, $pastOrder->status);
+
+        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($bob, 3));
+    }
+
+    #[Test]
+    public function checkoutOnAnAlreadyValidatedTurnShowsADomainExceptionMessage(): void
+    {
+        [$game, $alice] = $this->createGameWithAliceAndBob();
+        $this->validateOrderFor($alice, ['democracy']);
+
+        $component = $this->createPlayerOrders($alice);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $component->call('addToTicket', ['key' => 'pottery']);
+        $rendered = $component->call('checkout')->render()->toString();
+
+        self::assertStringContainsString('already been validated', $rendered);
+    }
+
+    #[Test]
+    public function posProductsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $component = $this->createPlayerOrders($bob);
+        $component->call('openPos', ['turn' => $game->currentTurn]);
+        $crawler = $component->render()->crawler();
+
+        $pottery = $crawler->filter('#product-pottery');
+        self::assertSame('button', $pottery->nodeName());
+        self::assertStringContainsString('Pottery', $pottery->text());
+        self::assertStringContainsString('60', $pottery->text());
+
+        // Mysticism spans two categories (religion + art), so it must carry two distinct
+        // --cat-1/--cat-2 custom properties feeding the tile's striped background.
+        $mysticism = $crawler->filter('#product-mysticism');
+        self::assertSame('button', $mysticism->nodeName());
+        self::assertStringContainsString('Mysticism', $mysticism->text());
+        self::assertStringContainsString('50', $mysticism->text());
+        self::assertSame(
+            '--cat-1: var(--advance-religion); --cat-2: var(--advance-art)',
+            $mysticism->attr('style'),
+        );
+    }
+
+    #[Test]
+    public function eraseOrderCascadesRemovingLaterTurnsAndDisowningAdvances(): void
+    {
+        [$game, $alice] = $this->createGameWithAliceAndBob();
+        $game->currentTurn = 1;
+        $this->entityManager->flush();
+        $this->validateOrderFor($alice, ['democracy']);
+
+        $game->currentTurn = 2;
+        $this->entityManager->flush();
+        $this->validateOrderFor($alice, ['pottery']);
+
+        $component = $this->createPlayerOrders($alice);
+        $component->call('eraseOrder', ['turn' => 1]);
+
+        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($alice, 1));
+        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($alice, 2));
+
+        $reloadedAlice = $this->reloadPlayer($alice);
+        self::assertNotContains('democracy', $reloadedAlice->advances);
+        self::assertNotContains('pottery', $reloadedAlice->advances);
+        self::assertContains('agriculture', $reloadedAlice->advances);
+    }
+
+    #[Test]
+    public function cardsRunFromCurrentTurnDownToOneAndAKioskPendingOrderFillsItsTurnCard(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $game->currentTurn = 3;
+        $this->entityManager->flush();
+        // Submitted from the player's kiosk: must fill the turn-3 card, not add a duplicate.
+        $this->createPendingOrderFor($bob, ['pottery']);
+
+        $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
+
+        self::assertCount(3, $cards);
+        self::assertStringContainsString('Turn 3', $cards->eq(0)->text());
+        self::assertSame('pending', $cards->eq(0)->attr('data-status'));
+        self::assertStringContainsString('Turn 2', $cards->eq(1)->text());
+        self::assertStringContainsString('Turn 1', $cards->eq(2)->text());
+    }
+
+    #[Test]
+    public function anEmptyTurnRendersAnEmptyStatusCardWithAnEditButton(): void
+    {
+        [, , $bob] = $this->createGameWithAliceAndBob();
+
+        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
+        $card = $crawler->filter('article')->first();
+
+        self::assertSame('empty', $card->attr('data-status'));
+        self::assertStringContainsString('Empty', $card->text());
+        self::assertStringContainsString('Total: 0', $card->text());
+        self::assertStringContainsString('VP: 0', $card->text());
+        self::assertSame('Edit', trim($card->filter('button')->first()->text()));
+    }
+
+    #[Test]
+    public function aPendingOrderCardShowsRecomputedNetCostsAndAnEditButton(): void
+    {
+        [, , $bob] = $this->createGameWithAliceAndBob();
+        $this->createPendingOrderFor($bob, ['pottery']);
+
+        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
+        $card = $crawler->filter('article')->first();
+
+        self::assertSame('pending', $card->attr('data-status'));
+        self::assertStringContainsString('Pottery', $card->text());
+        // pottery costs 60, Bob owns nothing granting a credit.
+        self::assertStringContainsString('Total: 60', $card->text());
+        self::assertStringContainsString('VP: 1', $card->text());
+        self::assertSame('Edit', trim($card->filter('button')->first()->text()));
+    }
+
+    #[Test]
+    public function aValidatedOrderCardShowsFrozenNetCostsAndAnEmptyButton(): void
+    {
+        [, , $bob] = $this->createGameWithAliceAndBob();
+        $this->validateOrderFor($bob, ['democracy', 'pottery']);
+
+        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
+        $card = $crawler->filter('article')->first();
+
+        self::assertSame('validated', $card->attr('data-status'));
+        self::assertStringContainsString('Democracy', $card->text());
+        self::assertStringContainsString('Pottery', $card->text());
+        self::assertStringContainsString('Total: 280', $card->text());
+        // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
+        self::assertStringContainsString('VP: 7', $card->text());
+        self::assertSame('Empty', trim($card->filter('button')->first()->text()));
+    }
+
+    #[Test]
+    public function eraseConfirmForTheCurrentTurnHasNoCascadeMention(): void
+    {
+        [$game, $alice] = $this->createGameWithAliceAndBob();
+        $game->currentTurn = 1;
+        $this->entityManager->flush();
+        $this->validateOrderFor($alice, ['democracy']);
+
+        $rendered = $this->createPlayerOrders($alice)->render()->toString();
+
+        self::assertStringContainsString('Empty turn 1?', $rendered);
+        self::assertStringNotContainsString('also empty turn', $rendered);
     }
 
     /** @return array{GameSession, Player, Player} */
@@ -191,6 +299,14 @@ final class PosConsoleTest extends WebTestCase
         return [$game, $alice, $bob];
     }
 
+    private function createPlayerOrders(Player $player): object
+    {
+        return $this->createLiveComponent('PlayerOrders', [
+            'player' => $player,
+            'ordersStamp' => '',
+        ]);
+    }
+
     /** @param list<string> $slugs */
     private function createPendingOrderFor(Player $player, array $slugs): Order
     {
@@ -203,11 +319,11 @@ final class PosConsoleTest extends WebTestCase
     }
 
     /** @param list<string> $slugs */
-    private function validateOrderFor(Player $player, array $slugs, int $money): Order
+    private function validateOrderFor(Player $player, array $slugs): Order
     {
         $order = $this->createPendingOrderFor($player, $slugs);
 
-        self::getContainer()->get(OrderValidator::class)->validate($order, $money);
+        self::getContainer()->get(OrderValidator::class)->validate($order);
 
         return $order;
     }
