@@ -1,0 +1,6 @@
+<details class="tab" name="{{ group }}" {{ open|default(false) ? 'open' }}{% if tabColor|default %} style="--tab-color: {{ tabColor }}"{% endif %}>
+    <summary{% if selectAction|default %} {{ live_action(selectAction, {tab: tabId}, [], 'click') }}{% endif %}>{{ label }}</summary>
+    <div class="tab__panel">
+        {% block panel %}{% endblock %}
+    </div>
+</details>
