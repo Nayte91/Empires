@@ -37,8 +37,9 @@ advances:
         credits:
             craft: 5
             science: 20
-        pack:
-            science: 100
+        promotion:
+            gift:
+                science: 100
         mitigation:
             - epidemic
 
@@ -253,7 +254,8 @@ advances:
             art: 5
             science: 20
         promotion:
-            any: 40
+            discount:
+                any: 40
         mitigation:
             - regression
 
@@ -338,6 +340,8 @@ advances:
         credits:
             craft: 20
             science: 5
+        payment:
+            treasury: 2
         aggravation:
             - slave_revolt
 
@@ -359,12 +363,14 @@ advances:
         cost: 180
         points: 3
         categories:
+            - craft
             - religion
         credits:
             craft: 10
             religion: 10
-            special: 20
             wonder_of_the_world: 20
+        promotion:
+            option: 20
 
     monotheism:
         cost: 240
@@ -374,7 +380,7 @@ advances:
         credits:
             civic: 5
             religion: 20
-        mitigation:
+        aggravation:
             - iconoclasm_and_heresy
 
     music:
@@ -451,7 +457,6 @@ advances:
         credits:
             art: 20
             religion: 5
-            agriculture: 10
         aggravation:
             - barbarian_hordes
 
@@ -609,6 +614,7 @@ advances:
             - science
         credits:
             civic: 5
-            science: 10
-            special: 10
+            science: 5
             cartography: 10
+        promotion:
+            option: 10

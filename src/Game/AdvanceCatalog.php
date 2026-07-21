@@ -186,7 +186,7 @@ final class AdvanceCatalog
      */
     private function hydrateAdvance(string $key, array $data): Advance
     {
-        // The 'pack' and 'promotion' YAML keys exist but are intentionally not read (out of scope for v1 shop).
+        // The 'promotion' and 'payment' YAML keys exist but are intentionally not read (out of scope for v1 shop).
         return new Advance(
             key: $key,
             name: str_replace('_', ' ', $key),

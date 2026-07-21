@@ -9,7 +9,7 @@ use App\Game\Dto\Advance;
 
 final class PriceCalculator
 {
-    // Starting credits granted by config/game/scenarios.yaml, and the 'pack'/'promotion'
+    // Starting credits granted by config/game/scenarios.yaml, and the 'promotion'/'payment'
     // YAML keys, are intentionally out of scope for this v1 shop pricing.
 
     /** @param list<Advance> $owned */
