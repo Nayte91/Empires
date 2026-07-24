@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Game;
 
 use App\Game\AstCatalog;
+use App\Game\ASTVersion;
 use App\Game\Dto\AstEraDefinition;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -16,12 +18,6 @@ final class AstCatalogTest extends TestCase
     protected function setUp(): void
     {
         $this->astCatalog = new AstCatalog(\dirname(__DIR__, 2).'/config/game/ast.yaml');
-    }
-
-    #[Test]
-    public function getTrackLengthReturnsSixteen(): void
-    {
-        $this->assertSame(16, $this->astCatalog->getTrackLength());
     }
 
     #[Test]
@@ -45,7 +41,7 @@ final class AstCatalogTest extends TestCase
     #[Test]
     public function lateIronAgeHasItsFullBasicAndExpertRequirements(): void
     {
-        $lateIronAge = $this->astCatalog->getEraForPosition(15);
+        $lateIronAge = $this->astCatalog->getEraForPosition(15, ASTVersion::BASIC, 'standard');
 
         $this->assertSame('late_iron_age', $lateIronAge->key);
         $this->assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
@@ -53,38 +49,76 @@ final class AstCatalogTest extends TestCase
     }
 
     #[Test]
-    public function getEraForPositionZeroReturnsStart(): void
+    #[DataProvider('provideGetEraForPositionResolvesTheStandardBasicTrackCases')]
+    public function getEraForPositionResolvesTheStandardBasicTrack(int $position, string $expectedEraKey): void
     {
-        $this->assertSame('start', $this->astCatalog->getEraForPosition(0)->key);
+        $this->assertSame($expectedEraKey, $this->astCatalog->getEraForPosition($position, ASTVersion::BASIC, 'standard')->key);
+    }
+
+    /** @return iterable<string, array{int, string}> */
+    public static function provideGetEraForPositionResolvesTheStandardBasicTrackCases(): iterable
+    {
+        yield 'position 0 is start' => [0, 'start'];
+
+        yield 'position 4 is stone age' => [4, 'stone_age'];
+
+        yield 'position 5 is early bronze age' => [5, 'early_bronze_age'];
+
+        yield 'position 15 is late iron age' => [15, 'late_iron_age'];
+
+        yield 'negative position clamps to start' => [-3, 'start'];
+
+        yield 'out of bounds position clamps to late iron age' => [99, 'late_iron_age'];
     }
 
     #[Test]
-    public function getEraForPositionFourReturnsStoneAge(): void
+    public function getEraForPositionResolvesDifferentlyPerEmpireGroup(): void
     {
-        $this->assertSame('stone_age', $this->astCatalog->getEraForPosition(4)->key);
+        $this->assertSame('middle_bronze_age', $this->astCatalog->getEraForPosition(8, ASTVersion::BASIC, 'standard')->key);
+        $this->assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(8, ASTVersion::BASIC, 'slow_starter')->key);
     }
 
     #[Test]
-    public function getEraForPositionFiveReturnsEarlyBronzeAge(): void
+    #[DataProvider('provideGetTrackLengthReturnsTheCorrectTotalForEachTrackCases')]
+    public function getTrackLengthReturnsTheCorrectTotalForEachTrack(ASTVersion $astVersion, string $group, int $expectedLength): void
     {
-        $this->assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(5)->key);
+        $this->assertSame($expectedLength, $this->astCatalog->getTrackLength($astVersion, $group));
+    }
+
+    /** @return iterable<string, array{ASTVersion, string, int}> */
+    public static function provideGetTrackLengthReturnsTheCorrectTotalForEachTrackCases(): iterable
+    {
+        yield 'basic standard' => [ASTVersion::BASIC, 'standard', 16];
+
+        yield 'basic slow starter' => [ASTVersion::BASIC, 'slow_starter', 16];
+
+        yield 'basic extended early bronze' => [ASTVersion::BASIC, 'extended_early_bronze', 16];
+
+        yield 'expert standard' => [ASTVersion::EXPERT, 'standard', 17];
+
+        yield 'expert extended stone age' => [ASTVersion::EXPERT, 'extended_stone_age', 17];
     }
 
     #[Test]
-    public function getEraForPositionFifteenReturnsLateIronAge(): void
+    #[DataProvider('provideResolveEmpireGroupReturnsTheGroupForTheVersionCases')]
+    public function resolveEmpireGroupReturnsTheGroupForTheVersion(ASTVersion $astVersion, ?string $empireSlug, string $expectedGroup): void
     {
-        $this->assertSame('late_iron_age', $this->astCatalog->getEraForPosition(15)->key);
+        $this->assertSame($expectedGroup, $this->astCatalog->resolveEmpireGroup($astVersion, $empireSlug));
     }
 
-    #[Test]
-    public function getEraForPositionClampsNegativePositionToStart(): void
+    /** @return iterable<string, array{ASTVersion, ?string, string}> */
+    public static function provideResolveEmpireGroupReturnsTheGroupForTheVersionCases(): iterable
     {
-        $this->assertSame('start', $this->astCatalog->getEraForPosition(-3)->key);
-    }
+        yield 'minoa is a slow starter in basic' => [ASTVersion::BASIC, 'minoa', 'slow_starter'];
 
-    #[Test]
-    public function getEraForPositionClampsOutOfBoundsPositionToLateIronAge(): void
-    {
-        $this->assertSame('late_iron_age', $this->astCatalog->getEraForPosition(99)->key);
+        yield 'celt has an extended early bronze age in basic' => [ASTVersion::BASIC, 'celt', 'extended_early_bronze'];
+
+        yield 'kushan has an extended stone age in expert' => [ASTVersion::EXPERT, 'kushan', 'extended_stone_age'];
+
+        yield 'kushan is standard in basic' => [ASTVersion::BASIC, 'kushan', 'standard'];
+
+        yield 'null empire defaults to standard' => [ASTVersion::BASIC, null, 'standard'];
+
+        yield 'unknown empire falls back to standard' => [ASTVersion::BASIC, 'not-a-real-empire', 'standard'];
     }
 }

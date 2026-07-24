@@ -25,10 +25,11 @@ class Player
     public const int CARDS_MIN = 0;
     public const int AST_MIN = 0;
 
-    // REFACTOR-WHEN: track_length in ast.yaml diverges from 16 — AST_MAX duplicates track_length-1
-    // (same established pattern as CENSUS_MAX vs max_population); bind entity clamps to config in
-    // one move when any of them diverges.
-    public const int AST_MAX = 15;
+    // REFACTOR-WHEN: this is now a deliberately generous shared bound covering both AST versions'
+    // track lengths (16 for basic, 17 for expert), not a tight match to either — mirrors how
+    // CENSUS_MAX/TREASURY_MAX are simple static bounds while version-specific precision (exact
+    // track length per version+empire group) lives in AstCatalog, not here.
+    public const int AST_MAX = 16;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]

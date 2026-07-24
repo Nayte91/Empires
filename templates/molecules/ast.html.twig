@@ -12,21 +12,23 @@
     <thead>
         <tr>
             <th scope="col"></th>
-            {% for era in this.eras %}
-                <th scope="col" colspan="{{ era.span }}" class="{{ loop.index0 is odd ? 'alt' : '' }}">{{ era.name }}</th>
+            {% for entry in this.eraHeaders %}
+                <th scope="col" colspan="{{ entry.span }}" class="{{ loop.index0 is odd ? 'alt' : '' }}">{{ entry.era.name }}</th>
             {% endfor %}
         </tr>
     </thead>
     <tbody>
-        {% set columnEras = this.columnEras %}
         {% for player in this.rankedPlayers %}
+            {% set columnEras = this.columnErasFor(player) %}
             <tr data-empire="{{ player.empire }}">
                 <th scope="row"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
                 {% for position in range(0, this.trackLength - 1) %}
-                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{%- if position == 0 -%}
-                        <twig:atoms:Marker :pos="player.astPosition" empire="{{ player.empire }}" title="{{ player.name }} — {{ columnEras[player.astPosition].name }}" />
-                    {%- endif -%}
-                    {%- if columnEras[position].key == 'start' -%}→{%- endif -%}</td>
+                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
+                        {%- if position == 0 -%}
+                            <twig:atoms:Marker :pos="player.astPosition" empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
+                        {%- endif -%}
+                        {%- if columnEras[position].key == 'start' -%}→{%- endif -%}
+                    </td>
                 {% endfor %}
             </tr>
         {% else %}

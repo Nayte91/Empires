@@ -13,7 +13,6 @@ final readonly class AstEraDefinition
     public function __construct(
         public string $key,
         public string $name,
-        public int $span,
         public array $basicRequirements,
         public array $expertRequirements,
         public int $index,

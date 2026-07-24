@@ -138,8 +138,8 @@ final class AstTest extends WebTestCase
     public function requirementsMoleculeListsEachEraInBasicVersionWithNoRequirementsFallback(): void
     {
         $eras = [
-            new AstEraDefinition('stone_age', 'Stone Age', 5, [], [], 0),
-            new AstEraDefinition('early_bronze_age', 'Early Bronze Age', 3, ['cities' => 2, 'min_advance_cost' => 1], ['cities' => 3], 1),
+            new AstEraDefinition('stone_age', 'Stone Age', [], [], 0),
+            new AstEraDefinition('early_bronze_age', 'Early Bronze Age', ['cities' => 2, 'min_advance_cost' => 1], ['cities' => 3], 1),
         ];
 
         $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'basic'])->toString();
@@ -153,7 +153,7 @@ final class AstTest extends WebTestCase
     public function requirementsMoleculeSwitchesToExpertRequirementsWhenAstVersionIsExpert(): void
     {
         $eras = [
-            new AstEraDefinition('early_bronze_age', 'Early Bronze Age', 3, ['cities' => 2], ['cities' => 3], 0),
+            new AstEraDefinition('early_bronze_age', 'Early Bronze Age', ['cities' => 2], ['cities' => 3], 0),
         ];
 
         $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'expert'])->toString();

@@ -9,17 +9,27 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class AstCatalog
 {
+    private const array ERA_NAMES = [
+        'start' => 'Start',
+        'stone_age' => 'Stone Age',
+        'early_bronze_age' => 'Early Bronze Age',
+        'middle_bronze_age' => 'Middle Bronze Age',
+        'late_bronze_age' => 'Late Bronze Age',
+        'early_iron_age' => 'Early Iron Age',
+        'late_iron_age' => 'Late Iron Age',
+    ];
+
     /**
      * @var null|array{
      *     ast?: array{
-     *         eras?: array<string, array{
-     *             name?: string,
-     *             span?: int,
-     *             requirements?: array{
-     *                 basic?: array<string, int>,
-     *                 expert?: array<string, int>,
-     *             },
+     *         requirements?: array<string, array{
+     *             basic?: array<string, int>,
+     *             expert?: array<string, int>,
      *         }>,
+     *         tracks?: array<string, array<string, array{
+     *             empires?: list<string>,
+     *             spans?: array<string, int>,
+     *         }>>,
      *     },
      * }
      */
@@ -28,17 +38,34 @@ final class AstCatalog
     /** @var null|list<AstEraDefinition> */
     private ?array $eras = null;
 
-    /** @var null|list<AstEraDefinition> */
-    private ?array $columnEras = null;
+    /** @var array<string, list<AstEraDefinition>> keyed by "{version}:{group}" */
+    private array $columnEras = [];
 
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/game/ast.yaml')]
         private readonly string $astDataPath,
     ) {}
 
-    public function getTrackLength(): int
+    public function resolveEmpireGroup(ASTVersion $version, ?string $empireSlug): string
     {
-        return array_sum(array_map(static fn (AstEraDefinition $era): int => $era->span, $this->getEras()));
+        if (null === $empireSlug) {
+            return 'standard';
+        }
+
+        $groups = $this->loadAstData()['ast']['tracks'][$version->value] ?? [];
+
+        foreach ($groups as $group => $groupData) {
+            if (in_array($empireSlug, $groupData['empires'] ?? [], true)) {
+                return $group;
+            }
+        }
+
+        return 'standard';
+    }
+
+    public function getTrackLength(ASTVersion $version, string $group): int
+    {
+        return array_sum($this->getSpans($version, $group));
     }
 
     /** @return list<AstEraDefinition> */
@@ -48,12 +75,18 @@ final class AstCatalog
             return $this->eras;
         }
 
-        $erasData = $this->loadAstData()['ast']['eras'] ?? [];
+        $requirements = $this->loadAstData()['ast']['requirements'] ?? [];
         $eras = [];
         $index = 0;
 
-        foreach ($erasData as $key => $era) {
-            $eras[] = $this->hydrateEra($key, $era, $index);
+        foreach ($requirements as $key => $requirement) {
+            $eras[] = new AstEraDefinition(
+                key: $key,
+                name: self::ERA_NAMES[$key] ?? $key,
+                basicRequirements: $requirement['basic'] ?? [],
+                expertRequirements: $requirement['expert'] ?? [],
+                index: $index,
+            );
             ++$index;
         }
 
@@ -63,28 +96,31 @@ final class AstCatalog
     }
 
     /** @return list<AstEraDefinition> one entry per track position, in file order */
-    public function getColumnEras(): array
+    public function getColumnEras(ASTVersion $version, string $group): array
     {
-        if (null !== $this->columnEras) {
-            return $this->columnEras;
+        $cacheKey = "{$version->value}:{$group}";
+
+        if (isset($this->columnEras[$cacheKey])) {
+            return $this->columnEras[$cacheKey];
         }
 
+        $spans = $this->getSpans($version, $group);
         $columnEras = [];
 
         foreach ($this->getEras() as $era) {
-            for ($i = 0; $i < $era->span; ++$i) {
+            for ($i = 0; $i < ($spans[$era->key] ?? 0); ++$i) {
                 $columnEras[] = $era;
             }
         }
 
-        $this->columnEras = $columnEras;
+        $this->columnEras[$cacheKey] = $columnEras;
 
-        return $this->columnEras;
+        return $columnEras;
     }
 
-    public function getEraForPosition(int $position): AstEraDefinition
+    public function getEraForPosition(int $position, ASTVersion $version, string $group): AstEraDefinition
     {
-        $columnEras = $this->getColumnEras();
+        $columnEras = $this->getColumnEras($version, $group);
 
         if ([] === $columnEras) {
             throw new \RuntimeException('Invalid AST configuration: no eras defined');
@@ -95,39 +131,23 @@ final class AstCatalog
         return $columnEras[$clampedPosition];
     }
 
-    /**
-     * @param array{
-     *     name?: string,
-     *     span?: int,
-     *     requirements?: array{
-     *         basic?: array<string, int>,
-     *         expert?: array<string, int>,
-     *     },
-     * } $era
-     */
-    private function hydrateEra(string $key, array $era, int $index): AstEraDefinition
+    /** @return array<string, int> */
+    private function getSpans(ASTVersion $version, string $group): array
     {
-        return new AstEraDefinition(
-            key: $key,
-            name: $era['name'] ?? '',
-            span: $era['span'] ?? 0,
-            basicRequirements: $era['requirements']['basic'] ?? [],
-            expertRequirements: $era['requirements']['expert'] ?? [],
-            index: $index,
-        );
+        return $this->loadAstData()['ast']['tracks'][$version->value][$group]['spans'] ?? [];
     }
 
     /**
      * @return array{
      *     ast?: array{
-     *         eras?: array<string, array{
-     *             name?: string,
-     *             span?: int,
-     *             requirements?: array{
-     *                 basic?: array<string, int>,
-     *                 expert?: array<string, int>,
-     *             },
+     *         requirements?: array<string, array{
+     *             basic?: array<string, int>,
+     *             expert?: array<string, int>,
      *         }>,
+     *         tracks?: array<string, array<string, array{
+     *             empires?: list<string>,
+     *             spans?: array<string, int>,
+     *         }>>,
      *     },
      * }
      */
