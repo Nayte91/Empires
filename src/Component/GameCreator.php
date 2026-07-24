@@ -9,6 +9,7 @@ use App\Game\Dto\Empire;
 use App\Game\EmpireCatalog;
 use App\Game\GameData;
 use App\Game\ScenarioCatalog;
+use App\Game\Service\ScenarioRuleSummarizer;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -55,6 +56,7 @@ final class GameCreator
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly MessageBusInterface $commandBus,
         private readonly ValidatorInterface $validator,
+        private readonly ScenarioRuleSummarizer $scenarioRuleSummarizer,
     ) {}
 
     public function mount(): void
@@ -317,6 +319,12 @@ final class GameCreator
             static fn (string $region): array => ['value' => $region, 'label' => ucfirst($region)],
             ['west', 'east'],
         );
+    }
+
+    /** @return list<string> */
+    public function getScenarioSummary(): array
+    {
+        return $this->scenarioRuleSummarizer->summarize($this->game);
     }
 
     /**

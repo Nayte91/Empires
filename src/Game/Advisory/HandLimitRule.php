@@ -17,13 +17,16 @@ final class HandLimitRule implements AdvisoryRule
 
     // REFACTOR-WHEN: a 3rd hand-limit bracket lands (e.g. an empire/advance-based modifier on top of the player-count one) — read from config/game data instead of these constants.
 
-    public function evaluate(Player $player): ?Advisory
+    public function limitFor(int $playerCount): int
     {
-        $limit = $player->game->playerCount >= self::LARGE_GAME_PLAYER_THRESHOLD
+        return $playerCount >= self::LARGE_GAME_PLAYER_THRESHOLD
             ? self::LARGE_GAME_HAND_LIMIT
             : self::HAND_LIMIT;
+    }
 
-        if ($player->cards > $limit) {
+    public function evaluate(Player $player): ?Advisory
+    {
+        if ($player->cards > $this->limitFor($player->game->playerCount)) {
             return new Advisory('You must discard a card!');
         }
 

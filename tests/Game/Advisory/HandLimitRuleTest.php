@@ -15,6 +15,25 @@ use PHPUnit\Framework\TestCase;
 final class HandLimitRuleTest extends TestCase
 {
     #[Test]
+    #[DataProvider('provideLimitForReturnsTheHandLimitForPlayerCountCases')]
+    public function limitForReturnsTheHandLimitForPlayerCount(int $playerCount, int $expectedLimit): void
+    {
+        $this->assertSame($expectedLimit, new HandLimitRule()->limitFor($playerCount));
+    }
+
+    /** @return iterable<string, array{int, int}> */
+    public static function provideLimitForReturnsTheHandLimitForPlayerCountCases(): iterable
+    {
+        yield 'standard game' => [9, 8];
+
+        yield 'just under large-game threshold' => [11, 8];
+
+        yield 'large-game threshold' => [12, 9];
+
+        yield 'large-game upper player count' => [18, 9];
+    }
+
+    #[Test]
     #[DataProvider('provideHandWithinLimitYieldsNoAdvisoryCases')]
     public function handWithinLimitYieldsNoAdvisory(int $playerCount, int $cards): void
     {

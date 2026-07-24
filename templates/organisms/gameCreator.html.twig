@@ -31,6 +31,12 @@
                 <option value="expert" {{ game.astVersion == 'expert' ? 'selected' }}>Expert</option>
             </select>
         </label>
+
+        <ul class="game-creator__summary">
+            {% for line in this.scenarioSummary %}
+                <li>{{ line }}</li>
+            {% endfor %}
+        </ul>
     </fieldset>
 
     <section class="game-creator__players">

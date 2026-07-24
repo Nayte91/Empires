@@ -51,6 +51,26 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
+    public function scenarioSummaryShowsTheCardLimitForTheDefaultPlayerCount(): void
+    {
+        $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
+
+        $this->assertStringContainsString('Card limit: 8', $rendered);
+    }
+
+    #[Test]
+    public function scenarioSummaryShowsTheRaisedCardLimitForALargeGame(): void
+    {
+        $rendered = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 12)
+            ->render()
+            ->toString()
+        ;
+
+        $this->assertStringContainsString('Card limit: 9', $rendered);
+    }
+
+    #[Test]
     public function settingTheSlugSlugifiesItAndShowsItAsAvailable(): void
     {
         $rendered = $this->createLiveComponent('GameCreator')
