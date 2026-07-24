@@ -17,6 +17,10 @@
         text-align: start;
     }
 
+    & td[data-empire] {
+        color: var(--player-color, dimgray);
+    }
+
     & td[data-scored] {
         color: goldenrod;
     }

@@ -33,7 +33,8 @@ final class AstTest extends WebTestCase
     public function rendersTrackLengthCellsPerPlayerRow(): void
     {
         $game = new GameSession();
-        new Player($game, 'Alice');
+        $player = new Player($game, 'Alice');
+        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -57,7 +58,8 @@ final class AstTest extends WebTestCase
     public function playerAtPositionZeroGetsAMarkerTitledWithTheirNameAndEraName(): void
     {
         $game = new GameSession();
-        new Player($game, 'Alice');
+        $player = new Player($game, 'Alice');
+        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -70,6 +72,7 @@ final class AstTest extends WebTestCase
         $game = new GameSession();
         $player = new Player($game, 'Alice');
         $player->astPosition = 4;
+        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -88,8 +91,10 @@ final class AstTest extends WebTestCase
         $game = new GameSession();
         $atStart = new Player($game, 'Alice');
         $atStart->astPosition = 0;
+        $atStart->empire = 'minoa';
         $elsewhere = new Player($game, 'Bob');
         $elsewhere->astPosition = 3;
+        $elsewhere->empire = 'saba';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -101,7 +106,8 @@ final class AstTest extends WebTestCase
     public function cellsMarkTheColumnMatchingTheCurrentTurnOncePerPlayerRowPlusTfoot(): void
     {
         $game = new GameSession();
-        new Player($game, 'Alice');
+        $player = new Player($game, 'Alice');
+        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 

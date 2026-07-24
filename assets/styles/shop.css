@@ -45,14 +45,6 @@
         }
     }
 
-    .shop__header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
     .shop__error {
         border: 1px solid var(--operator-error);
         border-radius: var(--operator-radius);
@@ -237,7 +229,7 @@
 
     .allocation-picker__step {
         aspect-ratio: 1;
-        inline-size: 1.5rem;
+        inline-size: var(--size-circle-sm);
         border-radius: 50%;
         padding: 0;
         display: inline-grid;

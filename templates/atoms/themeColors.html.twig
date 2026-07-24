@@ -7,4 +7,12 @@
         --advance-{{ category }}: {{ color }};
         {% endfor %}
     }
+
+    {% for slug in this.empireColors|keys %}
+    [data-empire="{{ slug }}"] { --player-color: var(--empire-{{ slug }}); }
+    {% endfor %}
+    {% for category in this.advanceCategoryColors|keys %}
+    [data-advance-category="{{ category }}"] { --category-color: var(--advance-{{ category }}); }
+    [data-advance-category-2="{{ category }}"] { --cat-2: var(--advance-{{ category }}); }
+    {% endfor %}
 </style>

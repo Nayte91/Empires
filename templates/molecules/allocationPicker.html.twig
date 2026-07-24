@@ -8,7 +8,7 @@
     <p class="allocation-picker__remaining">Remaining: {{ remaining }}</p>
     <ul class="allocation-picker__rows">
         {% for facet, current in allocation %}
-            <li class="allocation-picker__row" style="--category-color: var(--advance-{{ facet }})">
+            <li class="allocation-picker__row" data-advance-category="{{ facet }}">
                 <span class="allocation-picker__category">{{ facet|capitalize }}</span>
                 {% set isMinusDisabled = current <= 0 %}
                 {% set isPlusDisabled = remaining <= 0 %}

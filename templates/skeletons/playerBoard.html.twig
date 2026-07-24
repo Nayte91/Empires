@@ -2,7 +2,7 @@
 
 {% block title %}Empires - {{ player.name }}'s board{% endblock %}
 
-{% block body_attr %}{% if player.empire %}style="background-color: var(--empire-{{ player.empire }}, dimgray)"{% endif %}{% endblock %}
+{% block body_attr %}data-empire="{{ player.empire }}"{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}

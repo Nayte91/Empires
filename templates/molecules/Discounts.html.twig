@@ -7,7 +7,7 @@
     </thead>
     <tbody>
         {% for category, amount in this.credits.facets %}
-            <tr class="discounts__category" style="--category-color: {{ this.categoryColors[category] }}">
+            <tr class="discounts__category" data-advance-category="{{ category }}">
                 <td>{{ category|capitalize }}</td>
                 <td><b>{{ amount }}</b></td>
             </tr>

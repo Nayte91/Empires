@@ -55,9 +55,9 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        $this->assertStringContainsString('--category-color', $rendered);
-        $this->assertStringContainsString('--category-color: #F7941E', $rendered);
-        $this->assertStringContainsString('--category-color: #39B54A', $rendered);
+        // Agriculture provides credits for craft and science categories
+        $this->assertStringContainsString('data-advance-category="craft"', $rendered);
+        $this->assertStringContainsString('data-advance-category="science"', $rendered);
     }
 
     #[Test]

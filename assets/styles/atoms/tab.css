@@ -1,26 +1,15 @@
-.tab-group {
-    margin-block: 1rem;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-
-    /* summary and panel become direct flex items of .tab-group; ::details-content is the
-       modern pseudo-box wrapping a <details>'s content — without display: contents on it,
-       it stays the flex item instead of summary/panel themselves. */
-    > details, > details::details-content { display: contents }
-
-    /* safety net: contents on ::details-content defeats the native content-visibility
-       that would otherwise hide closed panels */
-    > details:not([open]) .tab__panel { display: none }
+.tab {
+    --tab-radius: 0.375rem;
+    --tab-border: 1px solid gainsboro;
 
     summary {
         order: 1;
         flex: 1 0 auto;
-        border: 1px solid gainsboro;
+        border: var(--tab-border);
         border-block-end: none;
-        border-radius: 0.375rem 0.375rem 0 0;
+        border-radius: var(--tab-radius) var(--tab-radius) 0 0;
         padding: 0.5em 1.25em;
-        background: var(--tab-color, dimgray);
+        background: var(--player-color, dimgray);
         list-style: none;
         text-align: center;
         font-weight: 600;
@@ -31,17 +20,15 @@
         &::-webkit-details-marker { display: none }
     }
 
-    /* active tab cue: raised look, since color saturation no longer distinguishes it
-       (closed and open tabs now share the same full-strength --tab-color background) */
-    details[open] summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
+    &:open summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
 }
 
-.tab__panel {
+.tab::details-content {
     order: 2;
     box-sizing: border-box;
     flex: 1 0 100%;
-    border: 1px solid gainsboro;
-    border-radius: 0 0.375rem 0.375rem 0.375rem;
+    border: var(--tab-border);
+    border-radius: 0 var(--tab-radius) var(--tab-radius) var(--tab-radius);
     padding: 1.5rem;
     background: white;
 }

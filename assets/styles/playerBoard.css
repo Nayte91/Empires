@@ -38,19 +38,6 @@
         }
     }
 
-    .player-board__header {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 1rem;
-
-        @media (max-width: 40em) {
-            flex-direction: column;
-            align-items: stretch;
-        }
-    }
-
     .player-board__shop-link {
         border: 1px solid var(--operator-accent);
         border-radius: var(--operator-radius);

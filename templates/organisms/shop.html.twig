@@ -1,10 +1,11 @@
-<div
+{% set title = player.name ~ '\'s shop' %}
+{% set subtitle = 'Turn ' ~ player.game.currentTurn %}
+
+<main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['game-updated', 'order-updated']})) }}
     class="shop"
 >
-    <header class="shop__header">
-        <h1>{{ player.name }}'s shop — Turn {{ player.game.currentTurn }}</h1>
-    </header>
+    <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
     {% if error %}
         <p class="shop__error" role="alert">{{ error }}</p>
@@ -89,4 +90,4 @@
             {% endif %}
         </aside>
     </div>
-</div>
+</main>

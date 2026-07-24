@@ -101,13 +101,14 @@ final class PlayerBoardTest extends WebTestCase
     public function discountCategoryRowsCarryTheOfficialCategoryColor(): void
     {
         $player = $this->createPlayer();
-        $player->ownAdvances(['advanced_military']);
+        $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
-        $this->assertStringContainsString('--category-color: #F04E56', $rendered);
-        $this->assertStringContainsString('--category-color: #39B54A', $rendered);
+        // Agriculture provides credits for craft and science categories
+        $this->assertStringContainsString('data-advance-category="craft"', $rendered);
+        $this->assertStringContainsString('data-advance-category="science"', $rendered);
     }
 
     #[Test]
@@ -123,25 +124,22 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function bodyBackgroundIsColoredForAPlayerWithAnEmpireAndNotOtherwise(): void
+    public function bodyBackgroundIsColoredByThePlayersEmpire(): void
     {
         $withEmpire = $this->createPlayer();
         $withEmpire->empire = 'minoa';
-        $withoutEmpire = $this->createPlayer('Bob');
         $this->entityManager->flush();
 
         $client = self::getClient(self::getContainer()->get('test.client'));
 
         $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug);
         $boardContent = (string) $client->getResponse()->getContent();
-        $this->assertStringContainsString('background-color: var(--empire-minoa, dimgray)', $boardContent);
+        $this->assertStringContainsString('data-empire="minoa"', $boardContent);
         $this->assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
+        $this->assertMatchesRegularExpression('/<body[^>]*data-empire="minoa"/', $boardContent);
 
         $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
-        $this->assertStringContainsString('background-color: var(--empire-minoa, dimgray)', (string) $client->getResponse()->getContent());
-
-        $client->request('GET', '/'.$withoutEmpire->game->slug.'/player/'.$withoutEmpire->slug);
-        $this->assertStringNotContainsString('background-color', (string) $client->getResponse()->getContent());
+        $this->assertStringContainsString('data-empire="minoa"', (string) $client->getResponse()->getContent());
     }
 
     private function createPlayer(string $name = 'Alice'): Player

@@ -13,15 +13,10 @@
     --operator-gap: 1.5rem;
 }
 
-:where(h1, h2) {
-    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', P052, serif;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    font-weight: 600;
-}
-
 body {
     margin: 0;
     padding: 0;
     background-color: #aaa;
 }
+
+body[data-empire] { background-color: var(--player-color, dimgray) }

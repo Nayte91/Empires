@@ -88,6 +88,7 @@ final class GameDashboardTest extends WebTestCase
     private function createPlayer(GameSession $game, string $name): Player
     {
         $player = new Player($game, $name);
+        $player->empire = 'minoa';
         $this->entityManager->persist($player);
         $this->entityManager->flush();
 

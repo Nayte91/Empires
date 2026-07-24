@@ -3,7 +3,8 @@
 <article
     id="product-{{ row.advance.key }}"
     class="product-card{{ row.product.owned ? ' product-card--owned' }}{{ row.product.inCart ? ' product-card--in-cart' }}"
-    style="--cat-1: var(--advance-{{ cat1 }}); --cat-2: var(--advance-{{ cat2 }})"
+    data-advance-category="{{ cat1 }}"
+    data-advance-category-2="{{ cat2 }}"
     {{ row.product.owned ? 'data-owned' }}
     {{ row.product.inCart ? 'data-in-cart' }}
 >

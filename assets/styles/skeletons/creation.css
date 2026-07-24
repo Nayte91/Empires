@@ -7,10 +7,9 @@
     font-size: 0.9375rem;
 
     input, select {
-        padding: 0.4em 0.6em;
+        padding: 0.5em;
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
-        font-size: 0.9375rem;
 
         &:focus-visible {
             outline: 2px solid var(--operator-accent);
@@ -38,13 +37,7 @@
 
         th { background: var(--operator-bg-subtle) }
 
-        tbody tr[style] { background: color-mix(in oklab, var(--player-color) 20%, white) }
-    }
-
-    .game-creator__header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
+        tbody tr[data-empire] { background: color-mix(in oklab, var(--player-color, dimgray) 20%, white) }
     }
 
     .game-creator__error {

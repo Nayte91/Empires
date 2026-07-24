@@ -1,8 +1,8 @@
-<div class="game-dashboard">
+<main class="game-dashboard">
     {% set operatorUrl = this.operatorUrl %}
     {% set operatorQr = this.operatorQr %}
 
-    <h1>{{ game.slug }}</h1>
+    <twig:atoms:PageTitle :title="game.slug" />
 
     <p class="game-dashboard__operator-link">
         <twig:molecules:Modal class="game-dashboard__name-modal">
@@ -25,5 +25,5 @@
     <twig:Ast :game="game" />
 
     <h2><a href="{{ path('app_game_census', {slug: game.slug}) }}">Census</a></h2>
-    <twig:CensusView :game="game" />
-</div>
+    <twig:Census :game="game" />
+</main>

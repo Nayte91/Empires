@@ -21,10 +21,10 @@
         {% set columnEras = this.columnEras %}
         {% for player in this.rankedPlayers %}
             <tr data-empire="{{ player.empire }}">
-                <th scope="row" style="background-color: var(--empire-{{ player.empire ?? 'none' }}, dimgray)"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
+                <th scope="row"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
                 {% for position in range(0, this.trackLength - 1) %}
                     <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{%- if position == 0 -%}
-                        <twig:atoms:Marker :pos="player.astPosition" color="var(--empire-{{ player.empire ?? 'none' }}, dimgray)" title="{{ player.name }} — {{ columnEras[player.astPosition].name }}" />
+                        <twig:atoms:Marker :pos="player.astPosition" empire="{{ player.empire }}" title="{{ player.name }} — {{ columnEras[player.astPosition].name }}" />
                     {%- endif -%}
                     {%- if columnEras[position].key == 'start' -%}→{%- endif -%}</td>
                 {% endfor %}

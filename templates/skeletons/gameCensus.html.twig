@@ -1,6 +1,9 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - Census{% endblock %}
+{% set title = 'Census' %}
+{% set subtitle = game.slug %}
+
+{% block title %}{{ title }} - {{ subtitle }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -9,5 +12,8 @@
 {% endblock %}
 
 {% block main %}
-    <twig:CensusView :game="game" />
+    <main>
+        <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
+        <twig:Census :game="game" />
+    </main>
 {% endblock %}

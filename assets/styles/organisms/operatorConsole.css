@@ -1,0 +1,9 @@
+.tab-group {
+    margin-block: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+
+    > details { display: contents }
+    > details:not([open])::details-content { display: none }
+}

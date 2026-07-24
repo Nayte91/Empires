@@ -1,7 +1,7 @@
-<div {{ attributes }} class="game-creator">
-    <header class="game-creator__header">
-        <h1>Create a new game</h1>
-    </header>
+{% set title = 'Create a new game' %}
+
+<main {{ attributes }} class="game-creator">
+    <twig:atoms:PageTitle :title="title" />
 
     {% if error %}
         <p class="game-creator__error" data-error role="alert">{{ error }}</p>
@@ -83,7 +83,7 @@
             </thead>
             <tbody>
                 {% for player in game.players %}
-                    <tr{% if player.empire %} style="--player-color: var(--empire-{{ player.empire }}, dimgray)"{% endif %}>
+                    <tr{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
                         <td>{{ player.name }}</td>
                         <td>{{ player.empire != '' ? player.empire : '—' }}</td>
                         <td>
@@ -178,4 +178,4 @@
     {% else %}
         <p class="game-creator__conformity game-creator__conformity--error" data-conformity="error" role="alert">{{ issues|join(' ') }}</p>
     {% endif %}
-</div>
+</main>

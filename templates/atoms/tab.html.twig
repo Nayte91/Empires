@@ -1,6 +1,10 @@
-<details class="tab" name="{{ group }}" {{ open|default(false) ? 'open' }}{% if tabColor|default %} style="--tab-color: {{ tabColor }}"{% endif %}>
+<details
+    class="tab"
+    name="{{ group }}"
+    data-tab-id="{{ tabId }}"
+    {{ open|default(false) ? 'open' }}
+    data-empire="{{ empire|default }}"
+>
     <summary>{{ label }}</summary>
-    <div class="tab__panel">
-        {% block panel %}{% endblock %}
-    </div>
+    {% block panel %}{% endblock %}
 </details>

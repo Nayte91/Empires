@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Entity\Player;
-use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceCreditsCalculator;
 use App\Game\Shop\ShopConnector;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
@@ -17,7 +16,6 @@ final class Discounts
 
     public function __construct(
         private readonly AdvanceCreditsCalculator $creditsCalculator,
-        private readonly AdvanceCatalog $advanceCatalog,
         private readonly ShopConnector $shopConnector,
     ) {}
 
@@ -27,11 +25,5 @@ final class Discounts
         $buyer = $this->shopConnector->buyerFor($this->player);
 
         return $this->creditsCalculator->creditsFor($buyer->entitlements, $this->shopConnector->facets());
-    }
-
-    /** @return array<string, string> */
-    public function getCategoryColors(): array
-    {
-        return $this->advanceCatalog->getCategoryColors();
     }
 }

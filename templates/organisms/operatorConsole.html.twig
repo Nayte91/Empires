@@ -1,8 +1,11 @@
-<div
+{% set title = game.slug %}
+{% set subtitle = 'Turn ' ~ game.currentTurn %}
+
+<main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id})) }}
     class="operator-console"
 >
-    <h1>{{ game.slug }} — Turn {{ game.currentTurn }}</h1>
+    <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
     <section class="operator-console__players">
         <h2>Players</h2>
@@ -49,8 +52,8 @@
                 {% embed 'atoms/tab.html.twig' with {
                     group: 'operator-tabs',
                     tabId: player.id,
-                    label: (player.empire ?? player.name)|capitalize,
-                    tabColor: 'var(--empire-' ~ (player.empire ?? 'none') ~ ', dimgray)',
+                    label: player.empire|empire_demonym|capitalize,
+                    empire: player.empire,
                 } %}
                     {% block panel %}
                         <h3>{{ player.name }}</h3>
@@ -70,4 +73,4 @@
             {% endfor %}
         </div>
     </section>
-</div>
+</main>

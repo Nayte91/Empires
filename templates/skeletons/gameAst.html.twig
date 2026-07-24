@@ -1,6 +1,8 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - AST{% endblock %}
+{% set title = 'Archaeological Succession Timeline' %}
+
+{% block title %}{{ title }}{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -11,6 +13,9 @@
 {% endblock %}
 
 {% block main %}
-    <twig:Ast :game="game" />
-    <twig:molecules:AstRequirements :eras="eras" :astVersion="game.astVersion.value" />
+    <main>
+        <twig:atoms:PageTitle :title="title" />
+        <twig:Ast :game="game" />
+        <twig:molecules:AstRequirements :eras="eras" :astVersion="game.astVersion.value" />
+    </main>
 {% endblock %}

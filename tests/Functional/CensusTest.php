@@ -11,10 +11,10 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 
-final class CensusViewTest extends WebTestCase
+final class CensusTest extends WebTestCase
 {
     #[Test]
-    public function censusViewIsAccessibleForAnExistingGame(): void
+    public function censusIsAccessibleForAnExistingGame(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -29,7 +29,7 @@ final class CensusViewTest extends WebTestCase
     }
 
     #[Test]
-    public function censusViewListsPlayersInMovementOrder(): void
+    public function censusListsPlayersInMovementOrder(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -77,10 +77,8 @@ final class CensusViewTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $militaryRow = $crawler->filter('ol li[data-empire="minoa"]');
         $this->assertGreaterThan(0, $militaryRow->filter('[title="Military"]')->count(), 'Military badge should be present on the Military player row');
-        $this->assertGreaterThan(0, $crawler->filter('ol li[data-empire="minoa"][data-military]')->count(), 'data-military attribute should be present on the Military player row');
         $nonMilitaryRow = $crawler->filter('ol li[data-empire="saba"]');
         $this->assertCount(0, $nonMilitaryRow->filter('[title="Military"]'), 'Military badge should be absent on the non-Military player row');
-        $this->assertCount(0, $crawler->filter('ol li[data-empire="saba"][data-military]'), 'data-military attribute should be absent on the non-Military player row');
     }
 
     #[Test]

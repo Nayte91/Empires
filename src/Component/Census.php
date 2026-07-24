@@ -16,7 +16,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * Re-rendered by a Mercure ping whenever the operator console changes the game.
  */
 #[AsLiveComponent(template: 'molecules/census.html.twig')]
-final class CensusView
+final class Census
 {
     use DefaultActionTrait;
 

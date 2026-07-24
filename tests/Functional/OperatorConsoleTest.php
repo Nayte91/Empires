@@ -107,13 +107,11 @@ final class OperatorConsoleTest extends WebTestCase
     public function aPlayerTabPanelContainsTheSixStatTriggerButtons(): void
     {
         $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $player = $this->createPlayer($game, 'Alice');
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        $playerDetails = $rendered->crawler()->filter('details')->reduce(
-            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
-        );
+        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
 
         $this->assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
     }
@@ -182,13 +180,11 @@ final class OperatorConsoleTest extends WebTestCase
     public function aPlayerTabPanelContainsItsOrderCardsRegionWithAnEmptyCardForTheCurrentTurn(): void
     {
         $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $player = $this->createPlayer($game, 'Alice');
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        $playerDetails = $rendered->crawler()->filter('details')->reduce(
-            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
-        );
+        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
 
         $card = $playerDetails->filter('article')->reduce(
             static fn ($node): bool => str_contains((string) $node->text(), 'Turn 1'),
@@ -218,7 +214,7 @@ final class OperatorConsoleTest extends WebTestCase
     public function advancingTurnsRendersOneOrderCardPerElapsedTurnInThePlayerTab(): void
     {
         $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $player = $this->createPlayer($game, 'Alice');
 
         $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
         $console->call('nextTurn');
@@ -226,9 +222,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $this->assertSame(3, $this->reloadGame($game)->currentTurn);
 
-        $playerDetails = $rendered->crawler()->filter('details')->reduce(
-            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
-        );
+        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
 
         $cardTexts = $playerDetails->filter('article')->each(
             static fn ($node): string => trim($node->text()),
@@ -252,6 +246,7 @@ final class OperatorConsoleTest extends WebTestCase
     private function createPlayer(GameSession $game, string $name): Player
     {
         $player = new Player($game, $name);
+        $player->empire = 'minoa';
         $this->entityManager->persist($player);
         $this->entityManager->flush();
 

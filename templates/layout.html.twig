@@ -18,6 +18,7 @@
             <link rel="stylesheet" href="{{ asset('styles/globals.css') }}">
             <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}">
             <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}">
         {% endblock %}
 
         {% block javascripts %}
@@ -26,9 +27,7 @@
     </head>
     <body {% block body_attr %}{% endblock %}>
         <header></header>
-        <main>
-            {% block main %}{% endblock %}
-        </main>
+        {% block main %}{% endblock %}
         <footer></footer>
     </body>
 </html>

@@ -121,12 +121,13 @@ final class ProductGridComponentTest extends KernelTestCase
         $this->assertStringContainsString('60', $pottery->text());
 
         // Mysticism spans two categories (religion + art), so it must carry two distinct
-        // --cat-1/--cat-2 custom properties feeding the tile's striped background.
+        // data-advance-category attributes feeding the tile's striped background.
         $mysticism = $crawler->filter('#product-mysticism');
         $this->assertSame('button', $mysticism->nodeName());
         $this->assertStringContainsString('Mysticism', $mysticism->text());
         $this->assertStringContainsString('50', $mysticism->text());
-        $this->assertSame('--cat-1: var(--advance-religion); --cat-2: var(--advance-art)', $mysticism->attr('style'));
+        $this->assertSame('religion', $mysticism->attr('data-advance-category'));
+        $this->assertSame('art', $mysticism->attr('data-advance-category-2'));
     }
 
     #[Test]

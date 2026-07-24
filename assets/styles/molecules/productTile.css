@@ -9,7 +9,7 @@
     justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
-    background: repeating-linear-gradient(-45deg, var(--cat-1) 0 10px, var(--cat-2) 10px 20px);
+    background: repeating-linear-gradient(-45deg, var(--category-color) 0 10px, var(--cat-2) 10px 20px);
     cursor: pointer;
     transition: box-shadow 0.15s;
 

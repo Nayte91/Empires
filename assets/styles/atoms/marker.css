@@ -7,7 +7,7 @@
     inline-size: 1.5rem;
     border-radius: 50%;
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-    background-color: var(--marker-color);
+    background-color: var(--player-color);
     transform: translate(calc(-50% + var(--marker-pitch, 43px) * var(--marker-pos, 0)), -50%);
     transition: transform 0.4s linear;
 }
