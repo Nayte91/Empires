@@ -1,0 +1,26 @@
+.control-board {
+    border: 1px solid var(--operator-border);
+    border-radius: var(--operator-radius);
+    padding: 1rem;
+    background: white;
+    display: grid;
+    gap: 1rem;
+
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem 2rem;
+    }
+
+    .advisories {
+        margin: 0;
+        flex: 1 1 100%;
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+
+        li { color: var(--operator-warning) }
+    }
+}

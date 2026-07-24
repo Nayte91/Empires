@@ -7,13 +7,7 @@
 >
     <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
-    <section class="player-board__stats" aria-label="Stats">
-        <twig:molecules:StatPicker :player="player" stat="cities" :value="player.cities" />
-        <twig:molecules:StatPicker :player="player" stat="ships" :value="player.ships" />
-        <twig:molecules:StatPicker :player="player" stat="census" :value="player.census" />
-        <twig:molecules:StatPicker :player="player" stat="treasury" :value="player.treasury" />
-        <twig:molecules:StatPicker :player="player" stat="cards" :value="player.cards" />
-    </section>
+    <twig:molecules:ControlBoard :player="player" />
 
     <h2>Discounts</h2>
 

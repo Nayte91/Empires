@@ -58,16 +58,6 @@
         }
     }
 
-    .player-board__stats {
-        border: 1px solid var(--operator-border);
-        border-radius: var(--operator-radius);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem 2rem;
-        padding: 1rem;
-        background: white;
-    }
-
     .player-board__advances-grid {
         --grid-min-col-size: 14rem;
         display: grid;
