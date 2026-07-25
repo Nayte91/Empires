@@ -9,7 +9,8 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Workflow\Event\GuardEvent;
 
 /**
- * The Game→Shop seam, workflow side: `shop_order` (src/Shop/) is canon-complete
+ * The Game→Shop seam, workflow side: `shop_order` (packages/userforged/shop-engine/)
+ * is canon-complete
  * and ships a `reject` transition — the lib stays generic, it doesn't know
  * Mega Civilization has an opinion on it. This is the one place where our
  * context expresses that opinion, by blocking the transition outright.

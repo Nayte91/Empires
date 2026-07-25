@@ -19,25 +19,25 @@ final class PriceCalculator
      *                                             Option allocations (Userforged\ShopEngine\Promotion\OptionCredits),
      *                                             merged into the facet totals alongside $owned
      */
-    public function netCost(ProductInterface $advance, array $owned, array $bonusCredits = []): int
+    public function netCost(ProductInterface $product, array $owned, array $bonusCredits = []): int
     {
-        $net = $advance->cost - $this->facetCredits($advance, $owned, $bonusCredits) - $this->namedCredits($advance, $owned, $bonusCredits);
+        $net = $product->cost - $this->facetCredits($product, $owned, $bonusCredits) - $this->namedCredits($product, $owned, $bonusCredits);
 
         return max(0, $net);
     }
 
     /**
-     * @param list<ProductInterface> $advances
+     * @param list<ProductInterface> $products
      * @param list<ProductInterface> $owned
      * @param array<string, int>     $bonusCredits
      *
      * @return list<OrderLine>
      */
-    public function priceLines(array $advances, array $owned, array $bonusCredits = []): array
+    public function priceLines(array $products, array $owned, array $bonusCredits = []): array
     {
         return array_map(
-            fn (ProductInterface $advance): OrderLine => new OrderLine($advance->key, $this->netCost($advance, $owned, $bonusCredits)),
-            $advances,
+            fn (ProductInterface $product): OrderLine => new OrderLine($product->key, $this->netCost($product, $owned, $bonusCredits)),
+            $products,
         );
     }
 
@@ -50,8 +50,8 @@ final class PriceCalculator
     {
         $total = 0;
 
-        foreach ($inOrder as $advance) {
-            $total += $this->netCost($advance, $owned, $bonusCredits);
+        foreach ($inOrder as $product) {
+            $total += $this->netCost($product, $owned, $bonusCredits);
         }
 
         return $total;
@@ -59,8 +59,8 @@ final class PriceCalculator
 
     /**
      * Aggregates every credit granted by $owned, globally rather than against a single
-     * priced advance: facet credits sum across all owned (no per-product max), and
-     * every non-facet credit key is treated as a named credit toward that advance slug.
+     * priced product: facet credits sum across all owned (no per-product max), and
+     * every non-facet credit key is treated as a named credit toward that product slug.
      *
      * @param list<ProductInterface> $owned
      * @param array<string, int>     $bonusCredits
@@ -79,9 +79,9 @@ final class PriceCalculator
 
         $named = [];
 
-        foreach ($owned as $ownedAdvance) {
+        foreach ($owned as $ownedProduct) {
             /** @var array<string, int> $credits */
-            $credits = $ownedAdvance->credits;
+            $credits = $ownedProduct->credits;
 
             foreach ($credits as $key => $value) {
                 if (\in_array($key, $facets, true)) {
@@ -99,10 +99,10 @@ final class PriceCalculator
      * @param list<ProductInterface> $owned
      * @param array<string, int>     $bonusCredits
      */
-    private function facetCredits(ProductInterface $advance, array $owned, array $bonusCredits = []): int
+    private function facetCredits(ProductInterface $product, array $owned, array $bonusCredits = []): int
     {
         /** @var list<string> $facets */
-        $facets = $advance->facets;
+        $facets = $product->facets;
 
         $best = 0;
 
@@ -117,9 +117,9 @@ final class PriceCalculator
      * @param list<ProductInterface> $owned
      * @param array<string, int>     $bonusCredits
      */
-    private function namedCredits(ProductInterface $advance, array $owned, array $bonusCredits = []): int
+    private function namedCredits(ProductInterface $product, array $owned, array $bonusCredits = []): int
     {
-        return $this->sumCreditsFor($advance->key, $owned, $bonusCredits);
+        return $this->sumCreditsFor($product->key, $owned, $bonusCredits);
     }
 
     /**
@@ -130,9 +130,9 @@ final class PriceCalculator
     {
         $sum = 0;
 
-        foreach ($owned as $ownedAdvance) {
+        foreach ($owned as $ownedProduct) {
             /** @var array<string, int> $credits */
-            $credits = $ownedAdvance->credits;
+            $credits = $ownedProduct->credits;
             $sum += $credits[$creditKey] ?? 0;
         }
 

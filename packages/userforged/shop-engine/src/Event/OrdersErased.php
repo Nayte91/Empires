@@ -10,7 +10,7 @@ final readonly class OrdersErased
 {
     /** @param list<int> $windows */
     public function __construct(
-        public Uuid $playerId,
+        public Uuid $buyerId,
         public array $windows,
     ) {}
 }

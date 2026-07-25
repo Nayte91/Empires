@@ -16,7 +16,8 @@ use Userforged\ShopEngine\Event\OrderValidated;
 
 /**
  * The Game→Shop seam, Mercure side: this is the only publisher of
- * shop-originated Mercure updates. `src/Shop/` dispatches granular,
+ * shop-originated Mercure updates. `packages/userforged/shop-engine/`
+ * dispatches granular,
  * business-named events (`OrderSubmitted`, `OrderValidated`, `OrderRejected`,
  * `OrdersErased`) on `shop.event.bus`; collapsing them onto the two Mercure
  * event names the frontend already listens for (`order-updated`,
@@ -43,7 +44,8 @@ use Userforged\ShopEngine\Event\OrderValidated;
  *
  * Defensive note: `mercure.hub.default.message_handler` is also registered
  * on `shop.event.bus` (for `Symfony\Component\Mercure\Update`). Dispatching
- * an `Update` directly on that bus from inside `src/Shop/` would silently
+ * an `Update` directly on that bus from inside `packages/userforged/shop-engine/`
+ * would silently
  * reintroduce the Mercure coupling this seam exists to remove — with no
  * Mercure import visible anywhere in the lib.
  */
@@ -57,27 +59,27 @@ final readonly class ShopMercurePublisher
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrderSubmitted(OrderSubmitted $event): void
     {
-        $this->publish($event->playerId, 'order-updated');
+        $this->publish($event->buyerId, 'order-updated');
     }
 
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrderValidated(OrderValidated $event): void
     {
-        $this->publish($event->playerId, 'order-updated');
-        $this->publish($event->playerId, 'player-updated');
+        $this->publish($event->buyerId, 'order-updated');
+        $this->publish($event->buyerId, 'player-updated');
     }
 
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrderRejected(OrderRejected $event): void
     {
-        $this->publish($event->playerId, 'order-updated');
+        $this->publish($event->buyerId, 'order-updated');
     }
 
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrdersErased(OrdersErased $event): void
     {
-        $this->publish($event->playerId, 'player-updated');
-        $this->publish($event->playerId, 'order-updated');
+        $this->publish($event->buyerId, 'player-updated');
+        $this->publish($event->buyerId, 'order-updated');
     }
 
     private function publish(Uuid $playerId, string $mercureEvent): void

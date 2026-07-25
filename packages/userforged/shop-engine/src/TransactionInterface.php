@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Userforged\ShopEngine;
 
 /**
- * A single write scope for src/Shop/. No caller currently nests a transactional()
+ * A single write scope for this library's mutations. No caller currently nests a transactional()
  * call inside another one — SellDirectHandler, for instance, leaves its own
  * mutations unflushed and lets them ride into OrderValidator::validate()'s scope
  * via the unit of work, rather than opening a scope of its own. The re-entrant/

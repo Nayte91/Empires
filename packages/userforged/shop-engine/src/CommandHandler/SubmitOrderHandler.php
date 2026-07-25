@@ -37,7 +37,7 @@ final readonly class SubmitOrderHandler
             throw CartException::empty();
         }
 
-        $buyer = $this->buyers->buyerFor($command->playerId);
+        $buyer = $this->buyers->buyerFor($command->buyerId);
 
         foreach ($command->items as $item) {
             if (in_array($item->key, $buyer->ownedKeys, true)) {
@@ -45,7 +45,7 @@ final readonly class SubmitOrderHandler
             }
         }
 
-        $existing = $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $command->window);
+        $existing = $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $command->window);
 
         if (OrderStatus::Validated === $existing?->status) {
             throw OrderException::windowAlreadyValidated();
@@ -55,7 +55,7 @@ final readonly class SubmitOrderHandler
         // a bad elective allocation), no persisted-but-unflushed empty Order is left
         // dangling in the unit of work for a later flush() to insert.
         $lines = $this->lineQuoter->quote($command->items, $buyer);
-        $order = $existing ?? $this->orderRepository->create($command->playerId, $command->window);
+        $order = $existing ?? $this->orderRepository->create($command->buyerId, $command->window);
 
         $this->transaction->transactional(function () use ($order, $lines): void {
             $order->replaceLines($lines);
@@ -66,7 +66,7 @@ final readonly class SubmitOrderHandler
             }
         });
 
-        $this->events->publish(new OrderSubmitted($command->playerId, $command->window));
+        $this->events->publish(new OrderSubmitted($command->buyerId, $command->window));
 
         return $order;
     }

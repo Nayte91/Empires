@@ -17,7 +17,8 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 /**
  * Empires' declared policy (App\Game\Shop\OrderWorkflowPolicy): the shop_order
- * workflow's `reject` transition is canon-complete in src/Shop/ but is always
+ * workflow's `reject` transition is canon-complete in
+ * packages/userforged/shop-engine/ but is always
  * blocked here — Mega Civilization has no such thing as a refused purchase.
  * These tests run against the real, container-wired shop_order workflow
  * service (unlike tests/Shop/RejectOrderTest.php, which builds a bare

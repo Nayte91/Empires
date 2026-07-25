@@ -65,7 +65,7 @@ final class Shop
         }
 
         if (\in_array($key, $this->player->advances, true)) {
-            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::AdvanceAlreadyOwned, ['key' => $key]);
+            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::ProductAlreadyOwned, ['key' => $key]);
 
             return;
         }

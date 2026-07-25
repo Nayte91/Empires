@@ -17,8 +17,8 @@ final readonly class ProductCatalog
     ) {}
 
     /**
-     * Catalogue minus the buyer's already-owned advances — a cashier has no
-     * use for re-selling what a player already has.
+     * Catalogue minus the buyer's already-owned products — a cashier has no
+     * use for re-selling what a buyer already has.
      *
      * @param list<string> $inCartKeys
      *
@@ -26,17 +26,17 @@ final readonly class ProductCatalog
      */
     public function productsFor(BuyerInterface $buyer, array $inCartKeys): array
     {
-        $ownedAdvances = $this->productProvider->productsByKeys($buyer->ownedKeys);
+        $ownedProducts = $this->productProvider->productsByKeys($buyer->ownedKeys);
         $bonusCredits = $buyer->electiveCredits;
 
         return array_map(
-            fn (ProductInterface $advance): ?Product => \in_array($advance->key, $buyer->ownedKeys, true)
+            fn (ProductInterface $product): ?Product => \in_array($product->key, $buyer->ownedKeys, true)
                     ? null
                     : new Product(
-                        key: $advance->key,
-                        netCost: $this->priceCalculator->netCost($advance, $ownedAdvances, $bonusCredits),
+                        key: $product->key,
+                        netCost: $this->priceCalculator->netCost($product, $ownedProducts, $bonusCredits),
                         owned: false,
-                        inCart: \in_array($advance->key, $inCartKeys, true),
+                        inCart: \in_array($product->key, $inCartKeys, true),
                     ),
             $this->productProvider->products(),
         )

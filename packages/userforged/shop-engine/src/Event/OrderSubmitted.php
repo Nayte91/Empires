@@ -9,7 +9,7 @@ use Symfony\Component\Uid\Uuid;
 final readonly class OrderSubmitted
 {
     public function __construct(
-        public Uuid $playerId,
+        public Uuid $buyerId,
         public int $window,
     ) {}
 }

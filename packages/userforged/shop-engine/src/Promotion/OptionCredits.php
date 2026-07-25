@@ -11,7 +11,7 @@ final class OptionCredits
     /**
      * Sums, per facet, every Option allocation carried by the given lines —
      * a pure function over already-fetched, already-filtered lines. Callers
-     * decide which lines are "confirmed" (in Empires: validated orders only,
+     * decide which lines are "confirmed" (e.g. validated orders only,
      * see App\Game\Shop\ShopConnector::buyerFor()) — this class no longer
      * knows what confirmed means, only how to add allocations up.
      *

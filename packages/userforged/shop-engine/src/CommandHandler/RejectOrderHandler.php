@@ -28,9 +28,9 @@ final readonly class RejectOrderHandler
 
     public function __invoke(RejectOrder $command): void
     {
-        $this->buyers->buyerFor($command->playerId);
+        $this->buyers->buyerFor($command->buyerId);
 
-        $order = $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $command->window);
+        $order = $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $command->window);
 
         if (!$order instanceof OrderInterface) {
             return;
@@ -45,6 +45,6 @@ final readonly class RejectOrderHandler
             $machine->apply($order, 'reject');
         });
 
-        $this->events->publish(new OrderRejected($command->playerId, $command->window));
+        $this->events->publish(new OrderRejected($command->buyerId, $command->window));
     }
 }

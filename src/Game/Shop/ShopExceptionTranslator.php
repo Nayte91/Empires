@@ -11,9 +11,10 @@ use Userforged\ShopEngine\Exception\ShopException;
 use Userforged\ShopEngine\Exception\ShopExceptionReason;
 
 /**
- * The Game→Shop seam, i18n side: src/Shop/ throws ShopException with a
- * machine-readable reason() + context(), never player-facing copy (see
- * src/Shop/README.md) — this is the only place that maps a reason to a
+ * The Game→Shop seam, i18n side: packages/userforged/shop-engine/ throws
+ * ShopException with a machine-readable reason() + context(), never
+ * player-facing copy (see
+ * packages/userforged/shop-engine/README.md) — this is the only place that maps a reason to a
  * translation key and turns it into copy the player actually sees, in the
  * 'shop' domain (translations/Shop/shop+intl-icu.en.xlf).
  *
@@ -67,7 +68,7 @@ final readonly class ShopExceptionTranslator
     {
         return match ($reason) {
             ShopExceptionReason::CartEmpty => $this->translator->trans('error.cart_empty', $context, 'shop'),
-            ShopExceptionReason::AdvanceAlreadyOwned => $this->translator->trans('error.advance_already_owned', $context, 'shop'),
+            ShopExceptionReason::ProductAlreadyOwned => $this->translator->trans('error.advance_already_owned', $context, 'shop'),
             ShopExceptionReason::WindowAlreadyValidated => $this->translator->trans('error.window_already_validated', $context, 'shop'),
             ShopExceptionReason::OrderAlreadyValidated => $this->translator->trans('error.order_already_validated', $context, 'shop'),
             ShopExceptionReason::OrderLinesLocked => $this->translator->trans('error.order_lines_locked', $context, 'shop'),

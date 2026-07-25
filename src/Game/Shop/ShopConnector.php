@@ -17,7 +17,7 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
 /**
  * The Game→Shop seam: the shop's opaque ordering window is, in Empires, the
  * game turn. This class is the only place where that translation is allowed —
- * src/Shop/ never learns what a window stands for.
+ * packages/userforged/shop-engine/ never learns what a window stands for.
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
@@ -31,8 +31,8 @@ final readonly class ShopConnector implements FacetProviderInterface
     /**
      * The Game→Shop seam for the generic "facet" concept: the shop's Option
      * promotion splits a budget across opaque "facets" — in Empires, those
-     * are the advance categories. src/Shop/ never learns what a facet stands
-     * for.
+     * are the advance categories. packages/userforged/shop-engine/ never
+     * learns what a facet stands for.
      *
      * @return list<string>
      */

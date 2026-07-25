@@ -10,7 +10,7 @@ final readonly class EraseOrders
 {
     /** @param list<int> $windows Opaque ordering-window indexes supplied by the host connector. */
     public function __construct(
-        public Uuid $playerId,
+        public Uuid $buyerId,
         public array $windows,
     ) {}
 }

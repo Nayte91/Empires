@@ -15,15 +15,15 @@ final readonly class PromotionEngine
     /**
      * @param list<OrderLine>        $lines
      * @param list<ProductInterface> $inOrder
-     * @param list<LineIntent>       $intents         player intents (gift choices), keyed by source advance
-     * @param list<ProductInterface> $catalog         full advance catalog, needed to resolve gift candidates,
+     * @param list<LineIntent>       $intents         buyer intents (gift choices), keyed by source product
+     * @param list<ProductInterface> $catalog         full product catalog, needed to resolve gift candidates,
      *                                                and as a fallback to resolve a gift-appended line's own
      *                                                Option promotion (a gift-appended line is never present
      *                                                in $inOrder)
-     * @param array<string, int>     $catalogNetCosts netCost of every catalog advance, priced against the
+     * @param array<string, int>     $catalogNetCosts netCost of every catalog product, priced against the
      *                                                same $owned basis as $lines — required to stamp the
      *                                                gift line's "amount" (the cost it would have priced at)
-     * @param list<string>           $ownedKeys       player's currently owned advance keys
+     * @param list<string>           $ownedKeys       buyer's currently owned product keys
      * @param list<string>           $facets          valid Option allocation facets (the Game→Shop seam
      *                                                for the generic "facet" concept, see ShopConnector::facets())
      *
@@ -41,21 +41,21 @@ final readonly class PromotionEngine
         $lines = $this->applyGifts($lines, $inOrder, $intents, $catalog, $catalogNetCosts, $ownedKeys);
 
         foreach ($lines as $line) {
-            $advance = $this->findAdvance($inOrder, $line->key) ?? $this->findAdvance($catalog, $line->key);
-            if (!$advance instanceof ProductInterface) {
+            $product = $this->findProduct($inOrder, $line->key) ?? $this->findProduct($catalog, $line->key);
+            if (!$product instanceof ProductInterface) {
                 continue;
             }
-            if (!$advance->promotion instanceof ProductPromotion) {
+            if (!$product->promotion instanceof ProductPromotion) {
                 continue;
             }
 
-            if ($advance->promotion->option instanceof ElectiveBenefit) {
+            if ($product->promotion->option instanceof ElectiveBenefit) {
                 $intent = $this->findIntent($intents, $line->key);
                 $allocation = $intent instanceof LineIntent ? $intent->allocation : [];
-                $lines = $this->applyOption($lines, $line->key, $advance->promotion->option, $allocation, $facets);
+                $lines = $this->applyOption($lines, $line->key, $product->promotion->option, $allocation, $facets);
             }
 
-            $discount = $advance->promotion->discount;
+            $discount = $product->promotion->discount;
 
             if ([] === $discount) {
                 continue;
@@ -68,7 +68,7 @@ final readonly class PromotionEngine
     }
 
     /**
-     * Advances a granting advance's gift may offer: same facet as one of the
+     * Products a granting product's gift may offer: same facet as one of the
      * gift's keys, base cost below that facet's threshold, not already
      * owned, and not already present in the order.
      *
@@ -87,10 +87,10 @@ final readonly class PromotionEngine
         }
 
         return array_values(array_map(
-            static fn (ProductInterface $advance): string => $advance->key,
+            static fn (ProductInterface $product): string => $product->key,
             array_filter(
                 $catalog,
-                fn (ProductInterface $advance): bool => $this->isGiftCandidate($advance, $gift, $ownedKeys, $inOrderKeys),
+                fn (ProductInterface $product): bool => $this->isGiftCandidate($product, $gift, $ownedKeys, $inOrderKeys),
             ),
         ));
     }
@@ -143,14 +143,14 @@ final readonly class PromotionEngine
      */
     private function applyGifts(array $lines, array $inOrder, array $intents, array $catalog, array $catalogNetCosts, array $ownedKeys): array
     {
-        $inOrderKeys = array_map(static fn (ProductInterface $advance): string => $advance->key, $inOrder);
+        $inOrderKeys = array_map(static fn (ProductInterface $product): string => $product->key, $inOrder);
 
         foreach ($intents as $intent) {
             if (null === $intent->gift) {
                 continue;
             }
 
-            $source = $this->findAdvance($inOrder, $intent->key);
+            $source = $this->findProduct($inOrder, $intent->key);
 
             if (!$source instanceof ProductInterface) {
                 continue;
@@ -183,29 +183,29 @@ final readonly class PromotionEngine
      * @param list<string>       $ownedKeys
      * @param list<string>       $inOrderKeys
      */
-    private function isGiftCandidate(ProductInterface $advance, array $gift, array $ownedKeys, array $inOrderKeys): bool
+    private function isGiftCandidate(ProductInterface $product, array $gift, array $ownedKeys, array $inOrderKeys): bool
     {
-        $threshold = $this->giftThresholdFor($advance, $gift);
+        $threshold = $this->giftThresholdFor($product, $gift);
 
         if (null === $threshold) {
             return false;
         }
-        if ($advance->cost >= $threshold) {
+        if ($product->cost >= $threshold) {
             return false;
         }
-        if (\in_array($advance->key, $ownedKeys, true)) {
+        if (\in_array($product->key, $ownedKeys, true)) {
             return false;
         }
 
-        return !\in_array($advance->key, $inOrderKeys, true);
+        return !\in_array($product->key, $inOrderKeys, true);
     }
 
     /** @param array<string, int> $gift */
-    private function giftThresholdFor(ProductInterface $advance, array $gift): ?int
+    private function giftThresholdFor(ProductInterface $product, array $gift): ?int
     {
-        foreach ($advance->facets as $facet) {
+        foreach ($product->facets as $facet) {
             if (isset($gift[$facet])) {
-                // REFACTOR-WHEN: a 2nd advance matching multiple gift facets with
+                // REFACTOR-WHEN: a 2nd product matching multiple gift facets with
                 // different thresholds appears — currently the first matched facet wins.
                 return $gift[$facet];
             }
@@ -215,11 +215,11 @@ final readonly class PromotionEngine
     }
 
     /** @param list<ProductInterface> $inOrder */
-    private function findAdvance(array $inOrder, string $key): ?ProductInterface
+    private function findProduct(array $inOrder, string $key): ?ProductInterface
     {
-        foreach ($inOrder as $advance) {
-            if ($advance->key === $key) {
-                return $advance;
+        foreach ($inOrder as $product) {
+            if ($product->key === $key) {
+                return $product;
             }
         }
 
@@ -278,7 +278,7 @@ final readonly class PromotionEngine
 
     /**
      * Empty or not-yet-fully-spent allocations are a transient, expected state
-     * while the player is still picking (allocationRequired); a wrong sum,
+     * while the buyer is still picking (allocationRequired); a wrong sum,
      * an unknown facet, or a non-multiple-of-step value can only come from
      * a bypassed client (invalidAllocation).
      *

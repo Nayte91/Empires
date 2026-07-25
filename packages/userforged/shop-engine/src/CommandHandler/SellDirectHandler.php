@@ -36,9 +36,9 @@ final readonly class SellDirectHandler
             throw CartException::empty();
         }
 
-        $buyer = $this->buyers->buyerFor($command->playerId);
+        $buyer = $this->buyers->buyerFor($command->buyerId);
 
-        $existing = $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $command->window);
+        $existing = $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $command->window);
 
         if (OrderStatus::Validated === $existing?->status) {
             throw OrderException::windowAlreadyValidated();
@@ -48,7 +48,7 @@ final readonly class SellDirectHandler
         // a bad elective allocation), no persisted-but-unflushed empty Order is left
         // dangling in the unit of work for a later flush() to insert.
         $lines = $this->lineQuoter->quote($command->items, $buyer);
-        $order = $existing ?? $this->orderRepository->create($command->playerId, $command->window);
+        $order = $existing ?? $this->orderRepository->create($command->buyerId, $command->window);
 
         // No scope opened here: these mutations stay in-memory, unflushed. They ride
         // into OrderValidator::validate()'s transactional() call below via the unit
@@ -64,7 +64,7 @@ final readonly class SellDirectHandler
 
         $this->orderValidator->validate($order);
 
-        $this->events->publish(new OrderSold($command->playerId, $command->window));
+        $this->events->publish(new OrderSold($command->buyerId, $command->window));
 
         return $order;
     }

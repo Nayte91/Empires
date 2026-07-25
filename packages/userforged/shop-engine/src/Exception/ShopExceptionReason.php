@@ -13,7 +13,7 @@ namespace Userforged\ShopEngine\Exception;
 enum ShopExceptionReason: string
 {
     case CartEmpty = 'cart_empty';
-    case AdvanceAlreadyOwned = 'advance_already_owned';
+    case ProductAlreadyOwned = 'product_already_owned';
     case WindowAlreadyValidated = 'window_already_validated';
     case OrderAlreadyValidated = 'order_already_validated';
     case OrderLinesLocked = 'order_lines_locked';

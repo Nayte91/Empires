@@ -29,19 +29,19 @@ final readonly class LineQuoter
      */
     public function quote(array $intents, BuyerInterface $buyer): array
     {
-        $advances = $this->advancesFor($intents);
+        $products = $this->productsFor($intents);
         $owned = $this->ownedFor($buyer);
         $catalog = $this->productProvider->products();
 
-        $lines = $this->priceCalculator->priceLines($advances, $owned, $buyer->electiveCredits);
+        $lines = $this->priceCalculator->priceLines($products, $owned, $buyer->electiveCredits);
 
-        return $this->engine->apply($lines, $advances, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $this->facetProvider->facets());
+        return $this->engine->apply($lines, $products, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $this->facetProvider->facets());
     }
 
     /**
      * Same as quote(), but tolerates an incomplete/invalid Option allocation
      * instead of throwing — falls back to plain, unpromoted pricing for that
-     * render pass. Used by cart/ticket preview getters, where the player may
+     * render pass. Used by cart/ticket preview getters, where the buyer may
      * still be mid-allocation; submit/checkout call quote() directly, so the
      * PromotionException guard still applies there.
      *
@@ -54,7 +54,7 @@ final readonly class LineQuoter
         try {
             return $this->quote($intents, $buyer);
         } catch (PromotionException) {
-            return $this->priceCalculator->priceLines($this->advancesFor($intents), $this->ownedFor($buyer), $buyer->electiveCredits);
+            return $this->priceCalculator->priceLines($this->productsFor($intents), $this->ownedFor($buyer), $buyer->electiveCredits);
         }
     }
 
@@ -82,7 +82,7 @@ final readonly class LineQuoter
      *
      * @return list<ProductInterface>
      */
-    private function advancesFor(array $intents): array
+    private function productsFor(array $intents): array
     {
         $giftKeys = array_filter(
             array_map(static fn (LineIntent $intent): ?string => $intent->gift, $intents),
@@ -116,8 +116,8 @@ final readonly class LineQuoter
     {
         $netCosts = [];
 
-        foreach ($catalog as $advance) {
-            $netCosts[$advance->key] = $this->priceCalculator->netCost($advance, $owned);
+        foreach ($catalog as $product) {
+            $netCosts[$product->key] = $this->priceCalculator->netCost($product, $owned);
         }
 
         return $netCosts;

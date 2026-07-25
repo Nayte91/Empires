@@ -32,10 +32,10 @@ final readonly class EraseOrdersHandler
             return;
         }
 
-        $this->buyers->buyerFor($command->playerId);
+        $this->buyers->buyerFor($command->buyerId);
 
         $orders = array_values(array_filter(array_map(
-            fn (int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $window),
+            fn (int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $window),
             $command->windows,
         )));
 
@@ -57,7 +57,7 @@ final readonly class EraseOrdersHandler
         });
 
         $this->events->publish(new OrdersErased(
-            $command->playerId,
+            $command->buyerId,
             array_map(static fn (OrderInterface $order): int => $order->window, $orders),
         ));
     }

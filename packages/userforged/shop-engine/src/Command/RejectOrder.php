@@ -9,7 +9,7 @@ use Symfony\Component\Uid\Uuid;
 final readonly class RejectOrder
 {
     public function __construct(
-        public Uuid $playerId,
+        public Uuid $buyerId,
         /** Opaque ordering-window index supplied by the host connector. */
         public int $window,
     ) {}

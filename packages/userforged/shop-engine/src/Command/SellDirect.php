@@ -11,7 +11,7 @@ final readonly class SellDirect
 {
     /** @param list<LineIntent> $items */
     public function __construct(
-        public Uuid $playerId,
+        public Uuid $buyerId,
         public array $items,
         /** Opaque ordering-window index supplied by the host connector. */
         public int $window,

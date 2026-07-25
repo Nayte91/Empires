@@ -18,8 +18,8 @@ final class EligibilityException extends \DomainException implements ShopExcepti
     public static function productAlreadyOwned(string $key): self
     {
         return new self(
-            sprintf('Advance "%s" is already owned.', $key),
-            ShopExceptionReason::AdvanceAlreadyOwned,
+            sprintf('Product "%s" is already owned.', $key),
+            ShopExceptionReason::ProductAlreadyOwned,
             ['key' => $key],
         );
     }
