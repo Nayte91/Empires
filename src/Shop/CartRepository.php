@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Shop;
 
+use App\Shop\Dto\LineIntent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Uid\Uuid;
 
 final readonly class CartRepository
 {
@@ -16,30 +16,36 @@ final readonly class CartRepository
         private RequestStack $requestStack,
     ) {}
 
-    public function findOrCreate(Uuid $playerId): Cart
+    public function findOrCreate(string $key): Cart
     {
-        /** @var list<string> $items */
-        $items = $this->getSession()->get($this->sessionKey($playerId), []);
+        /** @var list<array{key: string, gift?: string, allocation?: array<string, int>}|string> $items */
+        $items = $this->getSession()->get($this->sessionKey($key), []);
 
         $cart = new Cart();
-        $cart->items = $items;
+        $cart->items = array_map(
+            static fn (array|string $item): LineIntent => is_string($item) ? new LineIntent($item) : LineIntent::fromArray($item),
+            $items,
+        );
 
         return $cart;
     }
 
-    public function save(Uuid $playerId, Cart $cart): void
+    public function save(string $key, Cart $cart): void
     {
-        $this->getSession()->set($this->sessionKey($playerId), $cart->items);
+        $this->getSession()->set(
+            $this->sessionKey($key),
+            array_map(static fn (LineIntent $item): array => $item->toArray(), $cart->items),
+        );
     }
 
-    public function clear(Uuid $playerId): void
+    public function clear(string $key): void
     {
-        $this->getSession()->remove($this->sessionKey($playerId));
+        $this->getSession()->remove($this->sessionKey($key));
     }
 
-    private function sessionKey(Uuid $playerId): string
+    private function sessionKey(string $key): string
     {
-        return self::SESSION_KEY_PREFIX.$playerId->toRfc4122();
+        return self::SESSION_KEY_PREFIX.$key;
     }
 
     private function getSession(): SessionInterface

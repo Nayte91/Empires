@@ -27,46 +27,17 @@
             Close
         </button>
     {% else %}
-        <div>
-            <menu aria-label="Available advances">
-                {% for product in computed.products %}
-                    <li>{% include 'molecules/productTile.html.twig' with {product, action: 'addToTicket'} only %}</li>
-                {% endfor %}
-            </menu>
+        <twig:organisms:ProductGrid :player="player" :compact="true" storageKey="pos.{{ player.id }}" />
 
-            <aside aria-label="Ticket">
-                <h3>Ticket</h3>
+        <twig:Cart :player="player" :cartStamp="this.getCartStamp()" storageKey="pos.{{ player.id }}" />
 
-                <ul>
-                    {% for line in this.ticketLines %}
-                        <li>
-                            <span>{{ line.advance.name|capitalize }}</span>
-                            <span>{{ line.netCost }}</span>
-                            <button
-                                type="button"
-                                {{ live_action('removeFromTicket', {key: line.advance.key}) }}
-                                data-loading="addAttribute(disabled)"
-                                title="Remove {{ line.advance.name|capitalize }}"
-                            >
-                                ×
-                            </button>
-                        </li>
-                    {% else %}
-                        <li>Ticket is empty.</li>
-                    {% endfor %}
-                </ul>
-
-                <p>Total: {{ this.ticketTotal }}</p>
-
-                <button
-                    type="button"
-                    {{ live_action('checkout') }}
-                    {{ this.ticketLines is empty ? 'disabled' }}
-                    data-loading="addAttribute(disabled)"
-                >
-                    Confirm purchase
-                </button>
-            </aside>
-        </div>
+        <button
+            type="button"
+            {{ live_action('checkout') }}
+            {{ (this.isTicketEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
+            data-loading="addAttribute(disabled)"
+        >
+            Confirm purchase
+        </button>
     {% endif %}
 </dialog>

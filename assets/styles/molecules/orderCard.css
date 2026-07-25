@@ -16,6 +16,11 @@
         background: var(--operator-success-bg);
     }
 
+    &[data-status="missing"] {
+        border-color: var(--operator-error);
+        background: var(--operator-error-bg);
+    }
+
     h4 { margin: 0 }
     p { margin: 0 }
     &[data-status="empty"] > p:first-of-type { color: var(--operator-text-muted) }

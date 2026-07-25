@@ -21,7 +21,7 @@ final class CartRepositoryTest extends TestCase
     {
         $repository = $this->makeRepository();
 
-        $cart = $repository->findOrCreate(Uuid::v4());
+        $cart = $repository->findOrCreate((string) Uuid::v4());
 
         self::assertTrue($cart->isEmpty());
     }
@@ -30,7 +30,7 @@ final class CartRepositoryTest extends TestCase
     public function saveThenFindOrCreateRestoresItems(): void
     {
         $repository = $this->makeRepository();
-        $playerId = Uuid::v4();
+        $playerId = (string) Uuid::v4();
         $cart = new Cart();
         $cart->add('pottery');
         $cart->add('agriculture');
@@ -39,15 +39,34 @@ final class CartRepositoryTest extends TestCase
 
         $restored = $repository->findOrCreate($playerId);
 
-        self::assertSame(['pottery', 'agriculture'], $restored->items);
+        self::assertSame(['pottery', 'agriculture'], $restored->keys());
+    }
+
+    #[Test]
+    public function aSessionWrittenBeforeLineIntentDeserializesAsBareIntents(): void
+    {
+        $playerId = Uuid::v4();
+
+        $requestStack = new RequestStack();
+        $request = new Request();
+        $session = new Session(new MockArraySessionStorage());
+        $session->set('empires.shop.cart.'.$playerId->toRfc4122(), ['pottery', 'agriculture']);
+        $request->setSession($session);
+        $requestStack->push($request);
+        $legacyRepository = new CartRepository($requestStack);
+
+        $restored = $legacyRepository->findOrCreate($playerId->toRfc4122());
+
+        self::assertSame(['pottery', 'agriculture'], $restored->keys());
+        self::assertNull($restored->items[0]->gift);
     }
 
     #[Test]
     public function differentPlayerIdsHaveIndependentCarts(): void
     {
         $repository = $this->makeRepository();
-        $firstPlayerId = Uuid::v4();
-        $secondPlayerId = Uuid::v4();
+        $firstPlayerId = (string) Uuid::v4();
+        $secondPlayerId = (string) Uuid::v4();
 
         $firstCart = new Cart();
         $firstCart->add('pottery');
@@ -57,15 +76,15 @@ final class CartRepositoryTest extends TestCase
         $secondCart->add('democracy');
         $repository->save($secondPlayerId, $secondCart);
 
-        self::assertSame(['pottery'], $repository->findOrCreate($firstPlayerId)->items);
-        self::assertSame(['democracy'], $repository->findOrCreate($secondPlayerId)->items);
+        self::assertSame(['pottery'], $repository->findOrCreate($firstPlayerId)->keys());
+        self::assertSame(['democracy'], $repository->findOrCreate($secondPlayerId)->keys());
     }
 
     #[Test]
     public function clearRemovesStoredCart(): void
     {
         $repository = $this->makeRepository();
-        $playerId = Uuid::v4();
+        $playerId = (string) Uuid::v4();
         $cart = new Cart();
         $cart->add('pottery');
         $repository->save($playerId, $cart);

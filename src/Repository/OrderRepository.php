@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -18,30 +17,15 @@ final class OrderRepository extends ServiceEntityRepository
         parent::__construct($registry, Order::class);
     }
 
-    public function findOneByPlayerAndTurn(Player $player, int $turn): ?Order
+    public function findOneByPlayerAndWindow(Player $player, int $window): ?Order
     {
         return $this->createQueryBuilder('o')
             ->andWhere('o.player = :player')
-            ->andWhere('o.turn = :turn')
+            ->andWhere('o.turn = :window')
             ->setParameter('player', $player->id, 'uuid')
-            ->setParameter('turn', $turn)
+            ->setParameter('window', $window)
             ->getQuery()
             ->getOneOrNullResult()
-        ;
-    }
-
-    /** @return list<Order> */
-    public function findByGameAndTurn(GameSession $game, int $turn): array
-    {
-        return $this->createQueryBuilder('o')
-            ->join('o.player', 'p')
-            ->andWhere('p.game = :game')
-            ->andWhere('o.turn = :turn')
-            ->setParameter('game', $game->id, 'uuid')
-            ->setParameter('turn', $turn)
-            ->addOrderBy('o.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult()
         ;
     }
 

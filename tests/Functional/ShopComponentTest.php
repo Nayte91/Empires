@@ -8,11 +8,30 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Shop\Cart;
+use App\Shop\CartRepository;
+use App\Shop\Dto\OrderLine;
+use App\Shop\OrderStatus;
+use App\Shop\Promotion\AppliedPromotion;
+use App\Shop\Promotion\PromotionType;
+use App\Shop\Service\OrderValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
+/**
+ * Cart line/gift/allocation rendering lives in App\Component\Cart, covered by
+ * CartComponentTest; the product grid lives in App\Component\ProductGrid,
+ * covered by ProductGridComponentTest. This file keeps what Shop owns: its
+ * own add() LiveAction (including the nested ProductGrid+Cart re-render it
+ * drives), order submission, pending/validated/rejected order views, and the
+ * Mercure/route wiring.
+ */
 final class ShopComponentTest extends WebTestCase
 {
     use InteractsWithLiveComponents;
@@ -27,83 +46,6 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function rendersAllFiftyOneAdvancesInTheShop(): void
-    {
-        $player = $this->createPlayer();
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-
-        self::assertSame(51, substr_count($rendered, '<article'));
-    }
-
-    #[Test]
-    public function ownedAdvancesAreExcludedFromTheKioskGrid(): void
-    {
-        $player = $this->createPlayer();
-        $player->ownAdvances(['pottery']);
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-
-        self::assertStringNotContainsString('id="product-pottery"', $rendered);
-    }
-
-    #[Test]
-    public function addToCartMarksTheProductInCartAndUpdatesTheTotal(): void
-    {
-        $player = $this->createPlayer();
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $component->call('addToCart', ['key' => 'pottery']);
-
-        $rendered = $component->render()->toString();
-
-        self::assertStringContainsString('id="product-pottery"', $rendered);
-        self::assertStringContainsString('data-in-cart', $rendered);
-        self::assertStringContainsString('Total: 60', $rendered);
-    }
-
-    #[Test]
-    public function theProductCardButtonIsAFullCardOverlayWithAnAccessibleAddLabel(): void
-    {
-        $player = $this->createPlayer();
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-        $card = $this->extractProductCard($rendered, 'pottery');
-
-        self::assertStringContainsString('<span class="sr-only">Add Pottery</span>', $card);
-        self::assertStringNotContainsString('>Add<', $card);
-    }
-
-    #[Test]
-    public function addingToCartDisablesTheOverlayButtonAndMarksTheCardInCart(): void
-    {
-        $player = $this->createPlayer();
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $component->call('addToCart', ['key' => 'pottery']);
-        $card = $this->extractProductCard($component->render()->toString(), 'pottery');
-
-        self::assertStringContainsString('data-in-cart', $card);
-        self::assertMatchesRegularExpression('/<button[^>]*\bdisabled\b/', $card);
-    }
-
-    #[Test]
-    public function democracyIsDiscountedForAPlayerOwningAgriculture(): void
-    {
-        $player = $this->createPlayer();
-        $player->ownAdvances(['agriculture']);
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-
-        self::assertMatchesRegularExpression(
-            '/id="product-democracy".*?data-price-net>200</s',
-            $rendered,
-        );
-    }
-
-    #[Test]
     public function discountsAreRenderedInTheKioskWithTheOwnedCategoryColors(): void
     {
         $player = $this->createPlayer();
@@ -112,29 +54,87 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('--category-color', $rendered);
-        self::assertStringContainsString('--category-color: #F7941E', $rendered);
-        self::assertStringContainsString('--category-color: #39B54A', $rendered);
+        $this->assertStringContainsString('--category-color', $rendered);
+        $this->assertStringContainsString('--category-color: #F7941E', $rendered);
+        $this->assertStringContainsString('--category-color: #39B54A', $rendered);
+    }
+
+    #[Test]
+    public function addMarksTheProductInCartAndUpdatesTheCartTotal(): void
+    {
+        $player = $this->createPlayer();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        // A single call()+render() round trip: proves add() re-renders the nested
+        // ProductGrid (in-cart marker) and Cart (total) together, not just Shop itself.
+        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
+
+        $this->assertStringContainsString('id="product-pottery"', $rendered);
+        $this->assertStringContainsString('data-in-cart', $rendered);
+        $this->assertStringContainsString('Total: 60', $rendered);
+    }
+
+    #[Test]
+    public function addIsANoOpAndSetsAnErrorWhenTheCartIsLocked(): void
+    {
+        $player = $this->createPlayer();
+        $order = $this->createPendingOrder($player, 'pottery');
+        $order->freeze([new OrderLine('pottery', 60)], 60);
+        $order->setMarking(OrderStatus::Validated->value);
+        $this->entityManager->flush();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $rendered = $component->call('add', ['key' => 'democracy'])->render()->toString();
+
+        $this->assertStringContainsString('An order has already been validated for this turn.', $rendered);
+    }
+
+    #[Test]
+    public function addingAnAlreadyOwnedAdvanceIsRefused(): void
+    {
+        $player = $this->createPlayer();
+        $player->ownAdvances(['agriculture']);
+        $this->entityManager->flush();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $rendered = $component->call('add', ['key' => 'agriculture'])->render()->toString();
+
+        $this->assertStringContainsString('already owned', $rendered);
+        $this->assertStringContainsString('Cart is empty.', $rendered);
+    }
+
+    #[Test]
+    public function addingTheSameAdvanceTwiceIsDeduped(): void
+    {
+        $player = $this->createPlayer();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $component->call('add', ['key' => 'pottery']);
+        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
+
+        $this->assertSame(1, substr_count($rendered, 'class="shop__cart-line"'));
+        $this->assertStringContainsString('Total: 60', $rendered);
     }
 
     #[Test]
     public function submitOrderCreatesAPendingOrderAndEmptiesTheCart(): void
     {
         $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $component->call('addToCart', ['key' => 'pottery']);
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $component->call('submitOrder');
 
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($player, $player->game->currentTurn);
-        self::assertNotNull($order);
-        self::assertSame(['pottery'], $order->lines);
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(['pottery'], $order->keys());
 
         $rendered = $component->render()->toString();
-        self::assertStringNotContainsString('Your cart', $rendered);
-        self::assertStringContainsString('Order pending for this turn.', $rendered);
-        self::assertStringContainsString('Pottery', $rendered);
-        self::assertStringContainsString('Modify', $rendered);
+        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringContainsString('Order pending for this turn.', $rendered);
+        $this->assertStringContainsString('Pottery', $rendered);
+        $this->assertStringContainsString('Modify', $rendered);
     }
 
     #[Test]
@@ -145,10 +145,10 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertStringNotContainsString('Your cart', $rendered);
-        self::assertStringContainsString('Order pending for this turn.', $rendered);
-        self::assertStringContainsString('Pottery', $rendered);
-        self::assertStringContainsString('Modify', $rendered);
+        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringContainsString('Order pending for this turn.', $rendered);
+        $this->assertStringContainsString('Pottery', $rendered);
+        $this->assertStringContainsString('Modify', $rendered);
     }
 
     #[Test]
@@ -162,32 +162,30 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertStringContainsString('Your cart', $rendered);
-        self::assertStringContainsString('data-in-cart', $rendered);
-        self::assertSame(2, substr_count($rendered, 'data-live-action-param="removeFromCart"'));
-        self::assertStringNotContainsString('Modify', $rendered);
-        self::assertNotNull($order->id);
+        $this->assertStringContainsString('shop__cart-lines', $rendered);
+        $this->assertStringContainsString('data-in-cart', $rendered);
+        $this->assertSame(2, substr_count($rendered, 'data-live-action-param="remove"'));
+        $this->assertStringNotContainsString('Modify', $rendered);
+        $this->assertNotNull($order->id);
     }
 
     #[Test]
-    public function aValidatedOrderLocksTheKioskAndAddToCartIsANoOp(): void
+    public function aValidatedOrderLocksTheKioskForTheTurn(): void
     {
         $player = $this->createPlayer();
         $order = $this->createPendingOrder($player, 'pottery');
-        $order->validate([['key' => 'pottery', 'netCost' => 60]], 60);
+        $order->freeze([new OrderLine('pottery', 60)], 60);
+        $order->setMarking(OrderStatus::Validated->value);
         $this->entityManager->flush();
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        self::assertTrue($this->getShopComponent($component)->isLockedForTurn());
-
-        $component->call('addToCart', ['key' => 'agriculture']);
+        $this->assertTrue($this->getShopComponent($component)->isLockedForTurn());
 
         $rendered = $component->render()->toString();
-        self::assertStringNotContainsString('data-in-cart', $rendered);
-        self::assertStringNotContainsString('Your cart', $rendered);
-        self::assertStringNotContainsString('Modify', $rendered);
-        self::assertStringContainsString('Order validated for this turn.', $rendered);
-        self::assertStringContainsString('Pottery', $rendered);
+        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringNotContainsString('Modify', $rendered);
+        $this->assertStringContainsString('Order validated for this turn.', $rendered);
+        $this->assertStringContainsString('Pottery', $rendered);
     }
 
     #[Test]
@@ -195,14 +193,40 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = $this->createPlayer();
         $order = $this->createPendingOrder($player, 'pottery');
-        $order->validate([['key' => 'pottery', 'netCost' => 999]], 999);
+        $order->freeze([new OrderLine('pottery', 999)], 999);
+        $order->setMarking(OrderStatus::Validated->value);
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('999', $rendered);
-        self::assertStringNotContainsString('Modify', $rendered);
-        self::assertStringNotContainsString('Your cart', $rendered);
+        $this->assertStringContainsString('999', $rendered);
+        $this->assertStringNotContainsString('Modify', $rendered);
+        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+    }
+
+    #[Test]
+    public function aRejectedOrderReopensForEditingAndResubmittingReturnsItToPending(): void
+    {
+        $player = $this->createPlayer();
+        $order = $this->createPendingOrder($player, 'pottery');
+        $order->setMarking(OrderStatus::Rejected->value);
+        $this->entityManager->flush();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $rendered = $component->render()->toString();
+
+        $this->assertStringContainsString('revise and resubmit', $rendered);
+
+        $component->call('editPendingOrder');
+        $editedRendered = $component->render()->toString();
+        $this->assertStringContainsString('shop__cart-lines', $editedRendered);
+        $this->assertStringContainsString('data-in-cart', $editedRendered);
+
+        $component->call('submitOrder');
+
+        $reloadedOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $reloadedOrder);
+        $this->assertSame(OrderStatus::Pending, $reloadedOrder->status);
     }
 
     #[Test]
@@ -212,9 +236,9 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        self::assertStringContainsString('game-updated', $rendered);
-        self::assertStringContainsString('order-updated', $rendered);
+        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
+        $this->assertStringContainsString('game-updated', $rendered);
+        $this->assertStringContainsString('order-updated', $rendered);
     }
 
     #[Test]
@@ -234,7 +258,145 @@ final class ShopComponentTest extends WebTestCase
         self::assertSelectorExists('[data-controller~="live"]');
 
         $html = (string) $client->getResponse()->getContent();
-        self::assertStringContainsString('empires/game/'.$player->game->id, $html);
+        $this->assertStringContainsString('empires/game/'.$player->game->id, $html);
+    }
+
+    #[Test]
+    public function choosingAGiftAppendsAZeroCostLineAndValidatingOwnsTheGiftedAdvance(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['anatomy']);
+        $cart->withGift('anatomy', 'astronavigation');
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $component->call('submitOrder');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
+
+        $giftLine = $order->lines()[1];
+        $this->assertSame('astronavigation', $giftLine->key);
+        $this->assertSame(0, $giftLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
+        $this->assertSame(PromotionType::Gift, $giftLine->promotion->type);
+        $this->assertSame('anatomy', $giftLine->promotion->source);
+
+        self::getContainer()->get(OrderValidator::class)->validate($order);
+
+        $reloadedPlayer = $this->reloadPlayer($player);
+        $this->assertContains('anatomy', $reloadedPlayer->advances);
+        $this->assertContains('astronavigation', $reloadedPlayer->advances);
+    }
+
+    #[Test]
+    public function editPendingOrderReloadsTheGiftChoiceIntoTheCart(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['anatomy']);
+        $cart->withGift('anatomy', 'astronavigation');
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $component->call('submitOrder');
+
+        $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
+        $freshComponent->call('editPendingOrder');
+
+        $rendered = $freshComponent->render()->toString();
+
+        $this->assertStringContainsString('Free gift: Astronavigation', $rendered);
+    }
+
+    #[Test]
+    public function addingMonumentWithIncompleteAllocationDisablesSubmit(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['monument']));
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
+
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    #[Test]
+    public function allocatingTheFullOptionPoolEnablesSubmitAndPersistsTheAllocationOnTheOrder(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'craft', 10);
+        $cart->withAllocation('monument', 'science', 10);
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $crawler = $component->render()->crawler();
+        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+
+        $component->call('submitOrder');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Pending, $order->status);
+
+        $line = $order->lines()[0];
+        $this->assertInstanceOf(AppliedPromotion::class, $line->promotion);
+        $this->assertSame(PromotionType::Option, $line->promotion->type);
+        $this->assertSame(['craft' => 10, 'science' => 10], $line->promotion->allocation);
+    }
+
+    #[Test]
+    public function validatingAMonumentOrderCreditsTheDiscountsTable(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'craft', 10);
+        $cart->withAllocation('monument', 'science', 10);
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $component->call('submitOrder');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        self::getContainer()->get(OrderValidator::class)->validate($order);
+
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+
+        // Craft is 20: monument's own recipe already credits craft+10 to its owner
+        // (config/game/advances.yaml), on top of which the +10 Option allocation
+        // merges in; science carries no such recipe credit, so its 10 is the bonus alone.
+        $this->assertMatchesRegularExpression('/Craft<\/td>\s*<td><b>20<\/b><\/td>/', $rendered);
+        $this->assertMatchesRegularExpression('/Science<\/td>\s*<td><b>10<\/b><\/td>/', $rendered);
+    }
+
+    #[Test]
+    public function editPendingOrderReloadsTheAllocationIntoTheCart(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'craft', 10);
+        $cart->withAllocation('monument', 'science', 10);
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $component->call('submitOrder');
+
+        $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
+        $freshComponent->call('editPendingOrder');
+
+        $crawler = $freshComponent->render()->crawler();
+
+        $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
+        // Category order is art/civic/craft/religion/science (App\Game\Category): only
+        // craft and science were allocated, 10 each.
+        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
+        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     private function createPlayer(): Player
@@ -252,11 +414,33 @@ final class ShopComponentTest extends WebTestCase
     private function createPendingOrder(Player $player, string ...$slugs): Order
     {
         $order = new Order($player, $player->game->currentTurn);
-        $order->replaceLines($slugs);
+        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
         return $order;
+    }
+
+    /**
+     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * no add() action of its own any more) and points $client's cookie jar at
+     * that session, so the Shop component under test — driven by the same
+     * $client — reads the same cart back. 'test.client' is registered
+     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
+     * so $client must be the exact instance later passed to createLiveComponent().
+     */
+    private function cartFor(KernelBrowser $client, Player $player, Cart $cart): void
+    {
+        $session = self::getContainer()->get('session.factory')->createSession();
+        $request = new Request();
+        $request->setSession($session);
+        $requestStack = self::getContainer()->get(RequestStack::class);
+        $requestStack->push($request);
+        self::getContainer()->get(CartRepository::class)->save((string) $player->id, $cart);
+        $requestStack->pop();
+        $session->save();
+
+        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
     private function freshOrderRepository(): OrderRepository
@@ -264,28 +448,18 @@ final class ShopComponentTest extends WebTestCase
         return self::getContainer()->get(OrderRepository::class);
     }
 
+    private function reloadPlayer(Player $player): Player
+    {
+        $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
+        $this->assertInstanceOf(Player::class, $reloaded);
+
+        return $reloaded;
+    }
+
     private function getShopComponent(object $component): object
     {
         // InteractsWithLiveComponents' TestLiveComponent exposes the underlying
         // component instance via getComponent() to inspect non-rendered state.
         return $component->component();
-    }
-
-    /**
-     * Scopes assertions to a single product's <article>, as opposed to the
-     * whole shop grid (which renders every other product's markup too).
-     */
-    private function extractProductCard(string $html, string $key): string
-    {
-        $idPosition = strpos($html, 'id="product-'.$key.'"');
-        self::assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
-
-        $start = strrpos(substr($html, 0, $idPosition), '<article');
-        self::assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
-
-        $end = strpos($html, '</article>', $start);
-        self::assertNotFalse($end, '</article> not found in rendered output.');
-
-        return substr($html, $start, $end - $start);
     }
 }

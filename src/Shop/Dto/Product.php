@@ -14,24 +14,4 @@ final readonly class Product
         public bool $owned,
         public bool $inCart,
     ) {}
-
-    /**
-     * @param list<self>   $products
-     * @param list<string> $keys
-     *
-     * @return list<self>
-     */
-    public static function filterByKeys(array $products, array $keys): array
-    {
-        $byKey = [];
-
-        foreach ($products as $product) {
-            $byKey[$product->advance->key] = $product;
-        }
-
-        return array_values(array_filter(array_map(
-            static fn (string $key): ?self => $byKey[$key] ?? null,
-            $keys,
-        )));
-    }
 }

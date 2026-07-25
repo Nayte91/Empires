@@ -8,13 +8,17 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
+use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
-use App\Shop\Dto\Product;
+use App\Shop\Command\SubmitOrder;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\ShopException;
 use App\Shop\OrderStatus;
-use App\Shop\Service\OrderSubmitter;
-use App\Shop\Service\PriceCalculator;
+use App\Shop\Service\LineQuoter;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -25,28 +29,32 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 final class Shop
 {
     use DefaultActionTrait;
+    use HasIncompleteAllocationsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public ?string $error = null;
-
-    /** @var ?list<Product> */
-    private ?array $products = null;
-
     private bool $currentOrderLoaded = false;
     private ?Order $currentOrder = null;
 
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly PriceCalculator $priceCalculator,
         private readonly CartRepository $cartRepository,
         private readonly OrderRepository $orderRepository,
-        private readonly OrderSubmitter $orderSubmitter,
+        private readonly LineQuoter $lineQuoter,
+        private readonly MessageBusInterface $commandBus,
+        private readonly ShopConnector $shopConnector,
     ) {}
 
     #[LiveAction]
-    public function addToCart(#[LiveArg] string $key): void
+    public function clearCart(): void
+    {
+        $this->cartRepository->clear((string) $this->player->id);
+    }
+
+    #[LiveAction]
+    public function add(#[LiveArg] string $key): void
     {
         if ($this->isLockedForTurn()) {
             $this->error = 'An order has already been validated for this turn.';
@@ -60,39 +68,36 @@ final class Shop
             return;
         }
 
-        $cart = $this->getCart();
+        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
 
         if ($cart->has($key)) {
             return;
         }
 
         $cart->add($key);
-        $this->cartRepository->save($this->player->id, $cart);
+        $this->cartRepository->save((string) $this->player->id, $cart);
         $this->error = null;
-    }
-
-    #[LiveAction]
-    public function removeFromCart(#[LiveArg] string $key): void
-    {
-        $cart = $this->getCart();
-        $cart->remove($key);
-        $this->cartRepository->save($this->player->id, $cart);
-    }
-
-    #[LiveAction]
-    public function clearCart(): void
-    {
-        $this->cartRepository->clear($this->player->id);
     }
 
     #[LiveAction]
     public function submitOrder(): void
     {
         try {
-            $this->orderSubmitter->submit($this->player);
+            $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
+            $window = $this->shopConnector->currentWindow($this->player->game);
+            $this->commandBus->dispatch(new SubmitOrder($this->player->id, $cart->items, $window));
+            $this->cartRepository->clear((string) $this->player->id);
             $this->error = null;
-        } catch (\DomainException $exception) {
-            $this->error = $exception->getMessage();
+        } catch (HandlerFailedException $exception) {
+            foreach ($exception->getWrappedExceptions() as $wrapped) {
+                if ($wrapped instanceof ShopException) {
+                    $this->error = $wrapped->getMessage();
+
+                    return;
+                }
+            }
+
+            throw $exception;
         }
     }
 
@@ -106,65 +111,37 @@ final class Shop
         }
 
         $cart = new Cart();
+        $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
-        /** @var list<string> $keys */
-        $keys = $order->lines;
-
-        foreach ($keys as $key) {
-            $cart->add($key);
-        }
-
-        $this->cartRepository->save($this->player->id, $cart);
+        $this->cartRepository->save((string) $this->player->id, $cart);
     }
 
-    /** @return list<Product> */
-    public function getProducts(): array
-    {
-        if (null !== $this->products) {
-            return $this->products;
-        }
-
-        /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->player->advances);
-        $cart = $this->getCart();
-
-        $this->products = array_values(array_filter(array_map(
-            fn (Advance $advance): ?Product => \in_array($advance->key, $this->player->advances, true)
-                ? null
-                : new Product(
-                    advance: $advance,
-                    netCost: $this->priceCalculator->netCost($advance, $ownedAdvances),
-                    owned: false,
-                    inCart: $cart->has($advance->key),
-                ),
-            $this->advanceCatalog->getAdvances(),
-        )));
-
-        return $this->products;
-    }
-
-    /** @return list<Product> */
-    public function getCartLines(): array
-    {
-        return Product::filterByKeys($this->getProducts(), $this->getCart()->items);
-    }
-
-    public function getCartTotal(): int
-    {
-        return array_sum(array_map(
-            static fn (Product $product): int => $product->netCost,
-            $this->getCartLines(),
-        ));
-    }
-
+    /** Editable order for the current turn — a rejected order reopens for revision, resubmitting it. */
     public function getPendingOrder(): ?Order
     {
         $order = $this->getCurrentTurnOrder();
+        $editable = $order instanceof Order
+            && (OrderStatus::Pending === $order->status || OrderStatus::Rejected === $order->status);
 
-        return ($order instanceof Order && OrderStatus::Pending === $order->status) ? $order : null;
+        return $editable ? $order : null;
     }
 
-    /** @return list<Product> */
+    /** Whether any option-promoted cart line still has an unspent balance — gates the submit button. */
+    public function hasIncompleteAllocations(): bool
+    {
+        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
+
+        return $this->isCartHasIncompleteAllocations($cart, $this->advanceCatalog);
+    }
+
+    public function isCartEmpty(): bool
+    {
+        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
+
+        return $cart->isEmpty();
+    }
+
+    /** @return list<array{advance: Advance, line: OrderLine}> */
     public function getOrderLines(): array
     {
         $order = $this->getCurrentTurnOrder();
@@ -173,14 +150,11 @@ final class Shop
             return [];
         }
 
-        if (OrderStatus::Validated === $order->status) {
-            return $this->getValidatedOrderLines($order);
-        }
+        $lines = OrderStatus::Validated === $order->status
+            ? $order->lines()
+            : $this->lineQuoter->quote($this->lineQuoter->intentsFromLines($order->lines()), $this->player, $this->shopConnector->buckets());
 
-        /** @var list<string> $keys */
-        $keys = $order->lines;
-
-        return Product::filterByKeys($this->getProducts(), $keys);
+        return $this->toRows($lines);
     }
 
     public function getOrderTotal(): int
@@ -191,10 +165,7 @@ final class Shop
             return $order->total ?? 0;
         }
 
-        return array_sum(array_map(
-            static fn (Product $product): int => $product->netCost,
-            $this->getOrderLines(),
-        ));
+        return $this->sumNetCost($this->getOrderLines());
     }
 
     public function isLockedForTurn(): bool
@@ -202,10 +173,16 @@ final class Shop
         return OrderStatus::Validated === $this->getCurrentTurnOrder()?->status;
     }
 
+    /** Status of the order for the current turn — only meaningful while {@see isOrderVisible()} is true. */
+    public function getOrderStatus(): ?string
+    {
+        return $this->getCurrentTurnOrder()?->status->value;
+    }
+
     /** Cart is shown when there is no order for this turn, or while editing one (non-empty cart). */
     public function isCartVisible(): bool
     {
-        return !$this->getCurrentTurnOrder() instanceof Order || [] !== $this->getCartLines();
+        return !$this->getCurrentTurnOrder() instanceof Order || !$this->isCartEmpty();
     }
 
     /** Order block is shown whenever an order exists and it isn't currently being edited in the cart. */
@@ -214,10 +191,15 @@ final class Shop
         return $this->getCurrentTurnOrder() instanceof Order && !$this->isCartVisible();
     }
 
+    public function getCartStamp(): string
+    {
+        return $this->cartRepository->findOrCreate((string) $this->player->id)->stamp();
+    }
+
     private function getCurrentTurnOrder(): ?Order
     {
         if (!$this->currentOrderLoaded) {
-            $this->currentOrder = $this->orderRepository->findOneByPlayerAndTurn(
+            $this->currentOrder = $this->orderRepository->findOneByPlayerAndWindow(
                 $this->player,
                 $this->player->game->currentTurn,
             );
@@ -227,26 +209,28 @@ final class Shop
         return $this->currentOrder;
     }
 
-    private function getCart(): Cart
+    /**
+     * @param list<OrderLine> $lines
+     *
+     * @return list<array{advance: Advance, line: OrderLine}>
+     */
+    private function toRows(array $lines): array
     {
-        return $this->cartRepository->findOrCreate($this->player->id);
+        return array_map(
+            function (OrderLine $line): ?array {
+                $advance = $this->advanceCatalog->getAdvanceByName($line->key);
+
+                return $advance instanceof Advance ? ['advance' => $advance, 'line' => $line] : null;
+            },
+            $lines,
+        )
+                |> array_filter(...)
+                |> array_values(...);
     }
 
-    /** @return list<Product> */
-    private function getValidatedOrderLines(Order $order): array
+    /** @param list<array{advance: Advance, line: OrderLine}> $rows */
+    private function sumNetCost(array $rows): int
     {
-        /** @var list<array{key: string, netCost: int}> $frozenLines */
-        $frozenLines = $order->lines;
-
-        return array_values(array_filter(array_map(
-            function (array $line): ?Product {
-                $advance = $this->advanceCatalog->getAdvanceByName($line['key']);
-
-                return $advance instanceof Advance
-                    ? new Product(advance: $advance, netCost: $line['netCost'], owned: true, inCart: false)
-                    : null;
-            },
-            $frozenLines,
-        )));
+        return array_sum(array_map(static fn (array $row): int => $row['line']->netCost, $rows));
     }
 }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f177f245a3ba37a3bcc0d5ea9b2072d8",
+    "content-hash": "c86f1424d1414f9d33369ecf8e2790a8",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -276,16 +276,16 @@
         },
         {
             "name": "doctrine/dbal",
-            "version": "4.4.3",
+            "version": "4.4.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/dbal.git",
-                "reference": "61e730f1658814821a85f2402c945f3883407dec"
+                "reference": "fb9e0ffe15e1590e24dc61c0c0a23f9a33ee42ce"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/dbal/zipball/61e730f1658814821a85f2402c945f3883407dec",
-                "reference": "61e730f1658814821a85f2402c945f3883407dec",
+                "url": "https://api.github.com/repos/doctrine/dbal/zipball/fb9e0ffe15e1590e24dc61c0c0a23f9a33ee42ce",
+                "reference": "fb9e0ffe15e1590e24dc61c0c0a23f9a33ee42ce",
                 "shasum": ""
             },
             "require": {
@@ -362,7 +362,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/dbal/issues",
-                "source": "https://github.com/doctrine/dbal/tree/4.4.3"
+                "source": "https://github.com/doctrine/dbal/tree/4.4.4"
             },
             "funding": [
                 {
@@ -378,7 +378,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-03-20T08:52:12+00:00"
+            "time": "2026-07-21T14:34:40+00:00"
         },
         {
             "name": "doctrine/deprecations",
@@ -430,16 +430,16 @@
         },
         {
             "name": "doctrine/doctrine-bundle",
-            "version": "3.2.4",
+            "version": "3.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/doctrine/DoctrineBundle.git",
-                "reference": "75f1bf75d0ba099f23e7d43ebd804df5bec58c29"
+                "reference": "9b231f957020de52d6ac94fd72f0cbe8cf1eaad5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/75f1bf75d0ba099f23e7d43ebd804df5bec58c29",
-                "reference": "75f1bf75d0ba099f23e7d43ebd804df5bec58c29",
+                "url": "https://api.github.com/repos/doctrine/DoctrineBundle/zipball/9b231f957020de52d6ac94fd72f0cbe8cf1eaad5",
+                "reference": "9b231f957020de52d6ac94fd72f0cbe8cf1eaad5",
                 "shasum": ""
             },
             "require": {
@@ -447,6 +447,7 @@
                 "doctrine/deprecations": "^1.0",
                 "doctrine/persistence": "^4",
                 "doctrine/sql-formatter": "^1.0.1",
+                "ext-mbstring": "*",
                 "php": "^8.4",
                 "symfony/cache": "^6.4 || ^7.0 || ^8.0",
                 "symfony/config": "^6.4 || ^7.0 || ^8.0",
@@ -474,6 +475,7 @@
                 "symfony/http-kernel": "^6.4 || ^7.0 || ^8.0",
                 "symfony/messenger": "^6.4 || ^7.0 || ^8.0",
                 "symfony/property-info": "^6.4 || ^7.0 || ^8.0",
+                "symfony/runtime": "^6.4 || ^7.0 || ^8.0",
                 "symfony/security-bundle": "^6.4 || ^7.0 || ^8.0",
                 "symfony/stopwatch": "^6.4 || ^7.0 || ^8.0",
                 "symfony/string": "^6.4 || ^7.0 || ^8.0",
@@ -526,7 +528,7 @@
             ],
             "support": {
                 "issues": "https://github.com/doctrine/DoctrineBundle/issues",
-                "source": "https://github.com/doctrine/DoctrineBundle/tree/3.2.4"
+                "source": "https://github.com/doctrine/DoctrineBundle/tree/3.3.1"
             },
             "funding": [
                 {
@@ -542,7 +544,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-09T19:11:55+00:00"
+            "time": "2026-07-23T10:37:01+00:00"
         },
         {
             "name": "doctrine/doctrine-migrations-bundle",
@@ -7512,6 +7514,96 @@
             "time": "2026-05-29T05:06:50+00:00"
         },
         {
+            "name": "symfony/workflow",
+            "version": "v8.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/workflow.git",
+                "reference": "8a4690c56fbc8766d4b49f02e60e8fa0ed360211"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/workflow/zipball/8a4690c56fbc8766d4b49f02e60e8fa0ed360211",
+                "reference": "8a4690c56fbc8766d4b49f02e60e8fa0ed360211",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.4.1"
+            },
+            "require-dev": {
+                "psr/log": "^1|^2|^3",
+                "symfony/config": "^7.4|^8.0",
+                "symfony/console": "^7.4|^8.0",
+                "symfony/dependency-injection": "^7.4|^8.0",
+                "symfony/error-handler": "^7.4|^8.0",
+                "symfony/event-dispatcher": "^7.4|^8.0",
+                "symfony/expression-language": "^7.4|^8.0",
+                "symfony/http-kernel": "^7.4|^8.0",
+                "symfony/security-core": "^7.4|^8.0",
+                "symfony/stopwatch": "^7.4|^8.0",
+                "symfony/validator": "^7.4|^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Symfony\\Component\\Workflow\\": ""
+                },
+                "exclude-from-classmap": [
+                    "/Tests/"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Fabien Potencier",
+                    "email": "fabien@symfony.com"
+                },
+                {
+                    "name": "Grégoire Pineau",
+                    "email": "lyrixx@lyrixx.info"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Provides tools for managing a workflow or finite state machine",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "petrinet",
+                "place",
+                "state",
+                "statemachine",
+                "transition",
+                "workflow"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/workflow/tree/v8.1.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2026-05-29T05:06:50+00:00"
+        },
+        {
             "name": "symfony/yaml",
             "version": "v8.1.1",
             "source": {
@@ -8717,27 +8809,28 @@
         },
         {
             "name": "phpstan/phpstan-strict-rules",
-            "version": "2.0.11",
+            "version": "2.0.12",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phpstan/phpstan-strict-rules.git",
-                "reference": "9b000a578b85b32945b358b172c7b20e91189024"
+                "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/9b000a578b85b32945b358b172c7b20e91189024",
-                "reference": "9b000a578b85b32945b358b172c7b20e91189024",
+                "url": "https://api.github.com/repos/phpstan/phpstan-strict-rules/zipball/2bc5ae19ae965663b62ac907ee6342c3903ec93b",
+                "reference": "2bc5ae19ae965663b62ac907ee6342c3903ec93b",
                 "shasum": ""
             },
             "require": {
                 "php": "^7.4 || ^8.0",
-                "phpstan/phpstan": "^2.1.39"
+                "phpstan/phpstan": "^2.1.52"
             },
             "require-dev": {
                 "php-parallel-lint/php-parallel-lint": "^1.2",
                 "phpstan/phpstan-deprecation-rules": "^2.0",
                 "phpstan/phpstan-phpunit": "^2.0",
-                "phpunit/phpunit": "^9.6"
+                "phpunit/phpunit": "^9.6",
+                "shipmonk/name-collision-detector": "^2.1"
             },
             "type": "phpstan-extension",
             "extra": {
@@ -8762,9 +8855,9 @@
             ],
             "support": {
                 "issues": "https://github.com/phpstan/phpstan-strict-rules/issues",
-                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.0.11"
+                "source": "https://github.com/phpstan/phpstan-strict-rules/tree/2.0.12"
             },
-            "time": "2026-05-02T06:54:10+00:00"
+            "time": "2026-07-19T07:24:06+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

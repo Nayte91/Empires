@@ -12,8 +12,7 @@
                 group: 'operator-tabs',
                 tabId: 'general',
                 label: 'General',
-                open: activeTab == 'general',
-                selectAction: 'selectTab',
+                open: true,
             } %}
                 {% block panel %}
                     <div class="operator-console__turn-controls">
@@ -52,8 +51,6 @@
                     tabId: player.id,
                     label: (player.empire ?? player.name)|capitalize,
                     tabColor: 'var(--empire-' ~ (player.empire ?? 'none') ~ ', dimgray)',
-                    open: activeTab == player.id,
-                    selectAction: 'selectTab',
                 } %}
                     {% block panel %}
                         <h3>{{ player.name }}</h3>

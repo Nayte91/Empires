@@ -13,7 +13,6 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
-use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -24,9 +23,6 @@ final class OperatorConsole
 
     #[LiveProp]
     public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
-
-    #[LiveProp(writable: true)]
-    public string $activeTab = 'general';
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -68,12 +64,6 @@ final class OperatorConsole
         $this->game->finishedAt = new \DateTimeImmutable();
         $this->entityManager->flush();
         $this->publish();
-    }
-
-    #[LiveAction]
-    public function selectTab(#[LiveArg] string $tab): void
-    {
-        $this->activeTab = $tab;
     }
 
     /**

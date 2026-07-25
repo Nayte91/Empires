@@ -1,0 +1,40 @@
+{# Gift picker molecule — shown under a cart/ticket line whose advance grants a
+   promotion.gift. Component-agnostic: chooseAction/revokeAction let Shop (cart)
+   and PlayerOrders (POS ticket) each drive their own live actions.
+   Expected context: row, chooseAction, revokeAction, candidates, chosenGift. #}
+{% if chosenGift %}
+    <p class="gift-picker gift-picker--chosen">
+        Free gift: {{ chosenGift.name|capitalize }}
+        <button
+            type="button"
+            {{ live_action(revokeAction, {for: row.advance.key}) }}
+            data-loading="addAttribute(disabled)"
+            class="gift-picker__revoke"
+        >
+            Change gift
+        </button>
+    </p>
+{% elseif candidates is not empty %}
+    <div class="gift-picker">
+        {% for category, threshold in row.advance.promotion.gift %}
+            <p class="gift-picker__intro">
+                {{ row.advance.name|capitalize }} offers a free {{ category }} advance (base cost below {{ threshold }}).
+            </p>
+        {% endfor %}
+        <ul class="gift-picker__candidates">
+            {% for candidate in candidates %}
+                <li>
+                    <button
+                        type="button"
+                        {{ live_action(chooseAction, {for: row.advance.key, key: candidate.key}) }}
+                        data-loading="addAttribute(disabled)"
+                        class="gift-picker__candidate"
+                    >
+                        {{ candidate.name|capitalize }}
+                        <small class="gift-picker__candidate-cost">{{ candidate.cost }}</small>
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}

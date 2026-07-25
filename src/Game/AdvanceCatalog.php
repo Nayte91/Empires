@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Game;
 
 use App\Game\Dto\Advance;
+use App\Game\Dto\Promotion;
+use App\Shop\Promotion\ElectiveBenefit;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
@@ -22,6 +24,7 @@ final class AdvanceCatalog
      *     credits: array<string, int>,
      *     mitigation?: list<string>,
      *     aggravation?: list<string>,
+     *     promotion?: array{gift?: array<string, int>, discount?: array<string, int>, option?: array{budget: int, step: int}},
      * }>
      */
     private ?array $advancesData = null;
@@ -134,6 +137,7 @@ final class AdvanceCatalog
      *     credits: array<string, int>,
      *     mitigation?: list<string>,
      *     aggravation?: list<string>,
+     *     promotion?: array{gift?: array<string, int>, discount?: array<string, int>, option?: array{budget: int, step: int}},
      * }>
      */
     private function getAdvancesData(): array
@@ -153,6 +157,7 @@ final class AdvanceCatalog
              *     credits: array<string, int>,
              *     mitigation?: list<string>,
              *     aggravation?: list<string>,
+             *     promotion?: array{gift?: array<string, int>, discount?: array<string, int>, option?: array{budget: int, step: int}},
              * }> $advances
              */
             $advances = $data['advances'];
@@ -182,11 +187,25 @@ final class AdvanceCatalog
      *     credits: array<string, int>,
      *     mitigation?: list<string>,
      *     aggravation?: list<string>,
+     *     promotion?: array{gift?: array<string, int>, discount?: array<string, int>, option?: array{budget: int, step: int}},
      * } $data
      */
     private function hydrateAdvance(string $key, array $data): Advance
     {
-        // The 'promotion' and 'payment' YAML keys exist but are intentionally not read (out of scope for v1 shop).
+        // The 'payment' YAML key exists but is intentionally not read (out of scope for v1 shop).
+        $promotion = isset($data['promotion'])
+            ? new Promotion(
+                gift: $data['promotion']['gift'] ?? [],
+                discount: $data['promotion']['discount'] ?? [],
+                option: isset($data['promotion']['option'])
+                    ? new ElectiveBenefit(
+                        budget: $data['promotion']['option']['budget'],
+                        step: $data['promotion']['option']['step'],
+                    )
+                    : null,
+            )
+            : null;
+
         return new Advance(
             key: $key,
             name: str_replace('_', ' ', $key),
@@ -197,6 +216,7 @@ final class AdvanceCatalog
             credits: $data['credits'],
             mitigations: $data['mitigation'] ?? [],
             aggravations: $data['aggravation'] ?? [],
+            promotion: $promotion,
         );
     }
 

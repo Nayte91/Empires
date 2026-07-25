@@ -11,6 +11,8 @@ use PHPUnit\Framework\TestCase;
 
 final class PriceCalculatorTest extends TestCase
 {
+    private const array BUCKETS = ['art', 'civic', 'craft', 'religion', 'science'];
+
     #[Test]
     public function netCostWithoutOwnedEqualsRawCost(): void
     {
@@ -101,9 +103,36 @@ final class PriceCalculatorTest extends TestCase
     }
 
     #[Test]
+    public function netCostMergesBonusCreditsIntoTheBestOwnedCategory(): void
+    {
+        $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
+
+        self::assertSame(40, new PriceCalculator()->netCost($pottery, [], ['craft' => 20]));
+    }
+
+    #[Test]
+    public function netCostCombinesOwnedAndBonusCreditsForTheSameCategory(): void
+    {
+        $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
+        $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
+
+        self::assertSame(30, new PriceCalculator()->netCost($pottery, [$agriculture], ['craft' => 20]));
+    }
+
+    #[Test]
+    public function creditsForMergesBonusCreditsIntoTheCategoryTotals(): void
+    {
+        $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
+
+        $credits = new PriceCalculator()->creditsFor([$agriculture], ['craft' => 10, 'science' => 10], self::BUCKETS);
+
+        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 20, 'religion' => 0, 'science' => 15], $credits['categories']);
+    }
+
+    #[Test]
     public function creditsForWithNoOwnedReturnsAllZeroCategoriesAndNoNamedCredits(): void
     {
-        $credits = new PriceCalculator()->creditsFor([]);
+        $credits = new PriceCalculator()->creditsFor([], [], self::BUCKETS);
 
         self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 0, 'religion' => 0, 'science' => 0], $credits['categories']);
         self::assertSame([], $credits['named']);
@@ -114,7 +143,7 @@ final class PriceCalculatorTest extends TestCase
     {
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
 
-        $credits = new PriceCalculator()->creditsFor([$agriculture]);
+        $credits = new PriceCalculator()->creditsFor([$agriculture], [], self::BUCKETS);
 
         self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 10, 'religion' => 0, 'science' => 5], $credits['categories']);
         self::assertSame(['democracy' => 20], $credits['named']);
@@ -126,7 +155,7 @@ final class PriceCalculatorTest extends TestCase
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
         $monarchy = $this->makeAdvance('monarchy', 60, ['civic'], ['religion' => 5, 'civic' => 10, 'law' => 10]);
 
-        $credits = new PriceCalculator()->creditsFor([$agriculture, $monarchy]);
+        $credits = new PriceCalculator()->creditsFor([$agriculture, $monarchy], [], self::BUCKETS);
 
         self::assertSame(['art' => 0, 'civic' => 10, 'craft' => 10, 'religion' => 5, 'science' => 5], $credits['categories']);
         self::assertSame(['democracy' => 20, 'law' => 10], $credits['named']);

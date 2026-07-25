@@ -8,13 +8,21 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
+use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
-use App\Shop\Dto\Product;
+use App\Shop\Cart;
+use App\Shop\CartRepository;
+use App\Shop\Command\EraseOrders;
+use App\Shop\Command\RejectOrder;
+use App\Shop\Command\SellDirect;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\ShopException;
 use App\Shop\OrderStatus;
-use App\Shop\Service\DirectSale;
-use App\Shop\Service\OrderEraser;
-use App\Shop\Service\PriceCalculator;
+use App\Shop\Service\LineQuoter;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -25,12 +33,12 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 final class PlayerOrders
 {
     use DefaultActionTrait;
+    use HasIncompleteAllocationsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    /** Fingerprint only: any change remounts this component fresh (see StatPicker's :value for the same mechanism). */
-    #[LiveProp]
+    #[LiveProp(updateFromParent: true)]
     public string $ordersStamp; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     #[LiveProp]
@@ -39,22 +47,37 @@ final class PlayerOrders
     #[LiveProp]
     public int $posTurn = 0;
 
-    /** @var list<string> */
-    #[LiveProp]
-    public array $ticket = [];
-
     public ?string $error = null;
-
-    /** @var ?list<Product> */
-    private ?array $products = null;
 
     public function __construct(
         private readonly OrderRepository $orderRepository,
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly PriceCalculator $priceCalculator,
-        private readonly DirectSale $directSale,
-        private readonly OrderEraser $orderEraser,
+        private readonly CartRepository $cartRepository,
+        private readonly LineQuoter $lineQuoter,
+        private readonly MessageBusInterface $commandBus,
+        private readonly ShopConnector $shopConnector,
+        private readonly WorkflowInterface $shopOrderStateMachine,
     ) {}
+
+    #[LiveAction]
+    public function add(#[LiveArg] string $key): void
+    {
+        if (\in_array($key, $this->player->advances, true)) {
+            $this->error = sprintf('Advance "%s" is already owned.', $key);
+
+            return;
+        }
+
+        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+
+        if ($cart->has($key)) {
+            return;
+        }
+
+        $cart->add($key);
+        $this->cartRepository->save($this->posCartKey(), $cart);
+        $this->error = null;
+    }
 
     #[LiveAction]
     public function openPos(#[LiveArg] int $turn): void
@@ -63,17 +86,18 @@ final class PlayerOrders
         $this->error = null;
         $this->posOpen = true;
 
-        $order = $this->orderRepository->findOneByPlayerAndTurn($this->player, $turn);
+        $order = $this->orderRepository->findOneByPlayerAndWindow($this->player, $turn);
 
         if (!$order instanceof Order || OrderStatus::Pending !== $order->status) {
-            $this->ticket = [];
+            $this->cartRepository->clear($this->posCartKey());
 
             return;
         }
 
-        /** @var list<string> $lines */
-        $lines = $order->lines;
-        $this->ticket = $lines;
+        $cart = new Cart();
+        $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
+
+        $this->cartRepository->save($this->posCartKey(), $cart);
     }
 
     #[LiveAction]
@@ -85,67 +109,90 @@ final class PlayerOrders
     #[LiveAction]
     public function eraseOrder(#[LiveArg] int $turn): void
     {
-        $order = $this->orderRepository->findOneByPlayerAndTurn($this->player, $turn);
+        $windows = $this->shopConnector->windowsToErase($this->player, $turn);
 
-        if (!$order instanceof Order) {
-            return;
+        if ([] !== $windows) {
+            $this->commandBus->dispatch(new EraseOrders($this->player->id, $windows));
         }
-
-        $this->orderEraser->erase($order);
     }
 
     #[LiveAction]
-    public function addToTicket(#[LiveArg] string $key): void
+    public function rejectOrder(#[LiveArg] int $turn): void
     {
-        if (\in_array($key, $this->player->advances, true)) {
-            $this->error = sprintf('Advance "%s" is already owned.', $key);
+        try {
+            $this->commandBus->dispatch(new RejectOrder($this->player->id, $turn));
+            $this->error = null;
+        } catch (HandlerFailedException $exception) {
+            foreach ($exception->getWrappedExceptions() as $wrapped) {
+                if ($wrapped instanceof ShopException) {
+                    $this->error = $wrapped->getMessage();
 
-            return;
+                    return;
+                }
+            }
+
+            throw $exception;
         }
-
-        if (\in_array($key, $this->ticket, true)) {
-            return;
-        }
-
-        $this->ticket[] = $key;
-        $this->error = null;
-    }
-
-    #[LiveAction]
-    public function removeFromTicket(#[LiveArg] string $key): void
-    {
-        $this->ticket = array_values(array_filter(
-            $this->ticket,
-            static fn (string $existing): bool => $existing !== $key,
-        ));
     }
 
     #[LiveAction]
     public function checkout(): void
     {
         try {
-            $this->directSale->sell($this->player, $this->ticket, $this->posTurn);
+            $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+            $this->commandBus->dispatch(new SellDirect($this->player->id, $cart->items, $this->posTurn));
 
-            $this->ticket = [];
+            $this->cartRepository->clear($this->posCartKey());
             $this->error = null;
-        } catch (\DomainException $exception) {
-            $this->error = $exception->getMessage();
-        } catch (UniqueConstraintViolationException) {
-            $this->error = 'Order already submitted for this turn, please retry.';
+        } catch (HandlerFailedException $exception) {
+            foreach ($exception->getWrappedExceptions() as $wrapped) {
+                if ($wrapped instanceof ShopException) {
+                    $this->error = $wrapped->getMessage();
+
+                    return;
+                }
+
+                if ($wrapped instanceof UniqueConstraintViolationException) {
+                    $this->error = 'Order already submitted for this turn, please retry.';
+
+                    return;
+                }
+            }
+
+            throw $exception;
         }
+    }
+
+    public function isTicketEmpty(): bool
+    {
+        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+
+        return $cart->isEmpty();
+    }
+
+    public function hasIncompleteAllocations(): bool
+    {
+        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+
+        return $this->isCartHasIncompleteAllocations($cart, $this->advanceCatalog);
     }
 
     /** The order (if any) for the turn currently open in the POS. */
     public function getPosOrder(): ?Order
     {
-        return $this->orderRepository->findOneByPlayerAndTurn($this->player, $this->posTurn);
+        return $this->orderRepository->findOneByPlayerAndWindow($this->player, $this->posTurn);
+    }
+
+    public function getCartStamp(): string
+    {
+        return $this->cartRepository->findOrCreate($this->posCartKey())->stamp();
     }
 
     /**
      * One card per turn, current turn first, whether an order exists for it or
      * not — a kiosk-submitted pending order fills its turn's card.
      *
-     * @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int}>
+     * @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int, rejectable: bool}>
      */
     public function getCards(): array
     {
@@ -155,94 +202,51 @@ final class PlayerOrders
             $byTurn[$order->turn] = $order;
         }
 
-        /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->player->advances);
-
         $cards = [];
 
         for ($turn = $this->player->game->currentTurn; $turn >= 1; --$turn) {
-            $cards[] = $this->summarizeTurn($turn, $byTurn[$turn] ?? null, $ownedAdvances);
+            $cards[] = $this->summarizeTurn($turn, $byTurn[$turn] ?? null);
         }
 
         return $cards;
     }
 
     /**
-     * Catalogue minus the player's already-owned advances — a cashier has no
-     * use for re-selling what a player already has.
-     *
-     * REFACTOR-WHEN: a 3rd component builds this Product list (Shop::getProducts()
-     * is the near-identical sibling, only the in-cart source differs) — extract a
-     * Shop\Service\ProductCatalog instead of copying it again.
-     *
-     * @return list<Product>
-     */
-    public function getProducts(): array
-    {
-        if (null !== $this->products) {
-            return $this->products;
-        }
-
-        /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($this->player->advances);
-
-        $this->products = array_values(array_filter(array_map(
-            fn (Advance $advance): ?Product => \in_array($advance->key, $this->player->advances, true)
-                ? null
-                : new Product(
-                    advance: $advance,
-                    netCost: $this->priceCalculator->netCost($advance, $ownedAdvances),
-                    owned: false,
-                    inCart: \in_array($advance->key, $this->ticket, true),
-                ),
-            $this->advanceCatalog->getAdvances(),
-        )));
-
-        return $this->products;
-    }
-
-    /** @return list<Product> */
-    public function getTicketLines(): array
-    {
-        return Product::filterByKeys($this->getProducts(), $this->ticket);
-    }
-
-    public function getTicketTotal(): int
-    {
-        return array_sum(array_map(
-            static fn (Product $product): int => $product->netCost,
-            $this->getTicketLines(),
-        ));
-    }
-
-    /**
      * Totals are frozen on the order once validated, otherwise recalculated
      * against the player's currently owned advances.
      *
-     * @param list<Advance> $ownedAdvances
-     *
-     * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int}
+     * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int, rejectable: bool}
      */
-    private function summarizeTurn(int $turn, ?Order $order, array $ownedAdvances): array
+    private function summarizeTurn(int $turn, ?Order $order): array
     {
-        /** @var list<string> $slugs */
-        $slugs = match (true) {
-            !$order instanceof Order => [],
-            OrderStatus::Validated === $order->status => array_column($order->lines, 'key'),
-            default => $order->lines,
-        };
+        $slugs = $order?->keys() ?? [];
 
         /** @var list<Advance> $advances */
         $advances = $this->advanceCatalog->getAdvancesByNames($slugs);
 
+        $total = OrderStatus::Validated === $order?->status
+            ? $order->total ?? 0
+            : array_sum(array_map(
+                static fn (OrderLine $line): int => $line->netCost,
+                $this->lineQuoter->quote($order instanceof Order ? $this->lineQuoter->intentsFromLines($order->lines()) : [], $this->player, $this->shopConnector->buckets()),
+            ));
+
         return [
             'turn' => $turn,
-            'status' => $order?->status->value ?? 'empty',
+            'status' => match (true) {
+                $order instanceof Order => $order->status->value,
+                $turn === $this->player->game->currentTurn => 'missing',
+                default => 'empty',
+            },
             'slugs' => $slugs,
-            'total' => OrderStatus::Validated === $order?->status
-                ? $order->total ?? 0
-                : $this->priceCalculator->orderTotal($advances, $ownedAdvances),
+            'total' => $total,
             'vp' => array_sum(array_map(static fn (Advance $advance): int => $advance->points, $advances)),
+            'rejectable' => $order instanceof Order && $this->shopOrderStateMachine->can($order, 'reject'),
         ];
+    }
+
+    private function posCartKey(): string
+    {
+        return 'pos.'.$this->player->id->toRfc4122();
     }
 }

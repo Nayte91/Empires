@@ -22,5 +22,6 @@ final readonly class Advance
         public array $credits,
         public array $mitigations,
         public array $aggravations,
+        public ?Promotion $promotion = null,
     ) {}
 }

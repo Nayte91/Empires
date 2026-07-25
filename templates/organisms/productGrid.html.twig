@@ -1,0 +1,9 @@
+<section class="shop__products" aria-label="Available advances">
+    {% for product in this.products %}
+        {% if compact %}
+            {% include 'molecules/productTile.html.twig' with {product, action: 'add'} only %}
+        {% else %}
+            {% include 'molecules/productCard.html.twig' with {product, locked, action: 'add'} only %}
+        {% endif %}
+    {% endfor %}
+</section>

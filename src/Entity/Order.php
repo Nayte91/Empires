@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Shop\Doctrine\OrderLinesType;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\OrderException;
 use App\Shop\OrderStatus;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -22,8 +25,8 @@ class Order
     #[ORM\Column(enumType: OrderStatus::class)]
     public private(set) OrderStatus $status = OrderStatus::Pending;
 
-    /** @var list<array{key: string, netCost: int}>|list<string> */
-    #[ORM\Column(type: Types::JSON)]
+    /** @var list<OrderLine> */
+    #[ORM\Column(type: OrderLinesType::NAME)]
     public private(set) array $lines = [];
 
     #[ORM\Column(nullable: true)]
@@ -46,26 +49,59 @@ class Order
         $this->createdAt = new \DateTimeImmutable();
     }
 
-    /** @param list<string> $keys */
-    public function replaceLines(array $keys): void
+    /** @param list<OrderLine> $lines */
+    public function replaceLines(array $lines): void
     {
         if (OrderStatus::Validated === $this->status) {
-            throw new \DomainException('Cannot replace lines of an already validated order.');
+            throw OrderException::linesLocked();
         }
 
-        $this->lines = $keys;
+        $this->lines = $lines;
     }
 
-    /** @param list<array{key: string, netCost: int}> $frozenLines */
-    public function validate(array $frozenLines, int $total): void
+    /**
+     * @param list<OrderLine> $lines
+     *
+     * Defense in depth: the `validate` transition only ever reaches a pending order
+     * (enforced by the workflow), so `validatedAt` — not `status`, already flipped by
+     * the state machine by the time this runs — is what detects a re-entrant freeze
+     */
+    public function freeze(array $lines, int $total): void
     {
-        if (OrderStatus::Validated === $this->status) {
-            throw new \DomainException('Order is already validated.');
+        if ($this->validatedAt instanceof \DateTimeImmutable) {
+            throw OrderException::alreadyValidated();
         }
 
-        $this->lines = $frozenLines;
+        $this->lines = $lines;
         $this->total = $total;
         $this->validatedAt = new \DateTimeImmutable();
-        $this->status = OrderStatus::Validated;
+    }
+
+    /** Workflow marking store access — status writes go through the shop_order state machine. */
+    public function getMarking(): string
+    {
+        return $this->status->value;
+    }
+
+    /**
+     * Workflow marking store access — status writes go through the shop_order state machine.
+     *
+     * @param array<string, mixed> $context
+     */
+    public function setMarking(string $marking, array $context = []): void
+    {
+        $this->status = OrderStatus::from($marking);
+    }
+
+    /** @return list<OrderLine> */
+    public function lines(): array
+    {
+        return $this->lines;
+    }
+
+    /** @return list<string> */
+    public function keys(): array
+    {
+        return array_map(static fn (OrderLine $line): string => $line->key, $this->lines);
     }
 }

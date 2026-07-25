@@ -5,32 +5,40 @@ declare(strict_types=1);
 namespace App\Tests\Shop;
 
 use App\Entity\GameSession;
+use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
+use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
-use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Repository\PlayerRepository;
+use App\Shop\Command\SellDirect;
+use App\Shop\Command\SubmitOrder;
+use App\Shop\CommandHandler\SellDirectHandler;
+use App\Shop\CommandHandler\SubmitOrderHandler;
+use App\Shop\Dto\LineIntent;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Event\ShopEventPublisher;
+use App\Shop\Exception\OrderException;
 use App\Shop\OrderStatus;
-use App\Shop\Service\DirectSale;
-use App\Shop\Service\OrderSubmitter;
+use App\Shop\Promotion\AppliedPromotion;
+use App\Shop\Promotion\OptionCredits;
+use App\Shop\Promotion\PromotionEngine;
+use App\Shop\Promotion\PromotionType;
+use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
 use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 final class DirectSaleTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
-    private CartRepository $cartRepository;
     private OrderRepository $orderRepository;
-    private OrderSubmitter $orderSubmitter;
-    private DirectSale $directSale;
+    private SubmitOrderHandler $submitOrderHandler;
+    private SellDirectHandler $sellDirectHandler;
 
     protected function setUp(): void
     {
@@ -38,25 +46,45 @@ final class DirectSaleTest extends WebTestCase
 
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
+        $playerRepository = self::getContainer()->get(PlayerRepository::class);
+        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
 
-        // CartRepository, OrderSubmitter, OrderValidator and DirectSale have no other
+        // SubmitOrderHandler, OrderValidator and SellDirectHandler have no other
         // consumer yet, so the compiled container inlines them and they cannot be
-        // fetched directly. Build them here from the shared RequestStack / EntityManager /
-        // OrderRepository instances, following OrderFlowTest's convention.
-        $requestStack = self::getContainer()->get(RequestStack::class);
-        $request = new Request();
-        $request->setSession(new Session(new MockArraySessionStorage()));
-        $requestStack->push($request);
-
-        $this->cartRepository = new CartRepository($requestStack);
-        $this->orderSubmitter = new OrderSubmitter($this->entityManager, $this->cartRepository, $this->orderRepository, new NullHub());
+        // fetched directly. Build them here from the shared EntityManager/
+        // OrderRepository/PlayerRepository/AdvanceCatalog instances, following
+        // OrderFlowTest's convention.
+        $lineQuoter = new LineQuoter($advanceCatalog, new PriceCalculator(), new PromotionEngine(), new OptionCredits($this->orderRepository));
+        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $eventBus = self::getContainer()->get(ShopEventPublisher::class);
+        $shopConnector = new ShopConnector($this->orderRepository);
+        $this->submitOrderHandler = new SubmitOrderHandler(
+            $this->entityManager,
+            $this->orderRepository,
+            $playerRepository,
+            new NullHub(),
+            $lineQuoter,
+            $shopOrderStateMachine,
+            $eventBus,
+            $shopConnector,
+        );
         $orderValidator = new OrderValidator(
             $this->entityManager,
-            self::getContainer()->get(AdvanceCatalog::class),
-            new PriceCalculator(),
+            $lineQuoter,
             new NullHub(),
+            $shopOrderStateMachine,
+            $shopConnector,
         );
-        $this->directSale = new DirectSale($this->entityManager, $this->orderRepository, $orderValidator);
+        $this->sellDirectHandler = new SellDirectHandler(
+            $this->entityManager,
+            $this->orderRepository,
+            $playerRepository,
+            $orderValidator,
+            $lineQuoter,
+            $shopOrderStateMachine,
+            $eventBus,
+            $shopConnector,
+        );
     }
 
     #[Test]
@@ -66,21 +94,35 @@ final class DirectSaleTest extends WebTestCase
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
-        $order = $this->directSale->sell($player, ['democracy', 'pottery']);
+        $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy', 'pottery']), $player->game->currentTurn));
 
         self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertSame(
-            [['key' => 'democracy', 'netCost' => 200], ['key' => 'pottery', 'netCost' => 50]],
-            $order->lines,
-        );
+        self::assertEquals([new OrderLine('democracy', 200), new OrderLine('pottery', 50)], $order->lines);
         self::assertSame(250, $order->total);
         self::assertContains('democracy', $player->advances);
         self::assertContains('pottery', $player->advances);
 
         $this->entityManager->clear();
         $reloadedOrder = $this->orderRepository->find($order->id);
-        self::assertNotNull($reloadedOrder);
+        self::assertInstanceOf(Order::class, $reloadedOrder);
         self::assertSame(OrderStatus::Validated, $reloadedOrder->status);
+    }
+
+    #[Test]
+    public function sellingLibraryAndDemocracyDiscountsAndFreezesTheDemocracyLine(): void
+    {
+        $player = $this->createPlayer();
+
+        $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
+
+        self::assertSame(400, $order->total);
+        $democracyLine = $order->lines()[1];
+        self::assertSame('democracy', $democracyLine->key);
+        self::assertSame(180, $democracyLine->netCost);
+        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+        self::assertSame(PromotionType::Discount, $democracyLine->promotion->type);
+        self::assertSame('library', $democracyLine->promotion->source);
+        self::assertSame(40, $democracyLine->promotion->amount);
     }
 
     #[Test]
@@ -90,7 +132,7 @@ final class DirectSaleTest extends WebTestCase
         $player->game->currentTurn = 3;
         $this->entityManager->flush();
 
-        $order = $this->directSale->sell($player, ['pottery'], 1);
+        $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
 
         self::assertSame(1, $order->turn);
         self::assertSame(OrderStatus::Validated, $order->status);
@@ -101,62 +143,27 @@ final class DirectSaleTest extends WebTestCase
     public function sellReusesExistingPendingOrderRow(): void
     {
         $player = $this->createPlayer();
-        $this->addToCart($player, 'pottery');
-        $pendingOrder = $this->orderSubmitter->submit($player);
+        $pendingOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
-        $order = $this->directSale->sell($player, ['democracy']);
+        $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
         self::assertSame($pendingOrder->id->toRfc4122(), $order->id->toRfc4122());
         self::assertSame(1, $this->orderRepository->count([
             'player' => $player,
             'turn' => $player->game->currentTurn,
         ]));
-        self::assertSame([['key' => 'democracy', 'netCost' => 220]], $order->lines);
+        self::assertEquals([new OrderLine('democracy', 220)], $order->lines);
     }
 
     #[Test]
-    public function sellAfterValidationOfTheTurnThrowsDomainException(): void
+    public function sellAfterValidationOfTheTurnThrowsOrderException(): void
     {
         $player = $this->createPlayer();
-        $this->directSale->sell($player, ['pottery']);
+        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
-        $this->expectException(\DomainException::class);
+        $this->expectException(OrderException::class);
 
-        $this->directSale->sell($player, ['democracy']);
-    }
-
-    #[Test]
-    public function findByGameAndTurnScopesToGameAndTurn(): void
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $playerTurnOne = new Player($game, 'Alice');
-        $this->entityManager->persist($playerTurnOne);
-        $this->entityManager->flush();
-
-        $this->directSale->sell($playerTurnOne, ['pottery']);
-
-        $game->currentTurn = 2;
-        $playerTurnTwo = new Player($game, 'Bob');
-        $this->entityManager->persist($playerTurnTwo);
-        $this->entityManager->flush();
-
-        $this->directSale->sell($playerTurnTwo, ['pottery']);
-
-        $otherGamePlayer = $this->createPlayer();
-        $this->directSale->sell($otherGamePlayer, ['pottery']);
-
-        $turnTwoOrders = $this->orderRepository->findByGameAndTurn($game, 2);
-
-        self::assertCount(1, $turnTwoOrders);
-        self::assertSame(2, $turnTwoOrders[0]->turn);
-        self::assertSame($playerTurnTwo->id->toRfc4122(), $turnTwoOrders[0]->player->id->toRfc4122());
-
-        $turnOneOrders = $this->orderRepository->findByGameAndTurn($game, 1);
-
-        self::assertCount(1, $turnOneOrders);
-        self::assertSame(1, $turnOneOrders[0]->turn);
-        self::assertSame($playerTurnOne->id->toRfc4122(), $turnOneOrders[0]->player->id->toRfc4122());
+        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
     }
 
     private function createPlayer(): Player
@@ -171,14 +178,13 @@ final class DirectSaleTest extends WebTestCase
         return $player;
     }
 
-    private function addToCart(Player $player, string ...$slugs): void
+    /**
+     * @param list<string> $keys
+     *
+     * @return list<LineIntent>
+     */
+    private function intents(array $keys): array
     {
-        $cart = new Cart();
-
-        foreach ($slugs as $slug) {
-            $cart->add($slug);
-        }
-
-        $this->cartRepository->save($player->id, $cart);
+        return array_map(static fn (string $key): LineIntent => new LineIntent($key), $keys);
     }
 }

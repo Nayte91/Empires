@@ -1,0 +1,12 @@
+framework:
+    workflows:
+        shop_order:
+            type: state_machine
+            marking_store: { type: method, property: marking }
+            supports: [App\Entity\Order]
+            initial_marking: pending
+            places: [pending, validated, rejected]
+            transitions:
+                validate: { from: pending, to: validated }
+                reject:   { from: pending, to: rejected }
+                resubmit: { from: rejected, to: pending }

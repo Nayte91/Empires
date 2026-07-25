@@ -370,7 +370,7 @@ advances:
             religion: 10
             wonder_of_the_world: 20
         promotion:
-            option: 20
+            option: {budget: 20, step: 5}
 
     monotheism:
         cost: 240
@@ -617,4 +617,4 @@ advances:
             science: 5
             cartography: 10
         promotion:
-            option: 10
+            option: {budget: 10, step: 5}

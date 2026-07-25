@@ -5,59 +5,47 @@ declare(strict_types=1);
 namespace App\Shop\Service;
 
 use App\Entity\Order;
-use App\Game\AdvanceCatalog;
-use App\Game\Dto\Advance;
-use App\Shop\OrderStatus;
+use App\Game\Shop\ShopConnector;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\EligibilityException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
+use Symfony\Component\Workflow\WorkflowInterface;
 
 final readonly class OrderValidator
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private AdvanceCatalog $advanceCatalog,
-        private PriceCalculator $priceCalculator,
+        private LineQuoter $lineQuoter,
         private HubInterface $hub,
+        private WorkflowInterface $shopOrderStateMachine,
+        private ShopConnector $shopConnector,
     ) {}
 
     public function validate(Order $order): void
     {
-        if (OrderStatus::Validated === $order->status) {
-            throw new \DomainException('Order is already validated.');
-        }
-
         $player = $order->player;
         $ownedSlugs = $player->advances;
 
-        /** @var list<string> $slugs */
-        $slugs = $order->lines;
+        $slugs = $order->keys();
 
         foreach ($slugs as $slug) {
             if (in_array($slug, $ownedSlugs, true)) {
-                throw new \DomainException(sprintf('Advance "%s" is already owned.', $slug));
+                throw EligibilityException::productAlreadyOwned($slug);
             }
         }
 
-        /** @var list<Advance> $advances */
-        $advances = $this->advanceCatalog->getAdvancesByNames($slugs);
-
-        /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($ownedSlugs);
-
-        $frozenLines = [];
-        $total = 0;
-
-        foreach ($advances as $advance) {
-            $netCost = $this->priceCalculator->netCost($advance, $ownedAdvances);
-            $frozenLines[] = ['key' => $advance->key, 'netCost' => $netCost];
-            $total += $netCost;
-        }
+        $intents = $this->lineQuoter->intentsFromLines($order->lines());
+        $frozenLines = $this->lineQuoter->quote($intents, $player, $this->shopConnector->buckets());
+        $total = array_sum(array_map(static fn (OrderLine $line): int => $line->netCost, $frozenLines));
 
         $hub = $this->hub;
+        $machine = $this->shopOrderStateMachine;
 
-        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $hub): void {
-            $order->validate($frozenLines, $total);
+        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $hub, $machine): void {
+            $machine->apply($order, 'validate');
+            $order->freeze($frozenLines, $total);
             $player->ownAdvances($slugs);
 
             $topic = 'empires/game/'.$player->game->id;

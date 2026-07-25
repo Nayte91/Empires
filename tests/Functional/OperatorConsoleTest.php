@@ -119,30 +119,6 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function selectingAPlayerTabOpensItAndClosesGeneral(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])
-            ->call('selectTab', ['tab' => (string) $player->id])
-            ->render()
-        ;
-
-        $details = $rendered->crawler()->filter('details');
-
-        $generalDetails = $details->reduce(
-            static fn ($node): bool => 'General' === trim((string) $node->filter('summary')->text()),
-        );
-        $playerDetails = $details->reduce(
-            static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
-        );
-
-        self::assertNull($generalDetails->attr('open'));
-        self::assertNotNull($playerDetails->attr('open'));
-    }
-
-    #[Test]
     public function previousTurnButtonIsEnabledOnTurnTwo(): void
     {
         $game = $this->createGame();

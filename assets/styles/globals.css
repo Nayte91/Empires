@@ -7,14 +7,12 @@
     --operator-error-bg: color-mix(in oklab, crimson 10%, white);
     --operator-success: seagreen;
     --operator-success-bg: color-mix(in oklab, seagreen 10%, white);
-    --operator-warning: chocolate;
-    --operator-warning-bg: color-mix(in oklab, chocolate 10%, white);
+    --operator-warning: goldenrod;
+    --operator-warning-bg: color-mix(in oklab, goldenrod 10%, white);
     --operator-radius: 0.375rem;
     --operator-gap: 1.5rem;
 }
 
-/* Zero-specificity default: any component rule on the same properties opts out
-   without fighting the cascade (e.g. the POS dialog's h2). */
 :where(h1, h2) {
     font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', P052, serif;
     text-transform: uppercase;

@@ -17,43 +17,18 @@
     </section>
 
     <div class="shop__layout">
-        <section class="shop__products" aria-label="Available advances">
-            {% for product in computed.products %}
-                {% include 'molecules/productCard.html.twig' with {product, locked: this.isLockedForTurn} only %}
-            {% endfor %}
-        </section>
-
         <aside class="shop__cart">
+            <twig:organisms:ProductGrid :player="player" :locked="this.isLockedForTurn" storageKey="{{ player.id }}" />
+
+            <twig:Cart :player="player" :showLines="this.isCartVisible" :cartStamp="this.getCartStamp()" storageKey="{{ player.id }}" />
+
             {% if this.isCartVisible %}
-                <h2>Your cart</h2>
-
-                <ul class="shop__cart-lines">
-                    {% for line in this.cartLines %}
-                        <li class="shop__cart-line">
-                            <span class="shop__cart-line-name">{{ line.advance.name|capitalize }}</span>
-                            <span class="shop__cart-line-cost">{{ line.netCost }}</span>
-                            <button
-                                type="button"
-                                {{ live_action('removeFromCart', {key: line.advance.key}) }}
-                                data-loading="addAttribute(disabled)"
-                                class="shop__cart-line-remove"
-                            >
-                                ×
-                            </button>
-                        </li>
-                    {% else %}
-                        <li class="shop__cart-empty">Your cart is empty.</li>
-                    {% endfor %}
-                </ul>
-
-                <p class="shop__cart-total">Total: {{ this.cartTotal }}</p>
-
                 <div class="shop__cart-actions">
                     <button
                         type="button"
                         {{ live_action('clearCart') }}
                         data-loading="addAttribute(disabled)"
-                        {{ this.cartLines is empty ? 'disabled' }}
+                        {{ this.isCartEmpty ? 'disabled' }}
                     >
                         Clear cart
                     </button>
@@ -61,7 +36,7 @@
                         type="button"
                         {{ live_action('submitOrder') }}
                         data-loading="addAttribute(disabled)"
-                        {{ (this.isLockedForTurn or this.cartLines is empty) ? 'disabled' }}
+                        {{ (this.isLockedForTurn or this.isCartEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
                         class="shop__submit"
                     >
                         Submit my order
@@ -70,18 +45,30 @@
             {% endif %}
 
             {% if this.isOrderVisible %}
-                <div class="shop__order" data-status="{{ this.isLockedForTurn ? 'validated' : 'pending' }}">
+                <div class="shop__order" data-status="{{ this.orderStatus }}">
                     <h3>Your order</h3>
 
                     <p class="shop__order-status" role="status">
-                        {{ this.isLockedForTurn ? 'Order validated for this turn.' : 'Order pending for this turn.' }}
+                        {% if this.orderStatus == 'validated' %}
+                            Order validated for this turn.
+                        {% elseif this.orderStatus == 'rejected' %}
+                            Order rejected for this turn — revise and resubmit.
+                        {% else %}
+                            Order pending for this turn.
+                        {% endif %}
                     </p>
 
                     <ul class="shop__order-lines">
-                        {% for line in this.orderLines %}
+                        {% for row in this.orderLines %}
                             <li>
-                                <span>{{ line.advance.name|capitalize }}</span>
-                                <span>{{ line.netCost }}</span>
+                                <span>{{ row.advance.name|capitalize }}</span>
+                                {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                                    <small class="shop__cart-line-original">{{ row.line.netCost + row.line.promotion.amount }}</small>
+                                {% endif %}
+                                <span>{{ row.line.netCost }}</span>
+                                {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                                    <span class="shop__cart-line-badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
+                                {% endif %}
                             </li>
                         {% endfor %}
                     </ul>

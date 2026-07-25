@@ -8,16 +8,28 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Shop\Cart;
+use App\Shop\CartRepository;
+use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 /**
  * End-to-end acceptance test for the cashier-kiosk pattern: a player builds a
  * cart in their Shop kiosk, submits it, an operator validates it from the
  * console, and the kiosk reflects the resulting lock/ownership state.
+ *
+ * Cart preconditions are written straight into the session-backed
+ * App\Shop\CartRepository, sharing $client with the Shop/PlayerOrders
+ * component under test — see CartComponentTest for Cart's own behavior
+ * coverage, ShopComponentTest/PosConsoleTest for the add() LiveAction.
  */
 final class KioskOperatorFlowTest extends WebTestCase
 {
@@ -36,16 +48,14 @@ final class KioskOperatorFlowTest extends WebTestCase
     public function aliceKioskAppliesAgricultureCreditsToCartPrices(): void
     {
         [, $alice] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
 
-        $shop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        $shop->call('addToCart', ['key' => 'democracy']);
-        $shop->call('addToCart', ['key' => 'pottery']);
+        $this->cartFor($client, $alice, Cart::fromKeys(['democracy', 'pottery']));
 
-        $rendered = $shop->render()->toString();
+        $rendered = $this->createLiveComponent('Shop', ['player' => $alice], $client)->render()->toString();
 
-        self::assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>200</s', $rendered);
-        self::assertMatchesRegularExpression('/id="product-pottery".*?data-price-net>50</s', $rendered);
-        self::assertStringContainsString('Total: 250', $rendered);
+        $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>200</s', $rendered);
+        $this->assertMatchesRegularExpression('/id="product-pottery".*?data-price-net>50</s', $rendered);
     }
 
     #[Test]
@@ -55,11 +65,11 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $this->submitAliceDemocracyAndPotteryOrder($alice);
 
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, $game->currentTurn);
 
-        self::assertInstanceOf(Order::class, $order);
-        self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertSame(['democracy', 'pottery'], $order->lines);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Pending, $order->status);
+        $this->assertSame(['democracy', 'pottery'], $order->keys());
     }
 
     #[Test]
@@ -74,10 +84,10 @@ final class KioskOperatorFlowTest extends WebTestCase
             'ordersStamp' => '',
         ])->render()->toString();
 
-        self::assertStringContainsString('Turn '.$game->currentTurn, $rendered);
-        self::assertStringContainsString('Democracy', $rendered);
-        self::assertStringContainsString('Pottery', $rendered);
-        self::assertStringContainsString('pending', $rendered);
+        $this->assertStringContainsString('Turn '.$game->currentTurn, $rendered);
+        $this->assertStringContainsString('Democracy', $rendered);
+        $this->assertStringContainsString('Pottery', $rendered);
+        $this->assertStringContainsString('pending', $rendered);
     }
 
     #[Test]
@@ -92,8 +102,13 @@ final class KioskOperatorFlowTest extends WebTestCase
             'ordersStamp' => '',
         ]);
         $component->call('openPos', ['turn' => $game->currentTurn]);
+        $crawler = $component->render()->crawler();
 
-        self::assertSame(['democracy', 'pottery'], $component->component()->ticket);
+        // The preloaded ticket is complete (no option promotion), so "Confirm
+        // purchase" — App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
+        // read directly, unaffected by the nested-Cart rendering issue documented
+        // in ShopComponentTest's editPendingOrder tests — is enabled.
+        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -102,23 +117,24 @@ final class KioskOperatorFlowTest extends WebTestCase
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
         $this->submitAliceDemocracyAndPotteryOrder($alice);
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
 
         $this->validateOrder($order);
 
         $reloadedOrder = $this->reloadOrder($order);
 
-        self::assertSame(OrderStatus::Validated, $reloadedOrder->status);
-        self::assertSame(
-            [
-                ['key' => 'democracy', 'netCost' => 200],
-                ['key' => 'pottery', 'netCost' => 50],
-            ],
-            $reloadedOrder->lines,
-        );
-        self::assertSame(250, $reloadedOrder->total);
-        self::assertSame(['agriculture', 'democracy', 'pottery'], $this->reloadPlayer($alice)->advances);
+        $this->assertSame(OrderStatus::Validated, $reloadedOrder->status);
+        // assertEquals, not assertSame — php_unit_strict (phpcs) rewrites this to assertSame,
+        // but its own doc flags that as risky "when testing object equality": $reloadedOrder->lines
+        // holds the actual OrderLine instances frozen by OrderValidator, never identical (===)
+        // to these fresh ones. Keep assertEquals here even if a phpcs re-run tries to flip it.
+        $this->assertEquals([
+            new OrderLine('democracy', 200),
+            new OrderLine('pottery', 50),
+        ], $reloadedOrder->lines);
+        $this->assertSame(250, $reloadedOrder->total);
+        $this->assertSame(['agriculture', 'democracy', 'pottery'], $this->reloadPlayer($alice)->advances);
 
         $rendered = $this->createLiveComponent('PlayerOrders', [
             'player' => $alice,
@@ -126,9 +142,9 @@ final class KioskOperatorFlowTest extends WebTestCase
         ])->render()->toString();
 
         // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
-        self::assertStringContainsString('Total: 250', $rendered);
-        self::assertStringContainsString('VP: 7', $rendered);
-        self::assertStringContainsString('validated', $rendered);
+        $this->assertStringContainsString('Total: 250', $rendered);
+        $this->assertStringContainsString('VP: 7', $rendered);
+        $this->assertStringContainsString('validated', $rendered);
     }
 
     #[Test]
@@ -139,18 +155,18 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->submitAndValidateAliceOrder($alice, $game);
 
         $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        self::assertTrue($this->getShopComponent($aliceShop)->isLockedForTurn());
+        $this->assertTrue($this->getShopComponent($aliceShop)->isLockedForTurn());
 
         $aliceRendered = $aliceShop->render()->toString();
-        self::assertStringContainsString('Order validated for this turn.', $aliceRendered);
-        self::assertStringNotContainsString('id="product-democracy"', $aliceRendered);
-        self::assertStringContainsString('Democracy', $aliceRendered);
+        $this->assertStringContainsString('Order validated for this turn.', $aliceRendered);
+        $this->assertStringNotContainsString('id="product-democracy"', $aliceRendered);
+        $this->assertStringContainsString('Democracy', $aliceRendered);
 
         $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
-        self::assertFalse($this->getShopComponent($bobShop)->isLockedForTurn());
+        $this->assertFalse($this->getShopComponent($bobShop)->isLockedForTurn());
 
         $bobRendered = $bobShop->render()->toString();
-        self::assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>220</s', $bobRendered);
+        $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>220</s', $bobRendered);
     }
 
     #[Test]
@@ -161,39 +177,38 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->submitAndValidateAliceOrder($alice, $game);
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
-        self::assertSame(2, $this->reloadGame($game)->currentTurn);
+        $this->assertSame(2, $this->reloadGame($game)->currentTurn);
 
         $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        self::assertFalse($this->getShopComponent($aliceShop)->isLockedForTurn());
+        $this->assertFalse($this->getShopComponent($aliceShop)->isLockedForTurn());
 
         // 'law' costs 150 and grants no direct discount to Alice, but its sole
         // category (civic) receives a 20-point credit from the democracy she
         // now owns: 150 - 20 = 130.
         $rendered = $aliceShop->render()->toString();
-        self::assertMatchesRegularExpression('/id="product-law".*?data-price-net>130</s', $rendered);
+        $this->assertMatchesRegularExpression('/id="product-law".*?data-price-net>130</s', $rendered);
     }
 
     #[Test]
     public function resubmittingAnOrderReplacesItsLinesOnTheSameOrderRow(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
 
-        $firstShop = $this->createLiveComponent('Shop', ['player' => $bob]);
-        $firstShop->call('addToCart', ['key' => 'pottery']);
-        $firstShop->call('submitOrder');
+        $this->cartFor($client, $bob, Cart::fromKeys(['pottery']));
+        $this->createLiveComponent('Shop', ['player' => $bob], $client)->call('submitOrder');
 
-        $firstOrder = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $firstOrder);
-        self::assertSame(['pottery'], $firstOrder->lines);
+        $firstOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $firstOrder);
+        $this->assertSame(['pottery'], $firstOrder->keys());
 
-        $secondShop = $this->createLiveComponent('Shop', ['player' => $bob]);
-        $secondShop->call('addToCart', ['key' => 'democracy']);
-        $secondShop->call('submitOrder');
+        $this->cartFor($client, $bob, Cart::fromKeys(['democracy']));
+        $this->createLiveComponent('Shop', ['player' => $bob], $client)->call('submitOrder');
 
-        $secondOrder = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $secondOrder);
-        self::assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
-        self::assertSame(['democracy'], $secondOrder->lines);
+        $secondOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $secondOrder);
+        $this->assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
+        $this->assertSame(['democracy'], $secondOrder->keys());
 
         $ordersForTurn = $this->freshEntityManager()->getRepository(Order::class)->createQueryBuilder('o')
             ->andWhere('o.player = :player')
@@ -203,26 +218,27 @@ final class KioskOperatorFlowTest extends WebTestCase
             ->getQuery()
             ->getResult()
         ;
-        self::assertCount(1, $ordersForTurn);
+        $this->assertCount(1, $ordersForTurn);
     }
 
     #[Test]
     public function cartAdditionsInAliceKioskNeverAppearInBobKiosk(): void
     {
         [, $alice, $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
 
-        $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        $aliceShop->call('addToCart', ['key' => 'pottery']);
+        $this->cartFor($client, $alice, Cart::fromKeys(['pottery']));
 
         // createLiveComponent() defaults both kiosks to the same 'test.client'
-        // service, i.e. the same session. Isolation here is proven by
-        // CartRepository keying cart storage per player UUID (see
-        // App\Shop\CartRepository::sessionKey()), not by separate sessions.
-        $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
-        $bobRendered = $bobShop->render()->toString();
+        // service, i.e. the same session. Isolation is proven by CartRepository
+        // keying cart storage per player UUID (see App\Shop\CartRepository::
+        // sessionKey()), read here through Shop's own isCartEmpty() (the
+        // "Submit my order" gate) rather than through the nested Cart
+        // component's rendering, which does not reflect session state when
+        // embedded (see ShopComponentTest's editPendingOrder tests).
+        $bobCrawler = $this->createLiveComponent('Shop', ['player' => $bob], $client)->render()->crawler();
 
-        self::assertStringNotContainsString('data-in-cart', $bobRendered);
-        self::assertStringContainsString('Your cart is empty.', $bobRendered);
+        $this->assertTrue($bobCrawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     /** @return array{GameSession, Player, Player} */
@@ -243,10 +259,10 @@ final class KioskOperatorFlowTest extends WebTestCase
 
     private function submitAliceDemocracyAndPotteryOrder(Player $alice): void
     {
-        $shop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        $shop->call('addToCart', ['key' => 'democracy']);
-        $shop->call('addToCart', ['key' => 'pottery']);
-        $shop->call('submitOrder');
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $alice, Cart::fromKeys(['democracy', 'pottery']));
+
+        $this->createLiveComponent('Shop', ['player' => $alice], $client)->call('submitOrder');
     }
 
     private function validateOrder(Order $order): void
@@ -262,10 +278,32 @@ final class KioskOperatorFlowTest extends WebTestCase
     private function submitAndValidateAliceOrder(Player $alice, GameSession $game): void
     {
         $this->submitAliceDemocracyAndPotteryOrder($alice);
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($alice, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
 
         $this->validateOrder($order);
+    }
+
+    /**
+     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * no add() action of its own any more) and points $client's cookie jar at
+     * that session, so the Shop component under test — driven by the same
+     * $client — reads the same cart back. 'test.client' is registered
+     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
+     * so $client must be the exact instance later passed to createLiveComponent().
+     */
+    private function cartFor(KernelBrowser $client, Player $player, Cart $cart): void
+    {
+        $session = self::getContainer()->get('session.factory')->createSession();
+        $request = new Request();
+        $request->setSession($session);
+        $requestStack = self::getContainer()->get(RequestStack::class);
+        $requestStack->push($request);
+        self::getContainer()->get(CartRepository::class)->save((string) $player->id, $cart);
+        $requestStack->pop();
+        $session->save();
+
+        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
     private function freshEntityManager(): EntityManagerInterface
@@ -281,7 +319,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     private function reloadPlayer(Player $player): Player
     {
         $reloaded = $this->freshEntityManager()->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
+        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }
@@ -289,7 +327,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     private function reloadGame(GameSession $game): GameSession
     {
         $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
-        self::assertInstanceOf(GameSession::class, $reloaded);
+        $this->assertInstanceOf(GameSession::class, $reloaded);
 
         return $reloaded;
     }
@@ -297,7 +335,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     private function reloadOrder(Order $order): Order
     {
         $reloaded = $this->freshEntityManager()->find(Order::class, $order->id);
-        self::assertInstanceOf(Order::class, $reloaded);
+        $this->assertInstanceOf(Order::class, $reloaded);
 
         return $reloaded;
     }

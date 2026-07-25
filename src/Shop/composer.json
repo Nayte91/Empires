@@ -1,0 +1,13 @@
+{
+    "name": "userforged/shop",
+    "description": "Ordering engine (catalog, cart, checkout) — canonical shop pattern, ports-based, framework-agnostic core.",
+    "type": "library",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.5",
+        "symfony/messenger": "^8.1",
+        "symfony/workflow": "^8.1",
+        "symfony/uid": "^8.1",
+        "psr/event-dispatcher": "^1.0"
+    }
+}

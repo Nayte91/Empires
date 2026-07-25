@@ -68,6 +68,7 @@
 
     aside li {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: 0.75rem;
 
@@ -84,9 +85,16 @@
         span:last-of-type {
             font-variant-numeric: tabular-nums;
             color: var(--operator-text-muted);
+
+            small { text-decoration: line-through }
+
+            em {
+                font-style: normal;
+                color: var(--operator-success);
+            }
         }
 
-        button {
+        > button {
             aspect-ratio: 1;
             inline-size: 1.75rem;
             border-radius: 50%;
@@ -102,6 +110,90 @@
                 background: var(--operator-error-bg);
                 color: var(--operator-error);
             }
+        }
+
+        .gift-picker {
+            flex-basis: 100%;
+            padding-inline-start: 0.75rem;
+            border-inline-start: 2px solid var(--operator-accent);
+            font-size: 0.8125rem;
+        }
+
+        .gift-picker__intro {
+            margin: 0 0 0.35rem;
+            color: var(--operator-text-muted);
+        }
+
+        .gift-picker__candidates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .gift-picker__candidate-cost {
+            color: var(--operator-text-muted);
+            text-decoration: line-through;
+        }
+
+        .gift-picker--chosen {
+            color: var(--operator-success);
+        }
+
+        .gift-picker__revoke {
+            margin-inline-start: 0.5rem;
+            font-size: 0.75rem;
+        }
+
+        .allocation-picker {
+            flex-basis: 100%;
+            padding-inline-start: 0.75rem;
+            border-inline-start: 2px solid var(--operator-accent);
+            font-size: 0.8125rem;
+        }
+
+        .allocation-picker__remaining {
+            margin: 0 0 0.35rem;
+            font-weight: 600;
+            color: var(--operator-text-muted);
+        }
+
+        .allocation-picker__rows {
+            display: grid;
+            gap: 0.25rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .allocation-picker__row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .allocation-picker__category {
+            flex: 1;
+            color: var(--category-color);
+        }
+
+        .allocation-picker__value {
+            min-inline-size: 1.5rem;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .allocation-picker__step {
+            aspect-ratio: 1;
+            inline-size: 1.5rem;
+            border-radius: 50%;
+            padding: 0;
+            display: inline-grid;
+            place-content: center;
+            font-size: 0.875rem;
+            line-height: 1;
         }
     }
 

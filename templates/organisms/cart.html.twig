@@ -1,0 +1,51 @@
+<div {{ attributes }}>
+    {% if this.showLines %}
+        <h2>Cart</h2>
+
+        <ul class="shop__cart-lines">
+            {% for row in this.lines %}
+                <li class="shop__cart-line">
+                    <span class="shop__cart-line-name">{{ row.advance.name|capitalize }}</span>
+                    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                        <small class="shop__cart-line-original">{{ row.line.netCost + row.line.promotion.amount }}</small>
+                    {% endif %}
+                    <span class="shop__cart-line-cost">{{ row.line.netCost }}</span>
+                    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                        <span class="shop__cart-line-badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
+                    {% endif %}
+                    <button
+                        type="button"
+                        {{ live_action('remove', {key: row.advance.key}) }}
+                        data-loading="addAttribute(disabled)"
+                        class="shop__cart-line-remove"
+                    >
+                        ×
+                    </button>
+
+                    {% if row.advance.promotion and row.advance.promotion.gift is not empty %}
+                        {% include 'molecules/giftPicker.html.twig' with {
+                            row: row,
+                            chooseAction: 'chooseGift',
+                            revokeAction: 'revokeGift',
+                            candidates: this.getGiftCandidates(row.advance.key),
+                            chosenGift: this.getChosenGiftFor(row.advance.key),
+                        } only %}
+                    {% endif %}
+
+                    {% if row.advance.promotion and row.advance.promotion.option is not null %}
+                        {% include 'molecules/allocationPicker.html.twig' with {
+                            row: row,
+                            allocateAction: 'allocate',
+                            remaining: this.getAllocationRemaining(row.advance.key),
+                            allocation: this.getAllocationFor(row.advance.key),
+                        } only %}
+                    {% endif %}
+                </li>
+            {% else %}
+                <li class="shop__cart-empty">Cart is empty.</li>
+            {% endfor %}
+        </ul>
+
+        <p class="shop__cart-total">Total: {{ this.total }}</p>
+    {% endif %}
+</div>

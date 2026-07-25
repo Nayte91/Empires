@@ -7,28 +7,36 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
+use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
-use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Repository\PlayerRepository;
+use App\Shop\Command\SubmitOrder;
+use App\Shop\CommandHandler\SubmitOrderHandler;
+use App\Shop\Dto\LineIntent;
+use App\Shop\Dto\OrderLine;
+use App\Shop\Event\ShopEventPublisher;
+use App\Shop\Exception\CartException;
+use App\Shop\Exception\EligibilityException;
+use App\Shop\Exception\OrderException;
 use App\Shop\OrderStatus;
-use App\Shop\Service\OrderSubmitter;
+use App\Shop\Promotion\AppliedPromotion;
+use App\Shop\Promotion\OptionCredits;
+use App\Shop\Promotion\PromotionEngine;
+use App\Shop\Promotion\PromotionType;
+use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
 use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\Session;
-use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 final class OrderFlowTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
-    private CartRepository $cartRepository;
     private OrderRepository $orderRepository;
-    private OrderSubmitter $orderSubmitter;
+    private SubmitOrderHandler $submitOrderHandler;
     private OrderValidator $orderValidator;
 
     protected function setUp(): void
@@ -37,61 +45,66 @@ final class OrderFlowTest extends WebTestCase
 
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
+        $playerRepository = self::getContainer()->get(PlayerRepository::class);
+        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
 
-        // CartRepository, OrderSubmitter and OrderValidator have no other consumer yet
-        // (controllers/Live Components land in later plan steps), so the compiled
-        // container inlines them and they cannot be fetched directly. Build them here
-        // from the shared RequestStack / EntityManager / OrderRepository instances.
-        $requestStack = self::getContainer()->get(RequestStack::class);
-        $request = new Request();
-        $request->setSession(new Session(new MockArraySessionStorage()));
-        $requestStack->push($request);
-
-        $this->cartRepository = new CartRepository($requestStack);
-        $this->orderSubmitter = new OrderSubmitter($this->entityManager, $this->cartRepository, $this->orderRepository, new NullHub());
+        // SubmitOrderHandler and OrderValidator have no other consumer yet (the command
+        // bus dispatches them by tag, not by class reference), so the compiled container
+        // inlines them and they cannot be fetched directly. Build them here from the
+        // shared EntityManager / OrderRepository / PlayerRepository / AdvanceCatalog instances.
+        $lineQuoter = new LineQuoter($advanceCatalog, new PriceCalculator(), new PromotionEngine(), new OptionCredits($this->orderRepository));
+        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $shopConnector = new ShopConnector($this->orderRepository);
+        $this->submitOrderHandler = new SubmitOrderHandler(
+            $this->entityManager,
+            $this->orderRepository,
+            $playerRepository,
+            new NullHub(),
+            $lineQuoter,
+            $shopOrderStateMachine,
+            self::getContainer()->get(ShopEventPublisher::class),
+            $shopConnector,
+        );
         $this->orderValidator = new OrderValidator(
             $this->entityManager,
-            self::getContainer()->get(AdvanceCatalog::class),
-            new PriceCalculator(),
+            $lineQuoter,
             new NullHub(),
+            $shopOrderStateMachine,
+            $shopConnector,
         );
     }
 
     #[Test]
-    public function submitWithEmptyCartThrowsDomainException(): void
+    public function submitWithEmptyCartThrowsCartException(): void
     {
         $player = $this->createPlayer();
 
-        $this->expectException(\DomainException::class);
+        $this->expectException(CartException::class);
 
-        $this->orderSubmitter->submit($player);
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents([]), $player->game->currentTurn));
     }
 
     #[Test]
-    public function submitCreatesPendingOrderWithSlugsAndClearsCart(): void
+    public function submitCreatesPendingOrderWithSlugs(): void
     {
         $player = $this->createPlayer();
-        $this->addToCart($player, 'pottery', 'agriculture');
 
-        $order = $this->orderSubmitter->submit($player);
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery', 'agriculture']), $player->game->currentTurn));
 
         self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertSame(['pottery', 'agriculture'], $order->lines);
-        self::assertTrue($this->cartRepository->findOrCreate($player->id)->isEmpty());
+        self::assertSame(['pottery', 'agriculture'], $order->keys());
     }
 
     #[Test]
     public function resubmitReplacesLinesOnSameOrderAndKeepsUniqueRow(): void
     {
         $player = $this->createPlayer();
-        $this->addToCart($player, 'pottery');
-        $firstOrder = $this->orderSubmitter->submit($player);
+        $firstOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
-        $this->addToCart($player, 'democracy');
-        $secondOrder = $this->orderSubmitter->submit($player);
+        $secondOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
         self::assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
-        self::assertSame(['democracy'], $secondOrder->lines);
+        self::assertSame(['democracy'], $secondOrder->keys());
         self::assertSame(1, $this->orderRepository->count([
             'player' => $player,
             'turn' => $player->game->currentTurn,
@@ -105,45 +118,69 @@ final class OrderFlowTest extends WebTestCase
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
-        $this->addToCart($player, 'democracy');
-        $order = $this->orderSubmitter->submit($player);
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
         $this->orderValidator->validate($order);
 
         self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertSame([['key' => 'democracy', 'netCost' => 200]], $order->lines);
+        self::assertEquals([new OrderLine('democracy', 200)], $order->lines);
         self::assertSame(200, $order->total);
         self::assertContains('democracy', $player->advances);
     }
 
     #[Test]
-    public function submitAfterValidationOfTheTurnThrowsDomainException(): void
+    public function submitWithLibraryDiscountsTheOtherLineAndPersistsThePromotionPayload(): void
     {
         $player = $this->createPlayer();
-        $this->addToCart($player, 'pottery');
-        $order = $this->orderSubmitter->submit($player);
-        $this->orderValidator->validate($order);
 
-        $this->addToCart($player, 'democracy');
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
-        $this->expectException(\DomainException::class);
-
-        $this->orderSubmitter->submit($player);
+        $democracyLine = $order->lines()[1];
+        self::assertSame('democracy', $democracyLine->key);
+        self::assertSame(180, $democracyLine->netCost);
+        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+        self::assertSame(PromotionType::Discount, $democracyLine->promotion->type);
+        self::assertSame('library', $democracyLine->promotion->source);
+        self::assertSame(40, $democracyLine->promotion->amount);
     }
 
     #[Test]
-    public function submitWithAlreadyOwnedAdvanceInCartThrowsDomainException(): void
+    public function validatingALibraryAndDemocracyOrderFreezesTheDiscountedTotal(): void
+    {
+        $player = $this->createPlayer();
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
+
+        $this->orderValidator->validate($order);
+
+        self::assertSame(400, $order->total);
+        $democracyLine = $order->lines()[1];
+        self::assertSame(180, $democracyLine->netCost);
+        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+    }
+
+    #[Test]
+    public function submitAfterValidationOfTheTurnThrowsOrderException(): void
+    {
+        $player = $this->createPlayer();
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+        $this->orderValidator->validate($order);
+
+        $this->expectException(OrderException::class);
+
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
+    }
+
+    #[Test]
+    public function submitWithAlreadyOwnedAdvanceInCartThrowsEligibilityException(): void
     {
         $player = $this->createPlayer();
         $player->ownAdvances(['pottery']);
         $this->entityManager->flush();
 
-        $this->addToCart($player, 'pottery');
-
-        $this->expectException(\DomainException::class);
+        $this->expectException(EligibilityException::class);
         $this->expectExceptionMessageMatches('/pottery/');
 
-        $this->orderSubmitter->submit($player);
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
     }
 
     private function createPlayer(): Player
@@ -158,14 +195,13 @@ final class OrderFlowTest extends WebTestCase
         return $player;
     }
 
-    private function addToCart(Player $player, string ...$slugs): void
+    /**
+     * @param list<string> $keys
+     *
+     * @return list<LineIntent>
+     */
+    private function intents(array $keys): array
     {
-        $cart = new Cart();
-
-        foreach ($slugs as $slug) {
-            $cart->add($slug);
-        }
-
-        $this->cartRepository->save($player->id, $cart);
+        return array_map(static fn (string $key): LineIntent => new LineIntent($key), $keys);
     }
 }

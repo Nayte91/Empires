@@ -8,19 +8,44 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Shop\Cart;
+use App\Shop\CartRepository;
+use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
+use App\Shop\Promotion\AppliedPromotion;
+use App\Shop\Promotion\PromotionType;
 use App\Shop\Service\OrderValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\BrowserKit\Cookie;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
  * Acceptance tests for the per-player cashier (POS) flow: an operator opens a
- * player's order card for a given turn, builds a ticket of advances and
- * checks it out directly (App\Shop\Service\DirectSale), or erases an already
- * validated order (App\Shop\Service\OrderEraser cascade), all from the
+ * player's order card for a given turn, builds a ticket of advances (either
+ * via PlayerOrders' own add() LiveAction — including the nested ProductGrid+
+ * Cart re-render it drives — or, for checkout preconditions, written straight
+ * into App\Shop\CartRepository), checks it out directly
+ * (App\Shop\CommandHandler\SellDirectHandler), or erases an already validated
+ * order (App\Shop\CommandHandler\EraseOrdersHandler cascade), all from the
  * per-player PlayerOrders LiveComponent (organisms/playerOrders).
+ *
+ * Ticket line/gift/allocation rendering lives in App\Component\Cart, covered
+ * by CartComponentTest (POS mode); the product grid lives in
+ * App\Component\ProductGrid, covered by ProductGridComponentTest.
+ *
+ * Once a precondition ticket has been seeded on the shared client, the
+ * PlayerOrders component under test is always freshly constructed afterwards
+ * (never reused across an interleaved sequence) — TestLiveComponent::props()
+ * reads props off the client's *last* response, so an already-mounted instance
+ * whose turn came before an interleaved call on a different instance would send
+ * a stale checksum. `posOpen`/`posTurn` are passed directly to the fresh
+ * instance instead of driving them through an actual openPos() call.
  */
 final class PosConsoleTest extends WebTestCase
 {
@@ -43,10 +68,14 @@ final class PosConsoleTest extends WebTestCase
 
         $component = $this->createPlayerOrders($bob);
         $component->call('openPos', ['turn' => $game->currentTurn]);
+        $crawler = $component->render()->crawler();
 
-        self::assertSame(['pottery'], $component->component()->ticket);
-        self::assertTrue($component->component()->posOpen);
-        self::assertSame($game->currentTurn, $component->component()->posTurn);
+        // The pending order preloads a complete, single-item ticket, so "Confirm
+        // purchase" (App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
+        // read directly — unaffected by the nested-Cart rendering below) is enabled.
+        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($component->component()->posOpen);
+        $this->assertSame($game->currentTurn, $component->component()->posTurn);
     }
 
     #[Test]
@@ -56,21 +85,35 @@ final class PosConsoleTest extends WebTestCase
 
         $component = $this->createPlayerOrders($bob);
         $component->call('openPos', ['turn' => $game->currentTurn]);
+        $crawler = $component->render()->crawler();
 
-        self::assertSame([], $component->component()->ticket);
+        $this->assertTrue($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
-    public function addingAnAlreadyOwnedAdvanceToTheTicketIsRefused(): void
+    public function addMarksTheProductInCartAndUpdatesTheTicketTotal(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
+        // A single call()+render() round trip: proves add() re-renders the nested
+        // ProductGrid (in-cart marker) and Cart (total) together, not just PlayerOrders itself.
+        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
+
+        $this->assertStringContainsString('id="product-pottery"', $rendered);
+        $this->assertStringContainsString('product-tile--in-cart', $rendered);
+        $this->assertStringContainsString('Total: 60', $rendered);
+    }
+
+    #[Test]
+    public function addingAnAlreadyOwnedAdvanceIsRefused(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
-        $component = $this->createPlayerOrders($alice);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $rendered = $component->call('addToTicket', ['key' => 'agriculture'])->render()->toString();
+        $component = $this->createPlayerOrders($alice, posOpen: true, posTurn: $game->currentTurn);
+        $rendered = $component->call('add', ['key' => 'agriculture'])->render()->toString();
 
-        self::assertSame([], $component->component()->ticket);
-        self::assertStringContainsString('already owned', $rendered);
+        $this->assertStringContainsString('already owned', $rendered);
     }
 
     #[Test]
@@ -78,44 +121,119 @@ final class PosConsoleTest extends WebTestCase
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
 
-        $component = $this->createPlayerOrders($bob);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $component->call('addToTicket', ['key' => 'pottery']);
-        $component->call('addToTicket', ['key' => 'pottery']);
+        $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
+        $component->call('add', ['key' => 'pottery']);
+        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
-        self::assertSame(['pottery'], $component->component()->ticket);
-    }
-
-    #[Test]
-    public function removeFromTicketRemovesTheGivenKey(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-
-        $component = $this->createPlayerOrders($bob);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $component->call('addToTicket', ['key' => 'pottery']);
-        $component->call('addToTicket', ['key' => 'democracy']);
-        $component->call('removeFromTicket', ['key' => 'pottery']);
-
-        self::assertSame(['democracy'], $component->component()->ticket);
+        $this->assertSame(1, substr_count($rendered, 'class="shop__cart-line"'));
+        $this->assertStringContainsString('Total: 60', $rendered);
     }
 
     #[Test]
     public function checkoutValidatesThePosTurnOrderAndOwnsTheAdvances(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
+
+        $this->posCartFor($client, $bob, Cart::fromKeys(['pottery', 'democracy']));
+
+        // A fresh PlayerOrders instance, posTurn set directly rather than via an
+        // openPos() call — see the class docblock: interleaving .call() between two
+        // TestLiveComponent instances sharing one client breaks the second one's
+        // checksum, since props() reads whichever component last responded on it.
+        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertSame(['pottery', 'democracy'], $this->reloadPlayer($bob)->advances);
+    }
+
+    #[Test]
+    public function checkoutWithAChosenGiftValidatesTheOrderWithTheZeroCostGiftLine(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
+
+        $ticket = Cart::fromKeys(['anatomy']);
+        $ticket->withGift('anatomy', 'astronavigation');
+        $this->posCartFor($client, $bob, $ticket);
+
+        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
+
+        $giftLine = $order->lines()[1];
+        $this->assertSame('astronavigation', $giftLine->key);
+        $this->assertSame(0, $giftLine->netCost);
+
+        $this->assertSame(['anatomy', 'astronavigation'], $this->reloadPlayer($bob)->advances);
+    }
+
+    #[Test]
+    public function checkoutIsDisabledWhileTheMonumentAllocationIsIncomplete(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
+
+        $this->posCartFor($client, $bob, Cart::fromKeys(['monument']));
+
+        $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
+
+        $this->assertTrue($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    #[Test]
+    public function allocatingTheFullOptionPoolAtThePosEnablesCheckoutAndPersistsTheAllocation(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $client = self::getContainer()->get('test.client');
+
+        $ticket = Cart::fromKeys(['monument']);
+        $ticket->withAllocation('monument', 'craft', 10);
+        $ticket->withAllocation('monument', 'science', 10);
+        $this->posCartFor($client, $bob, $ticket);
+
+        $component = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn);
+        $crawler = $component->render()->crawler();
+        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+
+        $component->call('checkout');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+
+        $line = $order->lines()[0];
+        $this->assertInstanceOf(AppliedPromotion::class, $line->promotion);
+        $this->assertSame(PromotionType::Option, $line->promotion->type);
+        $this->assertSame(['craft' => 10, 'science' => 10], $line->promotion->allocation);
+    }
+
+    #[Test]
+    public function reopeningThePosOnAKioskSubmittedMonumentOrderReloadsTheAllocationIntoTheTicket(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+
+        $order = new Order($bob, $game->currentTurn);
+        $order->replaceLines([
+            new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])),
+        ]);
+        $this->entityManager->persist($order);
+        $this->entityManager->flush();
 
         $component = $this->createPlayerOrders($bob);
         $component->call('openPos', ['turn' => $game->currentTurn]);
-        $component->call('addToTicket', ['key' => 'pottery']);
-        $component->call('addToTicket', ['key' => 'democracy']);
-        $component->call('checkout');
 
-        $order = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertSame(['pottery', 'democracy'], $this->reloadPlayer($bob)->advances);
-        self::assertSame([], $component->component()->ticket);
+        $crawler = $component->render()->crawler();
+
+        $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
+        // Category order is art/civic/craft/religion/science (App\Game\Category): only
+        // craft and science were allocated, 10 each.
+        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
     }
 
     #[Test]
@@ -124,17 +242,16 @@ final class PosConsoleTest extends WebTestCase
         [$game, , $bob] = $this->createGameWithAliceAndBob();
         $game->currentTurn = 3;
         $this->entityManager->flush();
+        $client = self::getContainer()->get('test.client');
 
-        $component = $this->createPlayerOrders($bob);
-        $component->call('openPos', ['turn' => 1]);
-        $component->call('addToTicket', ['key' => 'pottery']);
-        $component->call('checkout');
+        $this->posCartFor($client, $bob, Cart::fromKeys(['pottery']));
+        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: 1)->call('checkout');
 
-        $pastOrder = $this->freshOrderRepository()->findOneByPlayerAndTurn($bob, 1);
-        self::assertInstanceOf(Order::class, $pastOrder);
-        self::assertSame(OrderStatus::Validated, $pastOrder->status);
+        $pastOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, 1);
+        $this->assertInstanceOf(Order::class, $pastOrder);
+        $this->assertSame(OrderStatus::Validated, $pastOrder->status);
 
-        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($bob, 3));
+        $this->assertNotInstanceOf(Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, 3));
     }
 
     #[Test]
@@ -142,39 +259,12 @@ final class PosConsoleTest extends WebTestCase
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
         $this->validateOrderFor($alice, ['democracy']);
+        $client = self::getContainer()->get('test.client');
 
-        $component = $this->createPlayerOrders($alice);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $component->call('addToTicket', ['key' => 'pottery']);
-        $rendered = $component->call('checkout')->render()->toString();
+        $this->posCartFor($client, $alice, Cart::fromKeys(['pottery']));
+        $rendered = $this->createPlayerOrders($alice, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout')->render()->toString();
 
-        self::assertStringContainsString('already been validated', $rendered);
-    }
-
-    #[Test]
-    public function posProductsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-
-        $component = $this->createPlayerOrders($bob);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $crawler = $component->render()->crawler();
-
-        $pottery = $crawler->filter('#product-pottery');
-        self::assertSame('button', $pottery->nodeName());
-        self::assertStringContainsString('Pottery', $pottery->text());
-        self::assertStringContainsString('60', $pottery->text());
-
-        // Mysticism spans two categories (religion + art), so it must carry two distinct
-        // --cat-1/--cat-2 custom properties feeding the tile's striped background.
-        $mysticism = $crawler->filter('#product-mysticism');
-        self::assertSame('button', $mysticism->nodeName());
-        self::assertStringContainsString('Mysticism', $mysticism->text());
-        self::assertStringContainsString('50', $mysticism->text());
-        self::assertSame(
-            '--cat-1: var(--advance-religion); --cat-2: var(--advance-art)',
-            $mysticism->attr('style'),
-        );
+        $this->assertStringContainsString('already been validated', $rendered);
     }
 
     #[Test]
@@ -192,13 +282,13 @@ final class PosConsoleTest extends WebTestCase
         $component = $this->createPlayerOrders($alice);
         $component->call('eraseOrder', ['turn' => 1]);
 
-        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($alice, 1));
-        self::assertNull($this->freshOrderRepository()->findOneByPlayerAndTurn($alice, 2));
+        $this->assertNotInstanceOf(Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, 1));
+        $this->assertNotInstanceOf(Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, 2));
 
         $reloadedAlice = $this->reloadPlayer($alice);
-        self::assertNotContains('democracy', $reloadedAlice->advances);
-        self::assertNotContains('pottery', $reloadedAlice->advances);
-        self::assertContains('agriculture', $reloadedAlice->advances);
+        $this->assertNotContains('democracy', $reloadedAlice->advances);
+        $this->assertNotContains('pottery', $reloadedAlice->advances);
+        $this->assertContains('agriculture', $reloadedAlice->advances);
     }
 
     #[Test]
@@ -207,35 +297,34 @@ final class PosConsoleTest extends WebTestCase
         [$game, , $bob] = $this->createGameWithAliceAndBob();
         $game->currentTurn = 3;
         $this->entityManager->flush();
-        // Submitted from the player's kiosk: must fill the turn-3 card, not add a duplicate.
         $this->createPendingOrderFor($bob, ['pottery']);
 
         $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
 
-        self::assertCount(3, $cards);
-        self::assertStringContainsString('Turn 3', $cards->eq(0)->text());
-        self::assertSame('pending', $cards->eq(0)->attr('data-status'));
-        self::assertStringContainsString('Turn 2', $cards->eq(1)->text());
-        self::assertStringContainsString('Turn 1', $cards->eq(2)->text());
+        $this->assertCount(3, $cards);
+        $this->assertStringContainsString('Turn 3', $cards->eq(0)->text());
+        $this->assertSame('pending', $cards->eq(0)->attr('data-status'));
+        $this->assertStringContainsString('Turn 2', $cards->eq(1)->text());
+        $this->assertStringContainsString('Turn 1', $cards->eq(2)->text());
     }
 
     #[Test]
-    public function anEmptyTurnRendersAnEmptyStatusCardWithAnEditButton(): void
+    public function aMissingCurrentTurnRendersAMissingStatusCardWithABuyButton(): void
     {
         [, , $bob] = $this->createGameWithAliceAndBob();
 
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
         $card = $crawler->filter('article')->first();
 
-        self::assertSame('empty', $card->attr('data-status'));
-        self::assertStringContainsString('Empty', $card->text());
-        self::assertStringContainsString('Total: 0', $card->text());
-        self::assertStringContainsString('VP: 0', $card->text());
-        self::assertSame('Edit', trim($card->filter('button')->first()->text()));
+        $this->assertSame('missing', $card->attr('data-status'));
+        $this->assertStringContainsString('Empty', $card->text());
+        $this->assertStringContainsString('Total: 0', $card->text());
+        $this->assertStringContainsString('VP: 0', $card->text());
+        $this->assertSame('Buy', trim($card->filter('button')->first()->text()));
     }
 
     #[Test]
-    public function aPendingOrderCardShowsRecomputedNetCostsAndAnEditButton(): void
+    public function aPendingOrderCardShowsRecomputedNetCostsAndAVerifyButton(): void
     {
         [, , $bob] = $this->createGameWithAliceAndBob();
         $this->createPendingOrderFor($bob, ['pottery']);
@@ -243,12 +332,30 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
         $card = $crawler->filter('article')->first();
 
-        self::assertSame('pending', $card->attr('data-status'));
-        self::assertStringContainsString('Pottery', $card->text());
-        // pottery costs 60, Bob owns nothing granting a credit.
-        self::assertStringContainsString('Total: 60', $card->text());
-        self::assertStringContainsString('VP: 1', $card->text());
-        self::assertSame('Edit', trim($card->filter('button')->first()->text()));
+        $this->assertSame('pending', $card->attr('data-status'));
+        $this->assertStringContainsString('Pottery', $card->text());
+        $this->assertStringContainsString('Total: 60', $card->text());
+        $this->assertStringContainsString('VP: 1', $card->text());
+        $this->assertSame('Verify', trim($card->filter('button')->first()->text()));
+    }
+
+    #[Test]
+    public function pastTurnsWithNoOrderStayEmptyWhileTheCurrentTurnIsPending(): void
+    {
+        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        $game->currentTurn = 3;
+        $this->entityManager->flush();
+        $this->createPendingOrderFor($bob, ['pottery']);
+
+        $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
+
+        $this->assertSame('pending', $cards->eq(0)->attr('data-status'));
+
+        $this->assertSame('empty', $cards->eq(1)->attr('data-status'));
+        $this->assertSame('Edit', trim($cards->eq(1)->filter('button')->first()->text()));
+
+        $this->assertSame('empty', $cards->eq(2)->attr('data-status'));
+        $this->assertSame('Edit', trim($cards->eq(2)->filter('button')->first()->text()));
     }
 
     #[Test]
@@ -260,13 +367,13 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
         $card = $crawler->filter('article')->first();
 
-        self::assertSame('validated', $card->attr('data-status'));
-        self::assertStringContainsString('Democracy', $card->text());
-        self::assertStringContainsString('Pottery', $card->text());
-        self::assertStringContainsString('Total: 280', $card->text());
+        $this->assertSame('validated', $card->attr('data-status'));
+        $this->assertStringContainsString('Democracy', $card->text());
+        $this->assertStringContainsString('Pottery', $card->text());
+        $this->assertStringContainsString('Total: 280', $card->text());
         // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
-        self::assertStringContainsString('VP: 7', $card->text());
-        self::assertSame('Empty', trim($card->filter('button')->first()->text()));
+        $this->assertStringContainsString('VP: 7', $card->text());
+        $this->assertSame('Empty', trim($card->filter('button')->first()->text()));
     }
 
     #[Test]
@@ -279,8 +386,8 @@ final class PosConsoleTest extends WebTestCase
 
         $rendered = $this->createPlayerOrders($alice)->render()->toString();
 
-        self::assertStringContainsString('Empty turn 1?', $rendered);
-        self::assertStringNotContainsString('also empty turn', $rendered);
+        $this->assertStringContainsString('Empty turn 1?', $rendered);
+        $this->assertStringNotContainsString('also empty turn', $rendered);
     }
 
     /** @return array{GameSession, Player, Player} */
@@ -299,19 +406,43 @@ final class PosConsoleTest extends WebTestCase
         return [$game, $alice, $bob];
     }
 
-    private function createPlayerOrders(Player $player): object
+    private function createPlayerOrders(Player $player, ?KernelBrowser $client = null, bool $posOpen = false, int $posTurn = 0): TestLiveComponent
     {
         return $this->createLiveComponent('PlayerOrders', [
             'player' => $player,
             'ordersStamp' => '',
-        ]);
+            'posOpen' => $posOpen,
+            'posTurn' => $posTurn,
+        ], $client);
+    }
+
+    /**
+     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * no add() action of its own any more) and points $client's cookie jar at
+     * that session, so the PlayerOrders component under test — driven by the
+     * same $client — reads the same ticket back. 'test.client' is registered
+     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
+     * so $client must be the exact instance later passed to createPlayerOrders().
+     */
+    private function posCartFor(KernelBrowser $client, Player $player, Cart $cart): void
+    {
+        $session = self::getContainer()->get('session.factory')->createSession();
+        $request = new Request();
+        $request->setSession($session);
+        $requestStack = self::getContainer()->get(RequestStack::class);
+        $requestStack->push($request);
+        self::getContainer()->get(CartRepository::class)->save('pos.'.$player->id->toRfc4122(), $cart);
+        $requestStack->pop();
+        $session->save();
+
+        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
     /** @param list<string> $slugs */
     private function createPendingOrderFor(Player $player, array $slugs): Order
     {
         $order = new Order($player, $player->game->currentTurn);
-        $order->replaceLines($slugs);
+        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
@@ -336,7 +467,7 @@ final class PosConsoleTest extends WebTestCase
     private function reloadPlayer(Player $player): Player
     {
         $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
+        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }

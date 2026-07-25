@@ -1,0 +1,37 @@
+{# Allocation picker molecule — shown under a cart/ticket line whose advance grants a
+   promotion.option (a fixed pool of credits the player must split across the 5
+   categories, by steps of 5, before the order can be submitted/checked out).
+   Component-agnostic: allocateAction lets Shop (cart) and PlayerOrders (POS ticket)
+   each drive their own live action. Expected context: row, allocateAction, remaining,
+   allocation (every category, 0-defaulted). #}
+<div class="allocation-picker">
+    <p class="allocation-picker__remaining">Remaining: {{ remaining }}</p>
+    <ul class="allocation-picker__rows">
+        {% for category, current in allocation %}
+            <li class="allocation-picker__row" style="--category-color: var(--advance-{{ category }})">
+                <span class="allocation-picker__category">{{ category|capitalize }}</span>
+                <button
+                    type="button"
+                    {{ live_action(allocateAction, {for: row.advance.key, category: category, delta: -row.advance.promotion.option.step}) }}
+                    data-loading="addAttribute(disabled)"
+                    {{ current <= 0 ? 'disabled' }}
+                    class="allocation-picker__step allocation-picker__step--minus"
+                    title="Remove {{ row.advance.promotion.option.step }} from {{ category }}"
+                >
+                    −
+                </button>
+                <span class="allocation-picker__value">{{ current }}</span>
+                <button
+                    type="button"
+                    {{ live_action(allocateAction, {for: row.advance.key, category: category, delta: row.advance.promotion.option.step}) }}
+                    data-loading="addAttribute(disabled)"
+                    {{ remaining <= 0 ? 'disabled' }}
+                    class="allocation-picker__step allocation-picker__step--plus"
+                    title="Add {{ row.advance.promotion.option.step }} to {{ category }}"
+                >
+                    +
+                </button>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

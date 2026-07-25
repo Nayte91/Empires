@@ -11,7 +11,7 @@ use Symfony\Component\Mercure\Update;
 /**
  * Test double for the Mercure hub: no network I/O, no JWT signing.
  * Registered in place of the real hub for the test environment (see
- * config/services.yaml, when@test) so OrderSubmitter/OrderValidator's
+ * config/services.yaml, when@test) so the Shop command handlers/OrderValidator's
  * publish() calls stay in-process during the PHPUnit suite.
  */
 final class NullHub implements HubInterface
