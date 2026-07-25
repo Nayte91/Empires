@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Game;
 
 use App\Game\Dto\Advance;
-use App\Game\Dto\Promotion;
 use App\Shop\Promotion\ElectiveBenefit;
+use App\Shop\Promotion\ProductPromotion;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
@@ -79,32 +79,6 @@ final class AdvanceCatalog
                 $this->getAdvanceByName(...),
                 $names
             )
-        );
-    }
-
-    /**
-     * @param list<string> $categories
-     *
-     * @return array<int, Advance>
-     */
-    public function getAdvancesByCategories(array $categories): array
-    {
-        $advances = $this->getAdvances();
-
-        return array_filter(
-            $advances,
-            static fn (Advance $advance): bool => [] !== array_intersect($advance->categories, $categories)
-        );
-    }
-
-    /** @return array<int, Advance> */
-    public function getAdvancesByCostRange(int $minCost, int $maxCost): array
-    {
-        $advances = $this->getAdvances();
-
-        return array_filter(
-            $advances,
-            static fn (Advance $advance): bool => $advance->cost >= $minCost && $advance->cost <= $maxCost
         );
     }
 
@@ -194,7 +168,7 @@ final class AdvanceCatalog
     {
         // The 'payment' YAML key exists but is intentionally not read (out of scope for v1 shop).
         $promotion = isset($data['promotion'])
-            ? new Promotion(
+            ? new ProductPromotion(
                 gift: $data['promotion']['gift'] ?? [],
                 discount: $data['promotion']['discount'] ?? [],
                 option: isset($data['promotion']['option'])
@@ -212,7 +186,7 @@ final class AdvanceCatalog
             fileName: $this->packages->getUrl(self::IMAGES_PATH.$key.self::IMAGE_EXTENSION),
             cost: $data['cost'],
             points: $data['points'],
-            categories: $data['categories'],
+            facets: $data['categories'],
             credits: $data['credits'],
             mitigations: $data['mitigation'] ?? [],
             aggravations: $data['aggravation'] ?? [],

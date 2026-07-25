@@ -53,7 +53,8 @@ final readonly class SellDirectHandler
             $this->entityManager->persist($order);
         }
 
-        $order->replaceLines($this->lineQuoter->quote($command->items, $player, $this->shopConnector->buckets()));
+        $buyer = $this->shopConnector->buyerFor($player);
+        $order->replaceLines($this->lineQuoter->quote($command->items, $buyer, $this->shopConnector->facets()));
 
         if (OrderStatus::Rejected === $order->status) {
             $this->shopOrderStateMachine->apply($order, 'resubmit');

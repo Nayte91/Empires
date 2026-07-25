@@ -10,6 +10,7 @@ use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
+use App\Shop\BuyerInterface;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
 use App\Shop\Command\EraseOrders;
@@ -202,10 +203,19 @@ final class PlayerOrders
             $byTurn[$order->turn] = $order;
         }
 
+        // Built once for this render pass, not per turn: buyerFor() runs a query,
+        // and this loop would otherwise re-run it once per turn card (N+1). Safe
+        // to reuse here because the loop is read-only — nothing between turns
+        // mutates orders/advances. This must NOT be hoisted any further up
+        // (e.g. into a service-level cache keyed by player id): any LiveAction
+        // that validates/erases/rejects an order and then re-renders in the same
+        // request needs a freshly-built buyer, or it self-credits stale data.
+        $buyer = $this->shopConnector->buyerFor($this->player);
+
         $cards = [];
 
         for ($turn = $this->player->game->currentTurn; $turn >= 1; --$turn) {
-            $cards[] = $this->summarizeTurn($turn, $byTurn[$turn] ?? null);
+            $cards[] = $this->summarizeTurn($turn, $byTurn[$turn] ?? null, $buyer);
         }
 
         return $cards;
@@ -213,11 +223,11 @@ final class PlayerOrders
 
     /**
      * Totals are frozen on the order once validated, otherwise recalculated
-     * against the player's currently owned advances.
+     * against the buyer's currently owned advances.
      *
      * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int, rejectable: bool}
      */
-    private function summarizeTurn(int $turn, ?Order $order): array
+    private function summarizeTurn(int $turn, ?Order $order, BuyerInterface $buyer): array
     {
         $slugs = $order?->keys() ?? [];
 
@@ -228,7 +238,7 @@ final class PlayerOrders
             ? $order->total ?? 0
             : array_sum(array_map(
                 static fn (OrderLine $line): int => $line->netCost,
-                $this->lineQuoter->quote($order instanceof Order ? $this->lineQuoter->intentsFromLines($order->lines()) : [], $this->player, $this->shopConnector->buckets()),
+                $this->lineQuoter->quote($order instanceof Order ? $this->lineQuoter->intentsFromLines($order->lines()) : [], $buyer, $this->shopConnector->facets()),
             ));
 
         return [

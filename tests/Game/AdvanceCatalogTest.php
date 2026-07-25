@@ -6,8 +6,8 @@ namespace App\Tests\Game;
 
 use App\Game\AdvanceCatalog;
 use App\Game\Category;
-use App\Game\Dto\Promotion;
 use App\Shop\Promotion\ElectiveBenefit;
+use App\Shop\Promotion\ProductPromotion;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -73,7 +73,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('anatomy');
 
-        self::assertInstanceOf(Promotion::class, $advance->promotion);
+        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
         self::assertSame(['science' => 100], $advance->promotion->gift);
         self::assertSame([], $advance->promotion->discount);
         self::assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
@@ -84,7 +84,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('library');
 
-        self::assertInstanceOf(Promotion::class, $advance->promotion);
+        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
         self::assertSame(['any' => 40], $advance->promotion->discount);
         self::assertSame([], $advance->promotion->gift);
         self::assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
@@ -95,7 +95,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('monument');
 
-        self::assertInstanceOf(Promotion::class, $advance->promotion);
+        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
         self::assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
         self::assertSame(20, $advance->promotion->option->budget);
         self::assertSame(5, $advance->promotion->option->step);
@@ -106,7 +106,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('written_record');
 
-        self::assertInstanceOf(Promotion::class, $advance->promotion);
+        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
         self::assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
         self::assertSame(10, $advance->promotion->option->budget);
         self::assertSame(5, $advance->promotion->option->step);
@@ -117,7 +117,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('pottery');
 
-        self::assertNotInstanceOf(Promotion::class, $advance->promotion);
+        self::assertNotInstanceOf(ProductPromotion::class, $advance->promotion);
     }
 
     #[Test]

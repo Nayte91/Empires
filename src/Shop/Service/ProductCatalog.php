@@ -4,44 +4,41 @@ declare(strict_types=1);
 
 namespace App\Shop\Service;
 
-use App\Entity\Player;
-use App\Game\AdvanceCatalog;
-use App\Game\Dto\Advance;
+use App\Shop\BuyerInterface;
 use App\Shop\Dto\Product;
-use App\Shop\Promotion\OptionCredits;
+use App\Shop\ProductInterface;
+use App\Shop\ProductProviderInterface;
 
 final readonly class ProductCatalog
 {
     public function __construct(
-        private AdvanceCatalog $advanceCatalog,
+        private ProductProviderInterface $productProvider,
         private PriceCalculator $priceCalculator,
-        private OptionCredits $optionCredits,
     ) {}
 
     /**
-     * Catalogue minus the player's already-owned advances — a cashier has no
+     * Catalogue minus the buyer's already-owned advances — a cashier has no
      * use for re-selling what a player already has.
      *
      * @param list<string> $inCartKeys
      *
      * @return list<Product>
      */
-    public function productsFor(Player $player, array $inCartKeys): array
+    public function productsFor(BuyerInterface $buyer, array $inCartKeys): array
     {
-        /** @var list<Advance> $ownedAdvances */
-        $ownedAdvances = $this->advanceCatalog->getAdvancesByNames($player->advances);
-        $bonusCredits = $this->optionCredits->forPlayer($player);
+        $ownedAdvances = $this->productProvider->productsByKeys($buyer->ownedKeys);
+        $bonusCredits = $buyer->electiveCredits;
 
         return array_map(
-            fn (Advance $advance): ?Product => \in_array($advance->key, $player->advances, true)
+            fn (ProductInterface $advance): ?Product => \in_array($advance->key, $buyer->ownedKeys, true)
                     ? null
                     : new Product(
-                        advance: $advance,
+                        key: $advance->key,
                         netCost: $this->priceCalculator->netCost($advance, $ownedAdvances, $bonusCredits),
                         owned: false,
                         inCart: \in_array($advance->key, $inCartKeys, true),
                     ),
-            $this->advanceCatalog->getAdvances(),
+            $this->productProvider->products(),
         )
                 |> array_filter(...)
                 |> array_values(...);

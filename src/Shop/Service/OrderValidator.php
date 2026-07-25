@@ -37,7 +37,12 @@ final readonly class OrderValidator
         }
 
         $intents = $this->lineQuoter->intentsFromLines($order->lines());
-        $frozenLines = $this->lineQuoter->quote($intents, $player, $this->shopConnector->buckets());
+        // Built right here, not before: the order is still Pending at this point,
+        // so it's correctly excluded from its own elective credits (see
+        // ShopConnector::buyerFor()'s no-self-crediting note). Never hoist this
+        // above the transition below, and never reuse a buyer across it.
+        $buyer = $this->shopConnector->buyerFor($player);
+        $frozenLines = $this->lineQuoter->quote($intents, $buyer, $this->shopConnector->facets());
         $total = array_sum(array_map(static fn (OrderLine $line): int => $line->netCost, $frozenLines));
 
         $hub = $this->hub;

@@ -9,7 +9,9 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Category;
 use App\Repository\OrderRepository;
+use App\Shop\BuyerInterface;
 use App\Shop\OrderStatus;
+use App\Shop\Promotion\OptionCredits;
 
 /**
  * The Game→Shop seam: the shop's opaque ordering window is, in Empires, the
@@ -26,16 +28,48 @@ final readonly class ShopConnector
     }
 
     /**
-     * The Game→Shop seam for the generic "bucket" concept: the shop's Option
-     * promotion splits a budget across opaque "buckets" — in Empires, those
-     * are the advance categories. src/Shop/ never learns what a bucket stands
+     * The Game→Shop seam for the generic "facet" concept: the shop's Option
+     * promotion splits a budget across opaque "facets" — in Empires, those
+     * are the advance categories. src/Shop/ never learns what a facet stands
      * for.
      *
      * @return list<string>
      */
-    public function buckets(): array
+    public function facets(): array
     {
         return array_map(static fn (Category $category): string => $category->value, Category::cases());
+    }
+
+    /**
+     * The Game→Shop seam for BuyerInterface: fetches the player's validated
+     * orders, aggregates their Option allocations, and snapshots the result
+     * into a PlayerBuyer.
+     *
+     * A Pending order's own lines are excluded here — not in OptionCredits —
+     * which is the load-bearing half of the no-self-crediting invariant: a
+     * buyer must be built (or rebuilt) at the exact call site of a quote, and
+     * never reused across a validate/erase/disown mutation, or it goes stale
+     * and self-credits. Never cache this by player id across such a boundary.
+     */
+    public function buyerFor(Player $player): BuyerInterface
+    {
+        $confirmedLines = [];
+
+        foreach ($this->orderRepository->findByPlayer($player) as $order) {
+            if (OrderStatus::Validated !== $order->status) {
+                continue;
+            }
+
+            foreach ($order->lines() as $line) {
+                $confirmedLines[] = $line;
+            }
+        }
+
+        return new PlayerBuyer(
+            id: $player->id,
+            ownedKeys: $player->advances,
+            electiveCredits: OptionCredits::aggregate($confirmedLines),
+        );
     }
 
     /** @return list<int> */

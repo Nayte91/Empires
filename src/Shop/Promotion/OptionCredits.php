@@ -4,43 +4,34 @@ declare(strict_types=1);
 
 namespace App\Shop\Promotion;
 
-use App\Entity\Player;
-use App\Repository\OrderRepository;
-use App\Shop\OrderStatus;
+use App\Shop\Dto\OrderLine;
 
-final readonly class OptionCredits
+final class OptionCredits
 {
-    public function __construct(
-        private OrderRepository $orderRepository,
-    ) {}
-
     /**
-     * Sums, per category, every Option allocation validated so far for this
-     * player — a Pending order's own allocation is intentionally excluded
-     * (no self-crediting), and it naturally stops counting once its order
-     * is erased.
+     * Sums, per facet, every Option allocation carried by the given lines —
+     * a pure function over already-fetched, already-filtered lines. Callers
+     * decide which lines are "confirmed" (in Empires: validated orders only,
+     * see App\Game\Shop\ShopConnector::buyerFor()) — this class no longer
+     * knows what confirmed means, only how to add allocations up.
+     *
+     * @param list<OrderLine> $confirmedLines
      *
      * @return array<string, int>
      */
-    public function forPlayer(Player $player): array
+    public static function aggregate(array $confirmedLines): array
     {
         $credits = [];
 
-        foreach ($this->orderRepository->findByPlayer($player) as $order) {
-            if (OrderStatus::Validated !== $order->status) {
+        foreach ($confirmedLines as $line) {
+            if (!$line->promotion instanceof AppliedPromotion) {
                 continue;
             }
-
-            foreach ($order->lines() as $line) {
-                if (!$line->promotion instanceof AppliedPromotion) {
-                    continue;
-                }
-                if (PromotionType::Option !== $line->promotion->type) {
-                    continue;
-                }
-                foreach ($line->promotion->allocation as $category => $amount) {
-                    $credits[$category] = ($credits[$category] ?? 0) + $amount;
-                }
+            if (PromotionType::Option !== $line->promotion->type) {
+                continue;
+            }
+            foreach ($line->promotion->allocation as $facet => $amount) {
+                $credits[$facet] = ($credits[$facet] ?? 0) + $amount;
             }
         }
 

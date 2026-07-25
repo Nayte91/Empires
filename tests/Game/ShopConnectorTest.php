@@ -11,6 +11,8 @@ use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
+use App\Shop\Promotion\AppliedPromotion;
+use App\Shop\Promotion\PromotionType;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -55,6 +57,71 @@ final class ShopConnectorTest extends WebTestCase
         $this->createOrder($player, 3, ['law'], validated: false);
 
         self::assertSame([1, 2, 3], $this->shopConnector->windowsToErase($player, 1));
+    }
+
+    #[Test]
+    public function buyerForSumsOptionAllocationsFromValidatedOrdersByFacet(): void
+    {
+        $player = $this->createPlayer();
+        $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
+
+        self::assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+    }
+
+    #[Test]
+    public function buyerForCumulatesOptionAllocationsAcrossSeveralValidatedOrders(): void
+    {
+        $player = $this->createPlayer();
+        $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
+        $this->createValidatedOptionOrder($player, 2, ['craft' => 5]);
+
+        self::assertSame(['craft' => 15, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+    }
+
+    /**
+     * The load-bearing no-self-crediting guarantee, now enforced by the
+     * Validated filter in ShopConnector::buyerFor() rather than by
+     * OptionCredits itself (see App\Shop\Promotion\OptionCredits, now a pure
+     * aggregate() over already-filtered lines).
+     */
+    #[Test]
+    public function buyerForIgnoresAPendingOrdersOwnAllocation(): void
+    {
+        $player = $this->createPlayer();
+        $order = new Order($player, 1);
+        $order->replaceLines([
+            new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])),
+        ]);
+        $this->entityManager->persist($order);
+        $this->entityManager->flush();
+
+        self::assertSame([], $this->shopConnector->buyerFor($player)->electiveCredits);
+    }
+
+    #[Test]
+    public function buyerForWithNoOrdersHasEmptyElectiveCreditsAndOwnedKeys(): void
+    {
+        $player = $this->createPlayer();
+
+        $buyer = $this->shopConnector->buyerFor($player);
+
+        self::assertSame([], $buyer->electiveCredits);
+        self::assertSame([], $buyer->ownedKeys);
+        self::assertSame($player->id, $buyer->id);
+    }
+
+    /** @param array<string, int> $allocation */
+    private function createValidatedOptionOrder(Player $player, int $turn, array $allocation): void
+    {
+        $line = new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: $allocation));
+
+        $order = new Order($player, $turn);
+        $order->replaceLines([$line]);
+        $order->freeze([$line], 180);
+        $order->setMarking(OrderStatus::Validated->value);
+
+        $this->entityManager->persist($order);
+        $this->entityManager->flush();
     }
 
     private function createPlayer(): Player

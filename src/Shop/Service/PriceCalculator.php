@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Shop\Service;
 
-use App\Game\Dto\Advance;
 use App\Shop\Dto\OrderLine;
+use App\Shop\ProductInterface;
 
 final class PriceCalculator
 {
@@ -14,37 +14,37 @@ final class PriceCalculator
     // downstream by App\Shop\Promotion\PromotionEngine, not here.
 
     /**
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits extra credits granted by validated
-     *                                         Option allocations (App\Shop\Promotion\OptionCredits),
-     *                                         merged into the category totals alongside $owned
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits extra credits granted by validated
+     *                                             Option allocations (App\Shop\Promotion\OptionCredits),
+     *                                             merged into the facet totals alongside $owned
      */
-    public function netCost(Advance $advance, array $owned, array $bonusCredits = []): int
+    public function netCost(ProductInterface $advance, array $owned, array $bonusCredits = []): int
     {
-        $net = $advance->cost - $this->categoryCredits($advance, $owned, $bonusCredits) - $this->namedCredits($advance, $owned, $bonusCredits);
+        $net = $advance->cost - $this->facetCredits($advance, $owned, $bonusCredits) - $this->namedCredits($advance, $owned, $bonusCredits);
 
         return max(0, $net);
     }
 
     /**
-     * @param list<Advance>      $advances
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
+     * @param list<ProductInterface> $advances
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
      *
      * @return list<OrderLine>
      */
     public function priceLines(array $advances, array $owned, array $bonusCredits = []): array
     {
         return array_map(
-            fn (Advance $advance): OrderLine => new OrderLine($advance->key, $this->netCost($advance, $owned, $bonusCredits)),
+            fn (ProductInterface $advance): OrderLine => new OrderLine($advance->key, $this->netCost($advance, $owned, $bonusCredits)),
             $advances,
         );
     }
 
     /**
-     * @param list<Advance>      $inOrder
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
+     * @param list<ProductInterface> $inOrder
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
      */
     public function orderTotal(array $inOrder, array $owned, array $bonusCredits = []): int
     {
@@ -59,22 +59,22 @@ final class PriceCalculator
 
     /**
      * Aggregates every credit granted by $owned, globally rather than against a single
-     * priced advance: category credits sum across all owned (no per-product max), and
-     * every non-category credit key is treated as a named credit toward that advance slug.
+     * priced advance: facet credits sum across all owned (no per-product max), and
+     * every non-facet credit key is treated as a named credit toward that advance slug.
      *
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
-     * @param list<string>       $buckets      valid category buckets (the Game→Shop seam for the
-     *                                         generic "bucket" concept, see ShopConnector::buckets())
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
+     * @param list<string>           $facets       valid facets (the Game→Shop seam for the
+     *                                             generic "facet" concept, see ShopConnector::facets())
      *
-     * @return array{categories: array<string, int>, named: array<string, int>}
+     * @return array{facets: array<string, int>, named: array<string, int>}
      */
-    public function creditsFor(array $owned, array $bonusCredits = [], array $buckets = []): array
+    public function creditsFor(array $owned, array $bonusCredits = [], array $facets = []): array
     {
-        $categories = [];
+        $facetCredits = [];
 
-        foreach ($buckets as $bucket) {
-            $categories[$bucket] = $this->sumCreditsFor($bucket, $owned, $bonusCredits);
+        foreach ($facets as $facet) {
+            $facetCredits[$facet] = $this->sumCreditsFor($facet, $owned, $bonusCredits);
         }
 
         $named = [];
@@ -84,7 +84,7 @@ final class PriceCalculator
             $credits = $ownedAdvance->credits;
 
             foreach ($credits as $key => $value) {
-                if (\in_array($key, $buckets, true)) {
+                if (\in_array($key, $facets, true)) {
                     continue;
                 }
 
@@ -92,39 +92,39 @@ final class PriceCalculator
             }
         }
 
-        return ['categories' => $categories, 'named' => $named];
+        return ['facets' => $facetCredits, 'named' => $named];
     }
 
     /**
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
      */
-    private function categoryCredits(Advance $advance, array $owned, array $bonusCredits = []): int
+    private function facetCredits(ProductInterface $advance, array $owned, array $bonusCredits = []): int
     {
-        /** @var list<string> $categories */
-        $categories = $advance->categories;
+        /** @var list<string> $facets */
+        $facets = $advance->facets;
 
         $best = 0;
 
-        foreach ($categories as $category) {
-            $best = max($best, $this->sumCreditsFor($category, $owned, $bonusCredits));
+        foreach ($facets as $facet) {
+            $best = max($best, $this->sumCreditsFor($facet, $owned, $bonusCredits));
         }
 
         return $best;
     }
 
     /**
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
      */
-    private function namedCredits(Advance $advance, array $owned, array $bonusCredits = []): int
+    private function namedCredits(ProductInterface $advance, array $owned, array $bonusCredits = []): int
     {
         return $this->sumCreditsFor($advance->key, $owned, $bonusCredits);
     }
 
     /**
-     * @param list<Advance>      $owned
-     * @param array<string, int> $bonusCredits
+     * @param list<ProductInterface> $owned
+     * @param array<string, int>     $bonusCredits
      */
     private function sumCreditsFor(string $creditKey, array $owned, array $bonusCredits = []): int
     {

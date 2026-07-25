@@ -1,38 +1,38 @@
-{% set cat1 = product.advance.categories[0] %}
-{% set cat2 = product.advance.categories[1] ?? cat1 %}
+{% set cat1 = row.advance.facets[0] %}
+{% set cat2 = row.advance.facets[1] ?? cat1 %}
 <article
-    id="product-{{ product.advance.key }}"
-    class="product-card{{ product.owned ? ' product-card--owned' }}{{ product.inCart ? ' product-card--in-cart' }}"
+    id="product-{{ row.advance.key }}"
+    class="product-card{{ row.product.owned ? ' product-card--owned' }}{{ row.product.inCart ? ' product-card--in-cart' }}"
     style="--cat-1: var(--advance-{{ cat1 }}); --cat-2: var(--advance-{{ cat2 }})"
-    {{ product.owned ? 'data-owned' }}
-    {{ product.inCart ? 'data-in-cart' }}
+    {{ row.product.owned ? 'data-owned' }}
+    {{ row.product.inCart ? 'data-in-cart' }}
 >
-    {% if product.advance.fileName %}
+    {% if row.advance.fileName %}
         <header>
-            <img src="{{ product.advance.fileName }}" alt="{{ product.advance.name }} card" loading="lazy">
+            <img src="{{ row.advance.fileName }}" alt="{{ row.advance.name }} card" loading="lazy">
         </header>
     {% endif %}
 
     <main>
-        <h3>{{ product.advance.name|capitalize }}</h3>
+        <h3>{{ row.advance.name|capitalize }}</h3>
 
         <div class="product-card__price">
-            {% if product.netCost < product.advance.cost %}
-                <small class="product-card__price-original">{{ product.advance.cost }}</small>
+            {% if row.product.netCost < row.advance.cost %}
+                <small class="product-card__price-original">{{ row.advance.cost }}</small>
             {% endif %}
-            <b data-price-net>{{ product.netCost }}</b>
+            <b data-price-net>{{ row.product.netCost }}</b>
         </div>
     </main>
 
     {% if not readonly|default(false) %}
         <button
             type="button"
-            {{ live_action(action|default('addToCart'), {key: product.advance.key}) }}
-            {{ (product.owned or product.inCart or locked) ? 'disabled' }}
+            {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
+            {{ (row.product.owned or row.product.inCart or locked) ? 'disabled' }}
             data-loading="addAttribute(disabled)"
             class="product-card__add"
         >
-            <span class="sr-only">Add {{ product.advance.name|capitalize }}</span>
+            <span class="sr-only">Add {{ row.advance.name|capitalize }}</span>
         </button>
     {% endif %}
 </article>

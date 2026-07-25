@@ -55,24 +55,34 @@ one possible context.
 
 ### Product & Catalog (read side)
 
-- `ProductInterface` — identity (`key`), display name, base price (int, minor units or
-  points), free-form attributes. The library never persists products.
-- `ProductProviderInterface` (**port**) — returns the products. Adapters: Doctrine
-  repository, config file (YAML/JSON), remote API, in-memory.
+- `ProductInterface` — **delivered**, minimal by PO decision: identity (`key`) plus
+  the inputs pricing/promotion need — `cost` (int), `facets` (`list<string>`),
+  `credits` (`array<string, int>`), `promotion` (`?ProductPromotion`). Deliberately
+  **no display fields** (name, image, description): the library never renders
+  anything, so it never needs them — the host rebuilds display rows from its own
+  catalog (in Empires: `App\Game\Dto\Advance` implements it directly, zero
+  accessors). The library never persists products.
+- `ProductProviderInterface` (**port**) — **delivered**: `products()` and
+  `productsByKeys(list<string> $keys)`, both returning `list<ProductInterface>`.
+  Ordering is the provider's responsibility — callers must not re-sort. Adapters:
+  Doctrine repository, config file (YAML/JSON), remote API, in-memory (in Empires:
+  `App\Game\Shop\AdvanceProductProvider`, wrapping `AdvanceCatalog`).
 - `CatalogInterface` — the *per-buyer* view of the products: the provider's output
-  filtered by eligibility rules.
+  filtered by eligibility rules. Target, not yet built.
 - `ProductEligibilityInterface` (**port**, chainable) — decides whether a buyer may see
   or buy a product. Reference rules: `NotAlreadyOwned`, `PrerequisitesMet`,
   `MaxQuantityPerBuyer`, `SegmentFilter` (e.g. region). Real-world source: game rules
   (one copy per player, tech prerequisites, region-restricted catalogs) map 1:1 to
-  B2C rules (one per customer, bundle requirements, market segmentation).
+  B2C rules (one per customer, bundle requirements, market segmentation). Target, not
+  yet built.
 
 ### Buyer
 
-- `BuyerInterface` — identity + the attributes pricing/eligibility need (owned product
-  keys, segment tags, arbitrary metadata). The library never owns users; the host maps
-  its User/Player/Customer entity onto this interface. This is the primary connector
-  to the host's world.
+- `BuyerInterface` — **delivered**: identity (`id`) plus the attributes pricing needs
+  (`ownedKeys`, `electiveCredits`). The library never owns users; the host maps its
+  User/Player/Customer entity onto this interface (in Empires:
+  `App\Game\Shop\PlayerBuyer`, built by `ShopConnector::buyerFor()`). This is the
+  primary connector to the host's world.
 
 ### Cart
 
@@ -170,9 +180,9 @@ future eligible purchase, forever, and are never consumed. They live on the
 from confirmed order lines). A spendable balance would belong to the *payment*
 extension instead — the earn/burn distinction is the boundary between the two.
 
-**Buckets are a port.** The engine never knows what the allocation buckets *are*
+**Facets are a port.** The engine never knows what the allocation facets *are*
 (product categories, brands, departments, game colors…): the host connector
-supplies the bucket list, the engine validates **structurally** against the
+supplies the facet list, the engine validates **structurally** against the
 benefit's configuration, the host's price resolver interprets the stored
 allocations. Storing the choice on the order line keeps two invariants for free:
 the order explains itself forever, and cancelling the order revokes the benefit.
@@ -181,22 +191,22 @@ the order explains itself forever, and cancelling the order revokes the benefit.
 by the same engine and both observed in a real catalog:
 
 ```yaml
-# free allocation: "distribute a budget across buckets, in fixed steps"
+# free allocation: "distribute a budget across facets, in fixed steps"
 benefit:
     budget: 20
     step: 5
 
-# exclusive picks: "exactly N distinct buckets at a fixed value each,
-# with a conditional penalty on the bucket left out"
+# exclusive picks: "exactly N distinct facets at a fixed value each,
+# with a conditional penalty on the facet left out"
 benefit:
     pick: 4
     value: 10
-    forfeit: 10   # applied to the remaining bucket only if the buyer
+    forfeit: 10   # applied to the remaining facet only if the buyer
                   # holds at least that much in previously earned benefits
 ```
 
 The picker UI derives from the configuration (`budget`+`step` → a ±step
-allocator; `pick` → "choose the excluded bucket", a single interaction). A
+allocator; `pick` → "choose the excluded facet", a single interaction). A
 `forfeit` may produce a *negative* entry in the stored allocation; aggregation is
 a plain sum, so reversal and self-explanation still hold.
 

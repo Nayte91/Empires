@@ -4,104 +4,55 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\GameSession;
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Repository\OrderRepository;
 use App\Shop\Dto\OrderLine;
-use App\Shop\OrderStatus;
 use App\Shop\Promotion\AppliedPromotion;
 use App\Shop\Promotion\OptionCredits;
 use App\Shop\Promotion\PromotionType;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use PHPUnit\Framework\TestCase;
 
-final class OptionCreditsTest extends WebTestCase
+final class OptionCreditsTest extends TestCase
 {
-    private EntityManagerInterface $entityManager;
-    private OrderRepository $orderRepository;
-
-    protected function setUp(): void
+    #[Test]
+    public function aggregateSumsAllocationsFromALineByFacet(): void
     {
-        self::bootKernel();
+        $lines = [$this->optionLine('monument', ['craft' => 10, 'science' => 10])];
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-        $this->orderRepository = self::getContainer()->get(OrderRepository::class);
+        self::assertSame(['craft' => 10, 'science' => 10], OptionCredits::aggregate($lines));
     }
 
     #[Test]
-    public function forPlayerSumsAllocationsFromValidatedOrdersByCategory(): void
+    public function aggregateCumulatesAllocationsAcrossSeveralLines(): void
     {
-        $player = $this->createPlayer();
-        $this->createValidatedOrder($player, 1, ['craft' => 10, 'science' => 10]);
+        $lines = [
+            $this->optionLine('monument', ['craft' => 10, 'science' => 10]),
+            $this->optionLine('temple', ['craft' => 5]),
+        ];
 
-        $credits = new OptionCredits($this->orderRepository)->forPlayer($player);
-
-        self::assertSame(['craft' => 10, 'science' => 10], $credits);
+        self::assertSame(['craft' => 15, 'science' => 10], OptionCredits::aggregate($lines));
     }
 
     #[Test]
-    public function forPlayerCumulatesAcrossSeveralValidatedOrders(): void
+    public function aggregateIgnoresLinesWithoutAnOptionPromotion(): void
     {
-        $player = $this->createPlayer();
-        $this->createValidatedOrder($player, 1, ['craft' => 10, 'science' => 10]);
-        $this->createValidatedOrder($player, 2, ['craft' => 5]);
+        $lines = [
+            new OrderLine('pottery', 50),
+            new OrderLine('library', 40, new AppliedPromotion(PromotionType::Discount, 'democracy', amount: 40)),
+            new OrderLine('astronavigation', 0, new AppliedPromotion(PromotionType::Gift, 'anatomy')),
+        ];
 
-        $credits = new OptionCredits($this->orderRepository)->forPlayer($player);
-
-        self::assertSame(['craft' => 15, 'science' => 10], $credits);
+        self::assertSame([], OptionCredits::aggregate($lines));
     }
 
     #[Test]
-    public function forPlayerIgnoresAPendingOrdersOwnAllocation(): void
+    public function aggregateWithNoLinesReturnsEmptyArray(): void
     {
-        $player = $this->createPlayer();
-        $order = new Order($player, 1);
-        $order->replaceLines([
-            new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])),
-        ]);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        $credits = new OptionCredits($this->orderRepository)->forPlayer($player);
-
-        self::assertSame([], $credits);
-    }
-
-    #[Test]
-    public function forPlayerWithNoOrdersReturnsEmptyArray(): void
-    {
-        $player = $this->createPlayer();
-
-        $credits = new OptionCredits($this->orderRepository)->forPlayer($player);
-
-        self::assertSame([], $credits);
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
+        self::assertSame([], OptionCredits::aggregate([]));
     }
 
     /** @param array<string, int> $allocation */
-    private function createValidatedOrder(Player $player, int $turn, array $allocation): Order
+    private function optionLine(string $key, array $allocation): OrderLine
     {
-        $order = new Order($player, $turn);
-        $line = new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: $allocation));
-        $order->replaceLines([$line]);
-        $order->freeze([$line], 180);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
+        return new OrderLine($key, 180, new AppliedPromotion(PromotionType::Option, $key, allocation: $allocation));
     }
 }

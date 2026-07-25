@@ -33,19 +33,22 @@ final class PlayerBoard
     }
 
     /**
-     * Owned advances wrapped as read-only {@see Product} DTOs, for reuse of the productCard molecule.
+     * Owned advances paired with a read-only {@see Product} DTO, for reuse of the productCard molecule.
      *
-     * @return list<Product>
+     * @return list<array{advance: Advance, product: Product}>
      */
-    public function getOwnedProducts(): array
+    public function getOwnedRows(): array
     {
         return array_map(
-            static fn (Advance $advance): Product => new Product(
-                advance: $advance,
-                netCost: $advance->cost,
-                owned: true,
-                inCart: false,
-            ),
+            static fn (Advance $advance): array => [
+                'advance' => $advance,
+                'product' => new Product(
+                    key: $advance->key,
+                    netCost: $advance->cost,
+                    owned: true,
+                    inCart: false,
+                ),
+            ],
             $this->getOwnedAdvances(),
         );
     }

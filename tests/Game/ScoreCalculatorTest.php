@@ -88,7 +88,7 @@ final class ScoreCalculatorTest extends TestCase
             fileName: $key.'.webp',
             cost: 0,
             points: $points,
-            categories: [],
+            facets: [],
             credits: [],
             mitigations: [],
             aggravations: [],

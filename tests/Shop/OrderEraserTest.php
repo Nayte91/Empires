@@ -7,7 +7,6 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Game\AdvanceCatalog;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -19,7 +18,7 @@ use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\OrderStatus;
-use App\Shop\Promotion\OptionCredits;
+use App\Shop\ProductProviderInterface;
 use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
@@ -36,6 +35,7 @@ final class OrderEraserTest extends WebTestCase
     private OrderRepository $orderRepository;
     private SellDirectHandler $sellDirectHandler;
     private EraseOrdersHandler $eraseOrdersHandler;
+    private ShopConnector $shopConnector;
 
     protected function setUp(): void
     {
@@ -52,17 +52,17 @@ final class OrderEraserTest extends WebTestCase
         // NullHub (registered for the real HubInterface under config/services.yaml
         // when@test) makes every publish() call in this flow a no-op — no network I/O
         // happens during the suite.
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $lineQuoter = new LineQuoter($advanceCatalog, new PriceCalculator(), new PromotionEngine(), new OptionCredits($this->orderRepository));
+        $productProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $shopConnector = new ShopConnector($this->orderRepository);
+        $this->shopConnector = new ShopConnector($this->orderRepository);
         $orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
             new NullHub(),
             $shopOrderStateMachine,
-            $shopConnector,
+            $this->shopConnector,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,
@@ -72,7 +72,7 @@ final class OrderEraserTest extends WebTestCase
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
-            $shopConnector,
+            $this->shopConnector,
         );
         $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, new NullHub(), $eventBus);
     }
@@ -156,13 +156,12 @@ final class OrderEraserTest extends WebTestCase
             1,
         ));
 
-        $optionCredits = new OptionCredits($this->orderRepository);
-        self::assertSame(['craft' => 10, 'science' => 10], $optionCredits->forPlayer($this->reloadPlayer($player)));
+        self::assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
         self::assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        self::assertSame([], $optionCredits->forPlayer($this->reloadPlayer($player)));
+        self::assertSame([], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
     }
 
     #[Test]

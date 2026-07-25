@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Game\Dto;
 
-final readonly class Advance
+use App\Shop\ProductInterface;
+use App\Shop\Promotion\ProductPromotion;
+
+final readonly class Advance implements ProductInterface
 {
     /**
-     * @param list<string>       $categories
+     * @param list<string>       $facets
      * @param array<string, int> $credits
      * @param list<string>       $mitigations
      * @param list<string>       $aggravations
@@ -18,10 +21,10 @@ final readonly class Advance
         public string $fileName,
         public int $cost,
         public int $points,
-        public array $categories,
+        public array $facets,
         public array $credits,
         public array $mitigations,
         public array $aggravations,
-        public ?Promotion $promotion = null,
+        public ?ProductPromotion $promotion = null,
     ) {}
 }

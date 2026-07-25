@@ -1,15 +1,15 @@
 {# Product Tile Molecule Template — compact POS tile, text-only, speed-first #}
-{% set cat1 = product.advance.categories[0] %}
-{% set cat2 = product.advance.categories[1] ?? cat1 %}
+{% set cat1 = row.advance.facets[0] %}
+{% set cat2 = row.advance.facets[1] ?? cat1 %}
 <button
     type="button"
-    id="product-{{ product.advance.key }}"
-    {{ live_action(action|default('addToCart'), {key: product.advance.key}) }}
-    {{ product.inCart ? 'disabled' }}
+    id="product-{{ row.advance.key }}"
+    {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
+    {{ row.product.inCart ? 'disabled' }}
     data-loading="addAttribute(disabled)"
-    class="product-tile{{ product.inCart ? ' product-tile--in-cart' }}"
+    class="product-tile{{ row.product.inCart ? ' product-tile--in-cart' }}"
     style="--cat-1: var(--advance-{{ cat1 }}); --cat-2: var(--advance-{{ cat2 }})"
 >
-    <span class="product-tile__name">{{ product.advance.name|capitalize }}</span>
-    <span class="product-tile__price">{{ product.netCost }}</span>
+    <span class="product-tile__name">{{ row.advance.name|capitalize }}</span>
+    <span class="product-tile__price">{{ row.product.netCost }}</span>
 </button>

@@ -72,17 +72,19 @@ final class Cart
     }
 
     #[LiveAction]
-    public function allocate(#[LiveArg] string $for, #[LiveArg] string $category, #[LiveArg] int $delta): void
+    public function allocate(#[LiveArg] string $for, #[LiveArg] string $facet, #[LiveArg] int $delta): void
     {
         $cart = $this->getCart();
-        $cart->withAllocation($for, $category, $delta);
+        $cart->withAllocation($for, $facet, $delta);
         $this->cartRepository->save($this->storageKey, $cart);
     }
 
     /** @return list<array{advance: Advance, line: OrderLine}> */
     public function getLines(): array
     {
-        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $this->player, $this->shopConnector->buckets()));
+        $buyer = $this->shopConnector->buyerFor($this->player);
+
+        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer, $this->shopConnector->facets()));
     }
 
     public function getTotal(): int
@@ -99,12 +101,14 @@ final class Cart
             return [];
         }
 
-        return $this->promotionEngine->giftCandidates(
+        $candidateKeys = $this->promotionEngine->giftCandidates(
             $source,
             $this->player->advances,
             $this->getCart()->keys(),
             $this->advanceCatalog->getAdvances(),
         );
+
+        return array_values($this->advanceCatalog->getAdvancesByNames($candidateKeys));
     }
 
     public function getChosenGiftFor(string $sourceKey): ?Advance
@@ -124,7 +128,7 @@ final class Cart
     }
 
     /**
-     * Every bucket defaulted to 0, in ShopConnector::buckets() order, so the
+     * Every facet defaulted to 0, in ShopConnector::facets() order, so the
      * picker template can iterate it directly (mirrors Component\Discounts::getCredits).
      *
      * @return array<string, int>
@@ -143,8 +147,8 @@ final class Cart
 
         $allocation = [];
 
-        foreach ($this->shopConnector->buckets() as $bucket) {
-            $allocation[$bucket] = $stored[$bucket] ?? 0;
+        foreach ($this->shopConnector->facets() as $facet) {
+            $allocation[$facet] = $stored[$facet] ?? 0;
         }
 
         return $allocation;

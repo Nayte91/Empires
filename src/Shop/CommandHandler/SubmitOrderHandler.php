@@ -63,7 +63,8 @@ final readonly class SubmitOrderHandler
             $this->entityManager->persist($order);
         }
 
-        $order->replaceLines($this->lineQuoter->quote($command->items, $player, $this->shopConnector->buckets()));
+        $buyer = $this->shopConnector->buyerFor($player);
+        $order->replaceLines($this->lineQuoter->quote($command->items, $buyer, $this->shopConnector->facets()));
 
         // Canon rule: submitting onto a rejected slot reopens it.
         if (OrderStatus::Rejected === $order->status) {

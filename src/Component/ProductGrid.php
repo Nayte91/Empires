@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Entity\Player;
+use App\Game\AdvanceCatalog;
+use App\Game\Dto\Advance;
+use App\Game\Shop\ShopConnector;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
 use App\Shop\Dto\Product;
@@ -20,16 +23,29 @@ final class ProductGrid
     public bool $compact = false;
 
     public function __construct(
+        private readonly AdvanceCatalog $advanceCatalog,
         private readonly CartRepository $cartRepository,
         private readonly ProductCatalog $productCatalog,
+        private readonly ShopConnector $shopConnector,
     ) {}
 
-    /** @return list<Product> */
-    public function getProducts(): array
+    /** @return list<array{advance: Advance, product: Product}> */
+    public function getRows(): array
     {
-        return $this->productCatalog->productsFor(
-            $this->player,
+        $advancesByKey = [];
+
+        foreach ($this->advanceCatalog->getAdvances() as $advance) {
+            $advancesByKey[$advance->key] = $advance;
+        }
+
+        $products = $this->productCatalog->productsFor(
+            $this->shopConnector->buyerFor($this->player),
             $this->getCart()->keys(),
+        );
+
+        return array_map(
+            static fn (Product $product): array => ['advance' => $advancesByKey[$product->key], 'product' => $product],
+            $products,
         );
     }
 

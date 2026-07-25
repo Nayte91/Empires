@@ -116,8 +116,8 @@ final class Cart
         }
     }
 
-    /** Sum-completeness is validated by PromotionEngine; this only clamps a single category to zero or above. */
-    public function withAllocation(string $key, string $category, int $delta): void
+    /** Sum-completeness is validated by PromotionEngine; this only clamps a single facet to zero or above. */
+    public function withAllocation(string $key, string $facet, int $delta): void
     {
         $intent = $this->find($key);
 
@@ -126,7 +126,7 @@ final class Cart
         }
 
         $allocation = $intent->allocation;
-        $allocation[$category] = max(0, ($allocation[$category] ?? 0) + $delta);
+        $allocation[$facet] = max(0, ($allocation[$facet] ?? 0) + $delta);
 
         $this->items = array_map(
             static fn (LineIntent $item): LineIntent => $item->key === $key

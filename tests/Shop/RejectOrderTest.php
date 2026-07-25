@@ -7,7 +7,6 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Game\AdvanceCatalog;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -21,7 +20,7 @@ use App\Shop\Dto\LineIntent;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\OrderException;
 use App\Shop\OrderStatus;
-use App\Shop\Promotion\OptionCredits;
+use App\Shop\ProductProviderInterface;
 use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
@@ -49,13 +48,13 @@ final class RejectOrderTest extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $productProvider = self::getContainer()->get(ProductProviderInterface::class);
 
         // Same convention as OrderFlowTest/DirectSaleTest: these handlers have no
         // other consumer yet, so the compiled container inlines them and they
         // cannot be fetched directly. Built here from the shared EntityManager/
-        // OrderRepository/PlayerRepository/AdvanceCatalog instances.
-        $lineQuoter = new LineQuoter($advanceCatalog, new PriceCalculator(), new PromotionEngine(), new OptionCredits($this->orderRepository));
+        // OrderRepository/PlayerRepository/ProductProviderInterface instances.
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $shopConnector = new ShopConnector($this->orderRepository);

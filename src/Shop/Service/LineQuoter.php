@@ -4,39 +4,37 @@ declare(strict_types=1);
 
 namespace App\Shop\Service;
 
-use App\Entity\Player;
-use App\Game\AdvanceCatalog;
-use App\Game\Dto\Advance;
+use App\Shop\BuyerInterface;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Exception\PromotionException;
-use App\Shop\Promotion\OptionCredits;
+use App\Shop\ProductInterface;
+use App\Shop\ProductProviderInterface;
 use App\Shop\Promotion\PromotionEngine;
 
 final readonly class LineQuoter
 {
     public function __construct(
-        private AdvanceCatalog $advanceCatalog,
+        private ProductProviderInterface $productProvider,
         private PriceCalculator $priceCalculator,
         private PromotionEngine $engine,
-        private OptionCredits $optionCredits,
     ) {}
 
     /**
      * @param list<LineIntent> $intents
-     * @param list<string>     $buckets valid allocation categories, forwarded to PromotionEngine::apply()
+     * @param list<string>     $facets  valid allocation facets, forwarded to PromotionEngine::apply()
      *
      * @return list<OrderLine>
      */
-    public function quote(array $intents, Player $player, array $buckets = []): array
+    public function quote(array $intents, BuyerInterface $buyer, array $facets = []): array
     {
         $advances = $this->advancesFor($intents);
-        $owned = $this->ownedFor($player);
-        $catalog = $this->advanceCatalog->getAdvances();
+        $owned = $this->ownedFor($buyer);
+        $catalog = $this->productProvider->products();
 
-        $lines = $this->priceCalculator->priceLines($advances, $owned, $this->optionCredits->forPlayer($player));
+        $lines = $this->priceCalculator->priceLines($advances, $owned, $buyer->electiveCredits);
 
-        return $this->engine->apply($lines, $advances, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $player->advances, $buckets);
+        return $this->engine->apply($lines, $advances, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $facets);
     }
 
     /**
@@ -47,16 +45,16 @@ final readonly class LineQuoter
      * PromotionException guard still applies there.
      *
      * @param list<LineIntent> $intents
-     * @param list<string>     $buckets valid allocation categories, forwarded to PromotionEngine::apply()
+     * @param list<string>     $facets  valid allocation facets, forwarded to PromotionEngine::apply()
      *
      * @return list<OrderLine>
      */
-    public function quotePreview(array $intents, Player $player, array $buckets = []): array
+    public function quotePreview(array $intents, BuyerInterface $buyer, array $facets = []): array
     {
         try {
-            return $this->quote($intents, $player, $buckets);
+            return $this->quote($intents, $buyer, $facets);
         } catch (PromotionException) {
-            return $this->priceCalculator->priceLines($this->advancesFor($intents), $this->ownedFor($player), $this->optionCredits->forPlayer($player));
+            return $this->priceCalculator->priceLines($this->advancesFor($intents), $this->ownedFor($buyer), $buyer->electiveCredits);
         }
     }
 
@@ -82,7 +80,7 @@ final readonly class LineQuoter
      *
      * @param list<LineIntent> $intents
      *
-     * @return list<Advance>
+     * @return list<ProductInterface>
      */
     private function advancesFor(array $intents): array
     {
@@ -99,20 +97,18 @@ final readonly class LineQuoter
             )),
         );
 
-        // getAdvancesByNames() returns a non-reindexed array (array_filter preserves
-        // the original keys), so array_values is required before treating it as a list.
-        return array_values($this->advanceCatalog->getAdvancesByNames($keys));
+        return $this->productProvider->productsByKeys($keys);
     }
 
-    /** @return list<Advance> */
-    private function ownedFor(Player $player): array
+    /** @return list<ProductInterface> */
+    private function ownedFor(BuyerInterface $buyer): array
     {
-        return array_values($this->advanceCatalog->getAdvancesByNames($player->advances));
+        return $this->productProvider->productsByKeys($buyer->ownedKeys);
     }
 
     /**
-     * @param list<Advance> $catalog
-     * @param list<Advance> $owned
+     * @param list<ProductInterface> $catalog
+     * @param list<ProductInterface> $owned
      *
      * @return array<string, int>
      */

@@ -224,7 +224,7 @@ final class CartTest extends TestCase
     }
 
     #[Test]
-    public function withAllocationAddsToTheGivenCategory(): void
+    public function withAllocationAddsToTheGivenFacet(): void
     {
         $cart = new Cart();
         $cart->add('monument');

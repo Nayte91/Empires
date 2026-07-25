@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Game\Dto\Advance;
 use App\Shop\Service\PriceCalculator;
+use App\Tests\Shop\Support\FakeProduct;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class PriceCalculatorTest extends TestCase
 {
-    private const array BUCKETS = ['art', 'civic', 'craft', 'religion', 'science'];
+    private const array FACETS = ['art', 'civic', 'craft', 'religion', 'science'];
 
     #[Test]
     public function netCostWithoutOwnedEqualsRawCost(): void
@@ -120,21 +120,21 @@ final class PriceCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function creditsForMergesBonusCreditsIntoTheCategoryTotals(): void
+    public function creditsForMergesBonusCreditsIntoTheFacetTotals(): void
     {
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
 
-        $credits = new PriceCalculator()->creditsFor([$agriculture], ['craft' => 10, 'science' => 10], self::BUCKETS);
+        $credits = new PriceCalculator()->creditsFor([$agriculture], ['craft' => 10, 'science' => 10], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 20, 'religion' => 0, 'science' => 15], $credits['categories']);
+        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 20, 'religion' => 0, 'science' => 15], $credits['facets']);
     }
 
     #[Test]
-    public function creditsForWithNoOwnedReturnsAllZeroCategoriesAndNoNamedCredits(): void
+    public function creditsForWithNoOwnedReturnsAllZeroFacetsAndNoNamedCredits(): void
     {
-        $credits = new PriceCalculator()->creditsFor([], [], self::BUCKETS);
+        $credits = new PriceCalculator()->creditsFor([], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 0, 'religion' => 0, 'science' => 0], $credits['categories']);
+        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 0, 'religion' => 0, 'science' => 0], $credits['facets']);
         self::assertSame([], $credits['named']);
     }
 
@@ -143,9 +143,9 @@ final class PriceCalculatorTest extends TestCase
     {
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
 
-        $credits = new PriceCalculator()->creditsFor([$agriculture], [], self::BUCKETS);
+        $credits = new PriceCalculator()->creditsFor([$agriculture], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 10, 'religion' => 0, 'science' => 5], $credits['categories']);
+        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 10, 'religion' => 0, 'science' => 5], $credits['facets']);
         self::assertSame(['democracy' => 20], $credits['named']);
     }
 
@@ -155,28 +155,18 @@ final class PriceCalculatorTest extends TestCase
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
         $monarchy = $this->makeAdvance('monarchy', 60, ['civic'], ['religion' => 5, 'civic' => 10, 'law' => 10]);
 
-        $credits = new PriceCalculator()->creditsFor([$agriculture, $monarchy], [], self::BUCKETS);
+        $credits = new PriceCalculator()->creditsFor([$agriculture, $monarchy], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 10, 'craft' => 10, 'religion' => 5, 'science' => 5], $credits['categories']);
+        self::assertSame(['art' => 0, 'civic' => 10, 'craft' => 10, 'religion' => 5, 'science' => 5], $credits['facets']);
         self::assertSame(['democracy' => 20, 'law' => 10], $credits['named']);
     }
 
     /**
-     * @param list<string>       $categories
+     * @param list<string>       $facets
      * @param array<string, int> $credits
      */
-    private function makeAdvance(string $key, int $cost, array $categories, array $credits): Advance
+    private function makeAdvance(string $key, int $cost, array $facets, array $credits): FakeProduct
     {
-        return new Advance(
-            key: $key,
-            name: str_replace('_', ' ', $key),
-            fileName: $key.'.webp',
-            cost: $cost,
-            points: 0,
-            categories: $categories,
-            credits: $credits,
-            mitigations: [],
-            aggravations: [],
-        );
+        return new FakeProduct(key: $key, cost: $cost, facets: $facets, credits: $credits);
     }
 }

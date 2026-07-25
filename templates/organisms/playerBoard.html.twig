@@ -28,8 +28,8 @@
         <h2>Advances</h2>
 
         <div class="player-board__advances-grid">
-            {% for product in this.ownedProducts %}
-                {% include 'molecules/productCard.html.twig' with {product, readonly: true} only %}
+            {% for row in this.ownedRows %}
+                {% include 'molecules/productCard.html.twig' with {row, readonly: true} only %}
             {% else %}
                 <p>No advance owned yet.</p>
             {% endfor %}

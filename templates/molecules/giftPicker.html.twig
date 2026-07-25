@@ -16,9 +16,9 @@
     </p>
 {% elseif candidates is not empty %}
     <div class="gift-picker">
-        {% for category, threshold in row.advance.promotion.gift %}
+        {% for facet, threshold in row.advance.promotion.gift %}
             <p class="gift-picker__intro">
-                {{ row.advance.name|capitalize }} offers a free {{ category }} advance (base cost below {{ threshold }}).
+                {{ row.advance.name|capitalize }} offers a free {{ facet }} advance (base cost below {{ threshold }}).
             </p>
         {% endfor %}
         <ul class="gift-picker__candidates">

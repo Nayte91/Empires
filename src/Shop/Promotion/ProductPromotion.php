@@ -2,11 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Game\Dto;
+namespace App\Shop\Promotion;
 
-use App\Shop\Promotion\ElectiveBenefit;
-
-final readonly class Promotion
+final readonly class ProductPromotion
 {
     /**
      * @param array<string, int> $gift
