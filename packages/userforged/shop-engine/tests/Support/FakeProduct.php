@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Shop\Support;
+namespace Userforged\ShopEngine\Tests\Support;
 
 use Userforged\ShopEngine\ProductInterface;
 use Userforged\ShopEngine\Promotion\ProductPromotion;

@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Shop;
+namespace Userforged\ShopEngine\Tests;
 
 use Userforged\ShopEngine\Service\PriceCalculator;
-use App\Tests\Shop\Support\FakeProduct;
+use Userforged\ShopEngine\Tests\Support\FakeProduct;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

@@ -11,23 +11,22 @@ use Rector\Symfony\Set\SymfonySetList;
 
 return RectorConfig::configure()
     ->withPaths([
-        __DIR__.'/../src',
-        __DIR__.'/../tests',
-        __DIR__.'/../packages/userforged/shop-engine/src',
+        __DIR__.'/../../src',
+        __DIR__.'/../../tests',
     ])
     ->withSkip([
-        __DIR__.'/../src/Kernel.php',
-        __DIR__.'/../var',
-        __DIR__.'/../vendor',
+        __DIR__.'/../../src/Kernel.php',
+        __DIR__.'/../../var',
+        __DIR__.'/../../vendor',
         // Empty method bodies are the documented Symfony UX LiveComponent idiom
         // for a #[LiveListener]: its only job is to trigger the component's
         // own re-render, nothing to execute.
         RemoveEmptyClassMethodRector::class => [
-            __DIR__.'/../src/Component/Shop.php',
-            __DIR__.'/../src/Component/PlayerOrders.php',
+            __DIR__.'/../../src/Component/Shop.php',
+            __DIR__.'/../../src/Component/PlayerOrders.php',
         ],
     ])
-    ->withCache(__DIR__.'/../var/cache/rector')
+    ->withCache(__DIR__.'/../../var/cache/rector')
     ->withComposerBased(symfony: true)
     ->withSets([
         LevelSetList::UP_TO_PHP_84,

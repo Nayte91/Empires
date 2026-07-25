@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Shop;
+namespace Userforged\ShopEngine\Tests;
 
 use Userforged\ShopEngine\Dto\LineIntent;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -12,7 +12,7 @@ use Userforged\ShopEngine\Promotion\ElectiveBenefit;
 use Userforged\ShopEngine\Promotion\ProductPromotion;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Promotion\PromotionType;
-use App\Tests\Shop\Support\FakeProduct;
+use Userforged\ShopEngine\Tests\Support\FakeProduct;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

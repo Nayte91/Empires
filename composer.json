@@ -98,10 +98,10 @@
         "post-update-cmd": [
             "@auto-scripts"
         ],
-        "rector": "vendor/bin/rector process --config=tools/rector.php",
-        "phpcs": "vendor/bin/php-cs-fixer fix --config=tools/php-cs-fixer.php",
-        "phpstan": "vendor/bin/phpstan analyse --configuration=tools/phpstan.php --memory-limit=1G",
-        "phpunit": "vendor/bin/phpunit --configuration=tools/phpunit.xml"
+        "rector": "vendor/bin/rector process --config=config/tools/rector.php",
+        "phpcs": "vendor/bin/php-cs-fixer fix --config=config/tools/php-cs-fixer.php",
+        "phpstan": "vendor/bin/phpstan analyse --configuration=config/tools/phpstan.php --memory-limit=1G",
+        "phpunit": "vendor/bin/phpunit --configuration=config/tools/phpunit.xml"
     },
     "scripts-descriptions": {
         "rector": "Apply Rector modernization sources/rules (defaults to src/ — pass paths after --)",

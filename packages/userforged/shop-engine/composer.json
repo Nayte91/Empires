@@ -8,6 +8,11 @@
             "Userforged\\ShopEngine\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Userforged\\ShopEngine\\Tests\\": "tests/"
+        }
+    },
     "require": {
         "php": ">=8.5",
         "psr/event-dispatcher": "^1.0",
@@ -24,18 +29,21 @@
         "doctrine/orm": "^3.6"
     },
     "require-dev": {
-        "symfony/framework-bundle": "^8.1"
+        "symfony/framework-bundle": "^8.1",
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0.12",
+        "phpunit/phpunit": "^13.2",
+        "rector/rector": "^2.4"
     },
     "suggest": {
         "symfony/framework-bundle": "To register UserforgedShopEngineBundle — a Symfony bundle is an adapter, not the core; the engine itself needs no framework."
     },
-    "_comment_require": [
-        "The second group is transitional, not part of the target surface.",
-        "doctrine/* is only needed because the write side still traverses Doctrine",
-        "directly (EntityManagerInterface, OrderLinesType). symfony/http-foundation is",
-        "gone: CartStorageInterface now ships as the cart persistence port, and the",
-        "library no longer touches the HTTP session directly. Declared meanwhile",
-        "because a manifest that understates its dependencies is worse than one that",
-        "admits the debt."
-    ]
+    "scripts": {
+        "rector": "vendor/bin/rector process --config=config/tools/rector.php",
+        "phpcs": "vendor/bin/php-cs-fixer fix --config=config/tools/php-cs-fixer.php",
+        "phpstan": "vendor/bin/phpstan analyse --configuration=config/tools/phpstan.php --memory-limit=1G",
+        "phpunit": "vendor/bin/phpunit --configuration=config/tools/phpunit.xml"
+    }
 }

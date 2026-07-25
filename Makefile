@@ -5,7 +5,7 @@ COLOR_CYAN = \033[36m
 .DEFAULT_GOAL := help
 
 include system/backend/commands.mk
-include tools/pipeline.mk
+include config/tools/pipeline.mk
 
 .PHONY: help
 help: ## [Help] This help

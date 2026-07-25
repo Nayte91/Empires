@@ -51,10 +51,11 @@ one possible context.
    vocabulary is not ours to invent: `Catalog → Product → Cart → Checkout → Order →
    Fulfillment` is the standard decomposition of an **Order Management System**,
    settled long before us by the retail (ARTS/NRF data model) and telecom (TM Forum
-   SID) reference models, and by Fowler's order and pricing patterns (*Analysis
-   Patterns*, *PoEAA*). Naming along that line is an adoption argument, not an
+   SID) reference models, by Fowler's order and pricing patterns (*Analysis Patterns*,
+   *PoEAA*), and implemented as a reusable order-management component in Apache OFBiz
+   for over twenty years. Naming along that line is an adoption argument, not an
    aesthetic one: an integrator recognises the surface before reading it, and every
-   deviation from it is a word we would have to teach.
+   deviation from it is a word we would have to teach. See §11 for the full survey.
 2. **Ports over features.** When a capability depends on context, the core defines an
    interface and ships nothing (or a trivial default). Reference adapters live in
    separate packages (`shop-engine/adapter-*`).
@@ -457,3 +458,127 @@ Le state machine `shop_order` (défini dans `config/workflow.yaml`, embarqué pa
 - `completed.validate` se déclenche **avant le flush** — un listener y pousserait un état pas encore persisté, exactement le bug que la bascule d'`OrderValidated` après `wrapInTransaction()` corrige (voir plus haut).
 
 `shop.event.bus` reste donc le point d'entrée uniforme pour tout le métier ; les events Workflow natifs ne sont pas une alternative viable.
+
+---
+
+## 11. Positioning and prior art — the long version
+
+This section holds the reasoning that the package's `CLAUDE.md` deliberately drops: an
+agent working in the codebase does not need it, a human deciding whether to adopt or
+extend the library does.
+
+### 11.1 The two poles, and why neither has a canonical name
+
+What we build is a **domain engine**: ports, value objects, domain services, commands and
+events, and nothing else. The opposite pole is an **embeddable shop**: everything above,
+plus concrete entities, mapping, migrations, routes, controllers, templates, assets, an
+admin and fixtures. Aimeos is the clearest example of the second: library-first, embeds
+into Laravel/TYPO3/Symfony, but ships its own schema, its own DB layer (MShop) and its own
+back-office.
+
+There is **no standard pair of terms** for this distinction. Each ecosystem named one pole
+and left the other implicit:
+
+| Term | Ecosystem | Which pole |
+|:---|:---|:---|
+| *reusable app* | Django | embeddable (with a written spec of what it ships) |
+| *engine* | Rails | embeddable — ships migrations, controllers, views |
+| *bundle* | Symfony | embeddable (framework glue + optionally more) |
+| *headless* | MACH Alliance | domain-ish — the only formalised term, but it only means "no presentation tier" |
+| *component* | Sylius | domain |
+
+Note the trap: a **Rails Engine is the opposite pole from a commerce engine**. The word
+"engine" means different things to a Rails reader and to a PHP/Node commerce reader. This
+package uses it in the second sense.
+
+The practical test that settles any borderline case: **how long between `composer require`
+and a first order placed?** Days, because you write the adapter tier → domain engine.
+Minutes, because you write a theme → embeddable shop.
+
+### 11.2 Rings, not a binary
+
+Choosing "domain engine" does not forbid ever shipping templates — it forbids shipping them
+in the *core package*. Every mature project layers the same way, each ring depending only
+inward:
+
+| Ring | Sylius | Medusa | Here |
+|:---|:---|:---|:---|
+| Domain | `Sylius\Component\Order` | `@medusajs/cart` | this package |
+| Framework glue | `SyliusOrderBundle` | — | `UserforgedShopEngineBundle` (**inside** this package) |
+| Presentation | `SyliusShopBundle` + themes | Admin / Storefront | the host's components and templates |
+| Starter | Sylius-Standard | `create-medusa-app` | Empires itself |
+
+Sylius kept its rings in separate packages; we keep the glue ring inside the core package,
+because splitting it before a second consumer exists would be speculative. The directory
+layout (`src/Doctrine/`, the bundle class at `src/`) keeps a future split mechanical.
+
+### 11.3 Prior art, and what each one teaches
+
+**Sylius — the closest architectural match, and a warning.** Sylius genuinely split its
+domain into standalone, UI-free components; the read-only `Sylius/Cart` repository still
+describes itself as a *"Webshop cart library for PHP"*, and the documentation invited use
+outside Symfony. Almost nobody took the invitation. With no external consumer defending
+their boundary, the components drifted back into internals — 2.0 removed pieces such as
+`Sylius\Component\Order\CartActions` without deprecation. What people actually install is
+Sylius-Standard, the outermost ring.
+
+The lesson is not architectural, it is social: **building an extractable core is the easy
+part; finding a second consumer before it refossilises is the hard part.**
+
+**Medusa v2 (JS/TS) — the closest living analogue.** Seventeen commerce modules, each
+adoptable independently and replaceable, with database-level dependencies between them
+deliberately removed; the Cart module is documented as usable standalone. One monorepo,
+packages published separately — the layout this package copies. **The differentiator**:
+every Medusa module owns its own data model and migrations, so persistence is *prescribed*.
+Here persistence is a port. That is the honest way to state what is different, rather than
+claiming the category is empty.
+
+**django-oscar (Python)** is the maturest answer to "how does a library ship persistable
+entities": abstract models that the host application concretises, with the explicit
+promise that every model, view and class can be overridden. It is strategy 3 of §11.4, in
+Django form.
+
+**Broadleaf Commerce (Java)** has held the "framework, not platform" position since around
+2009 — Spring beans you extend rather than an application you configure. **Apache OFBiz**
+carries a reusable order-management component that predates most of this discussion.
+
+**Spree / Solidus (Ruby)** are Rails engines: they ship migrations, but the host must
+explicitly copy them into its own application (`rake … install:migrations`). Different
+mechanism, same instinct as ours — **the migration belongs to the application**.
+
+**Magento, PrestaShop, Shopware, Spryker** are platforms with in-house engines. Not
+extractable, not comparable.
+
+### 11.4 How a PHP library can ship persistable data — the five strategies
+
+Relevant because §3 states flatly that the host persists the order. These are the options
+we did *not* take, and why.
+
+1. **Ports only** — the library defines `OrderInterface` and `OrderRepositoryInterface`;
+   the host writes the entity and the adapter. Zero mapping, zero migration, zero
+   surprise. **This is what we do.** Cost: the host writes boilerplate.
+2. **`resolve_target_entities`** — Doctrine's official answer when a package needs an
+   *association* to a class it does not own; a listener rewrites the interface to the
+   host's concrete class. **Not needed here**, and worth stating explicitly: this package
+   maps nothing, so it has no associations to resolve.
+3. **`#[MappedSuperclass]`** — the library ships mapping metadata on an abstract class the
+   host extends. The FOSUserBundle/Sonata lineage, and django-oscar's model. Burns the
+   host's single inheritance, and cannot carry bidirectional associations.
+4. **Traits carrying mapping attributes** — the modern refinement of (3); Doctrine reads
+   attributes on trait properties fine. Reference implementation:
+   `knplabs/doctrine-behaviors` (`TimestampableTrait`, `SoftDeletableTrait`). Composable,
+   no inheritance burned, but still cannot declare associations to host classes.
+5. **Model classes + shipped XML mapping, opt-in registration** — the Sylius Resource
+   lineage, with a config layer letting the host swap classes. The most flexible and the
+   heaviest; it is an infrastructure, not a pattern.
+
+If a future consumer ever wants convenience, (3) or (4) belong in a **separate**
+`shop-engine-doctrine` adapter package, never in the core.
+
+**On migrations**: the community norm is that the library ships none and the host runs
+`doctrine:migrations:diff` after enabling the mapping. A library *may* ship migrations in
+its own namespace for the host to register explicitly, and infrastructure tables that
+create themselves (`messenger_messages`, `lock_keys`) are an accepted exception — but never
+for domain tables. Note also that a plain Composer library cannot force tables on anyone:
+Doctrine maps only what `doctrine.orm.mappings` declares. The real vector is a bundle whose
+extension prepends mapping configuration unconditionally, which this bundle must never do.

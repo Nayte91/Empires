@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Shop;
+namespace Userforged\ShopEngine\Tests;
 
 use Userforged\ShopEngine\Cart;
 use PHPUnit\Framework\Attributes\Test;

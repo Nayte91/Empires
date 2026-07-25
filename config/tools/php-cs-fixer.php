@@ -6,8 +6,7 @@ use PhpCsFixer\Finder;
 
 $finder = new Finder()
     ->in([
-        __DIR__.'/../src',
-        __DIR__.'/../packages/userforged/shop-engine/src',
+        __DIR__.'/../../src',
     ])
     ->exclude(['var', 'vendor'])
 ;
@@ -60,6 +59,6 @@ return new Config()
         ],
     ])
     ->setFinder($finder)
-    ->setCacheFile(__DIR__.'/../var/cache/phpcsfixer/php-cs-fixer.cache')
+    ->setCacheFile(__DIR__.'/../../var/cache/phpcsfixer/php-cs-fixer.cache')
     ->setRiskyAllowed(true)
 ;

@@ -37,7 +37,7 @@ make rector|phpcs|phpstan|phpunit       # individual tools
 make deploy / make deploy-migrate       # production
 ```
 
-Composer equivalents (configs in `tools/`): `composer phpunit|phpstan|phpcs|rector` — pass paths after `--` to scope. Bare defaults come from each tool's own config: `phpstan`/`phpcs` are `src/`-only, `rector` covers `src/` **and** `tests/` (see 🧪 Testing for why).
+Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|phpcs|rector` — pass paths after `--` to scope. Bare defaults come from each tool's own config: `phpstan`/`phpcs` are `src/`-only, `rector` covers `src/` **and** `tests/` (see 🧪 Testing for why).
 
 ## 🏗 Project Architecture
 
@@ -50,11 +50,14 @@ src/
 ├── Game/         # bounded context: ScenarioCatalog, AdvanceCatalog, AstCatalog, EmpireCatalog,
 │                 #   GameData (yaml config readers), ASTType/Category enums, Dto/ (Advance, Empire,
 │                 #   AstEraDefinition read models), Service/ (ScoreCalculator)
-├── Repository/   # Doctrine repos (GameSessionRepository, PlayerRepository, OrderRepository)
-└── Shop/         # bounded context: Cart, CartRepository, OrderStatus enum, Dto/ (Product),
-                  #   Service/ (DirectSale, OrderSubmitter, OrderValidator, PriceCalculator)
+└── Repository/   # Doctrine repos (GameSessionRepository, PlayerRepository, OrderRepository)
+
+packages/userforged/shop-engine/   # the ordering engine, extracted as a Composer package
+                                   #   → has its own CLAUDE.md; read it before touching it
 ```
-**Governing rule**: `Entity/` & `Repository/` are the technical Doctrine layer, shared across the app. Each bounded context (`Game/`, `Shop/`) owns everything else that belongs to it — value objects, enums, non-persisted state, services.
+**Governing rule**: `Entity/` & `Repository/` are the technical Doctrine layer, shared across the app. The `Game/` bounded context owns everything else that belongs to it — value objects, enums, non-persisted state, services.
+
+**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. `src/Game/Shop/` holds the *adapters* that connect it to the game (`PlayerBuyerProvider`, `AdvanceProductProvider`, `AdvanceFulfillment`, `ShopConnector`, `SessionCartStorage`, `ShopMercurePublisher`, `ShopExceptionTranslator`, `OrderWorkflowPolicy`), and `config/services.yaml` declares the six port→adapter bindings explicitly. **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
 
 ### Config-driven game data
 ```
@@ -97,15 +100,20 @@ Routes (no `/game` prefix — verify with `debug:router` before assuming): `/cre
 ## 🧪 Testing
 
 ```bash
-make quality                                        # THE command: rector on src/ tests/, phpcs+phpstan on src/, phpunit on tests/
+make quality                                        # THE command: the app pipeline, THEN the shop-engine package's own
+make lib-quality                                    # the package only
 docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # single file, while iterating
 ```
 
 ```
-tests/
+tests/                                              # 293 tests — the application
 ├── Entity/  Functional/  Game/  Repository/  Shop/   # Support/ = hand-written doubles, not PHPUnit mocks
-└── bootstrap.php   # drops+recreates the SQLite schema once per run; DAMA (tools/phpunit.xml + bundles.php) rolls back each test
+└── bootstrap.php   # drops+recreates the SQLite schema once per run; DAMA (config/tools/phpunit.xml + bundles.php) rolls back each test
+
+packages/userforged/shop-engine/tests/              # 60 tests — the engine, pure TestCase, no kernel
 ```
+
+**293 + 60 = 353.** The two suites are separate but `make quality` runs both and fails if either fails. `tests/Shop/` keeps only the four `WebTestCase` files: a test of the engine that needs a kernel is testing the *wiring*, so it belongs to the app.
 
 ### Which tool runs on `tests/` — and why the split is not negotiable
 
@@ -141,7 +149,7 @@ Simple rule: **assertions and expectations are `$this->`, kernel/container plumb
 - **Names are behaviour sentences**, articles spelled out: `aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled`, `addingAnAlreadyOwnedAdvanceIsRefused`.
 - **AAA by blank lines, never `// Arrange` comments.** Docblocks explain *why a test exists*, not what it does.
 - **Base class follows the need, not the directory**: pure object → `TestCase`; needs the container or DB → `WebTestCase` (the de-facto base here — `KernelTestCase` is used once and is an anomaly). `tests/Shop/` and `tests/Game/` are each ~half unit, half DB — the folder does not predict the base class.
-- **No PHPUnit mocks.** Zero `createMock`/`createStub`/`MockObject` in the suite, deliberately. Use real objects, plus the hand-written doubles in `tests/Support/` (`NullHub` substituted for `HubInterface` under `when@test`, `ShopOrderStateMachine::create()`, `tests/Shop/Support/FakeProduct`).
+- **No PHPUnit mocks.** Zero `createMock`/`createStub`/`MockObject` in the suite, deliberately. Use real objects, plus the hand-written doubles in `tests/Support/` (`NullHub` substituted for `HubInterface` under `when@test`, `ShopOrderStateMachine::create()`) and, on the package side, `packages/userforged/shop-engine/tests/Support/FakeProduct`.
 - **No cleanup, no `tearDown()`.** DAMA rolls every test back. To re-read what the DB stored, `$em->clear()` before re-fetching — note `freshEntityManager()`-style helpers return the *same* instance and do **not** reset the identity map.
 - **Private helpers at the bottom of the class**, after all `#[Test]` methods. Prefer aligning on an existing helper's name and signature — `createPlayer()`, `createCart()` and `makeAdvance()` currently have several incompatible signatures across files; don't add a new variant.
 - **Data providers**: none exist yet. When adding the first, name it `provide<TestMethodPascal>Cases()`, `public static`, return `iterable`, blank line between yields — rector's PHPUnit set runs on `tests/` and will rewrite anything else.
