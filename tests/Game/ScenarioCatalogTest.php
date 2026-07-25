@@ -20,16 +20,13 @@ final class ScenarioCatalogTest extends TestCase
     #[Test]
     public function empiresForReturnsExactSlugsForThreeWest(): void
     {
-        self::assertSame(['hatti', 'hellas', 'minoa'], $this->catalog->empiresFor(3, 'west'));
+        $this->assertSame(['hatti', 'hellas', 'minoa'], $this->catalog->empiresFor(3, 'west'));
     }
 
     #[Test]
     public function empiresForReturnsExactSlugsForNineEast(): void
     {
-        self::assertSame(
-            ['babylon', 'dravidia', 'indus', 'kushan', 'maurya', 'nubia', 'parthia', 'persia', 'saba'],
-            $this->catalog->empiresFor(9, 'east'),
-        );
+        $this->assertSame(['babylon', 'dravidia', 'indus', 'kushan', 'maurya', 'nubia', 'parthia', 'persia', 'saba'], $this->catalog->empiresFor(9, 'east'));
     }
 
     #[Test]
@@ -37,8 +34,8 @@ final class ScenarioCatalogTest extends TestCase
     {
         $empires = $this->catalog->empiresFor(10, null);
 
-        self::assertCount(10, $empires);
-        self::assertSame($empires, array_values(array_filter($empires, is_string(...))));
+        $this->assertCount(10, $empires);
+        $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
     }
 
     #[Test]
@@ -46,8 +43,8 @@ final class ScenarioCatalogTest extends TestCase
     {
         $empires = $this->catalog->empiresFor(12, null);
 
-        self::assertCount(12, $empires);
-        self::assertSame($empires, array_values(array_filter($empires, is_string(...))));
+        $this->assertCount(12, $empires);
+        $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
     }
 
     #[Test]
@@ -55,32 +52,32 @@ final class ScenarioCatalogTest extends TestCase
     {
         $empires = $this->catalog->empiresFor(18, null);
 
-        self::assertCount(18, $empires);
-        self::assertSame($empires, array_values(array_filter($empires, is_string(...))));
+        $this->assertCount(18, $empires);
+        $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
     }
 
     #[Test]
     public function empiresForReturnsEmptyArrayForUnknownPlayerCount(): void
     {
-        self::assertSame([], $this->catalog->empiresFor(19, null));
+        $this->assertSame([], $this->catalog->empiresFor(19, null));
     }
 
     #[Test]
     public function empiresForReturnsEmptyArrayForUnknownRegion(): void
     {
-        self::assertSame([], $this->catalog->empiresFor(5, 'north'));
+        $this->assertSame([], $this->catalog->empiresFor(5, 'north'));
     }
 
     #[Test]
     public function empiresForReturnsEmptyArrayForNullRegionBelowTenPlayers(): void
     {
-        self::assertSame([], $this->catalog->empiresFor(3, null));
+        $this->assertSame([], $this->catalog->empiresFor(3, null));
     }
 
     #[Test]
     public function empiresForReturnsEmptyArrayForUnknownCombinationBelowTenPlayers(): void
     {
-        self::assertSame([], $this->catalog->empiresFor(2, 'west'));
+        $this->assertSame([], $this->catalog->empiresFor(2, 'west'));
     }
 
     #[Test]
@@ -88,42 +85,36 @@ final class ScenarioCatalogTest extends TestCase
     {
         $counts = $this->catalog->playerCounts();
 
-        self::assertSame(range(3, 18), $counts);
+        $this->assertSame(range(3, 18), $counts);
     }
 
     #[Test]
     public function regionsForReturnsEastAndWestWhenSplitByRegion(): void
     {
-        self::assertSame(['east', 'west'], $this->catalog->regionsFor(9));
+        $this->assertSame(['east', 'west'], $this->catalog->regionsFor(9));
     }
 
     #[Test]
     public function regionsForReturnsEmptyArrayForCombinedPlayerCount(): void
     {
-        self::assertSame([], $this->catalog->regionsFor(10));
+        $this->assertSame([], $this->catalog->regionsFor(10));
     }
 
     #[Test]
     public function startingCreditsForReturnsTenPerCategoryForThreePlayers(): void
     {
-        self::assertSame(
-            ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10],
-            $this->catalog->startingCreditsFor(3),
-        );
+        $this->assertSame(['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10], $this->catalog->startingCreditsFor(3));
     }
 
     #[Test]
     public function startingCreditsForReturnsFivePerCategoryForFourPlayers(): void
     {
-        self::assertSame(
-            ['art' => 5, 'civic' => 5, 'craft' => 5, 'religion' => 5, 'science' => 5],
-            $this->catalog->startingCreditsFor(4),
-        );
+        $this->assertSame(['art' => 5, 'civic' => 5, 'craft' => 5, 'religion' => 5, 'science' => 5], $this->catalog->startingCreditsFor(4));
     }
 
     #[Test]
     public function startingCreditsForReturnsEmptyArrayWhenScenarioHasNoCredits(): void
     {
-        self::assertSame([], $this->catalog->startingCreditsFor(9));
+        $this->assertSame([], $this->catalog->startingCreditsFor(9));
     }
 }

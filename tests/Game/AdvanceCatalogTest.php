@@ -27,7 +27,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advances = $this->advanceCatalog->getAdvances();
 
-        self::assertCount(51, $advances);
+        $this->assertCount(51, $advances);
     }
 
     #[Test]
@@ -35,9 +35,9 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('anatomy');
 
-        self::assertSame('anatomy', $advance->key);
-        self::assertSame(['epidemic'], $advance->mitigations);
-        self::assertSame(270, $advance->cost);
+        $this->assertSame('anatomy', $advance->key);
+        $this->assertSame(['epidemic'], $advance->mitigations);
+        $this->assertSame(270, $advance->cost);
     }
 
     #[Test]
@@ -45,9 +45,9 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('agriculture');
 
-        self::assertSame(['famine'], $advance->aggravations);
-        self::assertArrayHasKey('democracy', $advance->credits);
-        self::assertSame(20, $advance->credits['democracy']);
+        $this->assertSame(['famine'], $advance->aggravations);
+        $this->assertArrayHasKey('democracy', $advance->credits);
+        $this->assertSame(20, $advance->credits['democracy']);
     }
 
     #[Test]
@@ -55,8 +55,8 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('monarchy');
 
-        self::assertSame(['barbarian_hordes'], $advance->mitigations);
-        self::assertSame(['tyranny'], $advance->aggravations);
+        $this->assertSame(['barbarian_hordes'], $advance->mitigations);
+        $this->assertSame(['tyranny'], $advance->aggravations);
     }
 
     #[Test]
@@ -64,8 +64,8 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('architecture');
 
-        self::assertSame([], $advance->mitigations);
-        self::assertSame([], $advance->aggravations);
+        $this->assertSame([], $advance->mitigations);
+        $this->assertSame([], $advance->aggravations);
     }
 
     #[Test]
@@ -73,10 +73,10 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('anatomy');
 
-        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
-        self::assertSame(['science' => 100], $advance->promotion->gift);
-        self::assertSame([], $advance->promotion->discount);
-        self::assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
+        $this->assertInstanceOf(ProductPromotion::class, $advance->promotion);
+        $this->assertSame(['science' => 100], $advance->promotion->gift);
+        $this->assertSame([], $advance->promotion->discount);
+        $this->assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
     }
 
     #[Test]
@@ -84,10 +84,10 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('library');
 
-        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
-        self::assertSame(['any' => 40], $advance->promotion->discount);
-        self::assertSame([], $advance->promotion->gift);
-        self::assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
+        $this->assertInstanceOf(ProductPromotion::class, $advance->promotion);
+        $this->assertSame(['any' => 40], $advance->promotion->discount);
+        $this->assertSame([], $advance->promotion->gift);
+        $this->assertNotInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
     }
 
     #[Test]
@@ -95,10 +95,10 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('monument');
 
-        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
-        self::assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
-        self::assertSame(20, $advance->promotion->option->budget);
-        self::assertSame(5, $advance->promotion->option->step);
+        $this->assertInstanceOf(ProductPromotion::class, $advance->promotion);
+        $this->assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
+        $this->assertSame(20, $advance->promotion->option->budget);
+        $this->assertSame(5, $advance->promotion->option->step);
     }
 
     #[Test]
@@ -106,10 +106,10 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('written_record');
 
-        self::assertInstanceOf(ProductPromotion::class, $advance->promotion);
-        self::assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
-        self::assertSame(10, $advance->promotion->option->budget);
-        self::assertSame(5, $advance->promotion->option->step);
+        $this->assertInstanceOf(ProductPromotion::class, $advance->promotion);
+        $this->assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
+        $this->assertSame(10, $advance->promotion->option->budget);
+        $this->assertSame(5, $advance->promotion->option->step);
     }
 
     #[Test]
@@ -117,7 +117,7 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $advance = $this->advanceCatalog->getAdvanceByName('pottery');
 
-        self::assertNotInstanceOf(ProductPromotion::class, $advance->promotion);
+        $this->assertNotInstanceOf(ProductPromotion::class, $advance->promotion);
     }
 
     #[Test]
@@ -126,10 +126,10 @@ final class AdvanceCatalogTest extends WebTestCase
         $colors = $this->advanceCatalog->getCategoryColors();
 
         $expectedKeys = array_map(static fn (Category $category): string => $category->value, Category::cases());
-        self::assertSame($expectedKeys, array_keys($colors));
+        $this->assertSame($expectedKeys, array_keys($colors));
 
         foreach ($colors as $hex) {
-            self::assertMatchesRegularExpression('/^#[0-9A-F]{6}$/i', $hex);
+            $this->assertMatchesRegularExpression('/^#[0-9A-F]{6}$/i', $hex);
         }
     }
 
@@ -138,10 +138,10 @@ final class AdvanceCatalogTest extends WebTestCase
     {
         $colors = $this->advanceCatalog->getCategoryColors();
 
-        self::assertSame('#27AAE1', $colors['art']);
-        self::assertSame('#F04E56', $colors['civic']);
-        self::assertSame('#F7941E', $colors['craft']);
-        self::assertSame('#FFF200', $colors['religion']);
-        self::assertSame('#39B54A', $colors['science']);
+        $this->assertSame('#27AAE1', $colors['art']);
+        $this->assertSame('#F04E56', $colors['civic']);
+        $this->assertSame('#F7941E', $colors['craft']);
+        $this->assertSame('#FFF200', $colors['religion']);
+        $this->assertSame('#39B54A', $colors['science']);
     }
 }

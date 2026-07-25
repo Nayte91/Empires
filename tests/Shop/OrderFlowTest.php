@@ -90,8 +90,8 @@ final class OrderFlowTest extends WebTestCase
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery', 'agriculture']), $player->game->currentTurn));
 
-        self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertSame(['pottery', 'agriculture'], $order->keys());
+        $this->assertSame(OrderStatus::Pending, $order->status);
+        $this->assertSame(['pottery', 'agriculture'], $order->keys());
     }
 
     #[Test]
@@ -102,9 +102,9 @@ final class OrderFlowTest extends WebTestCase
 
         $secondOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
-        self::assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
-        self::assertSame(['democracy'], $secondOrder->keys());
-        self::assertSame(1, $this->orderRepository->count([
+        $this->assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
+        $this->assertSame(['democracy'], $secondOrder->keys());
+        $this->assertSame(1, $this->orderRepository->count([
             'player' => $player,
             'turn' => $player->game->currentTurn,
         ]));
@@ -121,10 +121,10 @@ final class OrderFlowTest extends WebTestCase
 
         $this->orderValidator->validate($order);
 
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertEquals([new OrderLine('democracy', 200)], $order->lines);
-        self::assertSame(200, $order->total);
-        self::assertContains('democracy', $player->advances);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertEquals([new OrderLine('democracy', 200)], $order->lines);
+        $this->assertSame(200, $order->total);
+        $this->assertContains('democracy', $player->advances);
     }
 
     #[Test]
@@ -135,12 +135,12 @@ final class OrderFlowTest extends WebTestCase
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
         $democracyLine = $order->lines()[1];
-        self::assertSame('democracy', $democracyLine->key);
-        self::assertSame(180, $democracyLine->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
-        self::assertSame(PromotionType::Discount, $democracyLine->promotion->type);
-        self::assertSame('library', $democracyLine->promotion->source);
-        self::assertSame(40, $democracyLine->promotion->amount);
+        $this->assertSame('democracy', $democracyLine->key);
+        $this->assertSame(180, $democracyLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+        $this->assertSame(PromotionType::Discount, $democracyLine->promotion->type);
+        $this->assertSame('library', $democracyLine->promotion->source);
+        $this->assertSame(40, $democracyLine->promotion->amount);
     }
 
     #[Test]
@@ -151,10 +151,10 @@ final class OrderFlowTest extends WebTestCase
 
         $this->orderValidator->validate($order);
 
-        self::assertSame(400, $order->total);
+        $this->assertSame(400, $order->total);
         $democracyLine = $order->lines()[1];
-        self::assertSame(180, $democracyLine->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+        $this->assertSame(180, $democracyLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
     }
 
     #[Test]

@@ -85,8 +85,8 @@ final class OrderEraserTest extends WebTestCase
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        self::assertSame([], $this->reloadPlayer($player)->advances);
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
+        $this->assertSame([], $this->reloadPlayer($player)->advances);
     }
 
     #[Test]
@@ -102,12 +102,12 @@ final class OrderEraserTest extends WebTestCase
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1, 2, 3]));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($turnOneOrder->id));
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($turnTwoOrder->id));
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($turnThreeOrder->id));
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($turnOneOrder->id));
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($turnTwoOrder->id));
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($turnThreeOrder->id));
 
         $reloadedPlayer = $this->reloadPlayer($player);
-        self::assertSame(['agriculture'], $reloadedPlayer->advances);
+        $this->assertSame(['agriculture'], $reloadedPlayer->advances);
     }
 
     #[Test]
@@ -120,13 +120,13 @@ final class OrderEraserTest extends WebTestCase
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [2]));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($turnTwoOrder->id));
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($turnTwoOrder->id));
 
         $reloadedTurnOneOrder = $this->orderRepository->find($turnOneOrder->id);
-        self::assertInstanceOf(Order::class, $reloadedTurnOneOrder);
-        self::assertSame(OrderStatus::Validated, $reloadedTurnOneOrder->status);
+        $this->assertInstanceOf(Order::class, $reloadedTurnOneOrder);
+        $this->assertSame(OrderStatus::Validated, $reloadedTurnOneOrder->status);
 
-        self::assertSame(['pottery'], $this->reloadPlayer($player)->advances);
+        $this->assertSame(['pottery'], $this->reloadPlayer($player)->advances);
     }
 
     #[Test]
@@ -136,13 +136,13 @@ final class OrderEraserTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, [new LineIntent('anatomy', gift: 'astronavigation')], 1));
 
-        self::assertSame(['anatomy', 'astronavigation'], $order->keys());
-        self::assertSame(['anatomy', 'astronavigation'], $this->reloadPlayer($player)->advances);
+        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
+        $this->assertSame(['anatomy', 'astronavigation'], $this->reloadPlayer($player)->advances);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        self::assertSame([], $this->reloadPlayer($player)->advances);
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
+        $this->assertSame([], $this->reloadPlayer($player)->advances);
     }
 
     #[Test]
@@ -156,12 +156,12 @@ final class OrderEraserTest extends WebTestCase
             1,
         ));
 
-        self::assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        self::assertSame([], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
+        $this->assertSame([], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
     }
 
     #[Test]
@@ -172,7 +172,7 @@ final class OrderEraserTest extends WebTestCase
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
 
-        self::assertInstanceOf(Order::class, $this->orderRepository->find($order->id));
+        $this->assertInstanceOf(Order::class, $this->orderRepository->find($order->id));
     }
 
     private function createPlayer(): Player
@@ -202,7 +202,7 @@ final class OrderEraserTest extends WebTestCase
     {
         $this->entityManager->clear();
         $reloaded = $this->entityManager->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
+        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }

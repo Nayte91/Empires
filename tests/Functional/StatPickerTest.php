@@ -35,7 +35,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cities',
         ])->set('value', 7)->call('save');
 
-        self::assertSame(7, $this->reloadPlayer($player)->cities);
+        $this->assertSame(7, $this->reloadPlayer($player)->cities);
     }
 
     #[Test]
@@ -49,7 +49,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cities',
         ])->set('value', 42)->call('save');
 
-        self::assertSame(9, $this->reloadPlayer($player)->cities);
+        $this->assertSame(9, $this->reloadPlayer($player)->cities);
     }
 
     #[Test]
@@ -65,7 +65,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cities',
         ])->set('value', 5)->call('save');
 
-        self::assertSame(5, $this->reloadPlayer($player)->cities);
+        $this->assertSame(5, $this->reloadPlayer($player)->cities);
     }
 
     #[Test]
@@ -80,7 +80,7 @@ final class StatPickerTest extends WebTestCase
         ])->render()->toString();
 
         for ($i = 0; $i <= 9; ++$i) {
-            self::assertStringContainsString((string) $i, $rendered);
+            $this->assertStringContainsString((string) $i, $rendered);
         }
     }
 
@@ -95,7 +95,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cities',
         ])->render()->toString();
 
-        self::assertStringContainsString('>OK<', $rendered);
+        $this->assertStringContainsString('>OK<', $rendered);
     }
 
     #[Test]
@@ -109,7 +109,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'census',
         ])->set('value', 30)->call('save');
 
-        self::assertSame(30, $this->reloadPlayer($player)->census);
+        $this->assertSame(30, $this->reloadPlayer($player)->census);
     }
 
     #[Test]
@@ -123,7 +123,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'treasury',
         ])->set('value', 20)->call('save');
 
-        self::assertSame(20, $this->reloadPlayer($player)->treasury);
+        $this->assertSame(20, $this->reloadPlayer($player)->treasury);
     }
 
     #[Test]
@@ -138,9 +138,9 @@ final class StatPickerTest extends WebTestCase
         ])->render()->toString();
 
         // Verify no "0" value in radio inputs
-        self::assertStringNotContainsString('value="0"', $rendered);
+        $this->assertStringNotContainsString('value="0"', $rendered);
         // Verify "1" is present
-        self::assertStringContainsString('value="1"', $rendered);
+        $this->assertStringContainsString('value="1"', $rendered);
     }
 
     #[Test]
@@ -158,7 +158,7 @@ final class StatPickerTest extends WebTestCase
 
         $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
 
-        self::assertSame('30', $checked->attr('value'));
+        $this->assertSame('30', $checked->attr('value'));
     }
 
     #[Test]
@@ -172,7 +172,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'ships',
         ])->set('value', 2)->call('save');
 
-        self::assertSame(2, $this->reloadPlayer($player)->ships);
+        $this->assertSame(2, $this->reloadPlayer($player)->ships);
     }
 
     #[Test]
@@ -186,7 +186,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cards',
         ])->set('value', 5)->call('save');
 
-        self::assertSame(5, $this->reloadPlayer($player)->cards);
+        $this->assertSame(5, $this->reloadPlayer($player)->cards);
     }
 
     #[Test]
@@ -200,7 +200,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'astPosition',
         ])->set('value', 15)->call('save');
 
-        self::assertSame(15, $this->reloadPlayer($player)->astPosition);
+        $this->assertSame(15, $this->reloadPlayer($player)->astPosition);
     }
 
     #[Test]
@@ -214,7 +214,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'astPosition',
         ])->set('value', 4)->call('save');
 
-        self::assertSame(4, $this->reloadPlayer($player)->astPosition);
+        $this->assertSame(4, $this->reloadPlayer($player)->astPosition);
     }
 
     #[Test]
@@ -232,9 +232,9 @@ final class StatPickerTest extends WebTestCase
         ])->render();
 
         $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
-        self::assertSame('4', $checked->attr('value'));
+        $this->assertSame('4', $checked->attr('value'));
 
-        self::assertStringContainsString('5', $rendered->crawler()->filter('button')->text());
+        $this->assertStringContainsString('5', $rendered->crawler()->filter('button')->text());
     }
 
     #[Test]
@@ -252,7 +252,7 @@ final class StatPickerTest extends WebTestCase
         ])->render();
 
         $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
-        self::assertSame('7', $checked->attr('value'));
+        $this->assertSame('7', $checked->attr('value'));
     }
 
     private function createGame(): GameSession
@@ -281,7 +281,7 @@ final class StatPickerTest extends WebTestCase
     private function reloadPlayer(Player $player): Player
     {
         $reloaded = $this->freshEntityManager()->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
+        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }

@@ -36,8 +36,8 @@ final class GameCreatorTest extends WebTestCase
         $component = $this->createLiveComponent('GameCreator');
         $rendered = $component->render();
 
-        self::assertTrue(Uuid::isValid($component->component()->game->slug));
-        self::assertStringContainsString('value="'.$component->component()->game->slug.'"', $rendered->toString());
+        $this->assertTrue(Uuid::isValid($component->component()->game->slug));
+        $this->assertStringContainsString('value="'.$component->component()->game->slug.'"', $rendered->toString());
     }
 
     #[Test]
@@ -47,7 +47,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
 
-        self::assertStringContainsString(sprintf('min="%d" max="%d"', $limits['min_players'], $limits['max_players']), $rendered);
+        $this->assertStringContainsString(sprintf('min="%d" max="%d"', $limits['min_players'], $limits['max_players']), $rendered);
     }
 
     #[Test]
@@ -58,8 +58,8 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('value="super-game-de-nayte"', $rendered->toString());
-        self::assertStringContainsString('aria-label="Slug available"', $rendered->toString());
+        $this->assertStringContainsString('value="super-game-de-nayte"', $rendered->toString());
+        $this->assertStringContainsString('aria-label="Slug available"', $rendered->toString());
     }
 
     #[Test]
@@ -72,8 +72,8 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('value="taken-slug"', $rendered->toString());
-        self::assertStringContainsString('aria-label="Slug unavailable"', $rendered->toString());
+        $this->assertStringContainsString('value="taken-slug"', $rendered->toString());
+        $this->assertStringContainsString('aria-label="Slug unavailable"', $rendered->toString());
     }
 
     #[Test]
@@ -86,7 +86,7 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('Slug "taken-slug" is not available.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertStringContainsString('Slug "taken-slug" is not available.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
     }
 
     #[Test]
@@ -97,7 +97,7 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
     }
 
     #[Test]
@@ -111,11 +111,11 @@ final class GameCreatorTest extends WebTestCase
         $select = $rendered->crawler()->filter('select[data-model="game.region"]');
         $options = $select->filter('option');
 
-        self::assertNotNull($select->attr('disabled'));
-        self::assertCount(1, $options);
-        self::assertSame('East + West', trim($options->text()));
-        self::assertSame('', $options->attr('value'));
-        self::assertNotNull($options->attr('selected'));
+        $this->assertNotNull($select->attr('disabled'));
+        $this->assertCount(1, $options);
+        $this->assertSame('East + West', trim($options->text()));
+        $this->assertSame('', $options->attr('value'));
+        $this->assertNotNull($options->attr('selected'));
     }
 
     #[Test]
@@ -127,7 +127,7 @@ final class GameCreatorTest extends WebTestCase
 
         $component->set('game.playerCount', 9);
 
-        self::assertSame('west', $component->component()->game->region);
+        $this->assertSame('west', $component->component()->game->region);
     }
 
     #[Test]
@@ -142,11 +142,11 @@ final class GameCreatorTest extends WebTestCase
         $select = $rendered->crawler()->filter('select[data-model="game.region"]');
         $options = $select->filter('option');
 
-        self::assertNull($select->attr('disabled'));
-        self::assertCount(2, $options);
-        self::assertSame(['West', 'East'], $options->each(static fn ($node): string => trim((string) $node->text())));
-        self::assertNotNull($select->filter('option[value="west"]')->attr('selected'));
-        self::assertNull($select->filter('option[value="east"]')->attr('selected'));
+        $this->assertNull($select->attr('disabled'));
+        $this->assertCount(2, $options);
+        $this->assertSame(['West', 'East'], $options->each(static fn ($node): string => trim((string) $node->text())));
+        $this->assertNotNull($select->filter('option[value="west"]')->attr('selected'));
+        $this->assertNull($select->filter('option[value="east"]')->attr('selected'));
     }
 
     #[Test]
@@ -167,12 +167,12 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render();
 
-        self::assertStringContainsString('Alice', $rendered->toString());
-        self::assertStringContainsString('Bob', $rendered->toString());
+        $this->assertStringContainsString('Alice', $rendered->toString());
+        $this->assertStringContainsString('Bob', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
-        self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
     #[Test]
@@ -190,9 +190,9 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render();
 
-        self::assertStringContainsString('already exists', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
-        self::assertSame(1, substr_count($rendered->toString(), '<td>Alice</td>'));
-        self::assertStringNotContainsString('<td>alice</td>', $rendered->toString());
+        $this->assertStringContainsString('already exists', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertSame(1, substr_count($rendered->toString(), '<td>Alice</td>'));
+        $this->assertStringNotContainsString('<td>alice</td>', $rendered->toString());
     }
 
     #[Test]
@@ -204,7 +204,7 @@ final class GameCreatorTest extends WebTestCase
             ->render()
         ;
 
-        self::assertStringContainsString('Player name is required.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertStringContainsString('Player name is required.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
     }
 
     /**
@@ -220,7 +220,7 @@ final class GameCreatorTest extends WebTestCase
         ;
         $component->call('addPlayer');
 
-        self::assertGreaterThan(0, $component->render()->crawler()->filter('[data-error="newPlayerName"]')->count());
+        $this->assertGreaterThan(0, $component->render()->crawler()->filter('[data-error="newPlayerName"]')->count());
 
         $component
             ->set('newPlayerName', 'Alice')
@@ -228,7 +228,7 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render();
 
-        self::assertCount(0, $rendered->crawler()->filter('[data-error="newPlayerName"]'));
+        $this->assertCount(0, $rendered->crawler()->filter('[data-error="newPlayerName"]'));
     }
 
     #[Test]
@@ -261,19 +261,19 @@ final class GameCreatorTest extends WebTestCase
         $component->call('launch');
 
         $response = $component->response();
-        self::assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
-        self::assertStringContainsString('/launch-game/operator', (string) $response->headers->get('Location'));
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertStringContainsString('/launch-game/operator', (string) $response->headers->get('Location'));
 
         $freshEntityManager = $this->freshEntityManager();
         $game = $freshEntityManager->getRepository(GameSession::class)->findOneBy(['slug' => 'launch-game']);
 
-        self::assertInstanceOf(GameSession::class, $game);
-        self::assertSame(9, $game->playerCount);
-        self::assertSame('west', $game->region);
-        self::assertSame(ASTVersion::EXPERT, $game->astVersion);
+        $this->assertInstanceOf(GameSession::class, $game);
+        $this->assertSame(9, $game->playerCount);
+        $this->assertSame('west', $game->region);
+        $this->assertSame(ASTVersion::EXPERT, $game->astVersion);
 
         $players = $freshEntityManager->getRepository(Player::class)->findBy(['game' => $game->id]);
-        self::assertCount(9, $players);
+        $this->assertCount(9, $players);
 
         $alice = null;
         foreach ($players as $player) {
@@ -282,9 +282,9 @@ final class GameCreatorTest extends WebTestCase
             }
         }
 
-        self::assertInstanceOf(Player::class, $alice);
-        self::assertSame('alice', $alice->slug);
-        self::assertSame('hatti', $alice->empire);
+        $this->assertInstanceOf(Player::class, $alice);
+        $this->assertSame('alice', $alice->slug);
+        $this->assertSame('hatti', $alice->empire);
     }
 
     #[Test]
@@ -309,10 +309,10 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        self::assertStringContainsString('is not available', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertStringContainsString('is not available', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
     }
 
     #[Test]
@@ -335,10 +335,10 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        self::assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
     }
 
     #[Test]
@@ -358,9 +358,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
-        self::assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
-        self::assertStringContainsString('Player limit reached (3/3).', $rendered);
+        $this->assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
+        $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
+        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
 
         $component
             ->set('newPlayerName', 'Dave')
@@ -368,8 +368,8 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render()->toString();
 
-        self::assertStringContainsString('Player limit reached (3/3).', $rendered);
-        self::assertStringNotContainsString('<td>Dave</td>', $rendered);
+        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
+        $this->assertStringNotContainsString('<td>Dave</td>', $rendered);
     }
 
     #[Test]
@@ -389,9 +389,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('game.playerCount', 3)->render()->toString();
 
-        self::assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
-        self::assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
-        self::assertStringContainsString('Player limit reached (3/3).', $rendered);
+        $this->assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
+        $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
+        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
     }
 
     #[Test]
@@ -411,9 +411,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString('Add 3 more players, or lower the player count to 5.', $rendered);
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('Add 3 more players, or lower the player count to 5.', $rendered);
     }
 
     #[Test]
@@ -425,10 +425,10 @@ final class GameCreatorTest extends WebTestCase
             ->toString()
         ;
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString('Add 9 more players.', $rendered);
-        self::assertStringNotContainsString('or lower the player count', $rendered);
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('Add 9 more players.', $rendered);
+        $this->assertStringNotContainsString('or lower the player count', $rendered);
     }
 
     #[Test]
@@ -448,9 +448,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('game.playerCount', 3)->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString('Remove 2 players, or raise the player count to 5.', $rendered);
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('Remove 2 players, or raise the player count to 5.', $rendered);
     }
 
     #[Test]
@@ -470,9 +470,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertFalse($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="ok"', $rendered);
-        self::assertStringContainsString('Everything is fine.', $rendered);
+        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="ok"', $rendered);
+        $this->assertStringContainsString('Everything is fine.', $rendered);
     }
 
     #[Test]
@@ -495,7 +495,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
     }
 
     #[Test]
@@ -516,7 +516,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
     }
 
     #[Test]
@@ -537,7 +537,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertFalse($this->isLaunchButtonDisabled($rendered));
+        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
     }
 
     #[Test]
@@ -553,12 +553,12 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        self::assertStringContainsString('data-conformity="error"', $rendered->toString());
-        self::assertStringContainsString('Add 9 more players.', $rendered->toString());
+        $this->assertStringContainsString('data-conformity="error"', $rendered->toString());
+        $this->assertStringContainsString('Add 9 more players.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
-        self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
     #[Test]
@@ -570,8 +570,8 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render()->toString();
 
-        self::assertStringNotContainsString('data-error', $rendered);
-        self::assertMatchesRegularExpression('/<td>Alice<\/td>\s*<td>—<\/td>/', $rendered);
+        $this->assertStringNotContainsString('data-error', $rendered);
+        $this->assertMatchesRegularExpression('/<td>Alice<\/td>\s*<td>—<\/td>/', $rendered);
     }
 
     #[Test]
@@ -592,10 +592,10 @@ final class GameCreatorTest extends WebTestCase
         $scenarioEmpires = self::getContainer()->get(ScenarioCatalog::class)->empiresFor(9, 'west');
         $players = $component->component()->game->players;
 
-        self::assertNotSame('', $players[1]['empire']);
-        self::assertContains($players[1]['empire'], $scenarioEmpires);
-        self::assertNotSame('hatti', $players[1]['empire']);
-        self::assertStringNotContainsString('data-live-action-param="assignRandomEmpire"', $rendered);
+        $this->assertNotSame('', $players[1]['empire']);
+        $this->assertContains($players[1]['empire'], $scenarioEmpires);
+        $this->assertNotSame('hatti', $players[1]['empire']);
+        $this->assertStringNotContainsString('data-live-action-param="assignRandomEmpire"', $rendered);
     }
 
     #[Test]
@@ -625,7 +625,7 @@ final class GameCreatorTest extends WebTestCase
 
         $component->call('assignRandomEmpire', ['index' => 8]);
 
-        self::assertSame('minoa', $component->component()->game->players[8]['empire']);
+        $this->assertSame('minoa', $component->component()->game->players[8]['empire']);
     }
 
     #[Test]
@@ -649,9 +649,9 @@ final class GameCreatorTest extends WebTestCase
             $component->component()->game->players,
         );
 
-        self::assertNotContains('', $assignedEmpires);
-        self::assertCount(3, array_intersect($assignedEmpires, $scenarioEmpires));
-        self::assertCount(3, array_unique($assignedEmpires));
+        $this->assertNotContains('', $assignedEmpires);
+        $this->assertCount(3, array_intersect($assignedEmpires, $scenarioEmpires));
+        $this->assertCount(3, array_unique($assignedEmpires));
     }
 
     #[Test]
@@ -667,9 +667,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('game.region', 'west')->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString('Alice&#039;s empire &quot;kushan&quot; is not part of the current scenario.', $rendered);
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('Alice&#039;s empire &quot;kushan&quot; is not part of the current scenario.', $rendered);
     }
 
     #[Test]
@@ -687,9 +687,9 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        self::assertTrue($this->isLaunchButtonDisabled($rendered));
-        self::assertStringContainsString('data-conformity="error"', $rendered);
-        self::assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
     }
 
     #[Test]
@@ -711,11 +711,11 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        self::assertStringContainsString('1 player still needs an empire.', $rendered->toString());
+        $this->assertStringContainsString('1 player still needs an empire.', $rendered->toString());
 
         $freshEntityManager = $this->freshEntityManager();
-        self::assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
-        self::assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
     private function createGame(string $slug): GameSession

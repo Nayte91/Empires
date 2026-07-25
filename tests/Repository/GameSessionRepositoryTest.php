@@ -33,16 +33,16 @@ final class GameSessionRepositoryTest extends WebTestCase
 
         $foundGame = $this->gameRepository->find($game->id);
 
-        self::assertNotNull($foundGame);
-        self::assertSame($game->id->toRfc4122(), $foundGame->id->toRfc4122());
-        self::assertSame(1, $foundGame->currentTurn);
-        self::assertSame(9, $foundGame->playerCount);
+        $this->assertInstanceOf(\App\Entity\GameSession::class, $foundGame);
+        $this->assertSame($game->id->toRfc4122(), $foundGame->id->toRfc4122());
+        $this->assertSame(1, $foundGame->currentTurn);
+        $this->assertSame(9, $foundGame->playerCount);
     }
 
     #[Test]
     public function gameTableIsEmptyAtTheStartOfEachTest(): void
     {
-        self::assertSame(0, $this->gameRepository->count([]));
+        $this->assertSame(0, $this->gameRepository->count([]));
     }
 
     #[Test]
@@ -51,10 +51,10 @@ final class GameSessionRepositoryTest extends WebTestCase
         $game = new GameSession();
 
         $game->currentTurn = 0;
-        self::assertSame(1, $game->currentTurn);
+        $this->assertSame(1, $game->currentTurn);
 
         $game->currentTurn = 25;
-        self::assertSame(20, $game->currentTurn);
+        $this->assertSame(20, $game->currentTurn);
     }
 
     #[Test]
@@ -75,8 +75,8 @@ final class GameSessionRepositoryTest extends WebTestCase
 
         $games = $this->gameRepository->findInProgress();
 
-        self::assertCount(2, $games);
-        self::assertSame($middle->id->toRfc4122(), $games[0]->id->toRfc4122());
-        self::assertSame($oldest->id->toRfc4122(), $games[1]->id->toRfc4122());
+        $this->assertCount(2, $games);
+        $this->assertSame($middle->id->toRfc4122(), $games[0]->id->toRfc4122());
+        $this->assertSame($oldest->id->toRfc4122(), $games[1]->id->toRfc4122());
     }
 }

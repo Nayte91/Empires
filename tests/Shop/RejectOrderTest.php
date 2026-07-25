@@ -103,8 +103,8 @@ final class RejectOrderTest extends WebTestCase
 
         ($this->rejectOrderHandler)(new RejectOrder($player->id, $player->game->currentTurn));
 
-        self::assertSame(OrderStatus::Rejected, $order->status);
-        self::assertSame(['pottery'], $order->keys());
+        $this->assertSame(OrderStatus::Rejected, $order->status);
+        $this->assertSame(['pottery'], $order->keys());
     }
 
     #[Test]
@@ -126,7 +126,7 @@ final class RejectOrderTest extends WebTestCase
 
         ($this->rejectOrderHandler)(new RejectOrder($player->id, $player->game->currentTurn));
 
-        self::assertNotInstanceOf(Order::class, $this->orderRepository->findOneByPlayerAndWindow($player, $player->game->currentTurn));
+        $this->assertNotInstanceOf(Order::class, $this->orderRepository->findOneByPlayerAndWindow($player, $player->game->currentTurn));
     }
 
     #[Test]
@@ -146,8 +146,8 @@ final class RejectOrderTest extends WebTestCase
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
-        self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertSame(['democracy'], $order->keys());
+        $this->assertSame(OrderStatus::Pending, $order->status);
+        $this->assertSame(['democracy'], $order->keys());
     }
 
     #[Test]
@@ -159,9 +159,9 @@ final class RejectOrderTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertSame(['democracy'], $order->keys());
-        self::assertContains('democracy', $player->advances);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertSame(['democracy'], $order->keys());
+        $this->assertContains('democracy', $player->advances);
     }
 
     private function createPlayer(): Player

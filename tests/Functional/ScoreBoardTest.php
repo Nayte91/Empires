@@ -34,10 +34,10 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertStringContainsString('Cities', $rendered);
-        self::assertStringContainsString('Census', $rendered);
-        self::assertStringContainsString('Treasury', $rendered);
-        self::assertStringNotContainsString('Points', $rendered);
+        $this->assertStringContainsString('Cities', $rendered);
+        $this->assertStringContainsString('Census', $rendered);
+        $this->assertStringContainsString('Treasury', $rendered);
+        $this->assertStringNotContainsString('Points', $rendered);
     }
 
     #[Test]
@@ -50,7 +50,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
+        $this->assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
     }
 
     #[Test]
@@ -64,7 +64,7 @@ final class ScoreBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
-        self::assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+        $this->assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
     }
 
     #[Test]
@@ -76,7 +76,7 @@ final class ScoreBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
-        self::assertSame('—', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+        $this->assertSame('—', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
     }
 
     #[Test]
@@ -88,7 +88,7 @@ final class ScoreBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
         // Treasury(0), Census(1), Ships(0), Cities(0), Cards(0), Advances(0), VP(0) — Name/Empire cells are not plain <td>value</td>.
-        self::assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
+        $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -103,10 +103,10 @@ final class ScoreBoardTest extends WebTestCase
 
         $html = $rendered->render()->toString();
 
-        self::assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
-        self::assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
-        self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
-        self::assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
+        $this->assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
+        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
+        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
+        $this->assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
     }
 
     #[Test]
@@ -118,7 +118,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertSame(2, substr_count($rendered, '<svg'));
+        $this->assertSame(2, substr_count($rendered, '<svg'));
     }
 
     #[Test]
@@ -132,7 +132,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/<td data-scored>11<\/td>\s*<\/tr>/', $rendered);
+        $this->assertMatchesRegularExpression('/<td data-scored>11<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -147,7 +147,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertMatchesRegularExpression('/<td data-scored>21<\/td>\s*<\/tr>/', $rendered);
+        $this->assertMatchesRegularExpression('/<td data-scored>21<\/td>\s*<\/tr>/', $rendered);
     }
 
     #[Test]
@@ -165,9 +165,9 @@ final class ScoreBoardTest extends WebTestCase
         $alicePosition = strpos($rendered, 'Alice');
         $bobPosition = strpos($rendered, 'Bob');
 
-        self::assertNotFalse($alicePosition);
-        self::assertNotFalse($bobPosition);
-        self::assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
+        $this->assertNotFalse($alicePosition);
+        $this->assertNotFalse($bobPosition);
+        $this->assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
     }
 
     #[Test]
@@ -182,9 +182,9 @@ final class ScoreBoardTest extends WebTestCase
         $crawler = new Crawler($rendered);
         $row = $crawler->filter('tbody tr');
 
-        self::assertNotNull($row->filter('td:nth-of-type(6)')->attr('data-scored'), 'Cities cell should be marked as scored.');
-        self::assertNull($row->filter('td:nth-of-type(8)')->attr('data-scored'), 'Advances cell should not be marked as scored when it is zero.');
-        self::assertNotNull($row->filter('td:nth-of-type(9)')->attr('data-scored'), 'Victory points cell should be marked as scored.');
+        $this->assertNotNull($row->filter('td:nth-of-type(6)')->attr('data-scored'), 'Cities cell should be marked as scored.');
+        $this->assertNull($row->filter('td:nth-of-type(8)')->attr('data-scored'), 'Advances cell should not be marked as scored when it is zero.');
+        $this->assertNotNull($row->filter('td:nth-of-type(9)')->attr('data-scored'), 'Victory points cell should be marked as scored.');
     }
 
     #[Test]
@@ -194,7 +194,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertStringContainsString('colspan="9"', $rendered);
+        $this->assertStringContainsString('colspan="9"', $rendered);
     }
 
     #[Test]
@@ -206,7 +206,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertStringContainsString('<caption>Turn 7</caption>', $rendered);
+        $this->assertStringContainsString('<caption>Turn 7</caption>', $rendered);
     }
 
     #[Test]
@@ -216,10 +216,10 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        self::assertStringContainsString('player-updated', $rendered);
-        self::assertStringContainsString('game-updated', $rendered);
-        self::assertStringNotContainsString('order-updated', $rendered);
+        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
+        $this->assertStringContainsString('player-updated', $rendered);
+        $this->assertStringContainsString('game-updated', $rendered);
+        $this->assertStringNotContainsString('order-updated', $rendered);
     }
 
     private function createGame(): GameSession

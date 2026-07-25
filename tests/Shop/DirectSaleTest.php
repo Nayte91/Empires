@@ -95,16 +95,16 @@ final class DirectSaleTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy', 'pottery']), $player->game->currentTurn));
 
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertEquals([new OrderLine('democracy', 200), new OrderLine('pottery', 50)], $order->lines);
-        self::assertSame(250, $order->total);
-        self::assertContains('democracy', $player->advances);
-        self::assertContains('pottery', $player->advances);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertEquals([new OrderLine('democracy', 200), new OrderLine('pottery', 50)], $order->lines);
+        $this->assertSame(250, $order->total);
+        $this->assertContains('democracy', $player->advances);
+        $this->assertContains('pottery', $player->advances);
 
         $this->entityManager->clear();
         $reloadedOrder = $this->orderRepository->find($order->id);
-        self::assertInstanceOf(Order::class, $reloadedOrder);
-        self::assertSame(OrderStatus::Validated, $reloadedOrder->status);
+        $this->assertInstanceOf(Order::class, $reloadedOrder);
+        $this->assertSame(OrderStatus::Validated, $reloadedOrder->status);
     }
 
     #[Test]
@@ -114,14 +114,14 @@ final class DirectSaleTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
-        self::assertSame(400, $order->total);
+        $this->assertSame(400, $order->total);
         $democracyLine = $order->lines()[1];
-        self::assertSame('democracy', $democracyLine->key);
-        self::assertSame(180, $democracyLine->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
-        self::assertSame(PromotionType::Discount, $democracyLine->promotion->type);
-        self::assertSame('library', $democracyLine->promotion->source);
-        self::assertSame(40, $democracyLine->promotion->amount);
+        $this->assertSame('democracy', $democracyLine->key);
+        $this->assertSame(180, $democracyLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
+        $this->assertSame(PromotionType::Discount, $democracyLine->promotion->type);
+        $this->assertSame('library', $democracyLine->promotion->source);
+        $this->assertSame(40, $democracyLine->promotion->amount);
     }
 
     #[Test]
@@ -133,9 +133,9 @@ final class DirectSaleTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
 
-        self::assertSame(1, $order->turn);
-        self::assertSame(OrderStatus::Validated, $order->status);
-        self::assertContains('pottery', $player->advances);
+        $this->assertSame(1, $order->turn);
+        $this->assertSame(OrderStatus::Validated, $order->status);
+        $this->assertContains('pottery', $player->advances);
     }
 
     #[Test]
@@ -146,12 +146,12 @@ final class DirectSaleTest extends WebTestCase
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
 
-        self::assertSame($pendingOrder->id->toRfc4122(), $order->id->toRfc4122());
-        self::assertSame(1, $this->orderRepository->count([
+        $this->assertSame($pendingOrder->id->toRfc4122(), $order->id->toRfc4122());
+        $this->assertSame(1, $this->orderRepository->count([
             'player' => $player,
             'turn' => $player->game->currentTurn,
         ]));
-        self::assertEquals([new OrderLine('democracy', 220)], $order->lines);
+        $this->assertEquals([new OrderLine('democracy', 220)], $order->lines);
     }
 
     #[Test]

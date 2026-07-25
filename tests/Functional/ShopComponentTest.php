@@ -211,7 +211,7 @@ final class ShopComponentTest extends WebTestCase
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
 
         $this->assertStringContainsString('Democracy', $crawler->filter('.shop__cart-lines')->text());
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -281,8 +281,8 @@ final class ShopComponentTest extends WebTestCase
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug.'/shop');
 
-        self::assertResponseIsSuccessful();
-        self::assertSelectorExists('[data-controller~="live"]');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-controller~="live"]');
 
         $html = (string) $client->getResponse()->getContent();
         $this->assertStringContainsString('empires/game/'.$player->game->id, $html);
@@ -345,7 +345,7 @@ final class ShopComponentTest extends WebTestCase
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -359,7 +359,7 @@ final class ShopComponentTest extends WebTestCase
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -373,7 +373,7 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createCart($player, $client)->call('checkout')->render()->toString();
 
-        $this->assertNull($this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
+        $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
         $this->assertStringContainsString('Allocation required for promotion on', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
@@ -389,7 +389,7 @@ final class ShopComponentTest extends WebTestCase
         $this->cartFor($client, $player, $cart);
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
-        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
 
         $this->createCart($player, $client)->call('checkout');
 
@@ -448,7 +448,7 @@ final class ShopComponentTest extends WebTestCase
         // Category order is art/civic/craft/religion/science (App\Game\Category): only
         // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
-        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     private function createPlayer(): Player

@@ -22,9 +22,9 @@ final class GameCreationTest extends WebTestCase
         $entityManager->persist($game);
         $entityManager->flush();
 
-        $client->request('GET', '/'.$game->slug);
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/'.$game->slug);
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
     }
 
     #[Test]
@@ -40,16 +40,16 @@ final class GameCreationTest extends WebTestCase
 
         // The operator console no longer links to the kiosk (PO decision): the
         // shop route itself must still be reachable directly (e.g. via a QR code).
-        $client->request('GET', '/'.$game->slug.'/player/'.$player->slug.'/shop');
-        self::assertResponseIsSuccessful();
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/'.$game->slug.'/player/'.$player->slug.'/shop');
+        $this->assertResponseIsSuccessful();
     }
 
     #[Test]
     public function unknownGameSlugReturnsNotFound(): void
     {
         $client = self::createClient();
-        $client->request('GET', '/does-not-exist');
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/does-not-exist');
 
-        self::assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(404);
     }
 }

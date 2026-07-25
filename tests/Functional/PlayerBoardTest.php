@@ -32,11 +32,11 @@ final class PlayerBoardTest extends WebTestCase
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug);
 
-        self::assertResponseIsSuccessful();
-        self::assertSelectorExists('[data-controller~="live"]');
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-controller~="live"]');
 
         $html = (string) $client->getResponse()->getContent();
-        self::assertStringContainsString('empires/game/'.$player->game->id, $html);
+        $this->assertStringContainsString('empires/game/'.$player->game->id, $html);
     }
 
     #[Test]
@@ -47,7 +47,7 @@ final class PlayerBoardTest extends WebTestCase
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/does-not-exist');
 
-        self::assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(404);
     }
 
     #[Test]
@@ -64,10 +64,7 @@ final class PlayerBoardTest extends WebTestCase
             ),
         );
 
-        self::assertSame(
-            ['Cities 0', 'Ships 0', 'Census 1', 'Treasury 0', 'Cards 0'],
-            $labels,
-        );
+        $this->assertSame(['Cities 0', 'Ships 0', 'Census 1', 'Treasury 0', 'Cards 0'], $labels);
     }
 
     #[Test]
@@ -79,9 +76,9 @@ final class PlayerBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('id="product-pottery"', $rendered);
-        self::assertStringContainsString('Pottery', $rendered);
-        self::assertStringNotContainsString('<button', $this->extractProductCard($rendered, 'pottery'));
+        $this->assertStringContainsString('id="product-pottery"', $rendered);
+        $this->assertStringContainsString('Pottery', $rendered);
+        $this->assertStringNotContainsString('<button', $this->extractProductCard($rendered, 'pottery'));
     }
 
     #[Test]
@@ -93,10 +90,10 @@ final class PlayerBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('Craft', $rendered);
-        self::assertMatchesRegularExpression('/Craft<\/td>\s*<td><b>10</', $rendered);
-        self::assertMatchesRegularExpression('/Science<\/td>\s*<td><b>5</', $rendered);
-        self::assertMatchesRegularExpression('/Democracy<\/td>\s*<td><b>20</', $rendered);
+        $this->assertStringContainsString('Craft', $rendered);
+        $this->assertMatchesRegularExpression('/Craft<\/td>\s*<td><b>10</', $rendered);
+        $this->assertMatchesRegularExpression('/Science<\/td>\s*<td><b>5</', $rendered);
+        $this->assertMatchesRegularExpression('/Democracy<\/td>\s*<td><b>20</', $rendered);
     }
 
     #[Test]
@@ -108,8 +105,8 @@ final class PlayerBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('--category-color: #F04E56', $rendered);
-        self::assertStringContainsString('--category-color: #39B54A', $rendered);
+        $this->assertStringContainsString('--category-color: #F04E56', $rendered);
+        $this->assertStringContainsString('--category-color: #39B54A', $rendered);
     }
 
     #[Test]
@@ -119,9 +116,9 @@ final class PlayerBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
-        self::assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        self::assertStringContainsString('player-updated', $rendered);
-        self::assertStringNotContainsString('order-updated', $rendered);
+        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
+        $this->assertStringContainsString('player-updated', $rendered);
+        $this->assertStringNotContainsString('order-updated', $rendered);
     }
 
     #[Test]
@@ -136,14 +133,14 @@ final class PlayerBoardTest extends WebTestCase
 
         $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug);
         $boardContent = (string) $client->getResponse()->getContent();
-        self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', $boardContent);
-        self::assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
+        $this->assertStringContainsString('background-color: var(--empire-minoa, dimgray)', $boardContent);
+        $this->assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
 
         $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
-        self::assertStringContainsString('background-color: var(--empire-minoa, dimgray)', (string) $client->getResponse()->getContent());
+        $this->assertStringContainsString('background-color: var(--empire-minoa, dimgray)', (string) $client->getResponse()->getContent());
 
         $client->request('GET', '/'.$withoutEmpire->game->slug.'/player/'.$withoutEmpire->slug);
-        self::assertStringNotContainsString('background-color', (string) $client->getResponse()->getContent());
+        $this->assertStringNotContainsString('background-color', (string) $client->getResponse()->getContent());
     }
 
     private function createPlayer(string $name = 'Alice'): Player
@@ -165,13 +162,13 @@ final class PlayerBoardTest extends WebTestCase
     private function extractProductCard(string $html, string $key): string
     {
         $idPosition = strpos($html, 'id="product-'.$key.'"');
-        self::assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
+        $this->assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
 
         $start = strrpos(substr($html, 0, $idPosition), '<article');
-        self::assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
+        $this->assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
 
         $end = strpos($html, '</article>', $start);
-        self::assertNotFalse($end, '</article> not found in rendered output.');
+        $this->assertNotFalse($end, '</article> not found in rendered output.');
 
         return substr($html, $start, $end - $start);
     }

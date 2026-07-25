@@ -37,7 +37,7 @@ make rector|phpcs|phpstan|phpunit       # individual tools
 make deploy / make deploy-migrate       # production
 ```
 
-Composer equivalents (configs in `tools/`): `composer phpunit|phpstan|phpcs|rector` — each defaults to `src/`, pass paths after `--` to scope.
+Composer equivalents (configs in `tools/`): `composer phpunit|phpstan|phpcs|rector` — pass paths after `--` to scope. Bare defaults come from each tool's own config: `phpstan`/`phpcs` are `src/`-only, `rector` covers `src/` **and** `tests/` (see 🧪 Testing for why).
 
 ## 🏗 Project Architecture
 
@@ -97,7 +97,7 @@ Routes (no `/game` prefix — verify with `debug:router` before assuming): `/cre
 ## 🧪 Testing
 
 ```bash
-make quality                                        # THE command: rector+phpcs+phpstan on src/, phpunit on tests/
+make quality                                        # THE command: rector on src/ tests/, phpcs+phpstan on src/, phpunit on tests/
 docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # single file, while iterating
 ```
 
@@ -107,28 +107,33 @@ tests/
 └── bootstrap.php   # drops+recreates the SQLite schema once per run; DAMA (tools/phpunit.xml + bundles.php) rolls back each test
 ```
 
-### Never run the quality tools on `tests/`
+### Which tool runs on `tests/` — and why the split is not negotiable
 
-`tools/{rector,phpstan,php-cs-fixer}.php` all target **`src/` only**, by design. `make quality` already does the right thing: static tools on `src/`, PHPUnit on `tests/`. **Never** pass `PARAMS=tests/` to `make quality`, and never call `composer rector/phpcs/phpstan -- tests/…`.
+| Tool | `src/` | `tests/` | Why |
+|---|:---:|:---:|---|
+| **rector** | ✅ | ✅ | Owns the test style. Aligned with `Userforged/Ephemere`. |
+| **php-cs-fixer** | ✅ | ❌ | `php_unit_strict` (`@PhpCsFixer:risky`) rewrites `assertEquals`→`assertSame`. On arrays of freshly-constructed readonly VOs that is **wrong** — `assertSame` demands instance identity and can never pass. This is why `assertEquals` is correct in `DirectSaleTest`/`OrderFlowTest` when comparing `OrderLine` graphs. |
+| **phpstan** | ✅ | ❌ | It flags the very form rector enforces: 25 × `staticMethod.dynamicCall` ("Dynamic call to static method `Assert::assertSame()`") on a single test file. **Rector and phpstan can never agree on test files** — that is the whole reason phpstan is scoped out. |
 
-Rationale — two rules actively corrupt this testbase:
-- `php_unit_strict` (`@PhpCsFixer:risky`) rewrites `assertEquals`→`assertSame`. On arrays of freshly-constructed readonly VOs that is **wrong**: `assertSame` demands instance identity and can never pass. This is why `assertEquals` is correct in `DirectSaleTest`/`OrderFlowTest` when comparing `OrderLine` graphs.
-- `PreferPHPUnitThisCallRector` rewrites `self::assert*`→`$this->assert*`, which contradicts the convention below.
+`make quality` implements exactly this split: `rector -- src/ tests/`, then `phpcs -- src/`, `phpstan -- src/`, then the full suite. Nothing else to run by hand.
 
-The testbase's style is settled by the rules here and by review, **not** by tooling.
+Never pass `PARAMS=tests/` to `make quality` — that would drag phpcs and phpstan into `tests/`, which is the one thing this split exists to prevent. To scope a run, call the tool directly (`composer rector -- tests/Shop/`).
 
-### Assertion form — `self::` vs `$this->` is not taste, it's the method's nature
+Corollary: never "settle" a test convention by running the full pipeline over `tests/` — two of its three stages contradict each other there. **Rector is the only authority on test style.**
 
-Verified by reflection, not habit:
+### Assertion form — everything is `$this->`; only kernel statics are `self::`
 
-| Call | Nature | Form |
+| Call | Form | Enforced by |
 |---|---|---|
-| `assert*` (PHPUnit `Assert` + Symfony `assertResponse*`/`assertSelector*`) | static | `self::` |
-| `markTestSkipped`, `markTestIncomplete` | static | `self::` |
-| `expectException`, `expectExceptionMessage`, `expectExceptionMessageMatches` | **instance** | `$this->` |
-| LiveComponent trait helpers (`createLiveComponent`, `assertComponentEmitEvent`, …) | **instance** | `$this->` |
+| `assert*` (PHPUnit) | `$this->` | rector, `PreferPHPUnitThisCallRector` |
+| `expectException*`, mock matchers (`once`, `never`, `any`, `exactly`, …), `createMock` | `$this->` | same rector rule — its `NonAssertNonStaticMethods` whitelist covers them |
+| `assertResponse*`, `assertSelector*` (Symfony) | `$this->` | convention — rector's rule targets `PHPUnit\Framework\Assert` only and leaves these alone, so write `$this->` |
+| `createStub`, `fail`, `markTestSkipped`, `markTestIncomplete` | `$this->` | convention only — these are **static** and rector does *not* rewrite them; both testbases still use `$this->` |
+| `bootKernel`, `getContainer`, `ensureKernelShutdown`, `createClient` | **`self::`** | genuinely static, and left alone by rector |
 
-So `self::assertSame(...)` next to `$this->expectException(...)` in the same method is **correct**, not drift. Dominant in the testbase (550 `self::` / 30 files); the 5 Shop/POS functional files still on `$this->assert*` are the drift — clean them up when you touch them.
+Simple rule: **assertions and expectations are `$this->`, kernel/container plumbing is `self::`.** 772 `$this->assert*` / 0 `self::assert*`, matching Ephemere (2156 / 0).
+
+`$this->assertSame()` is deliberately a dynamic call to a static method — that is why phpstan must not see `tests/`. Do not "correct" it back.
 
 ### Conventions
 
@@ -139,7 +144,7 @@ So `self::assertSame(...)` next to `$this->expectException(...)` in the same met
 - **No PHPUnit mocks.** Zero `createMock`/`createStub`/`MockObject` in the suite, deliberately. Use real objects, plus the hand-written doubles in `tests/Support/` (`NullHub` substituted for `HubInterface` under `when@test`, `ShopOrderStateMachine::create()`, `tests/Shop/Support/FakeProduct`).
 - **No cleanup, no `tearDown()`.** DAMA rolls every test back. To re-read what the DB stored, `$em->clear()` before re-fetching — note `freshEntityManager()`-style helpers return the *same* instance and do **not** reset the identity map.
 - **Private helpers at the bottom of the class**, after all `#[Test]` methods. Prefer aligning on an existing helper's name and signature — `createPlayer()`, `createCart()` and `makeAdvance()` currently have several incompatible signatures across files; don't add a new variant.
-- **Data providers**: none exist yet. When adding the first, name it `provide<TestMethodPascal>Cases()`, `public static`, return `iterable`, blank line between yields — so the suite stays consistent if rector's PHPUnit set is ever pointed at `tests/`.
+- **Data providers**: none exist yet. When adding the first, name it `provide<TestMethodPascal>Cases()`, `public static`, return `iterable`, blank line between yields — rector's PHPUnit set runs on `tests/` and will rewrite anything else.
 
 ### Functional selectors — semantics first, styling classes are a last resort
 

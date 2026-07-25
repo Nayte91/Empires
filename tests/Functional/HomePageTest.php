@@ -16,9 +16,9 @@ final class HomePageTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $client->request('GET', '/');
+        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
     }
 
     #[Test]
@@ -34,12 +34,12 @@ final class HomePageTest extends WebTestCase
         $entityManager->persist($finishedGame);
         $entityManager->flush();
 
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
 
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('in-progress-game', $crawler->text());
-        self::assertStringNotContainsString('finished-game', $crawler->text());
-        self::assertCount(1, $crawler->filter('a[href="/in-progress-game"]'));
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('in-progress-game', $crawler->text());
+        $this->assertStringNotContainsString('finished-game', $crawler->text());
+        $this->assertCount(1, $crawler->filter('a[href="/in-progress-game"]'));
     }
 
     #[Test]
@@ -47,9 +47,9 @@ final class HomePageTest extends WebTestCase
     {
         $client = self::createClient();
 
-        $crawler = $client->request('GET', '/');
+        $crawler = $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
 
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('No game in progress.', $crawler->text());
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('No game in progress.', $crawler->text());
     }
 }

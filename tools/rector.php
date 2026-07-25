@@ -12,6 +12,7 @@ use Rector\Symfony\Set\SymfonySetList;
 return RectorConfig::configure()
     ->withPaths([
         __DIR__.'/../src',
+        __DIR__.'/../tests',
     ])
     ->withSkip([
         __DIR__.'/../src/Kernel.php',

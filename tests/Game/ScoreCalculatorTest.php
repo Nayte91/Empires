@@ -18,7 +18,7 @@ final class ScoreCalculatorTest extends TestCase
     {
         $player = new Player(new GameSession(), 'Bob');
 
-        self::assertSame(0, new ScoreCalculator()->scoreFor($player, []));
+        $this->assertSame(0, new ScoreCalculator()->scoreFor($player, []));
     }
 
     #[Test]
@@ -28,7 +28,7 @@ final class ScoreCalculatorTest extends TestCase
         $pottery = $this->makeAdvance('pottery', 3);
         $agriculture = $this->makeAdvance('agriculture', 4);
 
-        self::assertSame(7, new ScoreCalculator()->scoreFor($player, [$pottery, $agriculture]));
+        $this->assertSame(7, new ScoreCalculator()->scoreFor($player, [$pottery, $agriculture]));
     }
 
     #[Test]
@@ -37,7 +37,7 @@ final class ScoreCalculatorTest extends TestCase
         $player = new Player(new GameSession(), 'Bob');
         $player->cities = 5;
 
-        self::assertSame(5, new ScoreCalculator()->scoreFor($player, []));
+        $this->assertSame(5, new ScoreCalculator()->scoreFor($player, []));
     }
 
     #[Test]
@@ -46,7 +46,7 @@ final class ScoreCalculatorTest extends TestCase
         $player = new Player(new GameSession(), 'Bob');
         $player->astPosition = 4;
 
-        self::assertSame(20, new ScoreCalculator()->scoreFor($player, []));
+        $this->assertSame(20, new ScoreCalculator()->scoreFor($player, []));
     }
 
     #[Test]
@@ -57,7 +57,7 @@ final class ScoreCalculatorTest extends TestCase
         $player->astPosition = 4;
         $advance = $this->makeAdvance('writing', 3);
 
-        self::assertSame(30, new ScoreCalculator()->scoreFor($player, [$advance]));
+        $this->assertSame(30, new ScoreCalculator()->scoreFor($player, [$advance]));
     }
 
     #[Test]
@@ -67,7 +67,7 @@ final class ScoreCalculatorTest extends TestCase
         $player->cities = 2;
         $player->astPosition = 5;
 
-        self::assertSame(27, new ScoreCalculator()->scoreFor($player, []));
+        $this->assertSame(27, new ScoreCalculator()->scoreFor($player, []));
     }
 
     #[Test]
@@ -77,7 +77,7 @@ final class ScoreCalculatorTest extends TestCase
         $player->cities = 3;
         $player->astPosition = 5;
 
-        self::assertSame(28, new ScoreCalculator()->scoreFor($player, []));
+        $this->assertSame(28, new ScoreCalculator()->scoreFor($player, []));
     }
 
     private function makeAdvance(string $key, int $points): Advance

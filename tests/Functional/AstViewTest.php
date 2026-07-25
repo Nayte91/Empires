@@ -26,7 +26,7 @@ final class AstViewTest extends WebTestCase
 
         $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
     }
 
     #[Test]
@@ -41,8 +41,8 @@ final class AstViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
-        self::assertGreaterThan(0, $crawler->filter('table')->count(), 'AST table should be present');
+        $this->assertResponseIsSuccessful();
+        $this->assertGreaterThan(0, $crawler->filter('table')->count(), 'AST table should be present');
     }
 
     #[Test]
@@ -57,8 +57,8 @@ final class AstViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
-        self::assertGreaterThan(0, $crawler->filter('section h3')->count(), 'Requirements section header should be present');
+        $this->assertResponseIsSuccessful();
+        $this->assertGreaterThan(0, $crawler->filter('section h3')->count(), 'Requirements section header should be present');
     }
 
     #[Test]
@@ -79,9 +79,9 @@ final class AstViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
         $order = $crawler->filter('tbody tr[data-empire]')->each(static fn ($node) => $node->attr('data-empire'));
-        self::assertSame(['minoa', 'hatti', 'hellas'], $order);
+        $this->assertSame(['minoa', 'hatti', 'hellas'], $order);
     }
 
     #[Test]
@@ -96,8 +96,8 @@ final class AstViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
-        self::assertSame('Basic version', trim($crawler->filter('caption')->text()));
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Basic version', trim($crawler->filter('caption')->text()));
     }
 
     #[Test]
@@ -113,8 +113,8 @@ final class AstViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
-        self::assertResponseIsSuccessful();
-        self::assertSame('Expert version', trim($crawler->filter('caption')->text()));
+        $this->assertResponseIsSuccessful();
+        $this->assertSame('Expert version', trim($crawler->filter('caption')->text()));
     }
 
     #[Test]
@@ -123,6 +123,6 @@ final class AstViewTest extends WebTestCase
         $client = self::createClient();
         $client->request(Request::METHOD_GET, '/does-not-exist/ast');
 
-        self::assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(404);
     }
 }

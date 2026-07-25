@@ -31,7 +31,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->toString();
 
-        self::assertStringNotContainsString('data-mercure-refresh-events-value', $rendered);
+        $this->assertStringNotContainsString('data-mercure-refresh-events-value', $rendered);
     }
 
     #[Test]
@@ -41,7 +41,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        self::assertStringContainsString('Turn 1', $rendered->toString());
+        $this->assertStringContainsString('Turn 1', $rendered->toString());
     }
 
     #[Test]
@@ -55,7 +55,7 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): bool => str_contains((string) $node->text(), 'Previous turn'),
         );
 
-        self::assertNotNull($button->attr('disabled'));
+        $this->assertNotNull($button->attr('disabled'));
     }
 
     #[Test]
@@ -69,18 +69,18 @@ final class OperatorConsoleTest extends WebTestCase
 
         $details = $rendered->crawler()->filter('details');
 
-        self::assertCount(3, $details);
+        $this->assertCount(3, $details);
 
         $names = [];
         foreach ($details as $node) {
             $names[] = $node->getAttribute('name');
         }
-        self::assertSame(['operator-tabs'], array_unique($names));
+        $this->assertSame(['operator-tabs'], array_unique($names));
 
         $generalDetails = $details->reduce(
             static fn ($node): bool => 'General' === trim((string) $node->filter('summary')->text()),
         );
-        self::assertNotNull($generalDetails->attr('open'));
+        $this->assertNotNull($generalDetails->attr('open'));
     }
 
     #[Test]
@@ -98,9 +98,9 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): string => trim($node->text()),
         );
 
-        self::assertContains('« Previous turn', $buttonTexts);
-        self::assertContains('Next turn »', $buttonTexts);
-        self::assertContains('Finish game', $buttonTexts);
+        $this->assertContains('« Previous turn', $buttonTexts);
+        $this->assertContains('Next turn »', $buttonTexts);
+        $this->assertContains('Finish game', $buttonTexts);
     }
 
     #[Test]
@@ -115,7 +115,7 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
         );
 
-        self::assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
+        $this->assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): bool => str_contains((string) $node->text(), 'Previous turn'),
         );
 
-        self::assertNull($button->attr('disabled'));
+        $this->assertNull($button->attr('disabled'));
     }
 
     #[Test]
@@ -141,7 +141,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
 
-        self::assertSame(2, $this->reloadGame($game)->currentTurn);
+        $this->assertSame(2, $this->reloadGame($game)->currentTurn);
     }
 
     #[Test]
@@ -153,7 +153,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
 
-        self::assertSame(20, $this->reloadGame($game)->currentTurn);
+        $this->assertSame(20, $this->reloadGame($game)->currentTurn);
     }
 
     #[Test]
@@ -163,7 +163,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('finishGame');
 
-        self::assertInstanceOf(\DateTimeImmutable::class, $this->reloadGame($game)->finishedAt);
+        $this->assertInstanceOf(\DateTimeImmutable::class, $this->reloadGame($game)->finishedAt);
     }
 
     #[Test]
@@ -175,7 +175,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
 
-        self::assertSame(1, $this->reloadGame($game)->currentTurn);
+        $this->assertSame(1, $this->reloadGame($game)->currentTurn);
     }
 
     #[Test]
@@ -194,7 +194,7 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): bool => str_contains((string) $node->text(), 'Turn 1'),
         );
 
-        self::assertStringContainsString('Empty', $card->text());
+        $this->assertStringContainsString('Empty', $card->text());
     }
 
     #[Test]
@@ -211,7 +211,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $stampAtTurnTwo = $console->ordersStampFor($this->reloadPlayer($player));
 
-        self::assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
+        $this->assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
     }
 
     #[Test]
@@ -224,7 +224,7 @@ final class OperatorConsoleTest extends WebTestCase
         $console->call('nextTurn');
         $rendered = $console->call('nextTurn')->render();
 
-        self::assertSame(3, $this->reloadGame($game)->currentTurn);
+        $this->assertSame(3, $this->reloadGame($game)->currentTurn);
 
         $playerDetails = $rendered->crawler()->filter('details')->reduce(
             static fn ($node): bool => 'Alice' === trim((string) $node->filter('summary')->text()),
@@ -234,10 +234,10 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): string => trim($node->text()),
         );
 
-        self::assertCount(3, $cardTexts);
-        self::assertTrue((bool) preg_grep('/Turn 1\b/', $cardTexts));
-        self::assertTrue((bool) preg_grep('/Turn 2\b/', $cardTexts));
-        self::assertTrue((bool) preg_grep('/Turn 3\b/', $cardTexts));
+        $this->assertCount(3, $cardTexts);
+        $this->assertTrue((bool) preg_grep('/Turn 1\b/', $cardTexts));
+        $this->assertTrue((bool) preg_grep('/Turn 2\b/', $cardTexts));
+        $this->assertTrue((bool) preg_grep('/Turn 3\b/', $cardTexts));
     }
 
     private function createGame(): GameSession
@@ -266,7 +266,7 @@ final class OperatorConsoleTest extends WebTestCase
     private function reloadGame(GameSession $game): GameSession
     {
         $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
-        self::assertInstanceOf(GameSession::class, $reloaded);
+        $this->assertInstanceOf(GameSession::class, $reloaded);
 
         return $reloaded;
     }
@@ -274,7 +274,7 @@ final class OperatorConsoleTest extends WebTestCase
     private function reloadPlayer(Player $player): Player
     {
         $reloaded = $this->freshEntityManager()->find(Player::class, $player->id);
-        self::assertInstanceOf(Player::class, $reloaded);
+        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }

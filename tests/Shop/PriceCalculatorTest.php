@@ -18,7 +18,7 @@ final class PriceCalculatorTest extends TestCase
     {
         $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
 
-        self::assertSame(60, new PriceCalculator()->netCost($pottery, []));
+        $this->assertSame(60, new PriceCalculator()->netCost($pottery, []));
     }
 
     #[Test]
@@ -27,7 +27,7 @@ final class PriceCalculatorTest extends TestCase
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
         $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
 
-        self::assertSame(50, new PriceCalculator()->netCost($pottery, [$agriculture]));
+        $this->assertSame(50, new PriceCalculator()->netCost($pottery, [$agriculture]));
     }
 
     #[Test]
@@ -36,7 +36,7 @@ final class PriceCalculatorTest extends TestCase
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
         $democracy = $this->makeAdvance('democracy', 220, ['civic'], ['art' => 5, 'civic' => 20]);
 
-        self::assertSame(200, new PriceCalculator()->netCost($democracy, [$agriculture]));
+        $this->assertSame(200, new PriceCalculator()->netCost($democracy, [$agriculture]));
     }
 
     #[Test]
@@ -52,7 +52,7 @@ final class PriceCalculatorTest extends TestCase
             'science' => 20,
         ]);
 
-        self::assertSame(240, new PriceCalculator()->netCost($mathematics, [$agriculture, $dramaAndPoetry]));
+        $this->assertSame(240, new PriceCalculator()->netCost($mathematics, [$agriculture, $dramaAndPoetry]));
     }
 
     #[Test]
@@ -76,7 +76,7 @@ final class PriceCalculatorTest extends TestCase
 
         $owned = [$anatomy, $library, $philosophy, $mathematics];
 
-        self::assertSame(0, new PriceCalculator()->netCost($astronavigation, $owned));
+        $this->assertSame(0, new PriceCalculator()->netCost($astronavigation, $owned));
     }
 
     #[Test]
@@ -87,7 +87,7 @@ final class PriceCalculatorTest extends TestCase
 
         $total = new PriceCalculator()->orderTotal([$pottery, $agriculture], []);
 
-        self::assertSame(180, $total);
+        $this->assertSame(180, $total);
     }
 
     #[Test]
@@ -99,7 +99,7 @@ final class PriceCalculatorTest extends TestCase
 
         $total = new PriceCalculator()->orderTotal([$pottery, $democracy], [$agriculture]);
 
-        self::assertSame(250, $total);
+        $this->assertSame(250, $total);
     }
 
     #[Test]
@@ -107,7 +107,7 @@ final class PriceCalculatorTest extends TestCase
     {
         $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
 
-        self::assertSame(40, new PriceCalculator()->netCost($pottery, [], ['craft' => 20]));
+        $this->assertSame(40, new PriceCalculator()->netCost($pottery, [], ['craft' => 20]));
     }
 
     #[Test]
@@ -116,7 +116,7 @@ final class PriceCalculatorTest extends TestCase
         $agriculture = $this->makeAdvance('agriculture', 120, ['craft'], ['craft' => 10, 'science' => 5, 'democracy' => 20]);
         $pottery = $this->makeAdvance('pottery', 60, ['craft'], ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
 
-        self::assertSame(30, new PriceCalculator()->netCost($pottery, [$agriculture], ['craft' => 20]));
+        $this->assertSame(30, new PriceCalculator()->netCost($pottery, [$agriculture], ['craft' => 20]));
     }
 
     #[Test]
@@ -126,7 +126,7 @@ final class PriceCalculatorTest extends TestCase
 
         $credits = new PriceCalculator()->creditsFor([$agriculture], ['craft' => 10, 'science' => 10], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 20, 'religion' => 0, 'science' => 15], $credits['facets']);
+        $this->assertSame(['art' => 0, 'civic' => 0, 'craft' => 20, 'religion' => 0, 'science' => 15], $credits['facets']);
     }
 
     #[Test]
@@ -134,8 +134,8 @@ final class PriceCalculatorTest extends TestCase
     {
         $credits = new PriceCalculator()->creditsFor([], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 0, 'religion' => 0, 'science' => 0], $credits['facets']);
-        self::assertSame([], $credits['named']);
+        $this->assertSame(['art' => 0, 'civic' => 0, 'craft' => 0, 'religion' => 0, 'science' => 0], $credits['facets']);
+        $this->assertSame([], $credits['named']);
     }
 
     #[Test]
@@ -145,8 +145,8 @@ final class PriceCalculatorTest extends TestCase
 
         $credits = new PriceCalculator()->creditsFor([$agriculture], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 0, 'craft' => 10, 'religion' => 0, 'science' => 5], $credits['facets']);
-        self::assertSame(['democracy' => 20], $credits['named']);
+        $this->assertSame(['art' => 0, 'civic' => 0, 'craft' => 10, 'religion' => 0, 'science' => 5], $credits['facets']);
+        $this->assertSame(['democracy' => 20], $credits['named']);
     }
 
     #[Test]
@@ -157,8 +157,8 @@ final class PriceCalculatorTest extends TestCase
 
         $credits = new PriceCalculator()->creditsFor([$agriculture, $monarchy], [], self::FACETS);
 
-        self::assertSame(['art' => 0, 'civic' => 10, 'craft' => 10, 'religion' => 5, 'science' => 5], $credits['facets']);
-        self::assertSame(['democracy' => 20, 'law' => 10], $credits['named']);
+        $this->assertSame(['art' => 0, 'civic' => 10, 'craft' => 10, 'religion' => 5, 'science' => 5], $credits['facets']);
+        $this->assertSame(['democracy' => 20, 'law' => 10], $credits['named']);
     }
 
     /**

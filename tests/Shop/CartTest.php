@@ -17,7 +17,7 @@ final class CartTest extends TestCase
 
         $cart->add('pottery');
 
-        self::assertSame(['pottery'], $cart->keys());
+        $this->assertSame(['pottery'], $cart->keys());
     }
 
     #[Test]
@@ -28,7 +28,7 @@ final class CartTest extends TestCase
         $cart->add('pottery');
         $cart->add('pottery');
 
-        self::assertSame(['pottery'], $cart->keys());
+        $this->assertSame(['pottery'], $cart->keys());
     }
 
     #[Test]
@@ -41,7 +41,7 @@ final class CartTest extends TestCase
 
         $cart->remove('agriculture');
 
-        self::assertSame([0 => 'pottery', 1 => 'democracy'], $cart->keys());
+        $this->assertSame([0 => 'pottery', 1 => 'democracy'], $cart->keys());
     }
 
     #[Test]
@@ -52,7 +52,7 @@ final class CartTest extends TestCase
 
         $cart->remove('democracy');
 
-        self::assertSame(['pottery'], $cart->keys());
+        $this->assertSame(['pottery'], $cart->keys());
     }
 
     #[Test]
@@ -64,7 +64,7 @@ final class CartTest extends TestCase
 
         $cart->clear();
 
-        self::assertSame([], $cart->keys());
+        $this->assertSame([], $cart->keys());
     }
 
     #[Test]
@@ -73,8 +73,8 @@ final class CartTest extends TestCase
         $cart = new Cart();
         $cart->add('pottery');
 
-        self::assertTrue($cart->has('pottery'));
-        self::assertFalse($cart->has('agriculture'));
+        $this->assertTrue($cart->has('pottery'));
+        $this->assertFalse($cart->has('agriculture'));
     }
 
     #[Test]
@@ -82,11 +82,11 @@ final class CartTest extends TestCase
     {
         $cart = new Cart();
 
-        self::assertTrue($cart->isEmpty());
+        $this->assertTrue($cart->isEmpty());
 
         $cart->add('pottery');
 
-        self::assertFalse($cart->isEmpty());
+        $this->assertFalse($cart->isEmpty());
     }
 
     #[Test]
@@ -97,7 +97,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', 'astronavigation');
 
-        self::assertSame('astronavigation', $cart->items[0]->gift);
+        $this->assertSame('astronavigation', $cart->items[0]->gift);
     }
 
     #[Test]
@@ -109,7 +109,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', null);
 
-        self::assertNull($cart->items[0]->gift);
+        $this->assertNull($cart->items[0]->gift);
     }
 
     #[Test]
@@ -120,7 +120,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('democracy', 'astronavigation');
 
-        self::assertNull($cart->items[0]->gift);
+        $this->assertNull($cart->items[0]->gift);
     }
 
     #[Test]
@@ -131,7 +131,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', 'astronavigation');
 
-        self::assertSame(['anatomy', 'astronavigation'], $cart->keys());
+        $this->assertSame(['anatomy', 'astronavigation'], $cart->keys());
     }
 
     #[Test]
@@ -143,7 +143,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', 'astronavigation');
 
-        self::assertSame(['anatomy', 'astronavigation'], $cart->keys());
+        $this->assertSame(['anatomy', 'astronavigation'], $cart->keys());
     }
 
     #[Test]
@@ -155,7 +155,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', 'coinage');
 
-        self::assertSame(['anatomy', 'coinage'], $cart->keys());
+        $this->assertSame(['anatomy', 'coinage'], $cart->keys());
     }
 
     #[Test]
@@ -167,7 +167,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', null);
 
-        self::assertSame(['anatomy'], $cart->keys());
+        $this->assertSame(['anatomy'], $cart->keys());
     }
 
     #[Test]
@@ -181,7 +181,7 @@ final class CartTest extends TestCase
 
         $cart->withGift('anatomy', 'coinage');
 
-        self::assertSame(['anatomy', 'philosophy', 'astronavigation', 'coinage'], $cart->keys());
+        $this->assertSame(['anatomy', 'philosophy', 'astronavigation', 'coinage'], $cart->keys());
     }
 
     #[Test]
@@ -193,7 +193,7 @@ final class CartTest extends TestCase
 
         $cart->remove('anatomy');
 
-        self::assertSame([], $cart->keys());
+        $this->assertSame([], $cart->keys());
     }
 
     #[Test]
@@ -207,7 +207,7 @@ final class CartTest extends TestCase
 
         $cart->remove('anatomy');
 
-        self::assertSame(['philosophy', 'astronavigation'], $cart->keys());
+        $this->assertSame(['philosophy', 'astronavigation'], $cart->keys());
     }
 
     #[Test]
@@ -219,8 +219,8 @@ final class CartTest extends TestCase
 
         $cart->remove('astronavigation');
 
-        self::assertSame(['anatomy'], $cart->keys());
-        self::assertNull($cart->items[0]->gift);
+        $this->assertSame(['anatomy'], $cart->keys());
+        $this->assertNull($cart->items[0]->gift);
     }
 
     #[Test]
@@ -231,7 +231,7 @@ final class CartTest extends TestCase
 
         $cart->withAllocation('monument', 'craft', 5);
 
-        self::assertSame(['craft' => 5], $cart->items[0]->allocation);
+        $this->assertSame(['craft' => 5], $cart->items[0]->allocation);
     }
 
     #[Test]
@@ -244,7 +244,7 @@ final class CartTest extends TestCase
         $cart->withAllocation('monument', 'craft', 5);
         $cart->withAllocation('monument', 'science', 10);
 
-        self::assertSame(['craft' => 10, 'science' => 10], $cart->items[0]->allocation);
+        $this->assertSame(['craft' => 10, 'science' => 10], $cart->items[0]->allocation);
     }
 
     #[Test]
@@ -256,7 +256,7 @@ final class CartTest extends TestCase
         $cart->withAllocation('monument', 'craft', 5);
         $cart->withAllocation('monument', 'craft', -20);
 
-        self::assertSame(['craft' => 0], $cart->items[0]->allocation);
+        $this->assertSame(['craft' => 0], $cart->items[0]->allocation);
     }
 
     #[Test]
@@ -267,6 +267,6 @@ final class CartTest extends TestCase
 
         $cart->withAllocation('democracy', 'craft', 5);
 
-        self::assertSame([], $cart->items[0]->allocation);
+        $this->assertSame([], $cart->items[0]->allocation);
     }
 }

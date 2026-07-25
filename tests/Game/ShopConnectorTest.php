@@ -36,7 +36,7 @@ final class ShopConnectorTest extends WebTestCase
     {
         $player = $this->createPlayer();
 
-        self::assertSame([], $this->shopConnector->windowsToErase($player, 1));
+        $this->assertSame([], $this->shopConnector->windowsToErase($player, 1));
     }
 
     #[Test]
@@ -45,7 +45,7 @@ final class ShopConnectorTest extends WebTestCase
         $player = $this->createPlayer();
         $this->createOrder($player, 1, ['pottery'], validated: false);
 
-        self::assertSame([1], $this->shopConnector->windowsToErase($player, 1));
+        $this->assertSame([1], $this->shopConnector->windowsToErase($player, 1));
     }
 
     #[Test]
@@ -56,7 +56,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->createOrder($player, 2, ['democracy'], validated: true);
         $this->createOrder($player, 3, ['law'], validated: false);
 
-        self::assertSame([1, 2, 3], $this->shopConnector->windowsToErase($player, 1));
+        $this->assertSame([1, 2, 3], $this->shopConnector->windowsToErase($player, 1));
     }
 
     #[Test]
@@ -65,7 +65,7 @@ final class ShopConnectorTest extends WebTestCase
         $player = $this->createPlayer();
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
 
-        self::assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
     }
 
     #[Test]
@@ -75,7 +75,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
         $this->createValidatedOptionOrder($player, 2, ['craft' => 5]);
 
-        self::assertSame(['craft' => 15, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame(['craft' => 15, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
     }
 
     /**
@@ -95,7 +95,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
-        self::assertSame([], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame([], $this->shopConnector->buyerFor($player)->electiveCredits);
     }
 
     #[Test]
@@ -105,9 +105,9 @@ final class ShopConnectorTest extends WebTestCase
 
         $buyer = $this->shopConnector->buyerFor($player);
 
-        self::assertSame([], $buyer->electiveCredits);
-        self::assertSame([], $buyer->ownedKeys);
-        self::assertSame($player->id, $buyer->id);
+        $this->assertSame([], $buyer->electiveCredits);
+        $this->assertSame([], $buyer->ownedKeys);
+        $this->assertSame($player->id, $buyer->id);
     }
 
     /** @param array<string, int> $allocation */

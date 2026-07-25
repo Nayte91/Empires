@@ -25,7 +25,7 @@ final class CensusViewTest extends WebTestCase
 
         $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
     }
 
     #[Test]
@@ -50,9 +50,9 @@ final class CensusViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
         $order = $crawler->filter('ol li')->each(static fn ($node) => $node->attr('data-empire'));
-        self::assertSame(['assyria', 'saba', 'minoa'], $order);
+        $this->assertSame(['assyria', 'saba', 'minoa'], $order);
     }
 
     #[Test]
@@ -74,13 +74,13 @@ final class CensusViewTest extends WebTestCase
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
 
-        self::assertResponseIsSuccessful();
+        $this->assertResponseIsSuccessful();
         $militaryRow = $crawler->filter('ol li[data-empire="minoa"]');
-        self::assertGreaterThan(0, $militaryRow->filter('[title="Military"]')->count(), 'Military badge should be present on the Military player row');
-        self::assertGreaterThan(0, $crawler->filter('ol li[data-empire="minoa"][data-military]')->count(), 'data-military attribute should be present on the Military player row');
+        $this->assertGreaterThan(0, $militaryRow->filter('[title="Military"]')->count(), 'Military badge should be present on the Military player row');
+        $this->assertGreaterThan(0, $crawler->filter('ol li[data-empire="minoa"][data-military]')->count(), 'data-military attribute should be present on the Military player row');
         $nonMilitaryRow = $crawler->filter('ol li[data-empire="saba"]');
-        self::assertCount(0, $nonMilitaryRow->filter('[title="Military"]'), 'Military badge should be absent on the non-Military player row');
-        self::assertCount(0, $crawler->filter('ol li[data-empire="saba"][data-military]'), 'data-military attribute should be absent on the non-Military player row');
+        $this->assertCount(0, $nonMilitaryRow->filter('[title="Military"]'), 'Military badge should be absent on the non-Military player row');
+        $this->assertCount(0, $crawler->filter('ol li[data-empire="saba"][data-military]'), 'data-military attribute should be absent on the non-Military player row');
     }
 
     #[Test]
@@ -89,6 +89,6 @@ final class CensusViewTest extends WebTestCase
         $client = self::createClient();
         $client->request(Request::METHOD_GET, '/does-not-exist/census');
 
-        self::assertResponseStatusCodeSame(404);
+        $this->assertResponseStatusCodeSame(404);
     }
 }

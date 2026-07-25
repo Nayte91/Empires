@@ -22,11 +22,11 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertSame(7, substr_count($rendered, 'scope="col" colspan="'));
-        self::assertStringContainsString('colspan="4"', $rendered); // Stone Age span
-        self::assertStringContainsString('Start', $rendered);
-        self::assertStringContainsString('Stone Age', $rendered);
-        self::assertStringContainsString('Late Iron Age', $rendered);
+        $this->assertSame(7, substr_count($rendered, 'scope="col" colspan="'));
+        $this->assertStringContainsString('colspan="4"', $rendered); // Stone Age span
+        $this->assertStringContainsString('Start', $rendered);
+        $this->assertStringContainsString('Stone Age', $rendered);
+        $this->assertStringContainsString('Late Iron Age', $rendered);
     }
 
     #[Test]
@@ -38,8 +38,8 @@ final class AstTest extends WebTestCase
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
 
-        self::assertSame(16, substr_count($tbody, '<td'));
-        self::assertStringContainsString('Alice', $rendered);
+        $this->assertSame(16, substr_count($tbody, '<td'));
+        $this->assertStringContainsString('Alice', $rendered);
     }
 
     #[Test]
@@ -49,8 +49,8 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertStringContainsString('colspan="17"', $rendered);
-        self::assertStringContainsString('No players yet.', $rendered);
+        $this->assertStringContainsString('colspan="17"', $rendered);
+        $this->assertStringContainsString('No players yet.', $rendered);
     }
 
     #[Test]
@@ -61,7 +61,7 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertStringContainsString('title="Alice — Start"', $rendered);
+        $this->assertStringContainsString('title="Alice — Start"', $rendered);
     }
 
     #[Test]
@@ -73,8 +73,8 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertStringContainsString('--marker-pos: 4', $rendered);
-        self::assertStringContainsString('title="Alice — Stone Age"', $rendered);
+        $this->assertStringContainsString('--marker-pos: 4', $rendered);
+        $this->assertStringContainsString('title="Alice — Stone Age"', $rendered);
     }
 
     #[Test]
@@ -94,7 +94,7 @@ final class AstTest extends WebTestCase
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
 
-        self::assertSame(2, substr_count($tbody, '→'));
+        $this->assertSame(2, substr_count($tbody, '→'));
     }
 
     #[Test]
@@ -105,12 +105,12 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertSame(2, substr_count($rendered, 'data-current-turn'));
+        $this->assertSame(2, substr_count($rendered, 'data-current-turn'));
 
         $game->currentTurn = 3;
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
-        self::assertSame(2, substr_count($rendered, 'data-current-turn'));
+        $this->assertSame(2, substr_count($rendered, 'data-current-turn'));
     }
 
     #[Test]
@@ -121,11 +121,11 @@ final class AstTest extends WebTestCase
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tfoot = $this->extractTag($rendered, 'tfoot');
 
-        self::assertSame(16, substr_count($tfoot, '<td'));
-        self::assertStringContainsString('>0</td>', $tfoot); // position 0
-        self::assertStringContainsString('>5</td>', $tfoot); // position 1
-        self::assertStringContainsString('>75</td>', $tfoot); // position 15 (last)
-        self::assertStringContainsString('>Victory Points</th>', $tfoot);
+        $this->assertSame(16, substr_count($tfoot, '<td'));
+        $this->assertStringContainsString('>0</td>', $tfoot); // position 0
+        $this->assertStringContainsString('>5</td>', $tfoot); // position 1
+        $this->assertStringContainsString('>75</td>', $tfoot); // position 15 (last)
+        $this->assertStringContainsString('>Victory Points</th>', $tfoot);
     }
 
     #[Test]
@@ -138,9 +138,9 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'basic'])->toString();
 
-        self::assertStringContainsString('A.S.T. requirements (basic)', $rendered);
-        self::assertStringContainsString('Stone Age:</strong> No requirements', $rendered);
-        self::assertStringContainsString('Early Bronze Age:</strong> Cities: 2, Min advance cost: 1', $rendered);
+        $this->assertStringContainsString('A.S.T. requirements (basic)', $rendered);
+        $this->assertStringContainsString('Stone Age:</strong> No requirements', $rendered);
+        $this->assertStringContainsString('Early Bronze Age:</strong> Cities: 2, Min advance cost: 1', $rendered);
     }
 
     #[Test]
@@ -152,8 +152,8 @@ final class AstTest extends WebTestCase
 
         $rendered = $this->renderTwigComponent('molecules:AstRequirements', ['eras' => $eras, 'astVersion' => 'expert'])->toString();
 
-        self::assertStringContainsString('A.S.T. requirements (expert)', $rendered);
-        self::assertStringContainsString('Early Bronze Age:</strong> Cities: 3', $rendered);
+        $this->assertStringContainsString('A.S.T. requirements (expert)', $rendered);
+        $this->assertStringContainsString('Early Bronze Age:</strong> Cities: 3', $rendered);
     }
 
     private function extractTag(string $html, string $tag): string
@@ -161,8 +161,8 @@ final class AstTest extends WebTestCase
         $start = strpos($html, "<{$tag}>");
         $end = strpos($html, "</{$tag}>");
 
-        self::assertNotFalse($start, "<{$tag}> not found in rendered output.");
-        self::assertNotFalse($end, "</{$tag}> not found in rendered output.");
+        $this->assertNotFalse($start, "<{$tag}> not found in rendered output.");
+        $this->assertNotFalse($end, "</{$tag}> not found in rendered output.");
 
         return substr($html, $start, $end - $start);
     }

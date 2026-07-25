@@ -73,7 +73,7 @@ final class PosConsoleTest extends WebTestCase
         // The pending order preloads a complete, single-item ticket, so "Confirm
         // purchase" — App\Component\Cart::hasIncompleteAllocations/isEmpty, read
         // from the nested Cart component itself — is enabled.
-        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($component->component()->posOpen);
         $this->assertSame($game->currentTurn, $component->component()->posTurn);
     }
@@ -87,7 +87,7 @@ final class PosConsoleTest extends WebTestCase
         $component->call('openPos', ['turn' => $game->currentTurn]);
         $crawler = $component->render()->crawler();
 
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -179,7 +179,7 @@ final class PosConsoleTest extends WebTestCase
 
         $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -194,7 +194,7 @@ final class PosConsoleTest extends WebTestCase
 
         $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -209,7 +209,7 @@ final class PosConsoleTest extends WebTestCase
 
         $rendered = $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
-        $this->assertNull($this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
+        $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
         $this->assertStringContainsString('Allocation required for promotion on', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
@@ -226,7 +226,7 @@ final class PosConsoleTest extends WebTestCase
         $this->posCartFor($client, $bob, $ticket);
 
         $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
-        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
 
         $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 

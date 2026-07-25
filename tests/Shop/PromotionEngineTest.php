@@ -36,17 +36,17 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
-        self::assertSame(220, $result[0]->netCost);
-        self::assertNotInstanceOf(AppliedPromotion::class, $result[0]->promotion);
+        $this->assertSame(220, $result[0]->netCost);
+        $this->assertNotInstanceOf(AppliedPromotion::class, $result[0]->promotion);
 
-        self::assertSame(160, $result[1]->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
-        self::assertSame(PromotionType::Discount, $result[1]->promotion->type);
-        self::assertSame('library', $result[1]->promotion->source);
-        self::assertSame(40, $result[1]->promotion->amount);
+        $this->assertSame(160, $result[1]->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
+        $this->assertSame(PromotionType::Discount, $result[1]->promotion->type);
+        $this->assertSame('library', $result[1]->promotion->source);
+        $this->assertSame(40, $result[1]->promotion->amount);
 
-        self::assertSame(60, $result[2]->netCost);
-        self::assertNotInstanceOf(AppliedPromotion::class, $result[2]->promotion);
+        $this->assertSame(60, $result[2]->netCost);
+        $this->assertNotInstanceOf(AppliedPromotion::class, $result[2]->promotion);
     }
 
     #[Test]
@@ -57,8 +57,8 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
-        self::assertSame(220, $result[0]->netCost);
-        self::assertNotInstanceOf(AppliedPromotion::class, $result[0]->promotion);
+        $this->assertSame(220, $result[0]->netCost);
+        $this->assertNotInstanceOf(AppliedPromotion::class, $result[0]->promotion);
     }
 
     #[Test]
@@ -75,9 +75,9 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
-        self::assertSame(0, $result[1]->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
-        self::assertSame(30, $result[1]->promotion->amount);
+        $this->assertSame(0, $result[1]->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
+        $this->assertSame(30, $result[1]->promotion->amount);
     }
 
     #[Test]
@@ -96,11 +96,11 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
-        self::assertSame(160, $result[1]->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
+        $this->assertSame(160, $result[1]->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $result[1]->promotion);
 
-        self::assertSame(200, $result[2]->netCost);
-        self::assertNotInstanceOf(AppliedPromotion::class, $result[2]->promotion);
+        $this->assertSame(200, $result[2]->netCost);
+        $this->assertNotInstanceOf(AppliedPromotion::class, $result[2]->promotion);
     }
 
     #[Test]
@@ -119,13 +119,13 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
-        self::assertSame(50, $result[0]->netCost);
-        self::assertSame(45, $result[1]->netCost);
+        $this->assertSame(50, $result[0]->netCost);
+        $this->assertSame(45, $result[1]->netCost);
 
-        self::assertSame(130, $result[2]->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $result[2]->promotion);
-        self::assertSame('source_b', $result[2]->promotion->source);
-        self::assertSame(30, $result[2]->promotion->amount);
+        $this->assertSame(130, $result[2]->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $result[2]->promotion);
+        $this->assertSame('source_b', $result[2]->promotion->source);
+        $this->assertSame(30, $result[2]->promotion->amount);
     }
 
     #[Test]
@@ -137,7 +137,7 @@ final class PromotionEngineTest extends TestCase
 
         $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$scienceAdvance, $artAdvance]);
 
-        self::assertSame(['astronavigation'], $candidates);
+        $this->assertSame(['astronavigation'], $candidates);
     }
 
     #[Test]
@@ -149,7 +149,7 @@ final class PromotionEngineTest extends TestCase
 
         $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$cheap, $atThreshold]);
 
-        self::assertSame(['astronavigation'], $candidates);
+        $this->assertSame(['astronavigation'], $candidates);
     }
 
     #[Test]
@@ -161,7 +161,7 @@ final class PromotionEngineTest extends TestCase
 
         $candidates = new PromotionEngine()->giftCandidates($granting, ['astronavigation'], [], [$owned, $free]);
 
-        self::assertSame(['empiricism'], $candidates);
+        $this->assertSame(['empiricism'], $candidates);
     }
 
     #[Test]
@@ -173,7 +173,7 @@ final class PromotionEngineTest extends TestCase
 
         $candidates = new PromotionEngine()->giftCandidates($granting, [], ['astronavigation'], [$inOrder, $free]);
 
-        self::assertSame(['empiricism'], $candidates);
+        $this->assertSame(['empiricism'], $candidates);
     }
 
     #[Test]
@@ -185,7 +185,7 @@ final class PromotionEngineTest extends TestCase
 
         $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$first, $second]);
 
-        self::assertSame(['astronavigation', 'empiricism'], $candidates);
+        $this->assertSame(['astronavigation', 'empiricism'], $candidates);
     }
 
     #[Test]
@@ -201,14 +201,14 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, [$anatomy], $intents, $catalog, $catalogNetCosts, []);
 
-        self::assertCount(2, $result);
+        $this->assertCount(2, $result);
         $giftLine = $result[1];
-        self::assertSame('astronavigation', $giftLine->key);
-        self::assertSame(0, $giftLine->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
-        self::assertSame(PromotionType::Gift, $giftLine->promotion->type);
-        self::assertSame('anatomy', $giftLine->promotion->source);
-        self::assertSame(80, $giftLine->promotion->amount);
+        $this->assertSame('astronavigation', $giftLine->key);
+        $this->assertSame(0, $giftLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
+        $this->assertSame(PromotionType::Gift, $giftLine->promotion->type);
+        $this->assertSame('anatomy', $giftLine->promotion->source);
+        $this->assertSame(80, $giftLine->promotion->amount);
     }
 
     #[Test]
@@ -235,11 +235,11 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
 
-        self::assertSame(180, $result[0]->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $result[0]->promotion);
-        self::assertSame(PromotionType::Option, $result[0]->promotion->type);
-        self::assertSame('monument', $result[0]->promotion->source);
-        self::assertSame(['craft' => 10, 'science' => 10], $result[0]->promotion->allocation);
+        $this->assertSame(180, $result[0]->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $result[0]->promotion);
+        $this->assertSame(PromotionType::Option, $result[0]->promotion->type);
+        $this->assertSame('monument', $result[0]->promotion->source);
+        $this->assertSame(['craft' => 10, 'science' => 10], $result[0]->promotion->allocation);
     }
 
     #[Test]
@@ -319,9 +319,9 @@ final class PromotionEngineTest extends TestCase
 
         $intents = new PromotionEngine()->intentsFromLines($lines);
 
-        self::assertCount(1, $intents);
-        self::assertSame('monument', $intents[0]->key);
-        self::assertSame(['craft' => 10, 'science' => 10], $intents[0]->allocation);
+        $this->assertCount(1, $intents);
+        $this->assertSame('monument', $intents[0]->key);
+        $this->assertSame(['craft' => 10, 'science' => 10], $intents[0]->allocation);
     }
 
     #[Test]
@@ -335,13 +335,13 @@ final class PromotionEngineTest extends TestCase
 
         $intents = new PromotionEngine()->intentsFromLines($lines);
 
-        self::assertCount(3, $intents);
-        self::assertSame('anatomy', $intents[0]->key);
-        self::assertSame('astronavigation', $intents[0]->gift);
-        self::assertSame('pottery', $intents[1]->key);
-        self::assertNull($intents[1]->gift);
-        self::assertSame('astronavigation', $intents[2]->key);
-        self::assertNull($intents[2]->gift);
+        $this->assertCount(3, $intents);
+        $this->assertSame('anatomy', $intents[0]->key);
+        $this->assertSame('astronavigation', $intents[0]->gift);
+        $this->assertSame('pottery', $intents[1]->key);
+        $this->assertNull($intents[1]->gift);
+        $this->assertSame('astronavigation', $intents[2]->key);
+        $this->assertNull($intents[2]->gift);
     }
 
     #[Test]
@@ -365,24 +365,24 @@ final class PromotionEngineTest extends TestCase
 
         $result = new PromotionEngine()->apply($lines, [$anatomy], $intents, $catalog, $catalogNetCosts, [], self::FACETS);
 
-        self::assertCount(2, $result);
+        $this->assertCount(2, $result);
         $giftLine = $result[1];
-        self::assertSame('written_record', $giftLine->key);
-        self::assertSame(0, $giftLine->netCost);
-        self::assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
-        self::assertSame(PromotionType::Gift, $giftLine->promotion->type, 'the Gift stamp must survive the Option merge');
-        self::assertSame('anatomy', $giftLine->promotion->source);
-        self::assertSame(60, $giftLine->promotion->amount);
-        self::assertSame(['civic' => 5, 'science' => 5], $giftLine->promotion->allocation);
+        $this->assertSame('written_record', $giftLine->key);
+        $this->assertSame(0, $giftLine->netCost);
+        $this->assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
+        $this->assertSame(PromotionType::Gift, $giftLine->promotion->type, 'the Gift stamp must survive the Option merge');
+        $this->assertSame('anatomy', $giftLine->promotion->source);
+        $this->assertSame(60, $giftLine->promotion->amount);
+        $this->assertSame(['civic' => 5, 'science' => 5], $giftLine->promotion->allocation);
 
         $roundTrippedIntents = new PromotionEngine()->intentsFromLines($result);
 
-        self::assertCount(2, $roundTrippedIntents);
-        self::assertSame('anatomy', $roundTrippedIntents[0]->key);
-        self::assertSame('written_record', $roundTrippedIntents[0]->gift);
-        self::assertSame('written_record', $roundTrippedIntents[1]->key);
-        self::assertNull($roundTrippedIntents[1]->gift);
-        self::assertSame(['civic' => 5, 'science' => 5], $roundTrippedIntents[1]->allocation);
+        $this->assertCount(2, $roundTrippedIntents);
+        $this->assertSame('anatomy', $roundTrippedIntents[0]->key);
+        $this->assertSame('written_record', $roundTrippedIntents[0]->gift);
+        $this->assertSame('written_record', $roundTrippedIntents[1]->key);
+        $this->assertNull($roundTrippedIntents[1]->gift);
+        $this->assertSame(['civic' => 5, 'science' => 5], $roundTrippedIntents[1]->allocation);
     }
 
     /** @param list<string> $facets */

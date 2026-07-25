@@ -18,7 +18,7 @@ final class OptionCreditsTest extends TestCase
     {
         $lines = [$this->optionLine('monument', ['craft' => 10, 'science' => 10])];
 
-        self::assertSame(['craft' => 10, 'science' => 10], OptionCredits::aggregate($lines));
+        $this->assertSame(['craft' => 10, 'science' => 10], OptionCredits::aggregate($lines));
     }
 
     #[Test]
@@ -29,7 +29,7 @@ final class OptionCreditsTest extends TestCase
             $this->optionLine('temple', ['craft' => 5]),
         ];
 
-        self::assertSame(['craft' => 15, 'science' => 10], OptionCredits::aggregate($lines));
+        $this->assertSame(['craft' => 15, 'science' => 10], OptionCredits::aggregate($lines));
     }
 
     #[Test]
@@ -41,13 +41,13 @@ final class OptionCreditsTest extends TestCase
             new OrderLine('astronavigation', 0, new AppliedPromotion(PromotionType::Gift, 'anatomy')),
         ];
 
-        self::assertSame([], OptionCredits::aggregate($lines));
+        $this->assertSame([], OptionCredits::aggregate($lines));
     }
 
     #[Test]
     public function aggregateWithNoLinesReturnsEmptyArray(): void
     {
-        self::assertSame([], OptionCredits::aggregate([]));
+        $this->assertSame([], OptionCredits::aggregate([]));
     }
 
     /** @param array<string, int> $allocation */

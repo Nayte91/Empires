@@ -17,14 +17,14 @@ final class ShopOrderStateMachine
 {
     public static function create(): StateMachine
     {
-        $definition = (new DefinitionBuilder(
+        $definition = new DefinitionBuilder(
             places: ['pending', 'validated', 'rejected'],
             transitions: [
                 new Transition('validate', 'pending', 'validated'),
                 new Transition('reject', 'pending', 'rejected'),
                 new Transition('resubmit', 'rejected', 'pending'),
             ],
-        ))
+        )
             ->setInitialPlaces('pending')
             ->build();
 

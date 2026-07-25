@@ -25,7 +25,7 @@ final class CensusOrderCalculatorTest extends TestCase
 
         $order = $this->calculator()->orderFor($game);
 
-        self::assertSame([$high, $low], $order);
+        $this->assertSame([$high, $low], $order);
     }
 
     #[Test]
@@ -41,7 +41,7 @@ final class CensusOrderCalculatorTest extends TestCase
 
         $order = $this->calculator()->orderFor($game);
 
-        self::assertSame([$minoa, $assyria], $order);
+        $this->assertSame([$minoa, $assyria], $order);
     }
 
     #[Test]
@@ -56,7 +56,7 @@ final class CensusOrderCalculatorTest extends TestCase
 
         $order = $this->calculator()->orderFor($game);
 
-        self::assertSame([$nonMilitary, $military], $order);
+        $this->assertSame([$nonMilitary, $military], $order);
     }
 
     #[Test]
@@ -74,7 +74,7 @@ final class CensusOrderCalculatorTest extends TestCase
 
         $order = $this->calculator()->orderFor($game);
 
-        self::assertSame([$second, $first], $order);
+        $this->assertSame([$second, $first], $order);
     }
 
     #[Test]
@@ -92,7 +92,7 @@ final class CensusOrderCalculatorTest extends TestCase
 
         $order = $this->calculator()->orderFor($game);
 
-        self::assertSame([$known, $unknown, $noEmpire], $order);
+        $this->assertSame([$known, $unknown, $noEmpire], $order);
     }
 
     private function calculator(): CensusOrderCalculator

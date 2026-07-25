@@ -21,7 +21,7 @@ final class AstCatalogTest extends TestCase
     #[Test]
     public function getTrackLengthReturnsSixteen(): void
     {
-        self::assertSame(16, $this->astCatalog->getTrackLength());
+        $this->assertSame(16, $this->astCatalog->getTrackLength());
     }
 
     #[Test]
@@ -29,8 +29,8 @@ final class AstCatalogTest extends TestCase
     {
         $eras = $this->astCatalog->getEras();
 
-        self::assertCount(7, $eras);
-        self::assertSame(['start', 'stone_age', 'early_bronze_age', 'middle_bronze_age', 'late_bronze_age', 'early_iron_age', 'late_iron_age'], array_map(static fn (AstEraDefinition $era): string => $era->key, $eras));
+        $this->assertCount(7, $eras);
+        $this->assertSame(['start', 'stone_age', 'early_bronze_age', 'middle_bronze_age', 'late_bronze_age', 'early_iron_age', 'late_iron_age'], array_map(static fn (AstEraDefinition $era): string => $era->key, $eras));
     }
 
     #[Test]
@@ -38,8 +38,8 @@ final class AstCatalogTest extends TestCase
     {
         $stoneAge = $this->astCatalog->getEras()[1];
 
-        self::assertSame([], $stoneAge->basicRequirements);
-        self::assertSame([], $stoneAge->expertRequirements);
+        $this->assertSame([], $stoneAge->basicRequirements);
+        $this->assertSame([], $stoneAge->expertRequirements);
     }
 
     #[Test]
@@ -47,44 +47,44 @@ final class AstCatalogTest extends TestCase
     {
         $lateIronAge = $this->astCatalog->getEraForPosition(15);
 
-        self::assertSame('late_iron_age', $lateIronAge->key);
-        self::assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
-        self::assertSame(['cities' => 6, 'advances' => 17, 'max_advance_cost' => 99, 'advance_points' => 56], $lateIronAge->expertRequirements);
+        $this->assertSame('late_iron_age', $lateIronAge->key);
+        $this->assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
+        $this->assertSame(['cities' => 6, 'advances' => 17, 'max_advance_cost' => 99, 'advance_points' => 56], $lateIronAge->expertRequirements);
     }
 
     #[Test]
     public function getEraForPositionZeroReturnsStart(): void
     {
-        self::assertSame('start', $this->astCatalog->getEraForPosition(0)->key);
+        $this->assertSame('start', $this->astCatalog->getEraForPosition(0)->key);
     }
 
     #[Test]
     public function getEraForPositionFourReturnsStoneAge(): void
     {
-        self::assertSame('stone_age', $this->astCatalog->getEraForPosition(4)->key);
+        $this->assertSame('stone_age', $this->astCatalog->getEraForPosition(4)->key);
     }
 
     #[Test]
     public function getEraForPositionFiveReturnsEarlyBronzeAge(): void
     {
-        self::assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(5)->key);
+        $this->assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(5)->key);
     }
 
     #[Test]
     public function getEraForPositionFifteenReturnsLateIronAge(): void
     {
-        self::assertSame('late_iron_age', $this->astCatalog->getEraForPosition(15)->key);
+        $this->assertSame('late_iron_age', $this->astCatalog->getEraForPosition(15)->key);
     }
 
     #[Test]
     public function getEraForPositionClampsNegativePositionToStart(): void
     {
-        self::assertSame('start', $this->astCatalog->getEraForPosition(-3)->key);
+        $this->assertSame('start', $this->astCatalog->getEraForPosition(-3)->key);
     }
 
     #[Test]
     public function getEraForPositionClampsOutOfBoundsPositionToLateIronAge(): void
     {
-        self::assertSame('late_iron_age', $this->astCatalog->getEraForPosition(99)->key);
+        $this->assertSame('late_iron_age', $this->astCatalog->getEraForPosition(99)->key);
     }
 }

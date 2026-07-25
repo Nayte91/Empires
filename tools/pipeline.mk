@@ -22,8 +22,8 @@ phpcs: ## [Quality] Run PHP-CS-Fixer code style (composer phpcs)
 	$(COMPOSER) phpcs -- $(or $(PARAMS),src/)
 
 rector: ## [Quality] Run Rector code modernization (composer rector)
-	@echo "🔧 Applying Rector modernization on: $(or $(PARAMS),src/)"
-	$(COMPOSER) rector -- $(or $(PARAMS),src/)
+	@echo "🔧 Applying Rector modernization on: $(or $(PARAMS),src/ tests/)"
+	$(COMPOSER) rector -- $(or $(PARAMS),src/ tests/)
 
 phpunit: ## [Quality] Run PHPUnit tests (composer phpunit)
 	@echo "🧪 Running PHPUnit tests on: $(or $(PARAMS),tests/)"

@@ -109,7 +109,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         // purchase" — App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
         // read directly, unaffected by the nested-Cart rendering issue documented
         // in ShopComponentTest's editPendingOrder tests — is enabled.
-        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -239,7 +239,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         // embedded (see ShopComponentTest's editPendingOrder tests).
         $bobCrawler = $this->createLiveComponent('Shop', ['player' => $bob], $client)->render()->crawler();
 
-        $this->assertTrue($bobCrawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($bobCrawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     /** @return array{GameSession, Player, Player} */

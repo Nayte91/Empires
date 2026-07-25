@@ -23,7 +23,7 @@ final class CartRepositoryTest extends TestCase
 
         $cart = $repository->findOrCreate((string) Uuid::v4());
 
-        self::assertTrue($cart->isEmpty());
+        $this->assertTrue($cart->isEmpty());
     }
 
     #[Test]
@@ -39,7 +39,7 @@ final class CartRepositoryTest extends TestCase
 
         $restored = $repository->findOrCreate($playerId);
 
-        self::assertSame(['pottery', 'agriculture'], $restored->keys());
+        $this->assertSame(['pottery', 'agriculture'], $restored->keys());
     }
 
     #[Test]
@@ -57,8 +57,8 @@ final class CartRepositoryTest extends TestCase
 
         $restored = $legacyRepository->findOrCreate($playerId->toRfc4122());
 
-        self::assertSame(['pottery', 'agriculture'], $restored->keys());
-        self::assertNull($restored->items[0]->gift);
+        $this->assertSame(['pottery', 'agriculture'], $restored->keys());
+        $this->assertNull($restored->items[0]->gift);
     }
 
     #[Test]
@@ -76,8 +76,8 @@ final class CartRepositoryTest extends TestCase
         $secondCart->add('democracy');
         $repository->save($secondPlayerId, $secondCart);
 
-        self::assertSame(['pottery'], $repository->findOrCreate($firstPlayerId)->keys());
-        self::assertSame(['democracy'], $repository->findOrCreate($secondPlayerId)->keys());
+        $this->assertSame(['pottery'], $repository->findOrCreate($firstPlayerId)->keys());
+        $this->assertSame(['democracy'], $repository->findOrCreate($secondPlayerId)->keys());
     }
 
     #[Test]
@@ -91,7 +91,7 @@ final class CartRepositoryTest extends TestCase
 
         $repository->clear($playerId);
 
-        self::assertTrue($repository->findOrCreate($playerId)->isEmpty());
+        $this->assertTrue($repository->findOrCreate($playerId)->isEmpty());
     }
 
     private function makeRepository(): CartRepository

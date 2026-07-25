@@ -49,10 +49,10 @@ final class OrderRejectionPolicyTest extends WebTestCase
         $rendered = $component->call('rejectOrder', ['turn' => $game->currentTurn])->render()->toString();
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
-        self::assertInstanceOf(Order::class, $order);
-        self::assertSame(OrderStatus::Pending, $order->status);
-        self::assertStringContainsString('role="alert"', $rendered);
-        self::assertStringContainsString('cannot be rejected', $rendered);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(OrderStatus::Pending, $order->status);
+        $this->assertStringContainsString('role="alert"', $rendered);
+        $this->assertStringContainsString('cannot be rejected', $rendered);
     }
 
     #[Test]
@@ -66,7 +66,7 @@ final class OrderRejectionPolicyTest extends WebTestCase
             'ordersStamp' => '',
         ])->render()->toString();
 
-        self::assertStringNotContainsString('data-live-action-param="rejectOrder"', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="rejectOrder"', $rendered);
     }
 
     /** @return array{GameSession, Player, Player} */

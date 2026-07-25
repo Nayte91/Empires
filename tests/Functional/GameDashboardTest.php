@@ -31,8 +31,8 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        self::assertSame(1, preg_match('/<h1>(.*?)<\/h1>/s', $html, $matches), '<h1> not found in rendered output.');
-        self::assertSame($game->slug, trim($matches[1]));
+        $this->assertSame(1, preg_match('/<h1>(.*?)<\/h1>/s', $html, $matches), '<h1> not found in rendered output.');
+        $this->assertSame($game->slug, trim($matches[1]));
     }
 
     #[Test]
@@ -46,10 +46,10 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        self::assertStringContainsString('/'.$game->slug.'/operator', $operatorUrl);
-        self::assertStringContainsString('<dialog', $html);
-        self::assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
-        self::assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
+        $this->assertStringContainsString('/'.$game->slug.'/operator', (string) $operatorUrl);
+        $this->assertStringContainsString('<dialog', $html);
+        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
+        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
     }
 
     #[Test]
@@ -60,7 +60,7 @@ final class GameDashboardTest extends WebTestCase
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
         // No players: the only QR code on the dashboard is the operator's.
-        self::assertSame(1, substr_count($html, '<svg'));
+        $this->assertSame(1, substr_count($html, '<svg'));
     }
 
     #[Test]
@@ -72,8 +72,8 @@ final class GameDashboardTest extends WebTestCase
         $rootTag = substr($html, 0, (int) strpos($html, '>') + 1);
         $beforeFirstTable = substr($html, 0, (int) strpos($html, '<table'));
 
-        self::assertStringNotContainsString('data-controller', $rootTag);
-        self::assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded ScoreBoard and Ast tables.');
+        $this->assertStringNotContainsString('data-controller', $rootTag);
+        $this->assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded ScoreBoard and Ast tables.');
     }
 
     private function createGame(): GameSession
