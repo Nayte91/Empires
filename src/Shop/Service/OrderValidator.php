@@ -7,10 +7,10 @@ namespace App\Shop\Service;
 use App\Entity\Order;
 use App\Game\Shop\ShopConnector;
 use App\Shop\Dto\OrderLine;
+use App\Shop\Event\OrderValidated;
+use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\EligibilityException;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Workflow\WorkflowInterface;
 
 final readonly class OrderValidator
@@ -18,9 +18,9 @@ final readonly class OrderValidator
     public function __construct(
         private EntityManagerInterface $entityManager,
         private LineQuoter $lineQuoter,
-        private HubInterface $hub,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopConnector $shopConnector,
+        private ShopEventPublisher $events,
     ) {}
 
     public function validate(Order $order): void
@@ -45,18 +45,14 @@ final readonly class OrderValidator
         $frozenLines = $this->lineQuoter->quote($intents, $buyer, $this->shopConnector->facets());
         $total = array_sum(array_map(static fn (OrderLine $line): int => $line->netCost, $frozenLines));
 
-        $hub = $this->hub;
         $machine = $this->shopOrderStateMachine;
 
-        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $hub, $machine): void {
+        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $machine): void {
             $machine->apply($order, 'validate');
             $order->freeze($frozenLines, $total);
             $player->ownAdvances($slugs);
-
-            $topic = 'empires/game/'.$player->game->id;
-
-            $hub->publish(new Update($topic, '{"event":"order-updated"}'));
-            $hub->publish(new Update($topic, '{"event":"player-updated"}'));
         });
+
+        $this->events->publish(new OrderValidated($player->id, $order->turn));
     }
 }

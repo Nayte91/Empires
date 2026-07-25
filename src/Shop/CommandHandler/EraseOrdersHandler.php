@@ -12,8 +12,6 @@ use App\Shop\Event\OrdersErased;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
@@ -23,7 +21,6 @@ final readonly class EraseOrdersHandler
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
         private PlayerRepository $playerRepository,
-        private HubInterface $hub,
         private ShopEventPublisher $events,
     ) {}
 
@@ -55,11 +52,6 @@ final readonly class EraseOrdersHandler
                 $entityManager->remove($o);
             }
         });
-
-        $topic = 'empires/game/'.$player->game->id;
-
-        $this->hub->publish(new Update($topic, '{"event":"player-updated"}'));
-        $this->hub->publish(new Update($topic, '{"event":"order-updated"}'));
 
         $this->events->publish(new OrdersErased(
             $command->playerId,

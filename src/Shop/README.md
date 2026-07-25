@@ -333,14 +333,17 @@ framework:
 
 Contrairement au bus de commandes (un seul handler autorisé par message), un bus d'events accepte N souscripteurs indépendants — c'est le rôle de `allow_no_handlers` que d'autoriser aussi zéro souscripteur, l'état actuel.
 
-Chaque `CommandHandler` de `src/Shop/CommandHandler/` dispatch, une fois son traitement effectivement réussi (jamais avant), un event immuable au payload scalaire (pas d'entité Doctrine — le rend sérialisable si le bus passe un jour en async) :
+Chaque `CommandHandler` de `src/Shop/CommandHandler/`, plus `OrderValidator` (voir plus bas), dispatch, une fois son traitement effectivement réussi (jamais avant), un event immuable au payload scalaire (pas d'entité Doctrine — le rend sérialisable si le bus passe un jour en async) :
 
-| Command       | Event            | Payload               | Condition d'émission                          |
-|---------------|------------------|-----------------------|-----------------------------------------------|
-| `SubmitOrder` | `OrderSubmitted` | `playerId`, `window`  | toujours                                      |
-| `RejectOrder` | `OrderRejected`  | `playerId`, `window`  | toujours                                      |
-| `SellDirect`  | `OrderSold`      | `playerId`, `window`  | toujours                                      |
-| `EraseOrders` | `OrdersErased`   | `playerId`, `windows` | uniquement les fenêtres réellement supprimées |
+| Command / appelant                | Event             | Payload               | Condition d'émission                             |
+|------------------------------------|-------------------|------------------------|---------------------------------------------------|
+| `SubmitOrder`                      | `OrderSubmitted`  | `playerId`, `window`   | toujours                                           |
+| `RejectOrder`                      | `OrderRejected`   | `playerId`, `window`   | toujours                                           |
+| `SellDirect`                       | `OrderSold`       | `playerId`, `window`   | toujours                                           |
+| `EraseOrders`                      | `OrdersErased`    | `playerId`, `windows`  | uniquement les fenêtres réellement supprimées      |
+| `OrderValidator::validate()` (pas une commande) | `OrderValidated`  | `playerId`, `window`   | toujours, après le retour de `wrapInTransaction()` |
+
+`OrderValidator::validate()` est un cas à part : contrairement aux 4 command handlers, il est appelable directement, en dehors de toute commande — c'est le chemin de validation par les pairs, sans passer par `SellDirect`. Sans event dédié, ce chemin ne publierait rien ; d'où `OrderValidated`. Son émission a lieu **après le retour de `wrapInTransaction()`**, jamais à l'intérieur : les anciens `hub->publish(...)` y étaient, donc avant le flush et avant le commit — un event émis là pousserait un état pas encore durablement persisté.
 
 Pour se brancher, le connecteur enregistre un handler sur ce bus :
 
@@ -357,10 +360,25 @@ final class OnOrderSold
 - **Décorer le `CommandHandler`** — couple le connecteur à l'implémentation interne du handler (fragile si la lib change), et scale mal dès qu'on veut plusieurs listeners indépendants.
 - **`WorkerMessageHandledEvent`** (event natif du `Worker` Messenger) — ne se déclenche que via `messenger:consume` sur un transport réellement async ; inopérant tant que nos commandes restent en `sync://`.
 
-### Ce qui n'est pas (encore) fait
+### Côté hôte : premier abonné (implémenté)
 
-Les `hub->publish(...)` existants restent en dur dans les handlers et dans `OrderValidator` — ils ne sont pas migrés vers des listeners du nouveau bus. C'est la base seulement ; la suite naturelle est F2-④ (port événements, voir tableau des chantiers dans `shop.md`).
+Le bus a maintenant un abonné réel : `App\Game\Shop\ShopMercurePublisher`, enregistré sur `bus: 'shop.event.bus'` uniquement (jamais `#[AsEventListener]` en plus — les deux canaux publieraient en double, voir §"Deux canaux" plus haut). Il traduit les events granulaires de la lib vers les deux noms Mercure déjà consommés par le frontend (`order-updated`, `player-updated`) :
 
-### Point de vigilance
+- `OrderSubmitted` → `order-updated`
+- `OrderValidated` → `order-updated` puis `player-updated`
+- `OrderRejected` → `order-updated`
+- `OrdersErased` → `player-updated` puis `order-updated`
+- `OrderSold` → volontairement non mappé : `SellDirect` valide en appelant `OrderValidator::validate()` en interne, qui a déjà publié `OrderValidated` pour la même mutation ; mapper `OrderSold` aussi publierait en double.
 
-Le state machine `shop_order` (`config/packages/workflow.yaml`) émet déjà nativement, via l'EventDispatcher standard, des events Symfony Workflow sur ses transitions (`workflow.shop_order.completed.validate`, `.reject`, `.resubmit`). `OrderSold` et `OrderRejected` — ainsi qu'`OrderSubmitted` dans le cas `resubmit` — font donc doublon avec un signal déjà disponible sans code supplémentaire. Seul `OrdersErased` est réellement inédit (l'effacement ne passe pas par la state machine). À trancher : garder `shop.event.bus` comme point d'entrée unique et uniforme pour tout le métier, ou s'appuyer sur les events Workflow pour tout ce qui est une transition d'état et réserver `shop.event.bus` aux actions qui n'en sont pas.
+**Ce mapping est une décision de l'hôte, pas de la lib.** `shop.event.bus` continue de porter les 5 events granulaires ; un autre hôte les mapperait différemment, ou consommerait `OrderSold` que celui-ci ignore délibérément. La lib ne doit jamais apprendre ces deux noms Mercure.
+
+### `shop.event.bus` reste le point d'entrée unique (tranché)
+
+Le state machine `shop_order` (défini dans `src/Shop/config/workflow.yaml` — `config/packages/workflow.yaml` n'en est plus qu'un shim d'import à 2 lignes) émet nativement, via l'EventDispatcher standard, des events Symfony Workflow sur ses transitions (`workflow.shop_order.completed.validate`, `.reject`, `.resubmit`). L'hypothèse de doublon avec `OrderSold`/`OrderRejected`/`OrderSubmitted` évoquée dans une version antérieure de ce document ne tient pas, par les faits :
+
+- `reject` est bloqué **inconditionnellement** par `App\Game\Shop\OrderWorkflowPolicy` (guard sur `workflow.shop_order.guard.reject`) → `completed.reject` ne se déclenche jamais en production, et `resubmit` est inatteignable par transitivité (rejeter est le seul chemin vers `rejected`) ;
+- le cas dominant d'`OrderSubmitted` (soumission simple) **ne passe par aucune transition** — le workflow démarre déjà en `pending` ;
+- l'effacement (`OrdersErased`) n'a pas de transition du tout ;
+- `completed.validate` se déclenche **avant le flush** — un listener y pousserait un état pas encore persisté, exactement le bug que la bascule d'`OrderValidated` après `wrapInTransaction()` corrige (voir plus haut).
+
+`shop.event.bus` reste donc le point d'entrée uniforme pour tout le métier ; les events Workflow natifs ne sont pas une alternative viable.

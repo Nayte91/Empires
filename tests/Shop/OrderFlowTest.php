@@ -25,7 +25,7 @@ use App\Shop\Promotion\PromotionType;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
-use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -37,6 +37,7 @@ final class OrderFlowTest extends WebTestCase
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private OrderValidator $orderValidator;
+    private RecordingHub $hub;
 
     protected function setUp(): void
     {
@@ -46,30 +47,35 @@ final class OrderFlowTest extends WebTestCase
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $this->hub = self::getContainer()->get(RecordingHub::class);
 
-        // SubmitOrderHandler and OrderValidator have no other consumer yet (the command
-        // bus dispatches them by tag, not by class reference), so the compiled container
-        // inlines them and they cannot be fetched directly. Build them here from the
-        // shared EntityManager / OrderRepository / PlayerRepository / ProductProviderInterface instances.
+        // SubmitOrderHandler and OrderValidator are built by hand rather than fetched
+        // from the container. This wires them to the guard-free ShopOrderStateMachine
+        // test double (tests/Support/Workflow/ShopOrderStateMachine.php) instead of the
+        // container's registered shop_order workflow, which carries OrderWorkflowPolicy's
+        // guard on reject. This file never exercises reject, so it's inherited convention
+        // from RejectOrderTest (the sibling file where it's load-bearing) rather than a
+        // hard requirement here — worth revisiting. Built from the shared EntityManager /
+        // OrderRepository / PlayerRepository / ProductProviderInterface instances.
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
         $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $shopConnector = new ShopConnector($this->orderRepository);
         $this->submitOrderHandler = new SubmitOrderHandler(
             $this->entityManager,
             $this->orderRepository,
             $playerRepository,
-            new NullHub(),
             $lineQuoter,
             $shopOrderStateMachine,
-            self::getContainer()->get(ShopEventPublisher::class),
+            $eventBus,
             $shopConnector,
         );
         $this->orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
-            new NullHub(),
             $shopOrderStateMachine,
             $shopConnector,
+            $eventBus,
         );
     }
 
@@ -180,6 +186,31 @@ final class OrderFlowTest extends WebTestCase
         $this->expectExceptionMessageMatches('/pottery/');
 
         ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+    }
+
+    #[Test]
+    public function submittingAnOrderPublishesOrderUpdatedOnTheGameTopic(): void
+    {
+        $player = $this->createPlayer();
+
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+
+        $this->assertSame(['order-updated'], $this->hub->eventNames());
+        $this->assertSame(['empires/game/'.$player->game->id], $this->hub->topics());
+    }
+
+    #[Test]
+    public function validatingAnOrderPublishesOrderUpdatedThenPlayerUpdated(): void
+    {
+        $player = $this->createPlayer();
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+        $this->hub->clear();
+
+        $this->orderValidator->validate($order);
+
+        $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
+        $topic = 'empires/game/'.$player->game->id;
+        $this->assertSame([$topic, $topic], $this->hub->topics());
     }
 
     private function createPlayer(): Player

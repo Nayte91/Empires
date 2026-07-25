@@ -25,7 +25,7 @@ use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
-use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -40,6 +40,7 @@ final class RejectOrderTest extends WebTestCase
     private SellDirectHandler $sellDirectHandler;
     private OrderValidator $orderValidator;
     private RejectOrderHandler $rejectOrderHandler;
+    private RecordingHub $hub;
 
     protected function setUp(): void
     {
@@ -49,11 +50,16 @@ final class RejectOrderTest extends WebTestCase
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $this->hub = self::getContainer()->get(RecordingHub::class);
 
-        // Same convention as OrderFlowTest/DirectSaleTest: these handlers have no
-        // other consumer yet, so the compiled container inlines them and they
-        // cannot be fetched directly. Built here from the shared EntityManager/
-        // OrderRepository/PlayerRepository/ProductProviderInterface instances.
+        // Same convention as OrderFlowTest/DirectSaleTest, but here it's load-bearing:
+        // these handlers are built by hand, not fetched from the container, so they run
+        // on the guard-free ShopOrderStateMachine test double instead of the container's
+        // registered shop_order workflow. The container's workflow carries
+        // OrderWorkflowPolicy's guard, which blocks the reject transition unconditionally
+        // in production — fetching the real handlers here would make every reject
+        // assertion below fail. Built from the shared EntityManager/OrderRepository/
+        // PlayerRepository/ProductProviderInterface instances.
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
@@ -62,7 +68,6 @@ final class RejectOrderTest extends WebTestCase
             $this->entityManager,
             $this->orderRepository,
             $playerRepository,
-            new NullHub(),
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
@@ -71,9 +76,9 @@ final class RejectOrderTest extends WebTestCase
         $this->orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
-            new NullHub(),
             $shopOrderStateMachine,
             $shopConnector,
+            $eventBus,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,
@@ -89,7 +94,6 @@ final class RejectOrderTest extends WebTestCase
             $this->entityManager,
             $this->orderRepository,
             $playerRepository,
-            new NullHub(),
             $shopOrderStateMachine,
             $eventBus,
         );
@@ -162,6 +166,32 @@ final class RejectOrderTest extends WebTestCase
         $this->assertSame(OrderStatus::Validated, $order->status);
         $this->assertSame(['democracy'], $order->keys());
         $this->assertContains('democracy', $player->advances);
+    }
+
+    #[Test]
+    public function rejectingAPendingOrderPublishesOrderUpdatedOnTheGameTopic(): void
+    {
+        $player = $this->createPlayer();
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+        $this->hub->clear();
+
+        ($this->rejectOrderHandler)(new RejectOrder($player->id, $player->game->currentTurn));
+
+        $this->assertSame(['order-updated'], $this->hub->eventNames());
+        $this->assertSame(['empires/game/'.$player->game->id], $this->hub->topics());
+    }
+
+    #[Test]
+    public function rejectingAMissingOrderPublishesNothing(): void
+    {
+        $player = $this->createPlayer();
+        ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+        $publishedBySubmit = $this->hub->eventNames();
+
+        ($this->rejectOrderHandler)(new RejectOrder($player->id, $player->game->currentTurn + 1));
+
+        $this->assertSame(['order-updated'], $publishedBySubmit);
+        $this->assertSame($publishedBySubmit, $this->hub->eventNames());
     }
 
     private function createPlayer(): Player

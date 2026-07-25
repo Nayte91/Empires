@@ -10,5 +10,6 @@ services:
 
 when@test:
     services:
-        Symfony\Component\Mercure\HubInterface: '@App\Tests\Support\Mercure\NullHub'
-        App\Tests\Support\Mercure\NullHub: ~
+        Symfony\Component\Mercure\HubInterface: '@App\Tests\Support\Mercure\RecordingHub'
+        App\Tests\Support\Mercure\RecordingHub:
+            public: true

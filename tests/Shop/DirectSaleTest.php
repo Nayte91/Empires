@@ -26,7 +26,7 @@ use App\Shop\Promotion\PromotionType;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
-use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -38,6 +38,7 @@ final class DirectSaleTest extends WebTestCase
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private SellDirectHandler $sellDirectHandler;
+    private RecordingHub $hub;
 
     protected function setUp(): void
     {
@@ -47,10 +48,14 @@ final class DirectSaleTest extends WebTestCase
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $this->hub = self::getContainer()->get(RecordingHub::class);
 
-        // SubmitOrderHandler, OrderValidator and SellDirectHandler have no other
-        // consumer yet, so the compiled container inlines them and they cannot be
-        // fetched directly. Build them here from the shared EntityManager/
+        // SubmitOrderHandler, OrderValidator and SellDirectHandler are built by hand
+        // rather than fetched from the container, so they share the guard-free
+        // ShopOrderStateMachine test double instead of the container's registered
+        // shop_order workflow (see OrderFlowTest). This file never exercises reject —
+        // the guard that motivates the test double — so this is inherited convention,
+        // not a hard requirement here. Built from the shared EntityManager/
         // OrderRepository/PlayerRepository/ProductProviderInterface instances, following
         // OrderFlowTest's convention.
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
@@ -61,7 +66,6 @@ final class DirectSaleTest extends WebTestCase
             $this->entityManager,
             $this->orderRepository,
             $playerRepository,
-            new NullHub(),
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
@@ -70,9 +74,9 @@ final class DirectSaleTest extends WebTestCase
         $orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
-            new NullHub(),
             $shopOrderStateMachine,
             $shopConnector,
+            $eventBus,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,
@@ -163,6 +167,18 @@ final class DirectSaleTest extends WebTestCase
         $this->expectException(OrderException::class);
 
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
+    }
+
+    #[Test]
+    public function sellingDirectPublishesOrderUpdatedThenPlayerUpdatedOnTheGameTopic(): void
+    {
+        $player = $this->createPlayer();
+
+        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), $player->game->currentTurn));
+
+        $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
+        $topic = 'empires/game/'.$player->game->id;
+        $this->assertSame([$topic, $topic], $this->hub->topics());
     }
 
     private function createPlayer(): Player

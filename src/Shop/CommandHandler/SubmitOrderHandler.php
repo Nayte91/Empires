@@ -17,8 +17,6 @@ use App\Shop\Exception\OrderException;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -29,7 +27,6 @@ final readonly class SubmitOrderHandler
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
         private PlayerRepository $playerRepository,
-        private HubInterface $hub,
         private LineQuoter $lineQuoter,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopEventPublisher $events,
@@ -72,11 +69,6 @@ final readonly class SubmitOrderHandler
         }
 
         $this->entityManager->flush();
-
-        $this->hub->publish(new Update(
-            'empires/game/'.$order->player->game->id,
-            '{"event":"order-updated"}',
-        ));
 
         $this->events->publish(new OrderSubmitted($command->playerId, $command->window));
 

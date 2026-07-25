@@ -5,9 +5,24 @@
     "license": "proprietary",
     "require": {
         "php": ">=8.5",
+        "psr/event-dispatcher": "^1.0",
+        "psr/log": "^3.0",
+        "symfony/dependency-injection": "^8.1",
         "symfony/messenger": "^8.1",
-        "symfony/workflow": "^8.1",
         "symfony/uid": "^8.1",
-        "psr/event-dispatcher": "^1.0"
-    }
+        "symfony/workflow": "^8.1",
+
+        "doctrine/dbal": "^4.4",
+        "doctrine/doctrine-bundle": "^3.3",
+        "doctrine/orm": "^3.6",
+        "symfony/http-foundation": "^8.1"
+    },
+    "_comment_require": [
+        "The second group is transitional, not part of the target surface.",
+        "doctrine/* and symfony/http-foundation are only needed because the write side still",
+        "traverses Doctrine directly (EntityManagerInterface, OrderLinesType) and because",
+        "CartRepository is hardcoded to the HTTP session. Chantier F2-⑥ (persistence port)",
+        "and CartStorageInterface remove them. Declared meanwhile because a manifest that",
+        "understates its dependencies is worse than one that admits the debt."
+    ]
 }

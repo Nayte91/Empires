@@ -12,8 +12,6 @@ use App\Shop\Event\OrderRejected;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\OrderException;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -24,7 +22,6 @@ final readonly class RejectOrderHandler
         private EntityManagerInterface $entityManager,
         private OrderRepository $orderRepository,
         private PlayerRepository $playerRepository,
-        private HubInterface $hub,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopEventPublisher $events,
     ) {}
@@ -46,11 +43,6 @@ final readonly class RejectOrderHandler
         $this->shopOrderStateMachine->apply($order, 'reject');
 
         $this->entityManager->flush();
-
-        $this->hub->publish(new Update(
-            'empires/game/'.$order->player->game->id,
-            '{"event":"order-updated"}',
-        ));
 
         $this->events->publish(new OrderRejected($command->playerId, $command->window));
     }

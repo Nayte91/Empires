@@ -23,7 +23,7 @@ use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
 use App\Shop\Service\PriceCalculator;
-use App\Tests\Support\Mercure\NullHub;
+use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -36,6 +36,7 @@ final class OrderEraserTest extends WebTestCase
     private SellDirectHandler $sellDirectHandler;
     private EraseOrdersHandler $eraseOrdersHandler;
     private ShopConnector $shopConnector;
+    private RecordingHub $hub;
 
     protected function setUp(): void
     {
@@ -44,14 +45,19 @@ final class OrderEraserTest extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
+        $this->hub = self::getContainer()->get(RecordingHub::class);
 
-        // SellDirectHandler, OrderValidator and EraseOrdersHandler have no other
-        // consumer yet, so the compiled container inlines them and they cannot be
-        // fetched directly. Built here from the shared EntityManager/OrderRepository/
-        // PlayerRepository, following DirectSaleTest's convention.
-        // NullHub (registered for the real HubInterface under config/services.yaml
-        // when@test) makes every publish() call in this flow a no-op — no network I/O
-        // happens during the suite.
+        // SellDirectHandler, OrderValidator and EraseOrdersHandler are built by hand
+        // rather than fetched from the container, so they share the guard-free
+        // ShopOrderStateMachine test double instead of the container's registered
+        // shop_order workflow (see OrderFlowTest/RejectOrderTest). This file never
+        // exercises reject — the guard that motivates the test double — so this is
+        // inherited convention, not a hard requirement here. Built from the shared
+        // EntityManager/OrderRepository/PlayerRepository, following DirectSaleTest's
+        // convention.
+        // RecordingHub (registered for the real HubInterface under config/services.yaml
+        // when@test) keeps every publish() call in-process — no network I/O happens
+        // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
         $shopOrderStateMachine = ShopOrderStateMachine::create();
@@ -60,9 +66,9 @@ final class OrderEraserTest extends WebTestCase
         $orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
-            new NullHub(),
             $shopOrderStateMachine,
             $this->shopConnector,
+            $eventBus,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,
@@ -74,7 +80,7 @@ final class OrderEraserTest extends WebTestCase
             $eventBus,
             $this->shopConnector,
         );
-        $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, new NullHub(), $eventBus);
+        $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, $eventBus);
     }
 
     #[Test]
@@ -173,6 +179,45 @@ final class OrderEraserTest extends WebTestCase
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
 
         $this->assertInstanceOf(Order::class, $this->orderRepository->find($order->id));
+    }
+
+    #[Test]
+    public function erasingOrdersPublishesPlayerUpdatedThenOrderUpdatedOnTheGameTopic(): void
+    {
+        $player = $this->createPlayer();
+        $this->createPendingOrder($player, 1, ['pottery']);
+
+        ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
+
+        $this->assertSame(['player-updated', 'order-updated'], $this->hub->eventNames());
+        $topic = 'empires/game/'.$player->game->id;
+        $this->assertSame([$topic, $topic], $this->hub->topics());
+    }
+
+    #[Test]
+    public function erasingWithNoWindowsPublishesNothing(): void
+    {
+        $player = $this->createPlayer();
+        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
+        $publishedBySale = $this->hub->eventNames();
+
+        ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
+
+        $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
+        $this->assertSame($publishedBySale, $this->hub->eventNames());
+    }
+
+    #[Test]
+    public function erasingWindowsWithoutAMatchingOrderPublishesNothing(): void
+    {
+        $player = $this->createPlayer();
+        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
+        $publishedBySale = $this->hub->eventNames();
+
+        ($this->eraseOrdersHandler)(new EraseOrders($player->id, [2, 3]));
+
+        $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
+        $this->assertSame($publishedBySale, $this->hub->eventNames());
     }
 
     private function createPlayer(): Player
