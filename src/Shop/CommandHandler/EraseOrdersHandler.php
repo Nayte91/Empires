@@ -10,6 +10,7 @@ use App\Repository\PlayerRepository;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Event\OrdersErased;
 use App\Shop\Event\ShopEventPublisher;
+use App\Shop\FulfillmentInterface;
 use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -22,6 +23,7 @@ final readonly class EraseOrdersHandler
         private OrderRepository $orderRepository,
         private PlayerRepository $playerRepository,
         private ShopEventPublisher $events,
+        private FulfillmentInterface $fulfillment,
     ) {}
 
     public function __invoke(EraseOrders $command): void
@@ -42,11 +44,12 @@ final readonly class EraseOrdersHandler
         }
 
         $entityManager = $this->entityManager;
+        $fulfillment = $this->fulfillment;
 
-        $entityManager->wrapInTransaction(static function () use ($orders, $entityManager): void {
+        $entityManager->wrapInTransaction(static function () use ($orders, $entityManager, $fulfillment): void {
             foreach ($orders as $o) {
                 if (OrderStatus::Validated === $o->status) {
-                    $o->player->disownAdvances($o->keys());
+                    $fulfillment->revoke($o->player->id, $o->keys());
                 }
 
                 $entityManager->remove($o);

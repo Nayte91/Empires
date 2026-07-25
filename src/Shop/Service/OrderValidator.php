@@ -10,6 +10,7 @@ use App\Shop\Dto\OrderLine;
 use App\Shop\Event\OrderValidated;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\EligibilityException;
+use App\Shop\FulfillmentInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -21,6 +22,7 @@ final readonly class OrderValidator
         private WorkflowInterface $shopOrderStateMachine,
         private ShopConnector $shopConnector,
         private ShopEventPublisher $events,
+        private FulfillmentInterface $fulfillment,
     ) {}
 
     public function validate(Order $order): void
@@ -46,11 +48,12 @@ final readonly class OrderValidator
         $total = array_sum(array_map(static fn (OrderLine $line): int => $line->netCost, $frozenLines));
 
         $machine = $this->shopOrderStateMachine;
+        $fulfillment = $this->fulfillment;
 
-        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $machine): void {
+        $this->entityManager->wrapInTransaction(static function () use ($order, $frozenLines, $total, $player, $slugs, $machine, $fulfillment): void {
             $machine->apply($order, 'validate');
             $order->freeze($frozenLines, $total);
-            $player->ownAdvances($slugs);
+            $fulfillment->grant($player->id, $slugs);
         });
 
         $this->events->publish(new OrderValidated($player->id, $order->turn));
