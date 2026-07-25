@@ -58,11 +58,12 @@
                 </select>
             </label>
 
+            {% set isAddPlayerDisabled = this.isPlayerLimitReached %}
             <button
                 type="button"
                 {{ live_action('addPlayer') }}
-                data-loading="addAttribute(disabled)"
-                {{ this.isPlayerLimitReached ? 'disabled' }}
+                {{ isAddPlayerDisabled ? 'disabled' }}
+                {% if not isAddPlayerDisabled %}data-loading="addAttribute(disabled)"{% endif %}
             >
                 Add
             </button>
@@ -128,12 +129,13 @@
             </tbody>
         </table>
 
+        {% set isRandomAllDisabled = not this.canAssignRandomEmpires %}
         <button
             type="button"
             class="game-creator__random-all"
             {{ live_action('assignRandomEmpires') }}
-            data-loading="addAttribute(disabled)"
-            {{ not this.canAssignRandomEmpires ? 'disabled' }}
+            {{ isRandomAllDisabled ? 'disabled' }}
+            {% if not isRandomAllDisabled %}data-loading="addAttribute(disabled)"{% endif %}
         >
             RANDOM
         </button>

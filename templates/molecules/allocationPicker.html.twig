@@ -10,11 +10,13 @@
         {% for facet, current in allocation %}
             <li class="allocation-picker__row" style="--category-color: var(--advance-{{ facet }})">
                 <span class="allocation-picker__category">{{ facet|capitalize }}</span>
+                {% set isMinusDisabled = current <= 0 %}
+                {% set isPlusDisabled = remaining <= 0 %}
                 <button
                     type="button"
                     {{ live_action(allocateAction, {for: row.advance.key, facet: facet, delta: -row.advance.promotion.option.step}) }}
-                    data-loading="addAttribute(disabled)"
-                    {{ current <= 0 ? 'disabled' }}
+                    {{ isMinusDisabled ? 'disabled' }}
+                    {% if not isMinusDisabled %}data-loading="addAttribute(disabled)"{% endif %}
                     class="allocation-picker__step allocation-picker__step--minus"
                     title="Remove {{ row.advance.promotion.option.step }} from {{ facet }}"
                 >
@@ -24,8 +26,8 @@
                 <button
                     type="button"
                     {{ live_action(allocateAction, {for: row.advance.key, facet: facet, delta: row.advance.promotion.option.step}) }}
-                    data-loading="addAttribute(disabled)"
-                    {{ remaining <= 0 ? 'disabled' }}
+                    {{ isPlusDisabled ? 'disabled' }}
+                    {% if not isPlusDisabled %}data-loading="addAttribute(disabled)"{% endif %}
                     class="allocation-picker__step allocation-picker__step--plus"
                     title="Add {{ row.advance.promotion.option.step }} to {{ facet }}"
                 >

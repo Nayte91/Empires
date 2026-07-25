@@ -25,11 +25,12 @@
     </main>
 
     {% if not readonly|default(false) %}
+        {% set isAddDisabled = row.product.owned or row.product.inCart or locked %}
         <button
             type="button"
             {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
-            {{ (row.product.owned or row.product.inCart or locked) ? 'disabled' }}
-            data-loading="addAttribute(disabled)"
+            {{ isAddDisabled ? 'disabled' }}
+            {% if not isAddDisabled %}data-loading="addAttribute(disabled)"{% endif %}
             class="product-card__add"
         >
             <span class="sr-only">Add {{ row.advance.name|capitalize }}</span>
