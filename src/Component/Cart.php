@@ -136,7 +136,7 @@ final class Cart
     {
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer, $this->shopConnector->facets()));
+        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer));
     }
 
     public function getTotal(): int

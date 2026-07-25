@@ -10,6 +10,7 @@ use App\Entity\Player;
 use App\Game\Category;
 use App\Repository\OrderRepository;
 use App\Shop\BuyerInterface;
+use App\Shop\FacetProviderInterface;
 use App\Shop\OrderStatus;
 use App\Shop\Promotion\OptionCredits;
 
@@ -18,7 +19,7 @@ use App\Shop\Promotion\OptionCredits;
  * game turn. This class is the only place where that translation is allowed —
  * src/Shop/ never learns what a window stands for.
  */
-final readonly class ShopConnector
+final readonly class ShopConnector implements FacetProviderInterface
 {
     public function __construct(private OrderRepository $orderRepository) {}
 

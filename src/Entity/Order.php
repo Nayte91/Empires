@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Shop\Doctrine\OrderLinesType;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Exception\OrderException;
+use App\Shop\OrderInterface;
 use App\Shop\OrderStatus;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -16,7 +17,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity]
 #[ORM\Table(name: 'orders')]
 #[ORM\UniqueConstraint(name: 'uniq_player_turn', columns: ['player_id', 'turn'])]
-class Order
+class Order implements OrderInterface
 {
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -37,6 +38,9 @@ class Order
 
     #[ORM\Column]
     public readonly \DateTimeImmutable $createdAt;
+
+    public int $window { get => $this->turn; }
+    public Uuid $buyerId { get => $this->player->id; }
 
     public function __construct(
         #[ORM\ManyToOne(targetEntity: Player::class)]

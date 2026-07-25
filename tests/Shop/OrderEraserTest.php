@@ -8,6 +8,7 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -15,6 +16,7 @@ use App\Shop\Command\EraseOrders;
 use App\Shop\Command\SellDirect;
 use App\Shop\CommandHandler\EraseOrdersHandler;
 use App\Shop\CommandHandler\SellDirectHandler;
+use App\Shop\Doctrine\DoctrineTransaction;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Event\ShopEventPublisher;
@@ -60,30 +62,37 @@ final class OrderEraserTest extends WebTestCase
         // when@test) keeps every publish() call in-process — no network I/O happens
         // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
+        $this->shopConnector = new ShopConnector($this->orderRepository);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine(), $this->shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $this->shopConnector = new ShopConnector($this->orderRepository);
         $fulfillment = new AdvanceFulfillment($playerRepository);
+        $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
+        // Single shared DoctrineTransaction instance, matching the singleton the
+        // container injects in production. SellDirectHandler doesn't open a scope of
+        // its own — its mutations stay unflushed and ride into OrderValidator's
+        // transactional() call via the unit of work, same as today. EraseOrdersHandler
+        // opens its own independent scope. Sharing the instance still matters: two
+        // separate instances would silently open a real nested transaction
+        // (SAVEPOINT) instead of joining the moment anything ever does nest.
+        $transaction = new DoctrineTransaction($this->entityManager);
         $orderValidator = new OrderValidator(
-            $this->entityManager,
+            $transaction,
             $lineQuoter,
             $shopOrderStateMachine,
-            $this->shopConnector,
+            $buyerProvider,
             $eventBus,
             $fulfillment,
         );
         $this->sellDirectHandler = new SellDirectHandler(
-            $this->entityManager,
             $this->orderRepository,
-            $playerRepository,
             $orderValidator,
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
-            $this->shopConnector,
+            $buyerProvider,
         );
-        $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, $eventBus, $fulfillment);
+        $this->eraseOrdersHandler = new EraseOrdersHandler($transaction, $this->orderRepository, $buyerProvider, $eventBus, $fulfillment);
     }
 
     #[Test]

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Shop\CommandHandler;
 
-use App\Entity\Order;
-use App\Repository\OrderRepository;
-use App\Repository\PlayerRepository;
+use App\Shop\BuyerProviderInterface;
 use App\Shop\Command\RejectOrder;
 use App\Shop\Event\OrderRejected;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\OrderException;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Shop\OrderInterface;
+use App\Shop\OrderRepositoryInterface;
+use App\Shop\TransactionInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -19,20 +19,20 @@ use Symfony\Component\Workflow\WorkflowInterface;
 final readonly class RejectOrderHandler
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private OrderRepository $orderRepository,
-        private PlayerRepository $playerRepository,
+        private TransactionInterface $transaction,
+        private OrderRepositoryInterface $orderRepository,
+        private BuyerProviderInterface $buyers,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopEventPublisher $events,
     ) {}
 
     public function __invoke(RejectOrder $command): void
     {
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $this->buyers->buyerFor($command->playerId);
 
-        $order = $this->orderRepository->findOneByPlayerAndWindow($player, $command->window);
+        $order = $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $command->window);
 
-        if (!$order instanceof Order) {
+        if (!$order instanceof OrderInterface) {
             return;
         }
 
@@ -40,9 +40,10 @@ final readonly class RejectOrderHandler
             throw OrderException::rejectionUnavailable();
         }
 
-        $this->shopOrderStateMachine->apply($order, 'reject');
-
-        $this->entityManager->flush();
+        $machine = $this->shopOrderStateMachine;
+        $this->transaction->transactional(static function () use ($order, $machine): void {
+            $machine->apply($order, 'reject');
+        });
 
         $this->events->publish(new OrderRejected($command->playerId, $command->window));
     }

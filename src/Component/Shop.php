@@ -124,7 +124,7 @@ final class Shop
 
         $lines = OrderStatus::Validated === $order->status
             ? $order->lines()
-            : $this->lineQuoter->quote($this->lineQuoter->intentsFromLines($order->lines()), $this->shopConnector->buyerFor($this->player), $this->shopConnector->facets());
+            : $this->lineQuoter->quote($this->lineQuoter->intentsFromLines($order->lines()), $this->shopConnector->buyerFor($this->player));
 
         return $this->toRows($lines);
     }

@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Shop\CommandHandler;
 
-use App\Entity\Order;
-use App\Game\Shop\ShopConnector;
-use App\Repository\OrderRepository;
-use App\Repository\PlayerRepository;
+use App\Shop\BuyerProviderInterface;
 use App\Shop\Command\SellDirect;
 use App\Shop\Event\OrderSold;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\CartException;
 use App\Shop\Exception\OrderException;
+use App\Shop\OrderInterface;
+use App\Shop\OrderRepositoryInterface;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
 use App\Shop\Service\OrderValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Workflow\WorkflowInterface;
 
@@ -24,37 +22,41 @@ use Symfony\Component\Workflow\WorkflowInterface;
 final readonly class SellDirectHandler
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private OrderRepository $orderRepository,
-        private PlayerRepository $playerRepository,
+        private OrderRepositoryInterface $orderRepository,
         private OrderValidator $orderValidator,
         private LineQuoter $lineQuoter,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopEventPublisher $events,
-        private ShopConnector $shopConnector,
+        private BuyerProviderInterface $buyers,
     ) {}
 
-    public function __invoke(SellDirect $command): Order
+    public function __invoke(SellDirect $command): OrderInterface
     {
         if ([] === $command->items) {
             throw CartException::empty();
         }
 
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $buyer = $this->buyers->buyerFor($command->playerId);
 
-        $order = $this->orderRepository->findOneByPlayerAndWindow($player, $command->window);
+        $existing = $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $command->window);
 
-        if (OrderStatus::Validated === $order?->status) {
+        if (OrderStatus::Validated === $existing?->status) {
             throw OrderException::windowAlreadyValidated();
         }
 
-        if (!$order instanceof Order) {
-            $order = new Order($player, $command->window);
-            $this->entityManager->persist($order);
-        }
+        // Quoted before the order row exists: if this throws (PromotionException on
+        // a bad elective allocation), no persisted-but-unflushed empty Order is left
+        // dangling in the unit of work for a later flush() to insert.
+        $lines = $this->lineQuoter->quote($command->items, $buyer);
+        $order = $existing ?? $this->orderRepository->create($command->playerId, $command->window);
 
-        $buyer = $this->shopConnector->buyerFor($player);
-        $order->replaceLines($this->lineQuoter->quote($command->items, $buyer, $this->shopConnector->facets()));
+        // No scope opened here: these mutations stay in-memory, unflushed. They ride
+        // into OrderValidator::validate()'s transactional() call below via the unit
+        // of work — the only real scope in this flow. This also keeps every
+        // exception validate() can throw (EligibilityException, PromotionException
+        // from re-quoting) outside any open scope, so none of them can trigger
+        // EntityManager::close().
+        $order->replaceLines($lines);
 
         if (OrderStatus::Rejected === $order->status) {
             $this->shopOrderStateMachine->apply($order, 'resubmit');

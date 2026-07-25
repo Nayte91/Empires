@@ -4,24 +4,24 @@ declare(strict_types=1);
 
 namespace App\Shop\CommandHandler;
 
-use App\Entity\Order;
-use App\Repository\OrderRepository;
-use App\Repository\PlayerRepository;
+use App\Shop\BuyerProviderInterface;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Event\OrdersErased;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\FulfillmentInterface;
+use App\Shop\OrderInterface;
+use App\Shop\OrderRepositoryInterface;
 use App\Shop\OrderStatus;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Shop\TransactionInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 #[AsMessageHandler]
 final readonly class EraseOrdersHandler
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private OrderRepository $orderRepository,
-        private PlayerRepository $playerRepository,
+        private TransactionInterface $transaction,
+        private OrderRepositoryInterface $orderRepository,
+        private BuyerProviderInterface $buyers,
         private ShopEventPublisher $events,
         private FulfillmentInterface $fulfillment,
     ) {}
@@ -32,10 +32,10 @@ final readonly class EraseOrdersHandler
             return;
         }
 
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $this->buyers->buyerFor($command->playerId);
 
         $orders = array_values(array_filter(array_map(
-            fn (int $window): ?Order => $this->orderRepository->findOneByPlayerAndWindow($player, $window),
+            fn (int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->playerId, $window),
             $command->windows,
         )));
 
@@ -43,22 +43,22 @@ final readonly class EraseOrdersHandler
             return;
         }
 
-        $entityManager = $this->entityManager;
+        $orderRepository = $this->orderRepository;
         $fulfillment = $this->fulfillment;
 
-        $entityManager->wrapInTransaction(static function () use ($orders, $entityManager, $fulfillment): void {
+        $this->transaction->transactional(static function () use ($orders, $orderRepository, $fulfillment): void {
             foreach ($orders as $o) {
                 if (OrderStatus::Validated === $o->status) {
-                    $fulfillment->revoke($o->player->id, $o->keys());
+                    $fulfillment->revoke($o->buyerId, $o->keys());
                 }
 
-                $entityManager->remove($o);
+                $orderRepository->remove($o);
             }
         });
 
         $this->events->publish(new OrdersErased(
             $command->playerId,
-            array_map(static fn (Order $order): int => $order->turn, $orders),
+            array_map(static fn (OrderInterface $order): int => $order->window, $orders),
         ));
     }
 }

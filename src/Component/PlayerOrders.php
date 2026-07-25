@@ -205,7 +205,7 @@ final class PlayerOrders
             ? $order->total ?? 0
             : array_sum(array_map(
                 static fn (OrderLine $line): int => $line->netCost,
-                $this->lineQuoter->quote($order instanceof Order ? $this->lineQuoter->intentsFromLines($order->lines()) : [], $buyer, $this->shopConnector->facets()),
+                $this->lineQuoter->quote($order instanceof Order ? $this->lineQuoter->intentsFromLines($order->lines()) : [], $buyer),
             ));
 
         return [

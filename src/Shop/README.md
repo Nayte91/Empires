@@ -83,6 +83,12 @@ one possible context.
   User/Player/Customer entity onto this interface (in Empires:
   `App\Game\Shop\PlayerBuyer`, built by `ShopConnector::buyerFor()`). This is the
   primary connector to the host's world.
+- `BuyerProviderInterface` (**port**) — **delivered**: `buyerFor(Uuid $buyerId):
+  BuyerInterface`, resolving a buyer id into a `BuyerInterface` without any library
+  caller touching the host's repository directly. Adapter: `App\Game\Shop\PlayerBuyerProvider`,
+  composing `PlayerRepository` + `ShopConnector::buyerFor()`. It absorbed the four
+  `PlayerRepository::find() ?? throw` sites that used to sit in the `CommandHandler`s
+  and `OrderValidator`.
 
 ### Cart
 
@@ -105,16 +111,42 @@ one possible context.
   applied promotions, see §5). Same shape at every status. A line's price starts as a
   **quote** (snapshot at submission) and becomes **authoritative** when the order
   reaches a confirmed status.
-- `OrderInterface` — identity, buyer ref, lines, total, status, timestamps. The host
-  persists it (Doctrine mapping shipped as an adapter, with the lines as an embedded
-  JSON document by default — a dedicated line table is the host's choice).
+- `OrderInterface` — **delivered**, minimal by the same "nothing speculative"
+  discipline as `ProductInterface`: buyer ref (`buyerId`), `window`, `status`,
+  `lines()`, `keys()`, `replaceLines()`, `freeze()`, plus `getMarking()`/`setMarking()`
+  for the workflow marking store (the `shop_order` state machine needs them on any
+  implementation, even though no other library code calls them directly). `id`,
+  `total`, `validatedAt`, `createdAt` are deliberately off the interface — verified
+  unread by any library code; they ship when a caller actually needs them, not
+  before. The host persists it (in Empires: `App\Entity\Order`, Doctrine-mapped, with
+  the lines as an embedded JSON document by default — a dedicated line table is the
+  host's choice).
 - **Status machine** — powered by `symfony/workflow`. Core default is deliberately
   tiny: `draft → pending → confirmed` + `cancelled` from any non-final state. Hosts
   extend the definition (paid, shipped, refunded…) without touching the engine; guards
   are workflow guards.
-- `OrderNumberInterface`, `OrderRepositoryInterface` (**ports**) — identity scheme and
-  persistence are contextual (sequential invoice numbers vs UUIDs vs `(buyer, turn)`
-  uniqueness — all valid).
+- `OrderRepositoryInterface` (**port**) — **delivered**: `findOneByBuyerAndWindow()`,
+  `create()`, `remove()` — the latter two only schedule the write in the current unit
+  of work, not durable until the enclosing transactional scope commits. Adapter:
+  `App\Repository\OrderRepository`; `create()` uses `getReference()`, so it needs no
+  `PlayerRepository` of its own.
+- `OrderNumberInterface` (**port**) — identity scheme is contextual (sequential
+  invoice numbers vs UUIDs vs `(buyer, window)` uniqueness — all valid). Target, not
+  yet built: Empires relies on `(buyer, window)` uniqueness directly, with no number
+  generator.
+
+**Portability status (code vs config).** As of the ports above, `src/Shop/`'s *code*
+names no host class — every `App\Entity\Order`, `App\Repository\PlayerRepository`,
+`EntityManagerInterface` reference that used to sit in a `CommandHandler` or
+`OrderValidator` is gone, replaced by `OrderInterface`, `OrderRepositoryInterface`,
+`BuyerProviderInterface`, `TransactionInterface`. Its *config* still does:
+`src/Shop/config/workflow.yaml` hardcodes `supports: [App\Entity\Order]`. That is
+packaging scope, deliberately not part of this chantier — but the port set is not
+"done" in the portability sense until that line is host-supplied too. Putting
+`getMarking()`/`setMarking()` on `OrderInterface`, rather than leaving them off, is
+what makes that eventual fix a one-line config change instead of a redesign: any
+class implementing `OrderInterface` already satisfies the marking-store contract the
+state machine needs, whatever its FQCN.
 
 ### Checkout (write side, CQRS)
 
@@ -132,6 +164,15 @@ Commands (final classes, validated by `symfony/validator`) and their handlers:
 
 Handlers are plain invokable services usable directly or through `symfony/messenger`
 (sync or async — host's choice; the library does not require a bus).
+
+- `TransactionInterface` (**port**) — **delivered**: `transactional(callable $unit):
+  void` and `afterCommit(callable $hook): void`. Re-entrant by design: a nested
+  `transactional()` call joins the enclosing scope instead of opening a real nested
+  transaction — the mechanism that lets `SellDirectHandler` ride its mutations into
+  `OrderValidator::validate()`'s single scope through the unit of work, rather than
+  opening a scope of its own (opening one there would put the eligibility check and
+  `quote()` — both of which throw — inside an open transaction, and Doctrine closes
+  the `EntityManager` on any throwable). Adapter: `App\Shop\Doctrine\DoctrineTransaction`.
 
 ### Fulfillment
 
@@ -180,11 +221,15 @@ future eligible purchase, forever, and are never consumed. They live on the
 from confirmed order lines). A spendable balance would belong to the *payment*
 extension instead — the earn/burn distinction is the boundary between the two.
 
-**Facets are a port.** The engine never knows what the allocation facets *are*
+**Facets are a port.** `FacetProviderInterface` (**port**) — **delivered**:
+`facets(): list<string>`. The engine never knows what the allocation facets *are*
 (product categories, brands, departments, game colors…): the host connector
-supplies the facet list, the engine validates **structurally** against the
-benefit's configuration, the host's price resolver interprets the stored
-allocations. Storing the choice on the order line keeps two invariants for free:
+supplies the facet list (in Empires: `App\Game\Shop\ShopConnector::facets()`,
+mapping `App\Game\Category` cases), the engine validates **structurally** against
+the benefit's configuration, the host's price resolver interprets the stored
+allocations. `LineQuoter` takes it as a constructor dependency — the change that let
+`quote()`/`quotePreview()` drop their `$facets` parameter (six call sites
+simplified). Storing the choice on the order line keeps two invariants for free:
 the order explains itself forever, and cancelling the order revokes the benefit.
 
 **The shape of the choice is data, not code.** Configuration examples, both served
@@ -227,6 +272,15 @@ percentage discounts.
 | Symfony bundle (DI config, session storage) | framework glue | **optional adapter** |
 
 No Twig, no forms, no HTTP anything in core: the engine renders nothing.
+
+`src/Shop/composer.json`'s dependency comment is more pessimistic than the current
+state warrants: `doctrine/dbal` and `doctrine/orm` are genuine, standing
+dependencies of the adapter tier, not transitional debt — `OrderLinesType` (the
+`OrderLine[]` Doctrine type) and now `DoctrineTransaction` (the `TransactionInterface`
+adapter) both need them, and neither is going away. Only `symfony/http-foundation`
+is actually transitional: it is there solely because `CartRepository` is hardcoded
+to the HTTP session, and it leaves the day a `CartStorageInterface` port ships (see
+§3, Cart).
 
 ## 7. What the core will NOT contain (anti-scope)
 

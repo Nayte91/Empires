@@ -7,11 +7,13 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
 use App\Shop\Command\SubmitOrder;
 use App\Shop\CommandHandler\SubmitOrderHandler;
+use App\Shop\Doctrine\DoctrineTransaction;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Event\ShopEventPublisher;
@@ -58,25 +60,30 @@ final class OrderFlowTest extends WebTestCase
         // from RejectOrderTest (the sibling file where it's load-bearing) rather than a
         // hard requirement here — worth revisiting. Built from the shared EntityManager /
         // OrderRepository / PlayerRepository / ProductProviderInterface instances.
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
+        $shopConnector = new ShopConnector($this->orderRepository);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $shopConnector = new ShopConnector($this->orderRepository);
         $fulfillment = new AdvanceFulfillment($playerRepository);
+        $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
+        // Single shared DoctrineTransaction instance: this file also drives
+        // OrderValidator::validate() directly, standalone, so it doesn't need to
+        // join anything here — but every handler/service built in this suite must
+        // still share one instance for the depth counter to mean anything.
+        $transaction = new DoctrineTransaction($this->entityManager);
         $this->submitOrderHandler = new SubmitOrderHandler(
-            $this->entityManager,
+            $transaction,
             $this->orderRepository,
-            $playerRepository,
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
-            $shopConnector,
+            $buyerProvider,
         );
         $this->orderValidator = new OrderValidator(
-            $this->entityManager,
+            $transaction,
             $lineQuoter,
             $shopOrderStateMachine,
-            $shopConnector,
+            $buyerProvider,
             $eventBus,
             $fulfillment,
         );

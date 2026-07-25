@@ -8,6 +8,7 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -17,6 +18,7 @@ use App\Shop\Command\SubmitOrder;
 use App\Shop\CommandHandler\RejectOrderHandler;
 use App\Shop\CommandHandler\SellDirectHandler;
 use App\Shop\CommandHandler\SubmitOrderHandler;
+use App\Shop\Doctrine\DoctrineTransaction;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\Exception\OrderException;
@@ -61,42 +63,49 @@ final class RejectOrderTest extends WebTestCase
         // in production — fetching the real handlers here would make every reject
         // assertion below fail. Built from the shared EntityManager/OrderRepository/
         // PlayerRepository/ProductProviderInterface instances.
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine());
+        $shopConnector = new ShopConnector($this->orderRepository);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $shopConnector = new ShopConnector($this->orderRepository);
         $fulfillment = new AdvanceFulfillment($playerRepository);
+        $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
+        // Single shared DoctrineTransaction instance, matching the singleton the
+        // container injects in production. SellDirectHandler doesn't open a scope of
+        // its own — its mutations stay unflushed and ride into OrderValidator's
+        // transactional() call via the unit of work, same as today. SubmitOrderHandler
+        // and RejectOrderHandler each open their own independent scope. Sharing the
+        // instance still matters: two separate instances would silently open a real
+        // nested transaction (SAVEPOINT) instead of joining the moment anything ever
+        // does nest.
+        $transaction = new DoctrineTransaction($this->entityManager);
         $this->submitOrderHandler = new SubmitOrderHandler(
-            $this->entityManager,
+            $transaction,
             $this->orderRepository,
-            $playerRepository,
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
-            $shopConnector,
+            $buyerProvider,
         );
         $this->orderValidator = new OrderValidator(
-            $this->entityManager,
+            $transaction,
             $lineQuoter,
             $shopOrderStateMachine,
-            $shopConnector,
+            $buyerProvider,
             $eventBus,
             $fulfillment,
         );
         $this->sellDirectHandler = new SellDirectHandler(
-            $this->entityManager,
             $this->orderRepository,
-            $playerRepository,
             $this->orderValidator,
             $lineQuoter,
             $shopOrderStateMachine,
             $eventBus,
-            $shopConnector,
+            $buyerProvider,
         );
         $this->rejectOrderHandler = new RejectOrderHandler(
-            $this->entityManager,
+            $transaction,
             $this->orderRepository,
-            $playerRepository,
+            $buyerProvider,
             $shopOrderStateMachine,
             $eventBus,
         );

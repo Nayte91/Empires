@@ -8,6 +8,7 @@ use App\Shop\BuyerInterface;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Exception\PromotionException;
+use App\Shop\FacetProviderInterface;
 use App\Shop\ProductInterface;
 use App\Shop\ProductProviderInterface;
 use App\Shop\Promotion\PromotionEngine;
@@ -18,15 +19,15 @@ final readonly class LineQuoter
         private ProductProviderInterface $productProvider,
         private PriceCalculator $priceCalculator,
         private PromotionEngine $engine,
+        private FacetProviderInterface $facetProvider,
     ) {}
 
     /**
      * @param list<LineIntent> $intents
-     * @param list<string>     $facets  valid allocation facets, forwarded to PromotionEngine::apply()
      *
      * @return list<OrderLine>
      */
-    public function quote(array $intents, BuyerInterface $buyer, array $facets = []): array
+    public function quote(array $intents, BuyerInterface $buyer): array
     {
         $advances = $this->advancesFor($intents);
         $owned = $this->ownedFor($buyer);
@@ -34,7 +35,7 @@ final readonly class LineQuoter
 
         $lines = $this->priceCalculator->priceLines($advances, $owned, $buyer->electiveCredits);
 
-        return $this->engine->apply($lines, $advances, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $facets);
+        return $this->engine->apply($lines, $advances, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $this->facetProvider->facets());
     }
 
     /**
@@ -45,14 +46,13 @@ final readonly class LineQuoter
      * PromotionException guard still applies there.
      *
      * @param list<LineIntent> $intents
-     * @param list<string>     $facets  valid allocation facets, forwarded to PromotionEngine::apply()
      *
      * @return list<OrderLine>
      */
-    public function quotePreview(array $intents, BuyerInterface $buyer, array $facets = []): array
+    public function quotePreview(array $intents, BuyerInterface $buyer): array
     {
         try {
-            return $this->quote($intents, $buyer, $facets);
+            return $this->quote($intents, $buyer);
         } catch (PromotionException) {
             return $this->priceCalculator->priceLines($this->advancesFor($intents), $this->ownedFor($buyer), $buyer->electiveCredits);
         }
