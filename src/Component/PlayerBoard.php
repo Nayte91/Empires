@@ -7,11 +7,11 @@ namespace App\Component;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
-use App\Shop\Dto\Product;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Userforged\ShopEngine\Dto\Product;
 
 #[AsLiveComponent(template: 'organisms/playerBoard.html.twig')]
 final class PlayerBoard

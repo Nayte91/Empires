@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Game\Shop;
 
-use App\Shop\Exception\ShopException;
-use App\Shop\Exception\ShopExceptionReason;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use Userforged\ShopEngine\Exception\ShopException;
+use Userforged\ShopEngine\Exception\ShopExceptionReason;
 
 /**
  * The Game→Shop seam, i18n side: src/Shop/ throws ShopException with a

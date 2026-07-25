@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Game\AdvanceCatalog;
-use App\Shop\Cart;
+use Userforged\ShopEngine\Cart;
 
 trait HasIncompleteAllocationsTrait
 {

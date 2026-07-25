@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Game;
 
 use App\Game\Dto\Advance;
-use App\Shop\Promotion\ElectiveBenefit;
-use App\Shop\Promotion\ProductPromotion;
 use Symfony\Component\Asset\Packages;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
+use Userforged\ShopEngine\Promotion\ElectiveBenefit;
+use Userforged\ShopEngine\Promotion\ProductPromotion;
 
 final class AdvanceCatalog
 {

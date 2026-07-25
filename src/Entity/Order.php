@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
-use App\Shop\Doctrine\OrderLinesType;
-use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\OrderException;
-use App\Shop\OrderInterface;
-use App\Shop\OrderStatus;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\Doctrine\OrderLinesType;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Exception\OrderException;
+use Userforged\ShopEngine\OrderInterface;
+use Userforged\ShopEngine\OrderStatus;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'orders')]

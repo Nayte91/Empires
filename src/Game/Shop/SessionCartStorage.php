@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Game\Shop;
 
-use App\Shop\Cart;
-use App\Shop\CartStorageInterface;
-use App\Shop\Dto\LineIntent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\LineIntent;
 
 /**
  * The Game→Shop seam for CartStorageInterface: keeps the cart in the HTTP

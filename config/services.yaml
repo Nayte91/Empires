@@ -8,6 +8,12 @@ services:
     App\:
         resource: '../src/'
 
+    # Phase 1 crutch: userforged/shop-engine is a path-repository package, not
+    # yet wired via a Symfony bundle (Phase 2). Without this glob its classes
+    # are outside App\'s resource and vanish from the container silently.
+    Userforged\ShopEngine\:
+        resource: '../packages/userforged/shop-engine/src/'
+
 when@test:
     services:
         Symfony\Component\Mercure\HubInterface: '@App\Tests\Support\Mercure\RecordingHub'

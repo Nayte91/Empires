@@ -9,10 +9,10 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
-use App\Shop\Dto\OrderLine;
-use App\Shop\OrderStatus;
-use App\Shop\Promotion\AppliedPromotion;
-use App\Shop\Promotion\PromotionType;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\OrderStatus;
+use Userforged\ShopEngine\Promotion\AppliedPromotion;
+use Userforged\ShopEngine\Promotion\PromotionType;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -81,7 +81,7 @@ final class ShopConnectorTest extends WebTestCase
     /**
      * The load-bearing no-self-crediting guarantee, now enforced by the
      * Validated filter in ShopConnector::buyerFor() rather than by
-     * OptionCredits itself (see App\Shop\Promotion\OptionCredits, now a pure
+     * OptionCredits itself (see Userforged\ShopEngine\Promotion\OptionCredits, now a pure
      * aggregate() over already-filtered lines).
      */
     #[Test]

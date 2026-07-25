@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Game\Shop;
 
-use App\Shop\BuyerInterface;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\BuyerInterface;
 
 /** The Game→Shop seam for BuyerInterface: a Player's shop-relevant facts, snapshotted at ShopConnector::buyerFor() time. */
 final readonly class PlayerBuyer implements BuyerInterface

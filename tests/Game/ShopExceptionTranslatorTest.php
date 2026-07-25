@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Game;
 
 use App\Game\Shop\ShopExceptionTranslator;
-use App\Shop\Exception\CartException;
-use App\Shop\Exception\EligibilityException;
-use App\Shop\Exception\OrderException;
-use App\Shop\Exception\PromotionException;
-use App\Shop\Exception\ShopException;
+use Userforged\ShopEngine\Exception\CartException;
+use Userforged\ShopEngine\Exception\EligibilityException;
+use Userforged\ShopEngine\Exception\OrderException;
+use Userforged\ShopEngine\Exception\PromotionException;
+use Userforged\ShopEngine\Exception\ShopException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,7 +20,7 @@ use Symfony\Component\Messenger\Exception\HandlerFailedException;
  * App\Game\Shop\ShopExceptionTranslator is the seam that turns a
  * ShopException's machine-readable reason()/context() into the copy the
  * player actually sees — the library itself only ever carries developer
- * English on getMessage() (see App\Shop\Exception\ShopException).
+ * English on getMessage() (see Userforged\ShopEngine\Exception\ShopException).
  */
 final class ShopExceptionTranslatorTest extends WebTestCase
 {

@@ -11,15 +11,6 @@ use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
-use App\Shop\BuyerInterface;
-use App\Shop\Cart;
-use App\Shop\CartStorageInterface;
-use App\Shop\Command\EraseOrders;
-use App\Shop\Command\RejectOrder;
-use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\ShopExceptionReason;
-use App\Shop\OrderStatus;
-use App\Shop\Service\LineQuoter;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
@@ -29,6 +20,15 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Userforged\ShopEngine\BuyerInterface;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Command\EraseOrders;
+use Userforged\ShopEngine\Command\RejectOrder;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Exception\ShopExceptionReason;
+use Userforged\ShopEngine\OrderStatus;
+use Userforged\ShopEngine\Service\LineQuoter;
 
 #[AsLiveComponent(template: 'organisms/playerOrders.html.twig')]
 final class PlayerOrders

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Shop\Cart;
+use Userforged\ShopEngine\Cart;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

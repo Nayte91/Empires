@@ -8,13 +8,13 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
-use App\Shop\Cart;
-use App\Shop\CartStorageInterface;
-use App\Shop\Dto\OrderLine;
-use App\Shop\OrderStatus;
-use App\Shop\Promotion\AppliedPromotion;
-use App\Shop\Promotion\PromotionType;
-use App\Shop\Service\OrderValidator;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\OrderStatus;
+use Userforged\ShopEngine\Promotion\AppliedPromotion;
+use Userforged\ShopEngine\Promotion\PromotionType;
+use Userforged\ShopEngine\Service\OrderValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -31,8 +31,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * via PlayerOrders' own add() LiveAction — including the nested ProductGrid+
  * Cart re-render it drives — or, for checkout preconditions, written straight
  * into the session-backed CartStorageInterface port), checks it out directly
- * (App\Shop\CommandHandler\SellDirectHandler), or erases an already validated
- * order (App\Shop\CommandHandler\EraseOrdersHandler cascade), all from the
+ * (Userforged\ShopEngine\CommandHandler\SellDirectHandler), or erases an already validated
+ * order (Userforged\ShopEngine\CommandHandler\EraseOrdersHandler cascade), all from the
  * per-player PlayerOrders LiveComponent (organisms/playerOrders).
  *
  * Ticket line/gift/allocation rendering lives in App\Component\Cart, covered

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Shop\Dto\LineIntent;
-use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\PromotionException;
-use App\Shop\Promotion\AppliedPromotion;
-use App\Shop\Promotion\ElectiveBenefit;
-use App\Shop\Promotion\ProductPromotion;
-use App\Shop\Promotion\PromotionEngine;
-use App\Shop\Promotion\PromotionType;
+use Userforged\ShopEngine\Dto\LineIntent;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Exception\PromotionException;
+use Userforged\ShopEngine\Promotion\AppliedPromotion;
+use Userforged\ShopEngine\Promotion\ElectiveBenefit;
+use Userforged\ShopEngine\Promotion\ProductPromotion;
+use Userforged\ShopEngine\Promotion\PromotionEngine;
+use Userforged\ShopEngine\Promotion\PromotionType;
 use App\Tests\Shop\Support\FakeProduct;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

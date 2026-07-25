@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c86f1424d1414f9d33369ecf8e2790a8",
+    "content-hash": "4c587943bd9ba978d07626f0ee27a8a2",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -7834,6 +7834,40 @@
             "time": "2026-07-03T20:44:34+00:00"
         },
         {
+            "name": "userforged/shop-engine",
+            "version": "dev-refacto/shop",
+            "dist": {
+                "type": "path",
+                "url": "packages/userforged/shop-engine",
+                "reference": "f815104fc153e52b7738b8b0f657d68d120e741a"
+            },
+            "require": {
+                "doctrine/dbal": "^4.4",
+                "doctrine/doctrine-bundle": "^3.3",
+                "doctrine/orm": "^3.6",
+                "php": ">=8.5",
+                "psr/event-dispatcher": "^1.0",
+                "psr/log": "^3.0",
+                "symfony/dependency-injection": "^8.1",
+                "symfony/messenger": "^8.1",
+                "symfony/uid": "^8.1",
+                "symfony/workflow": "^8.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Userforged\\ShopEngine\\": "src/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Ordering engine (catalog, cart, checkout) — canonical shop pattern, ports-based, framework-agnostic core.",
+            "transport-options": {
+                "relative": true
+            }
+        },
+        {
             "name": "webmozart/assert",
             "version": "2.4.1",
             "source": {
@@ -11602,7 +11636,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "userforged/shop-engine": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

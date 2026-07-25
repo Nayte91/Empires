@@ -11,18 +11,18 @@ use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
-use App\Shop\Cart;
-use App\Shop\CartStorageInterface;
-use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\ShopExceptionReason;
-use App\Shop\OrderStatus;
-use App\Shop\Service\LineQuoter;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Exception\ShopExceptionReason;
+use Userforged\ShopEngine\OrderStatus;
+use Userforged\ShopEngine\Service\LineQuoter;
 
 #[AsLiveComponent(template: 'organisms/shop.html.twig')]
 final class Shop

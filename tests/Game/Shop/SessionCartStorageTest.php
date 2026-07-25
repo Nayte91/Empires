@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Game\Shop;
 
 use App\Game\Shop\SessionCartStorage;
-use App\Shop\Cart;
+use Userforged\ShopEngine\Cart;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;

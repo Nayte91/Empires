@@ -8,8 +8,8 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
-use App\Shop\Service\PriceCalculator;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
+use Userforged\ShopEngine\Service\PriceCalculator;
 
 #[AsTwigComponent(name: 'molecules:Discounts', template: 'molecules/Discounts.html.twig')]
 final class Discounts

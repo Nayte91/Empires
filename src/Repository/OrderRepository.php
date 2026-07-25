@@ -6,11 +6,11 @@ namespace App\Repository;
 
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Shop\OrderInterface;
-use App\Shop\OrderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\OrderInterface;
+use Userforged\ShopEngine\OrderRepositoryInterface;
 
 /** @extends ServiceEntityRepository<Order> */
 final class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface

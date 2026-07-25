@@ -9,10 +9,10 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Category;
 use App\Repository\OrderRepository;
-use App\Shop\BuyerInterface;
-use App\Shop\FacetProviderInterface;
-use App\Shop\OrderStatus;
-use App\Shop\Promotion\OptionCredits;
+use Userforged\ShopEngine\BuyerInterface;
+use Userforged\ShopEngine\FacetProviderInterface;
+use Userforged\ShopEngine\OrderStatus;
+use Userforged\ShopEngine\Promotion\OptionCredits;
 
 /**
  * The Game→Shop seam: the shop's opaque ordering window is, in Empires, the

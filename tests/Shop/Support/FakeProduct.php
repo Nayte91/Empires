@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop\Support;
 
-use App\Shop\ProductInterface;
-use App\Shop\Promotion\ProductPromotion;
+use Userforged\ShopEngine\ProductInterface;
+use Userforged\ShopEngine\Promotion\ProductPromotion;
 
 final readonly class FakeProduct implements ProductInterface
 {

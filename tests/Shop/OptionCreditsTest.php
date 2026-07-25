@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Shop\Dto\OrderLine;
-use App\Shop\Promotion\AppliedPromotion;
-use App\Shop\Promotion\OptionCredits;
-use App\Shop\Promotion\PromotionType;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Promotion\AppliedPromotion;
+use Userforged\ShopEngine\Promotion\OptionCredits;
+use Userforged\ShopEngine\Promotion\PromotionType;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

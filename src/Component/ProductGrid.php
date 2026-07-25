@@ -8,11 +8,11 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
-use App\Shop\Cart;
-use App\Shop\CartStorageInterface;
-use App\Shop\Dto\Product;
-use App\Shop\Service\ProductCatalog;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\Product;
+use Userforged\ShopEngine\Service\ProductCatalog;
 
 #[AsTwigComponent(name: 'organisms:ProductGrid', template: 'organisms/productGrid.html.twig')]
 final class ProductGrid

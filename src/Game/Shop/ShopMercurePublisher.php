@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Game\Shop;
 
 use App\Repository\PlayerRepository;
-use App\Shop\Event\OrderRejected;
-use App\Shop\Event\OrdersErased;
-use App\Shop\Event\OrderSubmitted;
-use App\Shop\Event\OrderValidated;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\Event\OrderRejected;
+use Userforged\ShopEngine\Event\OrdersErased;
+use Userforged\ShopEngine\Event\OrderSubmitted;
+use Userforged\ShopEngine\Event\OrderValidated;
 
 /**
  * The Game→Shop seam, Mercure side: this is the only publisher of

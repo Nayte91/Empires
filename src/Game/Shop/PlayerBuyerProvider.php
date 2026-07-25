@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Game\Shop;
 
 use App\Repository\PlayerRepository;
-use App\Shop\BuyerInterface;
-use App\Shop\BuyerProviderInterface;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\BuyerInterface;
+use Userforged\ShopEngine\BuyerProviderInterface;
 
 /**
  * The Game→Shop seam for BuyerProviderInterface: resolves a buyer id to a

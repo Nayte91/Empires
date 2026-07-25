@@ -1,5 +1,5 @@
 imports:
-    - { resource: '../../src/Shop/config/messenger.yaml' }
+    - { resource: '../../packages/userforged/shop-engine/config/messenger.yaml' }
 
 framework:
     messenger:

@@ -1,2 +1,2 @@
 imports:
-    - { resource: '../../src/Shop/config/workflow.yaml' }
+    - { resource: '../../packages/userforged/shop-engine/config/workflow.yaml' }

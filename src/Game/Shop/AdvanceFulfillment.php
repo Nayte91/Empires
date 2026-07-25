@@ -6,8 +6,8 @@ namespace App\Game\Shop;
 
 use App\Entity\Player;
 use App\Repository\PlayerRepository;
-use App\Shop\FulfillmentInterface;
 use Symfony\Component\Uid\Uuid;
+use Userforged\ShopEngine\FulfillmentInterface;
 
 /**
  * The Game→Shop seam for FulfillmentInterface: in Empires, "delivering" an

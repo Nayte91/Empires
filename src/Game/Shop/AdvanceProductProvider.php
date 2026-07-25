@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Game\Shop;
 
 use App\Game\AdvanceCatalog;
-use App\Shop\ProductInterface;
-use App\Shop\ProductProviderInterface;
+use Userforged\ShopEngine\ProductInterface;
+use Userforged\ShopEngine\ProductProviderInterface;
 
 /**
  * The Game→Shop seam for ProductProviderInterface: wraps AdvanceCatalog,

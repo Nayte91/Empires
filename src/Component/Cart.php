@@ -9,15 +9,6 @@ use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
-use App\Shop\Cart as CartDomain;
-use App\Shop\CartStorageInterface;
-use App\Shop\Command\SellDirect;
-use App\Shop\Command\SubmitOrder;
-use App\Shop\Dto\OrderLine;
-use App\Shop\Promotion\AppliedPromotion;
-use App\Shop\Promotion\PromotionEngine;
-use App\Shop\Promotion\PromotionType;
-use App\Shop\Service\LineQuoter;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -26,6 +17,15 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Userforged\ShopEngine\Cart as CartDomain;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Command\SellDirect;
+use Userforged\ShopEngine\Command\SubmitOrder;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\Promotion\AppliedPromotion;
+use Userforged\ShopEngine\Promotion\PromotionEngine;
+use Userforged\ShopEngine\Promotion\PromotionType;
+use Userforged\ShopEngine\Service\LineQuoter;
 
 #[AsLiveComponent(template: 'organisms/cart.html.twig')]
 final class Cart

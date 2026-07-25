@@ -6,8 +6,8 @@ namespace App\Tests\Game;
 
 use App\Game\AdvanceCatalog;
 use App\Game\Category;
-use App\Shop\Promotion\ElectiveBenefit;
-use App\Shop\Promotion\ProductPromotion;
+use Userforged\ShopEngine\Promotion\ElectiveBenefit;
+use Userforged\ShopEngine\Promotion\ProductPromotion;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
