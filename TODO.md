@@ -1,7 +1,8 @@
 # TODO
 
 - [ ] **AST — scroll horizontal mobile** : depuis la suppression des wrappers (`<table class="ast">` racine du composant), plus de conteneur de scroll horizontal sur viewport étroit — la table rétrécit sous les 2,5rem par case au lieu de scroller. Le mobile compte : trouver un compromis (conteneur de scroll réintroduit autrement, media query, ou autre approche) sans réintroduire les 2 div wrappers refusés.
-- [ ] **Component/ — seuil de mirroring atomic design** : si `src/Component/` dépasse 15-20 fichiers, envisager un sous-découpage miroir de l'atomic design des templates (`templates/{atoms,molecules,organisms}/`) plutôt qu'un dossier plat. Actuellement 9 fichiers, sous le seuil.
+- [ ] **Component/ — seuil de mirroring atomic design** : si `src/Component/` dépasse 15-20 fichiers, envisager un sous-découpage miroir de l'atomic design des templates (`templates/{atoms,molecules,organisms}/`) plutôt qu'un dossier plat. Actuellement 15 fichiers, seuil bas atteint.
+- [ ] **Shop — layout : sticky inerte et colonne de grille morte** (mesuré sur `/{game}/player/{player}/shop`, viewport 1280×900) : la page fait 7647px et le bouton de commande est à 7538px, après les 51 cartes produit. `position: sticky` sur `.shop__cart` (`assets/styles/shop.css`) est **inopérant** car l'élément collant fait lui-même 7214px — plus haut que le viewport, donc rien ne se fige. `.shop__layout` déclare `grid-template-columns: 856px 320px` mais n'a **qu'un seul enfant** : la colonne de 320px est morte, vestige d'un design à deux colonnes. Piste : scinder en deux vrais enfants de grille — catalogue d'un côté, sidebar panier réellement collante et scrollable indépendamment de l'autre. Indépendant du placement du bouton (déjà traité) : même dans `Cart`, le bouton reste après `ProductGrid` dans la même `aside`.
 
 ## Doctrine de délégation à deux flux (actée avec le PO)
 
