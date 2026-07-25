@@ -14,13 +14,16 @@ use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Command\SellDirect;
+use App\Shop\Command\SubmitOrder;
 use App\Shop\CommandHandler\EraseOrdersHandler;
 use App\Shop\CommandHandler\SellDirectHandler;
+use App\Shop\CommandHandler\SubmitOrderHandler;
 use App\Shop\Doctrine\DoctrineTransaction;
 use App\Shop\Dto\LineIntent;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Event\ShopEventPublisher;
 use App\Shop\OrderStatus;
+use App\Shop\ProductInterface;
 use App\Shop\ProductProviderInterface;
 use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Service\LineQuoter;
@@ -163,6 +166,58 @@ final class OrderEraserTest extends WebTestCase
         $this->assertSame([], $this->reloadPlayer($player)->advances);
     }
 
+    /**
+     * Regression for the grant()/revoke() key mismatch: OrderValidator used to read
+     * the granted keys from the order's pre-freeze (submitted) lines instead of the
+     * frozen ones. Re-quoting the order at validate() time against a catalog that no
+     * longer resolves 'anatomy' (simulating a catalog change landing between submit
+     * and validate) makes PromotionEngine::applyGifts() silently drop the
+     * 'astronavigation' gift line too (its findAdvance()/continue guard, not a
+     * throw) — freeze() ends up with zero lines. The buggy code still granted both
+     * keys from the stale pre-freeze slugs, and erasing the order later revoked only
+     * the frozen (empty) set, permanently leaking the grant.
+     */
+    #[Test]
+    public function erasingAValidatedOrderWhoseGiftSourceVanishedFromTheCatalogBeforeValidationLeaksNothing(): void
+    {
+        $player = $this->createPlayer();
+        $playerRepository = self::getContainer()->get(PlayerRepository::class);
+        $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
+        $eventBus = self::getContainer()->get(ShopEventPublisher::class);
+        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $transaction = new DoctrineTransaction($this->entityManager);
+
+        $submitOrderHandler = new SubmitOrderHandler(
+            $transaction,
+            $this->orderRepository,
+            new LineQuoter($realProductProvider, new PriceCalculator(), new PromotionEngine(), $this->shopConnector),
+            $shopOrderStateMachine,
+            $eventBus,
+            $buyerProvider,
+        );
+        $orderValidator = new OrderValidator(
+            $transaction,
+            new LineQuoter($this->productProviderWithout($realProductProvider, 'anatomy'), new PriceCalculator(), new PromotionEngine(), $this->shopConnector),
+            $shopOrderStateMachine,
+            $buyerProvider,
+            $eventBus,
+            $fulfillment,
+        );
+
+        $order = ($submitOrderHandler)(new SubmitOrder($player->id, [new LineIntent('anatomy', gift: 'astronavigation')], 1));
+        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
+
+        $orderValidator->validate($order);
+
+        $this->assertSame([], $order->keys());
+
+        ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
+
+        $this->assertSame([], $this->reloadPlayer($player)->advances);
+    }
+
     #[Test]
     public function erasingAValidatedOrderWithAnOptionAllocationDropsItFromOptionCredits(): void
     {
@@ -272,5 +327,35 @@ final class OrderEraserTest extends WebTestCase
     private function intents(array $keys): array
     {
         return array_map(static fn (string $key): LineIntent => new LineIntent($key), $keys);
+    }
+
+    private function productProviderWithout(ProductProviderInterface $inner, string $excludedKey): ProductProviderInterface
+    {
+        return new readonly class($inner, $excludedKey) implements ProductProviderInterface {
+            public function __construct(
+                private ProductProviderInterface $inner,
+                private string $excludedKey,
+            ) {}
+
+            public function products(): array
+            {
+                return $this->without($this->inner->products());
+            }
+
+            public function productsByKeys(array $keys): array
+            {
+                return $this->without($this->inner->productsByKeys($keys));
+            }
+
+            /**
+             * @param list<ProductInterface> $products
+             *
+             * @return list<ProductInterface>
+             */
+            private function without(array $products): array
+            {
+                return array_values(array_filter($products, fn (ProductInterface $product): bool => $product->key !== $this->excludedKey));
+            }
+        };
     }
 }
