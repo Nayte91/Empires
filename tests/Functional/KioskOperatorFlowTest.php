@@ -9,7 +9,7 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
 use Doctrine\ORM\EntityManagerInterface;
@@ -28,7 +28,7 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * console, and the kiosk reflects the resulting lock/ownership state.
  *
  * Cart preconditions are written straight into the session-backed
- * App\Shop\CartRepository, sharing $client with the Shop/PlayerOrders
+ * CartStorageInterface port, sharing $client with the Shop/PlayerOrders
  * component under test — see CartComponentTest for Cart's own behavior
  * coverage, ShopComponentTest/PosConsoleTest for the add() LiveAction.
  */
@@ -231,12 +231,13 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->cartFor($client, $alice, Cart::fromKeys(['pottery']));
 
         // createLiveComponent() defaults both kiosks to the same 'test.client'
-        // service, i.e. the same session. Isolation is proven by CartRepository
-        // keying cart storage per player UUID (see App\Shop\CartRepository::
-        // sessionKey()), read here through Shop's own isCartEmpty() (the
-        // "Submit my order" gate) rather than through the nested Cart
-        // component's rendering, which does not reflect session state when
-        // embedded (see ShopComponentTest's editPendingOrder tests).
+        // service, i.e. the same session. Isolation is proven by
+        // SessionCartStorage keying cart storage per player UUID (see
+        // App\Game\Shop\SessionCartStorage::sessionKey()), read here through
+        // Shop's own isCartEmpty() (the "Submit my order" gate) rather than
+        // through the nested Cart component's rendering, which does not
+        // reflect session state when embedded (see ShopComponentTest's
+        // editPendingOrder tests).
         $bobCrawler = $this->createLiveComponent('Shop', ['player' => $bob], $client)->render()->crawler();
 
         $this->assertTrue($bobCrawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
@@ -308,7 +309,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     }
 
     /**
-     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * Writes straight into the session-backed CartStorageInterface port (Cart has
      * no add() action of its own any more) and points $client's cookie jar at
      * that session, so the Shop component under test — driven by the same
      * $client — reads the same cart back. 'test.client' is registered
@@ -322,7 +323,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $request->setSession($session);
         $requestStack = self::getContainer()->get(RequestStack::class);
         $requestStack->push($request);
-        self::getContainer()->get(CartRepository::class)->save((string) $player->id, $cart);
+        self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, $cart);
         $requestStack->pop();
         $session->save();
 

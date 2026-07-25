@@ -13,7 +13,7 @@ use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
 use App\Shop\BuyerInterface;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Command\RejectOrder;
 use App\Shop\Dto\OrderLine;
@@ -52,7 +52,7 @@ final class PlayerOrders
     public function __construct(
         private readonly OrderRepository $orderRepository,
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly CartRepository $cartRepository,
+        private readonly CartStorageInterface $cartStorage,
         private readonly LineQuoter $lineQuoter,
         private readonly MessageBusInterface $commandBus,
         private readonly ShopConnector $shopConnector,
@@ -69,14 +69,14 @@ final class PlayerOrders
             return;
         }
 
-        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+        $cart = $this->cartStorage->load($this->posCartKey());
 
         if ($cart->has($key)) {
             return;
         }
 
         $cart->add($key);
-        $this->cartRepository->save($this->posCartKey(), $cart);
+        $this->cartStorage->save($this->posCartKey(), $cart);
         $this->error = null;
     }
 
@@ -90,7 +90,7 @@ final class PlayerOrders
         $order = $this->orderRepository->findOneByPlayerAndWindow($this->player, $turn);
 
         if (!$order instanceof Order || OrderStatus::Pending !== $order->status) {
-            $this->cartRepository->clear($this->posCartKey());
+            $this->cartStorage->clear($this->posCartKey());
 
             return;
         }
@@ -98,7 +98,7 @@ final class PlayerOrders
         $cart = new Cart();
         $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
-        $this->cartRepository->save($this->posCartKey(), $cart);
+        $this->cartStorage->save($this->posCartKey(), $cart);
     }
 
     #[LiveAction]
@@ -140,7 +140,7 @@ final class PlayerOrders
 
     public function isTicketEmpty(): bool
     {
-        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
+        $cart = $this->cartStorage->load($this->posCartKey());
 
         return $cart->isEmpty();
     }
@@ -153,7 +153,7 @@ final class PlayerOrders
 
     public function getCartStamp(): string
     {
-        return $this->cartRepository->findOrCreate($this->posCartKey())->stamp();
+        return $this->cartStorage->load($this->posCartKey())->stamp();
     }
 
     /**

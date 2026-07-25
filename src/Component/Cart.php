@@ -10,7 +10,7 @@ use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Shop\Cart as CartDomain;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Command\SellDirect;
 use App\Shop\Command\SubmitOrder;
 use App\Shop\Dto\OrderLine;
@@ -66,7 +66,7 @@ final class Cart
 
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly CartRepository $cartRepository,
+        private readonly CartStorageInterface $cartStorage,
         private readonly MessageBusInterface $commandBus,
         private readonly LineQuoter $lineQuoter,
         private readonly PromotionEngine $promotionEngine,
@@ -85,7 +85,7 @@ final class Cart
                 : new SubmitOrder($this->player->id, $cart->items, $window);
 
             $this->commandBus->dispatch($command);
-            $this->cartRepository->clear($this->storageKey);
+            $this->cartStorage->clear($this->storageKey);
             $this->error = null;
             $this->emitUp('orderPlaced');
         } catch (HandlerFailedException $exception) {
@@ -104,7 +104,7 @@ final class Cart
     {
         $cart = $this->getCart();
         $cart->remove($key);
-        $this->cartRepository->save($this->storageKey, $cart);
+        $this->cartStorage->save($this->storageKey, $cart);
     }
 
     #[LiveAction]
@@ -112,7 +112,7 @@ final class Cart
     {
         $cart = $this->getCart();
         $cart->withGift($for, $key);
-        $this->cartRepository->save($this->storageKey, $cart);
+        $this->cartStorage->save($this->storageKey, $cart);
     }
 
     #[LiveAction]
@@ -120,7 +120,7 @@ final class Cart
     {
         $cart = $this->getCart();
         $cart->withGift($for, null);
-        $this->cartRepository->save($this->storageKey, $cart);
+        $this->cartStorage->save($this->storageKey, $cart);
     }
 
     #[LiveAction]
@@ -128,7 +128,7 @@ final class Cart
     {
         $cart = $this->getCart();
         $cart->withAllocation($for, $facet, $delta);
-        $this->cartRepository->save($this->storageKey, $cart);
+        $this->cartStorage->save($this->storageKey, $cart);
     }
 
     /** @return list<array{advance: Advance, line: OrderLine}> */
@@ -225,7 +225,7 @@ final class Cart
 
     private function getCart(): CartDomain
     {
-        return $this->cartRepository->findOrCreate($this->storageKey);
+        return $this->cartStorage->load($this->storageKey);
     }
 
     /**

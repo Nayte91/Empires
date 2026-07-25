@@ -12,7 +12,7 @@ use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Exception\ShopExceptionReason;
 use App\Shop\OrderStatus;
@@ -38,7 +38,7 @@ final class Shop
 
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly CartRepository $cartRepository,
+        private readonly CartStorageInterface $cartStorage,
         private readonly OrderRepository $orderRepository,
         private readonly LineQuoter $lineQuoter,
         private readonly ShopConnector $shopConnector,
@@ -52,7 +52,7 @@ final class Shop
     #[LiveAction]
     public function clearCart(): void
     {
-        $this->cartRepository->clear((string) $this->player->id);
+        $this->cartStorage->clear((string) $this->player->id);
     }
 
     #[LiveAction]
@@ -70,14 +70,14 @@ final class Shop
             return;
         }
 
-        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
+        $cart = $this->cartStorage->load((string) $this->player->id);
 
         if ($cart->has($key)) {
             return;
         }
 
         $cart->add($key);
-        $this->cartRepository->save((string) $this->player->id, $cart);
+        $this->cartStorage->save((string) $this->player->id, $cart);
         $this->error = null;
     }
 
@@ -93,7 +93,7 @@ final class Shop
         $cart = new Cart();
         $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
-        $this->cartRepository->save((string) $this->player->id, $cart);
+        $this->cartStorage->save((string) $this->player->id, $cart);
     }
 
     /** Editable order for the current turn — a rejected order reopens for revision, resubmitting it. */
@@ -108,7 +108,7 @@ final class Shop
 
     public function isCartEmpty(): bool
     {
-        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
+        $cart = $this->cartStorage->load((string) $this->player->id);
 
         return $cart->isEmpty();
     }
@@ -165,7 +165,7 @@ final class Shop
 
     public function getCartStamp(): string
     {
-        return $this->cartRepository->findOrCreate((string) $this->player->id)->stamp();
+        return $this->cartStorage->load((string) $this->player->id)->stamp();
     }
 
     private function getCurrentTurnOrder(): ?Order

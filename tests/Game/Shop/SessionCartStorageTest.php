@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Shop;
+namespace App\Tests\Game\Shop;
 
+use App\Game\Shop\SessionCartStorage;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -14,30 +14,30 @@ use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 use Symfony\Component\Uid\Uuid;
 
-final class CartRepositoryTest extends TestCase
+final class SessionCartStorageTest extends TestCase
 {
     #[Test]
-    public function findOrCreateReturnsEmptyCartByDefault(): void
+    public function loadReturnsEmptyCartByDefault(): void
     {
-        $repository = $this->makeRepository();
+        $storage = $this->makeStorage();
 
-        $cart = $repository->findOrCreate((string) Uuid::v4());
+        $cart = $storage->load((string) Uuid::v4());
 
         $this->assertTrue($cart->isEmpty());
     }
 
     #[Test]
-    public function saveThenFindOrCreateRestoresItems(): void
+    public function saveThenLoadRestoresItems(): void
     {
-        $repository = $this->makeRepository();
+        $storage = $this->makeStorage();
         $playerId = (string) Uuid::v4();
         $cart = new Cart();
         $cart->add('pottery');
         $cart->add('agriculture');
 
-        $repository->save($playerId, $cart);
+        $storage->save($playerId, $cart);
 
-        $restored = $repository->findOrCreate($playerId);
+        $restored = $storage->load($playerId);
 
         $this->assertSame(['pottery', 'agriculture'], $restored->keys());
     }
@@ -53,9 +53,9 @@ final class CartRepositoryTest extends TestCase
         $session->set('empires.shop.cart.'.$playerId->toRfc4122(), ['pottery', 'agriculture']);
         $request->setSession($session);
         $requestStack->push($request);
-        $legacyRepository = new CartRepository($requestStack);
+        $legacyStorage = new SessionCartStorage($requestStack);
 
-        $restored = $legacyRepository->findOrCreate($playerId->toRfc4122());
+        $restored = $legacyStorage->load($playerId->toRfc4122());
 
         $this->assertSame(['pottery', 'agriculture'], $restored->keys());
         $this->assertNull($restored->items[0]->gift);
@@ -64,43 +64,43 @@ final class CartRepositoryTest extends TestCase
     #[Test]
     public function differentPlayerIdsHaveIndependentCarts(): void
     {
-        $repository = $this->makeRepository();
+        $storage = $this->makeStorage();
         $firstPlayerId = (string) Uuid::v4();
         $secondPlayerId = (string) Uuid::v4();
 
         $firstCart = new Cart();
         $firstCart->add('pottery');
-        $repository->save($firstPlayerId, $firstCart);
+        $storage->save($firstPlayerId, $firstCart);
 
         $secondCart = new Cart();
         $secondCart->add('democracy');
-        $repository->save($secondPlayerId, $secondCart);
+        $storage->save($secondPlayerId, $secondCart);
 
-        $this->assertSame(['pottery'], $repository->findOrCreate($firstPlayerId)->keys());
-        $this->assertSame(['democracy'], $repository->findOrCreate($secondPlayerId)->keys());
+        $this->assertSame(['pottery'], $storage->load($firstPlayerId)->keys());
+        $this->assertSame(['democracy'], $storage->load($secondPlayerId)->keys());
     }
 
     #[Test]
     public function clearRemovesStoredCart(): void
     {
-        $repository = $this->makeRepository();
+        $storage = $this->makeStorage();
         $playerId = (string) Uuid::v4();
         $cart = new Cart();
         $cart->add('pottery');
-        $repository->save($playerId, $cart);
+        $storage->save($playerId, $cart);
 
-        $repository->clear($playerId);
+        $storage->clear($playerId);
 
-        $this->assertTrue($repository->findOrCreate($playerId)->isEmpty());
+        $this->assertTrue($storage->load($playerId)->isEmpty());
     }
 
-    private function makeRepository(): CartRepository
+    private function makeStorage(): SessionCartStorage
     {
         $requestStack = new RequestStack();
         $request = new Request();
         $request->setSession(new Session(new MockArraySessionStorage()));
         $requestStack->push($request);
 
-        return new CartRepository($requestStack);
+        return new SessionCartStorage($requestStack);
     }
 }

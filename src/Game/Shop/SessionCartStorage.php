@@ -2,21 +2,26 @@
 
 declare(strict_types=1);
 
-namespace App\Shop;
+namespace App\Game\Shop;
 
+use App\Shop\Cart;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\LineIntent;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
-final readonly class CartRepository
+/**
+ * The Game→Shop seam for CartStorageInterface: keeps the cart in the HTTP
+ * session, under a key prefixed for this application. The library itself
+ * never assumes a session exists — that choice belongs here.
+ */
+final readonly class SessionCartStorage implements CartStorageInterface
 {
     private const string SESSION_KEY_PREFIX = 'empires.shop.cart.';
 
-    public function __construct(
-        private RequestStack $requestStack,
-    ) {}
+    public function __construct(private RequestStack $requestStack) {}
 
-    public function findOrCreate(string $key): Cart
+    public function load(string $key): Cart
     {
         /** @var list<array{key: string, gift?: string, allocation?: array<string, int>}|string> $items */
         $items = $this->getSession()->get($this->sessionKey($key), []);

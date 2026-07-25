@@ -9,7 +9,7 @@ use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\Product;
 use App\Shop\Service\ProductCatalog;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
@@ -24,7 +24,7 @@ final class ProductGrid
 
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
-        private readonly CartRepository $cartRepository,
+        private readonly CartStorageInterface $cartStorage,
         private readonly ProductCatalog $productCatalog,
         private readonly ShopConnector $shopConnector,
     ) {}
@@ -51,6 +51,6 @@ final class ProductGrid
 
     private function getCart(): Cart
     {
-        return $this->cartRepository->findOrCreate($this->storageKey);
+        return $this->cartStorage->load($this->storageKey);
     }
 }

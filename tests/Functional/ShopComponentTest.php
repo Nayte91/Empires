@@ -9,7 +9,7 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
 use App\Shop\Promotion\AppliedPromotion;
@@ -474,7 +474,7 @@ final class ShopComponentTest extends WebTestCase
     }
 
     /**
-     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * Writes straight into the session-backed CartStorageInterface port (Cart has
      * no add() action of its own any more) and points $client's cookie jar at
      * that session, so the Shop component under test — driven by the same
      * $client — reads the same cart back. 'test.client' is registered
@@ -488,7 +488,7 @@ final class ShopComponentTest extends WebTestCase
         $request->setSession($session);
         $requestStack = self::getContainer()->get(RequestStack::class);
         $requestStack->push($request);
-        self::getContainer()->get(CartRepository::class)->save((string) $player->id, $cart);
+        self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, $cart);
         $requestStack->pop();
         $session->save();
 

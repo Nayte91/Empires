@@ -9,7 +9,7 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
 use App\Shop\Promotion\AppliedPromotion;
@@ -30,7 +30,7 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * player's order card for a given turn, builds a ticket of advances (either
  * via PlayerOrders' own add() LiveAction — including the nested ProductGrid+
  * Cart re-render it drives — or, for checkout preconditions, written straight
- * into App\Shop\CartRepository), checks it out directly
+ * into the session-backed CartStorageInterface port), checks it out directly
  * (App\Shop\CommandHandler\SellDirectHandler), or erases an already validated
  * order (App\Shop\CommandHandler\EraseOrdersHandler cascade), all from the
  * per-player PlayerOrders LiveComponent (organisms/playerOrders).
@@ -460,7 +460,7 @@ final class PosConsoleTest extends WebTestCase
     }
 
     /**
-     * Writes straight into the session-backed App\Shop\CartRepository (Cart has
+     * Writes straight into the session-backed CartStorageInterface port (Cart has
      * no add() action of its own any more) and points $client's cookie jar at
      * that session, so the PlayerOrders component under test — driven by the
      * same $client — reads the same ticket back. 'test.client' is registered
@@ -474,7 +474,7 @@ final class PosConsoleTest extends WebTestCase
         $request->setSession($session);
         $requestStack = self::getContainer()->get(RequestStack::class);
         $requestStack->push($request);
-        self::getContainer()->get(CartRepository::class)->save('pos.'.$player->id->toRfc4122(), $cart);
+        self::getContainer()->get(CartStorageInterface::class)->save('pos.'.$player->id->toRfc4122(), $cart);
         $requestStack->pop();
         $session->save();
 

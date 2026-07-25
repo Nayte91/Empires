@@ -8,7 +8,7 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Shop\Cart;
-use App\Shop\CartRepository;
+use App\Shop\CartStorageInterface;
 use App\Shop\Dto\OrderLine;
 use App\Shop\OrderStatus;
 use App\Shop\Promotion\AppliedPromotion;
@@ -40,8 +40,8 @@ final class ProductGridComponentTest extends KernelTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         // renderTwigComponent() renders in-process, with no HTTP request to carry a
-        // session — App\Shop\CartRepository is session-backed, so a request with its
-        // own session is pushed once here for every ProductGrid render/CartRepository
+        // session — the CartStorageInterface port is session-backed, so a request with
+        // its own session is pushed once here for every ProductGrid render/cart-storage
         // seed in this file to share.
         $request = new Request();
         $request->setSession(self::getContainer()->get('session.factory')->createSession());
@@ -98,7 +98,7 @@ final class ProductGridComponentTest extends KernelTestCase
     public function productAlreadyInCartHasDisabledOverlayButtonAndInCartMarker(): void
     {
         $player = $this->createPlayer();
-        self::getContainer()->get(CartRepository::class)->save((string) $player->id, Cart::fromKeys(['pottery']));
+        self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, Cart::fromKeys(['pottery']));
 
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
         $card = $this->extractProductCard($rendered, 'pottery');
@@ -147,9 +147,9 @@ final class ProductGridComponentTest extends KernelTestCase
         $shopKey = (string) $player->id;
         $posKey = $this->posKey($player);
 
-        $repository = self::getContainer()->get(CartRepository::class);
-        $repository->save($shopKey, Cart::fromKeys(['pottery']));
-        $repository->save($posKey, Cart::fromKeys(['democracy']));
+        $storage = self::getContainer()->get(CartStorageInterface::class);
+        $storage->save($shopKey, Cart::fromKeys(['pottery']));
+        $storage->save($posKey, Cart::fromKeys(['democracy']));
 
         $shopCrawler = $this->renderProductGrid($player, $shopKey)->crawler();
         $this->assertTrue($shopCrawler->filter('#product-pottery')->getNode(0)->hasAttribute('data-in-cart'));
