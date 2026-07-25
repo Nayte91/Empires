@@ -13,6 +13,7 @@ return RectorConfig::configure()
     ->withPaths([
         __DIR__.'/../src',
         __DIR__.'/../tests',
+        __DIR__.'/../packages/userforged/shop-engine/src',
     ])
     ->withSkip([
         __DIR__.'/../src/Kernel.php',

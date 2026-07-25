@@ -12,6 +12,7 @@ return [
         'phpVersion' => 80500,
         'paths' => [
             __DIR__.'/../src',
+            __DIR__.'/../packages/userforged/shop-engine/src',
         ],
         'excludePaths' => [
             __DIR__.'/../src/Kernel.php',

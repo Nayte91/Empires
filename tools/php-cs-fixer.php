@@ -5,7 +5,10 @@ use PhpCsFixer\Config;
 use PhpCsFixer\Finder;
 
 $finder = new Finder()
-    ->in(__DIR__.'/../src')
+    ->in([
+        __DIR__.'/../src',
+        __DIR__.'/../packages/userforged/shop-engine/src',
+    ])
     ->exclude(['var', 'vendor'])
 ;
 
