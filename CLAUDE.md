@@ -92,20 +92,62 @@ templates/
 - **Shop/Orders**: player cart → pending order → operator validation (POS console)
 - **Mercure**: components subscribe to topic `empires/game/{id}` (`mercure-refresh` Stimulus controller); publish on state changes
 
-Routes: `/game/create`, `/game/{slug}` (dashboard), `/game/{slug}/operator`, player board & shop under `/game/{slug}/player/{slug}`.
+Routes (no `/game` prefix — verify with `debug:router` before assuming): `/create`, `/{slug}` (dashboard), `/{slug}/ast`, `/{slug}/census`, `/{slug}/operator`, `/{gameSlug}/player/{playerSlug}` (board), `/{gameSlug}/player/{playerSlug}/shop`.
 
 ## 🧪 Testing
 
 ```bash
-make phpunit                                        # or: composer phpunit
-docker compose exec app composer phpunit -- tests/Functional/AstTest.php
+make quality                                        # THE command: rector+phpcs+phpstan on src/, phpunit on tests/
+docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # single file, while iterating
 ```
 
 ```
 tests/
-├── Entity/  Functional/  Game/  Repository/  Shop/  Support/
-└── bootstrap.php        # DAMA doctrine-test-bundle for isolation
+├── Entity/  Functional/  Game/  Repository/  Shop/   # Support/ = hand-written doubles, not PHPUnit mocks
+└── bootstrap.php   # drops+recreates the SQLite schema once per run; DAMA (tools/phpunit.xml + bundles.php) rolls back each test
 ```
+
+### Never run the quality tools on `tests/`
+
+`tools/{rector,phpstan,php-cs-fixer}.php` all target **`src/` only**, by design. `make quality` already does the right thing: static tools on `src/`, PHPUnit on `tests/`. **Never** pass `PARAMS=tests/` to `make quality`, and never call `composer rector/phpcs/phpstan -- tests/…`.
+
+Rationale — two rules actively corrupt this testbase:
+- `php_unit_strict` (`@PhpCsFixer:risky`) rewrites `assertEquals`→`assertSame`. On arrays of freshly-constructed readonly VOs that is **wrong**: `assertSame` demands instance identity and can never pass. This is why `assertEquals` is correct in `DirectSaleTest`/`OrderFlowTest` when comparing `OrderLine` graphs.
+- `PreferPHPUnitThisCallRector` rewrites `self::assert*`→`$this->assert*`, which contradicts the convention below.
+
+The testbase's style is settled by the rules here and by review, **not** by tooling.
+
+### Assertion form — `self::` vs `$this->` is not taste, it's the method's nature
+
+Verified by reflection, not habit:
+
+| Call | Nature | Form |
+|---|---|---|
+| `assert*` (PHPUnit `Assert` + Symfony `assertResponse*`/`assertSelector*`) | static | `self::` |
+| `markTestSkipped`, `markTestIncomplete` | static | `self::` |
+| `expectException`, `expectExceptionMessage`, `expectExceptionMessageMatches` | **instance** | `$this->` |
+| LiveComponent trait helpers (`createLiveComponent`, `assertComponentEmitEvent`, …) | **instance** | `$this->` |
+
+So `self::assertSame(...)` next to `$this->expectException(...)` in the same method is **correct**, not drift. Dominant in the testbase (550 `self::` / 30 files); the 5 Shop/POS functional files still on `$this->assert*` are the drift — clean them up when you touch them.
+
+### Conventions
+
+- **`#[Test]` attribute, never a `test*` prefix.** 340/340 methods comply. Attributes from `PHPUnit\Framework\Attributes\`, never doc-comment annotations.
+- **Names are behaviour sentences**, articles spelled out: `aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled`, `addingAnAlreadyOwnedAdvanceIsRefused`.
+- **AAA by blank lines, never `// Arrange` comments.** Docblocks explain *why a test exists*, not what it does.
+- **Base class follows the need, not the directory**: pure object → `TestCase`; needs the container or DB → `WebTestCase` (the de-facto base here — `KernelTestCase` is used once and is an anomaly). `tests/Shop/` and `tests/Game/` are each ~half unit, half DB — the folder does not predict the base class.
+- **No PHPUnit mocks.** Zero `createMock`/`createStub`/`MockObject` in the suite, deliberately. Use real objects, plus the hand-written doubles in `tests/Support/` (`NullHub` substituted for `HubInterface` under `when@test`, `ShopOrderStateMachine::create()`, `tests/Shop/Support/FakeProduct`).
+- **No cleanup, no `tearDown()`.** DAMA rolls every test back. To re-read what the DB stored, `$em->clear()` before re-fetching — note `freshEntityManager()`-style helpers return the *same* instance and do **not** reset the identity map.
+- **Private helpers at the bottom of the class**, after all `#[Test]` methods. Prefer aligning on an existing helper's name and signature — `createPlayer()`, `createCart()` and `makeAdvance()` currently have several incompatible signatures across files; don't add a new variant.
+- **Data providers**: none exist yet. When adding the first, name it `provide<TestMethodPascal>Cases()`, `public static`, return `iterable`, blank line between yields — so the suite stays consistent if rector's PHPUnit set is ever pointed at `tests/`.
+
+### Functional selectors — semantics first, styling classes are a last resort
+
+Priority: native semantic tag → `id` → `data-*` → ARIA role. **Avoid CSS classes**: they are presentational and rename on restyling.
+
+The testbase does not fully honour this yet — 18 of 85 crawler selectors target BEM classes, `.shop__submit` being the most-relied-on selector in the suite. Treat those as debt: don't add new ones, and when a template you touch already has a semantic hook, migrate the assertion.
+
+Consequence for the CSS-only skip rule (below/global): it does **not** apply here — a Twig `class` change can break tests, so run the suite.
 
 ## 🔒 Environment
 
