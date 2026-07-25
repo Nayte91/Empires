@@ -19,8 +19,19 @@ flowchart LR
 
 Existing PHP solutions ship this pattern **welded to a commerce context**: Sylius assumes a
 storefront (taxes, shipping, channels, admin), Thelia is a full CMS (own kernel, Propel,
-MySQL schema). There is no *engine* — a minimal library that implements the pattern and
-lets the host application decide everything contextual.
+MySQL schema), Aimeos embeds its own schema, DB layer and admin — an embeddable shop, not
+a domain engine.
+
+An extractable core is not a new idea, and its track record is the real argument. Sylius
+did split its domain into standalone, UI-free components (`Sylius\Component\Order`;
+`Sylius/Cart` still calls itself *"Webshop cart library for PHP"*), keeping framework glue
+in Bundles and templates in a separate ShopBundle — and almost nobody consumed them
+outside Sylius, so 2.0 dropped pieces without deprecation. In JS, Medusa v2 ships
+decoupled commerce modules, each installable on its own, but every module owns its data
+model and migrations: persistence is prescribed, not delegated. What is still missing in
+PHP is an ordering core that assumes no commerce context **and** treats persistence itself
+as a port — a minimal library that implements the pattern and lets the host application
+decide everything contextual.
 
 **shop-engine is that engine.** It models the ordering domain and nothing else. Every
 contextual decision — how the cart is persisted, where products come from, who may
@@ -36,7 +47,14 @@ one possible context.
 
 1. **Minimal core, canonical vocabulary.** Types are named after the pattern
    (`Catalog`, `Product`, `Cart`, `Order`, `OrderLine`, `Promotion`) so any developer
-   who has seen a shop understands the API in minutes. No invented jargon.
+   who has seen a shop understands the API in minutes. No invented jargon — and the
+   vocabulary is not ours to invent: `Catalog → Product → Cart → Checkout → Order →
+   Fulfillment` is the standard decomposition of an **Order Management System**,
+   settled long before us by the retail (ARTS/NRF data model) and telecom (TM Forum
+   SID) reference models, and by Fowler's order and pricing patterns (*Analysis
+   Patterns*, *PoEAA*). Naming along that line is an adoption argument, not an
+   aesthetic one: an integrator recognises the surface before reading it, and every
+   deviation from it is a word we would have to teach.
 2. **Ports over features.** When a capability depends on context, the core defines an
    interface and ships nothing (or a trivial default). Reference adapters live in
    separate packages (`shop-engine/adapter-*`).
@@ -95,8 +113,13 @@ one possible context.
 - `Cart` — a **pure value object**: an ordered set of line intents (`key`, `quantity`).
   Operations: `add`, `remove`, `clear`, `has`, `isEmpty`, `fromKeys`. No storage, no
   services, no events. It is a *draft order* and nothing more.
-- `CartStorageInterface` (**port**) — `load(buyerId): Cart`, `save(buyerId, Cart)`,
-  `clear(buyerId)`. **This is the flagship example of the whole philosophy** — the same
+- `CartStorageInterface` (**port**) — **delivered**: `load(string $key): Cart`,
+  `save(string $key, Cart)`, `clear(string $key)`. The key is an **opaque storage key,
+  not a buyer id** — an earlier draft of this document said `buyerId` and was wrong: a
+  single buyer may hold several carts under distinct keys, as the point-of-sale path
+  proves (an operator keeps a cart on behalf of a buyer, under `pos.<uuid>`). Typing the
+  key to a buyer identity would have made mediated checkout unrepresentable.
+  **This is the flagship example of the whole philosophy** — the same
   Cart serves radically different contexts purely by swapping storage:
     - `SessionCartStorage` — classic web session (default web adapter);
     - **client-held** — no storage at all: the UI layer holds the keys (hardware kiosk,
@@ -273,14 +296,13 @@ percentage discounts.
 
 No Twig, no forms, no HTTP anything in core: the engine renders nothing.
 
-`src/Shop/composer.json`'s dependency comment is more pessimistic than the current
-state warrants: `doctrine/dbal` and `doctrine/orm` are genuine, standing
-dependencies of the adapter tier, not transitional debt — `OrderLinesType` (the
-`OrderLine[]` Doctrine type) and now `DoctrineTransaction` (the `TransactionInterface`
-adapter) both need them, and neither is going away. Only `symfony/http-foundation`
-is actually transitional: it is there solely because `CartRepository` is hardcoded
-to the HTTP session, and it leaves the day a `CartStorageInterface` port ships (see
-§3, Cart).
+`doctrine/dbal` and `doctrine/orm` are genuine, standing dependencies of the adapter
+tier, not transitional debt — `OrderLinesType` (the `OrderLine[]` Doctrine type) and
+`DoctrineTransaction` (the `TransactionInterface` adapter) both need them, and neither
+is going away. `symfony/http-foundation` **is gone**: it was there solely because the
+old `CartRepository` was hardcoded to the HTTP session, and it left the day
+`CartStorageInterface` shipped (see §3, Cart). The session-backed adapter now lives in
+the host, which is where a choice of storage belongs.
 
 ## 7. What the core will NOT contain (anti-scope)
 
