@@ -135,7 +135,7 @@ final class CartComponentTest extends WebTestCase
 
         $this->assertNull(self::getContainer()->get(OrderRepository::class)
             ->findOneByPlayerAndWindow($player, $player->game->currentTurn));
-        $this->assertStringContainsString('Allocation required for promotion on', $rendered);
+        $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
 

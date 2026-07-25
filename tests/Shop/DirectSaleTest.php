@@ -7,6 +7,7 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -62,6 +63,7 @@ final class DirectSaleTest extends WebTestCase
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $shopConnector = new ShopConnector($this->orderRepository);
+        $fulfillment = new AdvanceFulfillment($playerRepository);
         $this->submitOrderHandler = new SubmitOrderHandler(
             $this->entityManager,
             $this->orderRepository,
@@ -77,6 +79,7 @@ final class DirectSaleTest extends WebTestCase
             $shopOrderStateMachine,
             $shopConnector,
             $eventBus,
+            $fulfillment,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,

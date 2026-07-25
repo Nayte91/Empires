@@ -374,7 +374,7 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $this->createCart($player, $client)->call('checkout')->render()->toString();
 
         $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
-        $this->assertStringContainsString('Allocation required for promotion on', $rendered);
+        $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
 

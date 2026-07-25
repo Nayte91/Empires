@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:2.0" version="2.0" srcLang="en" trgLang="en">
+	<file id="shop">
+		<unit id="error.cart_empty">
+			<segment>
+				<source>error.cart_empty</source>
+				<target>Cart is empty.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.advance_already_owned">
+			<segment>
+				<source>error.advance_already_owned</source>
+				<target>Advance "{key}" is already owned.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.window_already_validated">
+			<segment>
+				<source>error.window_already_validated</source>
+				<target>An order has already been validated for this turn.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.order_already_validated">
+			<segment>
+				<source>error.order_already_validated</source>
+				<target>Order is already validated.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.order_lines_locked">
+			<segment>
+				<source>error.order_lines_locked</source>
+				<target>This order has already been validated and can no longer be changed.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.order_rejection_unavailable">
+			<segment>
+				<source>error.order_rejection_unavailable</source>
+				<target>This order cannot be rejected.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.promotion_invalid_gift">
+			<segment>
+				<source>error.promotion_invalid_gift</source>
+				<target>That item is not a valid free gift for "{key}".</target>
+			</segment>
+		</unit>
+
+		<unit id="error.promotion_allocation_required">
+			<segment>
+				<source>error.promotion_allocation_required</source>
+				<target>Finish allocating the bonus for "{key}" before continuing.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.promotion_invalid_allocation">
+			<segment>
+				<source>error.promotion_invalid_allocation</source>
+				<target>The allocation for "{key}" is invalid.</target>
+			</segment>
+		</unit>
+
+		<unit id="error.order_already_submitted">
+			<segment>
+				<source>error.order_already_submitted</source>
+				<target>Order already submitted for this turn, please retry.</target>
+			</segment>
+		</unit>
+	</file>
+</xliff>

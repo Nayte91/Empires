@@ -9,10 +9,12 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
+use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
 use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\ShopExceptionReason;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -40,6 +42,7 @@ final class Shop
         private readonly OrderRepository $orderRepository,
         private readonly LineQuoter $lineQuoter,
         private readonly ShopConnector $shopConnector,
+        private readonly ShopExceptionTranslator $shopExceptionTranslator,
     ) {}
 
     /** Re-renders Shop so the order block reflects the order Cart::checkout() just placed. */
@@ -56,13 +59,13 @@ final class Shop
     public function add(#[LiveArg] string $key): void
     {
         if ($this->isLockedForTurn()) {
-            $this->error = 'An order has already been validated for this turn.';
+            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::WindowAlreadyValidated);
 
             return;
         }
 
         if (\in_array($key, $this->player->advances, true)) {
-            $this->error = sprintf('Advance "%s" is already owned.', $key);
+            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::AdvanceAlreadyOwned, ['key' => $key]);
 
             return;
         }

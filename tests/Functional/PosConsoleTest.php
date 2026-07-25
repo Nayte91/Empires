@@ -210,7 +210,7 @@ final class PosConsoleTest extends WebTestCase
         $rendered = $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
         $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
-        $this->assertStringContainsString('Allocation required for promotion on', $rendered);
+        $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
 

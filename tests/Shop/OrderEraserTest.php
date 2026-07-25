@@ -7,6 +7,7 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
@@ -63,12 +64,14 @@ final class OrderEraserTest extends WebTestCase
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $this->shopConnector = new ShopConnector($this->orderRepository);
+        $fulfillment = new AdvanceFulfillment($playerRepository);
         $orderValidator = new OrderValidator(
             $this->entityManager,
             $lineQuoter,
             $shopOrderStateMachine,
             $this->shopConnector,
             $eventBus,
+            $fulfillment,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->entityManager,
@@ -80,7 +83,7 @@ final class OrderEraserTest extends WebTestCase
             $eventBus,
             $this->shopConnector,
         );
-        $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, $eventBus);
+        $this->eraseOrdersHandler = new EraseOrdersHandler($this->entityManager, $this->orderRepository, $playerRepository, $eventBus, $fulfillment);
     }
 
     #[Test]

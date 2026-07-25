@@ -9,6 +9,7 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
+use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
 use App\Shop\BuyerInterface;
 use App\Shop\Cart;
@@ -16,7 +17,7 @@ use App\Shop\CartRepository;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Command\RejectOrder;
 use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\ShopException;
+use App\Shop\Exception\ShopExceptionReason;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
@@ -55,6 +56,7 @@ final class PlayerOrders
         private readonly LineQuoter $lineQuoter,
         private readonly MessageBusInterface $commandBus,
         private readonly ShopConnector $shopConnector,
+        private readonly ShopExceptionTranslator $shopExceptionTranslator,
         private readonly WorkflowInterface $shopOrderStateMachine,
     ) {}
 
@@ -62,7 +64,7 @@ final class PlayerOrders
     public function add(#[LiveArg] string $key): void
     {
         if (\in_array($key, $this->player->advances, true)) {
-            $this->error = sprintf('Advance "%s" is already owned.', $key);
+            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::AdvanceAlreadyOwned, ['key' => $key]);
 
             return;
         }
@@ -122,15 +124,13 @@ final class PlayerOrders
             $this->commandBus->dispatch(new RejectOrder($this->player->id, $turn));
             $this->error = null;
         } catch (HandlerFailedException $exception) {
-            foreach ($exception->getWrappedExceptions() as $wrapped) {
-                if ($wrapped instanceof ShopException) {
-                    $this->error = $wrapped->getMessage();
+            $message = $this->shopExceptionTranslator->messageFor($exception);
 
-                    return;
-                }
+            if (null === $message) {
+                throw $exception;
             }
 
-            throw $exception;
+            $this->error = $message;
         }
     }
 

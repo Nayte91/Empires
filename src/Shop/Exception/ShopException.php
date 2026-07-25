@@ -4,4 +4,18 @@ declare(strict_types=1);
 
 namespace App\Shop\Exception;
 
-interface ShopException extends \Throwable {}
+/**
+ * Marker + machine-readable contract for every domain exception in this
+ * library. getMessage() stays developer-facing English, for logs and stack
+ * traces — reason() and context() are what a host translates into
+ * player-facing copy. The library renders nothing and owns no i18n (see
+ * src/Shop/README.md); it must never be the source of copy shown to a
+ * player.
+ */
+interface ShopException extends \Throwable
+{
+    public function reason(): ShopExceptionReason;
+
+    /** @return array<string, string> */
+    public function context(): array;
+}

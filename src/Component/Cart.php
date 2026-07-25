@@ -8,17 +8,16 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
+use App\Game\Shop\ShopExceptionTranslator;
 use App\Shop\Cart as CartDomain;
 use App\Shop\CartRepository;
 use App\Shop\Command\SellDirect;
 use App\Shop\Command\SubmitOrder;
 use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\ShopException;
 use App\Shop\Promotion\AppliedPromotion;
 use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Promotion\PromotionType;
 use App\Shop\Service\LineQuoter;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -72,6 +71,7 @@ final class Cart
         private readonly LineQuoter $lineQuoter,
         private readonly PromotionEngine $promotionEngine,
         private readonly ShopConnector $shopConnector,
+        private readonly ShopExceptionTranslator $shopExceptionTranslator,
     ) {}
 
     #[LiveAction]
@@ -89,21 +89,13 @@ final class Cart
             $this->error = null;
             $this->emitUp('orderPlaced');
         } catch (HandlerFailedException $exception) {
-            foreach ($exception->getWrappedExceptions() as $wrapped) {
-                if ($wrapped instanceof ShopException) {
-                    $this->error = $wrapped->getMessage();
+            $message = $this->shopExceptionTranslator->messageFor($exception);
 
-                    return;
-                }
-
-                if ($wrapped instanceof UniqueConstraintViolationException) {
-                    $this->error = 'Order already submitted for this turn, please retry.';
-
-                    return;
-                }
+            if (null === $message) {
+                throw $exception;
             }
 
-            throw $exception;
+            $this->error = $message;
         }
     }
 
