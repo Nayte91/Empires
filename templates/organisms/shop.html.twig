@@ -35,7 +35,6 @@
                     <button
                         type="button"
                         {{ live_action('submitOrder') }}
-                        data-loading="addAttribute(disabled)"
                         {{ (this.isLockedForTurn or this.isCartEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
                         class="shop__submit"
                     >

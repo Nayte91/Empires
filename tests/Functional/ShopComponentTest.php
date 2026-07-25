@@ -324,6 +324,37 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
+    public function partiallyAllocatingTheOptionPoolKeepsSubmitDisabled(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'science', 5);
+        $this->cartFor($client, $player, $cart);
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
+
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    #[Test]
+    public function submittingWithAPartialAllocationIsRejectedServerSideAndShowsAnError(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'science', 5);
+        $this->cartFor($client, $player, $cart);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $rendered = $component->call('submitOrder')->render()->toString();
+
+        $this->assertNull($this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
+        $this->assertStringContainsString('Allocation required for promotion on', $rendered);
+        $this->assertStringContainsString('monument', $rendered);
+    }
+
+    #[Test]
     public function allocatingTheFullOptionPoolEnablesSubmitAndPersistsTheAllocationOnTheOrder(): void
     {
         $player = $this->createPlayer();

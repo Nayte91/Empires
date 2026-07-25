@@ -35,7 +35,6 @@
             type="button"
             {{ live_action('checkout') }}
             {{ (this.isTicketEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
-            data-loading="addAttribute(disabled)"
         >
             Confirm purchase
         </button>

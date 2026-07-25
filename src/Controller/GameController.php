@@ -22,15 +22,17 @@ final class GameController extends AbstractController
     }
 
     #[Route('/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function dashboard(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
-    {
+    public function dashboard(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        GameSession $game
+    ): Response {
         return $this->render('skeletons/gameDashboard.html.twig', ['game' => $game]);
     }
 
     #[Route('/{slug}/ast', name: 'app_game_ast', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function ast(
         #[MapEntity(mapping: ['slug' => 'slug'])]
-        GameSession $game,
+        GameSession $game
     ): Response {
         return $this->render('skeletons/gameAst.html.twig', [
             'game' => $game,
@@ -39,14 +41,18 @@ final class GameController extends AbstractController
     }
 
     #[Route('/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function census(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
-    {
+    public function census(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        GameSession $game
+    ): Response {
         return $this->render('skeletons/gameCensus.html.twig', ['game' => $game]);
     }
 
     #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] GameSession $game): Response
-    {
+    public function operator(
+        #[MapEntity(mapping: ['slug' => 'slug'])]
+        GameSession $game
+    ): Response {
         return $this->render('skeletons/gameOperator.html.twig', ['game' => $game]);
     }
 }
