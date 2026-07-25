@@ -1,11 +1,13 @@
 # TODO
 
-> État au terme de la session F2 : **les six sous-chantiers F2 sont livrés**. `src/Shop/` n'importe plus aucune classe de l'hôte et le cycle Game↔Shop est rompu — vérifiable en une commande :
+> **État : la lib est extraite.** `src/Shop/` n'existe plus — le code vit dans `packages/userforged/shop-engine/`, sous le namespace `Userforged\ShopEngine\`, relié à l'application par un path repository que Composer symlinke. Deux gardes-fous, à lancer ensemble :
 > ```
-> grep -rn '^use App\\' src/Shop/ --include="*.php" | grep -v 'App\\Shop\\'   → 0
-> grep -rn 'use App\Game' src/Shop/                                          → 0
+> grep -rn '^use App\\' packages/userforged/shop-engine/src/                  → 0
+> grep -rniE 'player|advance|empire' packages/userforged/shop-engine/src/     → 5
 > ```
-> Détail des ports livrés : `src/Shop/README.md`. Ce qui suit est ce qui reste.
+> **Le second existe parce que le premier ne suffisait pas** : il ne teste que les *imports*, et a longtemps certifié « host-free » un code qui portait ~117 mots du jeu — dont `playerId` sur les 9 classes de l'API publique, pendant qu'`OrderInterface` disait `buyerId` juste à côté. Les 5 occurrences restantes sont délibérées : des énumérations qui illustrent l'agnosticisme (« a license, a game advance, stock ») et deux commentaires nommant des classes hôtes réelles.
+>
+> Spécification de la lib : `packages/userforged/shop-engine/README.md`. Ce qui suit est ce qui reste.
 
 ---
 
@@ -23,7 +25,7 @@
 
 |   #    | Chantier                          | Contenu                                                                                                                                                                                                                                                                                                                          | Taille  | Bloqué par |
 |:------:|:----------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:----------:|
-| **Pkg** | Passer le Shop en lib installable | Les ports sont finis ; **ce qui reste est du packaging**, pas de l'architecture. Inventaire précis en fin de fichier.                                                                                                                                                                                                              | Grande  | ta décision |
+| **Pkg** | Passer le Shop en lib installable | **En cours.** Extraction faite, namespace détaché, vocabulaire purgé. Il reste le **bundle Symfony**, qui règle d'un coup les 3 derniers points de l'inventaire (DI, config embarquée, `supports:` fourni par l'hôte) et retire la béquille posée dans `config/services.yaml`. Inventaire en fin de fichier. | Moyenne | rien (décisions prises) |
 | **Exp** | Mécaniques expansion (`feat/far-east`) | Four Arts = une ligne de yaml (débloqué par F2-①) · Primal Philosophy = première *rule* du moteur (gift conditionnel) · Mechanical Clock · famille `payment` dormante. **Le seul chantier qui produit du jeu jouable plutôt que de la dette résorbée.**                                                                    | Moyenne | rien (débloqué) |
 | **i18n** | Étendre la traduction à l'UI      | F2-⑤ n'a traduit **que les exceptions** (10 clés, domaine `shop`). Tout le reste de l'interface est de l'anglais en dur dans les templates (`Submit my order`, `Clear cart`, `Free gift:`…). Décider si on veut une vraie UI traduisible, et si oui quelles locales — le catalogue actuel est `en` seul, délibérément. | Moyenne | ta décision |
 | **Tech** | Micro-reliquats                   | `REFACTOR-WHEN` : split du moteur de promotions en classes d'action — **toujours sous son seuil** (3 familles, se déclenche à la 4ᵉ). · `src/Component/` est à **15 fichiers**, borne basse du seuil de mirroring atomic design (`templates/{atoms,molecules,organisms}/`) : à surveiller, pas encore à agir.        | Micro   | rien |
@@ -40,9 +42,9 @@
 
 ## 🔍 Observations relevées en session (aucune urgence)
 
-- **`PromotionEngine::applyGifts()` avale en silence un produit source disparu du catalogue.** `findAdvance()` renvoie `null` → `continue`, sans exception ni journal : la ligne cadeau s'évapore au re-cotage et personne n'est prévenu. Découvert en écrivant le test de régression du bug `grant()`/`revoke()` (soldé en Phase 0), qui exploite précisément ce chemin. Pas urgent — aucun scénario de production ne retire un produit du catalogue en cours de partie — mais c'est une défaillance muette, à connaître avant d'ouvrir le catalogue à de la configuration dynamique.
+- **`PromotionEngine::applyGifts()` avale en silence un produit source disparu du catalogue.** `findProduct()` renvoie `null` → `continue`, sans exception ni journal : la ligne cadeau s'évapore au re-cotage et personne n'est prévenu. Découvert en écrivant le test de régression du bug `grant()`/`revoke()` (soldé en Phase 0), qui exploite précisément ce chemin. Pas urgent — aucun scénario de production ne retire un produit du catalogue en cours de partie — mais c'est une défaillance muette, à connaître avant d'ouvrir le catalogue à de la configuration dynamique.
 - **`RejectOrderHandler` est inatteignable en production.** `App\Game\Shop\OrderWorkflowPolicy` bloque le guard `reject` inconditionnellement — `can()` renvoie toujours faux et le handler lève avant d'agir. Ses tests ne passent que parce que `tests/Support/Workflow/ShopOrderStateMachine::create()` construit une state machine **sans guard**. Voulu (Mega Civilization n'a pas de commande refusée), mais bon à savoir avant de déboguer ce chemin.
-- **`tests/Support/Workflow/ShopOrderStateMachine` duplique la table de transitions** de `src/Shop/config/workflow.yaml`. Depuis que `OrderInterface` fige les accesseurs `getMarking()`/`setMarking()`, cette duplication est devenue *contractuelle* et non plus incidente : les deux doivent rester synchronisés à la main.
+- **`tests/Support/Workflow/ShopOrderStateMachine` duplique la table de transitions** de `packages/userforged/shop-engine/config/workflow.yaml`. Depuis que `OrderInterface` fige les accesseurs `getMarking()`/`setMarking()`, cette duplication est devenue *contractuelle* et non plus incidente : les deux doivent rester synchronisés à la main.
 - **`enabled_locales` n'est pas configuré** dans `config/packages/translation.yaml` : `bin/console lint:translations` sans argument répond « No translation files » et exige `--locale=en`.
 - **`Order::$createdAt` n'est lu nulle part** — ni dans `src/`, ni dans `tests/`, ni dans `templates/`. Écrit seulement.
 - **`initial_marking: pending`** dans le workflow est inerte : `Order` pré-initialise déjà son statut.
@@ -59,29 +61,30 @@
 >
 > **Corollaire, tranché aussi : les Live Components ne descendent pas dans la lib.** Un moteur de domaine ne livre pas de couche de présentation — et tant que Symfony UX ne permet pas des LC headless, les y mettre réintroduirait Twig/UX dans une lib devenue host-free. Ils restent hôte, où ils tiennent lieu de brouillon d'un futur anneau de présentation, si celui-ci voit jamais le jour.
 
-Ce qui empêche encore `src/Shop/` d'être installé ailleurs :
+### Reste à faire — les 3 points que le bundle règle
 
-1. **Zéro définition DI.** Toutes ses classes ne sont des services que grâce au glob hôte `App\: resource: '../src/'` dans `config/services.yaml`. Aucun bundle, aucune extension, aucun compiler pass.
-2. **Pas de bloc `autoload`** dans `src/Shop/composer.json`. Le namespace `App\Shop\` est servi par le `composer.json` racine de l'app ; en paquet autonome il ne mapperait rien.
-3. **Ses deux fichiers de config ne sont atteints que par des shims relatifs** (`config/packages/{workflow,messenger}.yaml` pointent vers `../../src/Shop/config/…`). Ils cassent dès que le dossier bouge. Et tous deux sont enracinés sur `framework:`, donc exigent FrameworkBundle.
-4. **`src/Shop/config/workflow.yaml` nomme `App\Entity\Order` en dur** (`supports:`). C'est le dernier endroit où la lib nomme l'hôte — dans sa *config*, plus dans son *code*. Avoir mis `getMarking()`/`setMarking()` sur `OrderInterface` fait que ce correctif sera une ligne de config, pas une refonte.
-5. **`#[AsDbalType('order_lines')]`, `#[AsMessageHandler]` et l'autowiring de `WorkflowInterface $shopOrderStateMachine`** reposent tous sur l'autoconfiguration Symfony de l'hôte.
-6. **La lib parle encore le vocabulaire du jeu — y compris dans son API publique.** Le grep de contrôle en tête de ce fichier (`grep '^use App\\'`) ne teste que les **imports** : il certifie « host-free » un code qui contient ~117 occurrences de `player`/`advance`/`turn`/`empire` réparties sur 98 lignes et 20 fichiers. Trois niveaux, par gravité décroissante :
-   - **API publique** — les 5 events (`OrderSubmitted`, `OrderValidated`, `OrderRejected`, `OrderSold`, `OrdersErased`) exposent une propriété publique **`playerId`**, alors qu'`OrderInterface` dit `buyerId` : la lib se contredit elle-même. Renommer est un changement cassant qui touche l'hôte (`ShopMercurePublisher`, 7 usages) — donc à faire **avant** toute publication, jamais après.
-   - **Nommage interne** — `PromotionEngine::findAdvance()` et les variables `$advance` de `PromotionEngine`/`PriceCalculator`/`LineQuoter` (78 occurrences d'`advance`). Le mot du pattern est `product`.
-   - **Docblocks** — « player intents », « full advance catalog », « player's currently owned advance keys ».
+1. **Zéro définition DI.** Les 47 classes du package ne sont des services que grâce à un **glob de secours** ajouté à `config/services.yaml` lors de l'extraction (`Userforged\ShopEngine\: resource: '../packages/…/src/'`). Il porte son propre commentaire de péremption : sans lui, les classes disparaissent du conteneur **en silence** — l'autoload continue de les charger, seul le conteneur les perd. C'est la béquille à retirer, pas à consolider.
+2. **La config de la lib est encore atteinte par des shims hôte.** `config/packages/{workflow,messenger}.yaml` importent `../../packages/userforged/shop-engine/config/…`. Ça marche, mais ça veut dire que l'app doit connaître l'arborescence interne du package. Et les deux fichiers sont enracinés sur `framework:`, donc exigent FrameworkBundle.
+3. **`config/workflow.yaml` nomme `App\Entity\Order` en dur** (`supports:`). Dernier endroit où la lib nomme l'hôte — dans sa *config*, plus dans son *code*. `getMarking()`/`setMarking()` étant sur `OrderInterface`, n'importe quelle implémentation satisfait le contrat : le correctif est une clé de configuration exposée par le bundle (`order_class`), pas une refonte.
 
-   Corollaire : ajouter un second grep de contrôle sur le vocabulaire, à côté de celui sur les imports.
-7. ~~**`CartRepository` est câblé à la session HTTP**~~ — **soldé (Phase 0).** `CartStorageInterface` est le port, `App\Game\Shop\SessionCartStorage` l'adaptateur hôte, `symfony/http-foundation` a quitté le `require` de la lib.
+S'y ajoutent `#[AsDbalType('order_lines')]`, `#[AsMessageHandler]` et l'autowiring de `WorkflowInterface $shopOrderStateMachine`, qui reposent tous sur l'autoconfiguration Symfony de l'hôte — le bundle les reprend à son compte.
 
-La marche à suivre reste celle documentée par Composer : `packages/<vendor>/<lib>/` en sibling de `src/`, avec son propre `composer.json` (nom `vendor/lib`, autoload PSR-4 sur un namespace détaché de `App\`, et sa propre liste de dépendances), déclaré dans le `composer.json` racine via un path repository :
+Un **bundle Symfony** (`AbstractBundle`) est précisément ce qui permet à la lib d'embarquer sa propre config au lieu de la laisser fuiter dans `config/packages/` : il règle les trois points d'un seul coup.
 
-```json
-"repositories": [{"type": "path", "url": "packages/vendor/lib"}],
-"require": {"vendor/lib": "*@dev"}
-```
+### Soldé
 
-Composer symlinke automatiquement. Le dossier peut rester dans le même repo tant que ça sert le développement en parallèle ; l'extraction vers un repo Git séparé (`git subtree split`) n'est qu'une étape ultérieure et optionnelle. Un **bundle Symfony** (`AbstractBundle`) est ce qui permet à la lib d'embarquer sa propre config au lieu de la laisser fuiter dans `config/packages/` de l'app hôte — c'est ce qui règle les points 1, 3, 4 et 6 d'un coup.
+- ~~**Pas de bloc `autoload`**~~ — le package a son PSR-4 (`Userforged\ShopEngine\` → `src/`), déclaré dans le `composer.json` racine via un path repository. `vendor/userforged/shop-engine` est un vrai symlink.
+- ~~**La lib n'embarque aucune migration**~~ — **annulé, pas résolu.** C'est le design : moteur de domaine, la persistance est un port. Ne pas ré-inscrire.
+- ~~**La lib parle le vocabulaire du jeu**~~ — `playerId` → `buyerId` sur les 9 classes de la façade d'écriture, `ShopExceptionReason::AdvanceAlreadyOwned` → `ProductAlreadyOwned`, `findAdvance()` → `findProduct()`. La clé de traduction reste `error.advance_already_owned` : la copie s'adresse à un joueur qui achète un advance, c'est du domaine de l'hôte. Garde-fou ajouté en tête de fichier.
+- ~~**`CartRepository` câblé à la session HTTP**~~ — `CartStorageInterface` est le port, `App\Game\Shop\SessionCartStorage` l'adaptateur hôte, `symfony/http-foundation` a quitté le `require` de la lib.
+
+### Après le bundle
+
+Le package est monorepo, relié par path repository, et **rien n'est publié**. L'extraction vers un repo Git séparé (`git subtree split`) reste une étape ultérieure et optionnelle — l'historique la supporte déjà, git ayant détecté les 51 renommages du déménagement, donc `git log --follow` traverse.
+
+Publier demanderait en plus : suite de tests exécutable **en isolation** (le vrai test de « est-ce une lib »), `LICENSE`, `CHANGELOG`, `.gitattributes`, et un job CI qui installe et teste le package seul. Rien de tout ça n'est nécessaire tant qu'Empires est le seul consommateur.
+
+**Dette résiduelle mineure**, signalée non traitée : la lib ne nomme plus l'hôte ni en code ni en config (`grep -rn 'App\\Entity' packages/` → 0), mais **5 docblocks de `src/` citent encore des classes hôtes en exemple** — `BuyerInterface`, `BuyerProviderInterface`, `FacetProviderInterface`, `Promotion/OptionCredits`, `Exception/ShopExceptionReason`, tous en « see `App\Game\Shop\…` ». Plus `Service/OrderValidator.php:37`, commentaire historique citant `$player->advances`. Sans effet sur le comportement, mais ce sont des références pendantes pour tout consommateur qui n'est pas Empires : à nettoyer avant publication, pas avant. (Le README, lui, a le droit : c'est un document de conception qui assume de documenter le cas Empires.)
 
 
 ## après l'extraction
