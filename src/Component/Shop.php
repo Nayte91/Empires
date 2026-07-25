@@ -12,16 +12,13 @@ use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
-use App\Shop\Command\SubmitOrder;
 use App\Shop\Dto\OrderLine;
-use App\Shop\Exception\ShopException;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
+use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -29,7 +26,6 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 final class Shop
 {
     use DefaultActionTrait;
-    use HasIncompleteAllocationsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
@@ -43,9 +39,12 @@ final class Shop
         private readonly CartRepository $cartRepository,
         private readonly OrderRepository $orderRepository,
         private readonly LineQuoter $lineQuoter,
-        private readonly MessageBusInterface $commandBus,
         private readonly ShopConnector $shopConnector,
     ) {}
+
+    /** Re-renders Shop so the order block reflects the order Cart::checkout() just placed. */
+    #[LiveListener('orderPlaced')]
+    public function onOrderPlaced(): void {}
 
     #[LiveAction]
     public function clearCart(): void
@@ -80,28 +79,6 @@ final class Shop
     }
 
     #[LiveAction]
-    public function submitOrder(): void
-    {
-        try {
-            $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
-            $window = $this->shopConnector->currentWindow($this->player->game);
-            $this->commandBus->dispatch(new SubmitOrder($this->player->id, $cart->items, $window));
-            $this->cartRepository->clear((string) $this->player->id);
-            $this->error = null;
-        } catch (HandlerFailedException $exception) {
-            foreach ($exception->getWrappedExceptions() as $wrapped) {
-                if ($wrapped instanceof ShopException) {
-                    $this->error = $wrapped->getMessage();
-
-                    return;
-                }
-            }
-
-            throw $exception;
-        }
-    }
-
-    #[LiveAction]
     public function editPendingOrder(): void
     {
         $order = $this->getPendingOrder();
@@ -124,14 +101,6 @@ final class Shop
             && (OrderStatus::Pending === $order->status || OrderStatus::Rejected === $order->status);
 
         return $editable ? $order : null;
-    }
-
-    /** Whether any option-promoted cart line still has an unspent balance — gates the submit button. */
-    public function hasIncompleteAllocations(): bool
-    {
-        $cart = $this->cartRepository->findOrCreate((string) $this->player->id);
-
-        return $this->isCartHasIncompleteAllocations($cart, $this->advanceCatalog);
     }
 
     public function isCartEmpty(): bool

@@ -29,14 +29,13 @@
     {% else %}
         <twig:organisms:ProductGrid :player="player" :compact="true" storageKey="pos.{{ player.id }}" />
 
-        <twig:Cart :player="player" :cartStamp="this.getCartStamp()" storageKey="pos.{{ player.id }}" />
-
-        <button
-            type="button"
-            {{ live_action('checkout') }}
-            {{ (this.isTicketEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
-        >
-            Confirm purchase
-        </button>
+        <twig:Cart
+            :player="player"
+            :cartStamp="this.getCartStamp()"
+            :directSale="true"
+            :window="posTurn"
+            checkoutLabel="Confirm purchase"
+            storageKey="pos.{{ player.id }}"
+        />
     {% endif %}
 </dialog>

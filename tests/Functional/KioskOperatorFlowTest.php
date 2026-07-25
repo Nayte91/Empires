@@ -20,6 +20,7 @@ use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
  * End-to-end acceptance test for the cashier-kiosk pattern: a player builds a
@@ -108,7 +109,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         // purchase" — App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
         // read directly, unaffected by the nested-Cart rendering issue documented
         // in ShopComponentTest's editPendingOrder tests — is enabled.
-        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -196,14 +197,14 @@ final class KioskOperatorFlowTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
 
         $this->cartFor($client, $bob, Cart::fromKeys(['pottery']));
-        $this->createLiveComponent('Shop', ['player' => $bob], $client)->call('submitOrder');
+        $this->createCart($bob, $client)->call('checkout');
 
         $firstOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $firstOrder);
         $this->assertSame(['pottery'], $firstOrder->keys());
 
         $this->cartFor($client, $bob, Cart::fromKeys(['democracy']));
-        $this->createLiveComponent('Shop', ['player' => $bob], $client)->call('submitOrder');
+        $this->createCart($bob, $client)->call('checkout');
 
         $secondOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $secondOrder);
@@ -262,17 +263,39 @@ final class KioskOperatorFlowTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
         $this->cartFor($client, $alice, Cart::fromKeys(['democracy', 'pottery']));
 
-        $this->createLiveComponent('Shop', ['player' => $alice], $client)->call('submitOrder');
+        $this->createCart($alice, $client)->call('checkout');
     }
 
     private function validateOrder(Order $order): void
     {
+        $client = self::getContainer()->get('test.client');
         $component = $this->createLiveComponent('PlayerOrders', [
             'player' => $order->player,
             'ordersStamp' => '',
-        ]);
+        ], $client);
         $component->call('openPos', ['turn' => $order->turn]);
-        $component->call('checkout');
+
+        $this->createPosCart($order->player, $order->turn, $client)->call('checkout');
+    }
+
+    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — Shop only hosts it. */
+    private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
+    {
+        return $this->createLiveComponent('Cart', [
+            'player' => $player,
+            'storageKey' => (string) $player->id,
+        ], $client);
+    }
+
+    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — PlayerOrders only hosts it. */
+    private function createPosCart(Player $player, int $turn, KernelBrowser $client): TestLiveComponent
+    {
+        return $this->createLiveComponent('Cart', [
+            'player' => $player,
+            'storageKey' => 'pos.'.$player->id->toRfc4122(),
+            'directSale' => true,
+            'window' => $turn,
+        ], $client);
     }
 
     private function submitAndValidateAliceOrder(Player $alice, GameSession $game): void

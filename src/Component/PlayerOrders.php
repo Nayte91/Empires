@@ -15,18 +15,17 @@ use App\Shop\Cart;
 use App\Shop\CartRepository;
 use App\Shop\Command\EraseOrders;
 use App\Shop\Command\RejectOrder;
-use App\Shop\Command\SellDirect;
 use App\Shop\Dto\OrderLine;
 use App\Shop\Exception\ShopException;
 use App\Shop\OrderStatus;
 use App\Shop\Service\LineQuoter;
-use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
+use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -34,7 +33,6 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 final class PlayerOrders
 {
     use DefaultActionTrait;
-    use HasIncompleteAllocationsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
@@ -136,46 +134,15 @@ final class PlayerOrders
         }
     }
 
-    #[LiveAction]
-    public function checkout(): void
-    {
-        try {
-            $cart = $this->cartRepository->findOrCreate($this->posCartKey());
-            $this->commandBus->dispatch(new SellDirect($this->player->id, $cart->items, $this->posTurn));
-
-            $this->cartRepository->clear($this->posCartKey());
-            $this->error = null;
-        } catch (HandlerFailedException $exception) {
-            foreach ($exception->getWrappedExceptions() as $wrapped) {
-                if ($wrapped instanceof ShopException) {
-                    $this->error = $wrapped->getMessage();
-
-                    return;
-                }
-
-                if ($wrapped instanceof UniqueConstraintViolationException) {
-                    $this->error = 'Order already submitted for this turn, please retry.';
-
-                    return;
-                }
-            }
-
-            throw $exception;
-        }
-    }
+    /** Re-renders PlayerOrders so its order cards reflect the order Cart::checkout() just placed. */
+    #[LiveListener('orderPlaced')]
+    public function onOrderPlaced(): void {}
 
     public function isTicketEmpty(): bool
     {
         $cart = $this->cartRepository->findOrCreate($this->posCartKey());
 
         return $cart->isEmpty();
-    }
-
-    public function hasIncompleteAllocations(): bool
-    {
-        $cart = $this->cartRepository->findOrCreate($this->posCartKey());
-
-        return $this->isCartHasIncompleteAllocations($cart, $this->advanceCatalog);
     }
 
     /** The order (if any) for the turn currently open in the POS. */

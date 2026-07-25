@@ -23,6 +23,7 @@ use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
  * Cart line/gift/allocation rendering lives in App\Component\Cart, covered by
@@ -123,14 +124,13 @@ final class ShopComponentTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
         $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
         $this->assertSame(['pottery'], $order->keys());
 
-        $rendered = $component->render()->toString();
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
         $this->assertStringNotContainsString('shop__cart-lines', $rendered);
         $this->assertStringContainsString('Order pending for this turn.', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
@@ -188,6 +188,32 @@ final class ShopComponentTest extends WebTestCase
         $this->assertStringContainsString('Pottery', $rendered);
     }
 
+    /**
+     * Regression pin: an operator can validate a POS sale for a turn while the
+     * player's own shop cart (a different storage key) still holds unrelated
+     * items — e.g. added before the operator closed the sale directly. The
+     * cart block stays visible (isCartVisible: order exists but cart is not
+     * empty), so it must render with checkout disabled rather than let the
+     * player click into a server-side "already validated" error.
+     */
+    #[Test]
+    public function aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled(): void
+    {
+        $player = $this->createPlayer();
+        $order = $this->createPendingOrder($player, 'pottery');
+        $order->freeze([new OrderLine('pottery', 60)], 60);
+        $order->setMarking(OrderStatus::Validated->value);
+        $this->entityManager->flush();
+
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['democracy']));
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
+
+        $this->assertStringContainsString('Democracy', $crawler->filter('.shop__cart-lines')->text());
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
+    }
+
     #[Test]
     public function validatedOrderShowsFrozenPricesRatherThanRecomputedOnes(): void
     {
@@ -212,7 +238,8 @@ final class ShopComponentTest extends WebTestCase
         $order->setMarking(OrderStatus::Rejected->value);
         $this->entityManager->flush();
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $client = self::getContainer()->get('test.client');
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $rendered = $component->render()->toString();
 
         $this->assertStringContainsString('revise and resubmit', $rendered);
@@ -222,7 +249,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertStringContainsString('shop__cart-lines', $editedRendered);
         $this->assertStringContainsString('data-in-cart', $editedRendered);
 
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $reloadedOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         $this->assertInstanceOf(Order::class, $reloadedOrder);
@@ -270,8 +297,7 @@ final class ShopComponentTest extends WebTestCase
         $cart->withGift('anatomy', 'astronavigation');
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
@@ -300,8 +326,7 @@ final class ShopComponentTest extends WebTestCase
         $cart->withGift('anatomy', 'astronavigation');
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
         $freshComponent->call('editPendingOrder');
@@ -346,8 +371,7 @@ final class ShopComponentTest extends WebTestCase
         $cart->withAllocation('monument', 'science', 5);
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $rendered = $component->call('submitOrder')->render()->toString();
+        $rendered = $this->createCart($player, $client)->call('checkout')->render()->toString();
 
         $this->assertNull($this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
         $this->assertStringContainsString('Allocation required for promotion on', $rendered);
@@ -364,11 +388,10 @@ final class ShopComponentTest extends WebTestCase
         $cart->withAllocation('monument', 'science', 10);
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $crawler = $component->render()->crawler();
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
         $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
 
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
@@ -390,8 +413,7 @@ final class ShopComponentTest extends WebTestCase
         $cart->withAllocation('monument', 'science', 10);
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         self::getContainer()->get(OrderValidator::class)->validate($order);
@@ -415,8 +437,7 @@ final class ShopComponentTest extends WebTestCase
         $cart->withAllocation('monument', 'science', 10);
         $this->cartFor($client, $player, $cart);
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $component->call('submitOrder');
+        $this->createCart($player, $client)->call('checkout');
 
         $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
         $freshComponent->call('editPendingOrder');
@@ -472,6 +493,15 @@ final class ShopComponentTest extends WebTestCase
         $session->save();
 
         $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
+    }
+
+    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — Shop only hosts it. */
+    private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
+    {
+        return $this->createLiveComponent('Cart', [
+            'player' => $player,
+            'storageKey' => (string) $player->id,
+        ], $client);
     }
 
     private function freshOrderRepository(): OrderRepository

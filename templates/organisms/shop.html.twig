@@ -20,25 +20,25 @@
         <aside class="shop__cart">
             <twig:organisms:ProductGrid :player="player" :locked="this.isLockedForTurn" storageKey="{{ player.id }}" />
 
-            <twig:Cart :player="player" :showLines="this.isCartVisible" :cartStamp="this.getCartStamp()" storageKey="{{ player.id }}" />
+            <twig:Cart
+                :player="player"
+                :showLines="this.isCartVisible"
+                :cartStamp="this.getCartStamp()"
+                :locked="this.isLockedForTurn"
+                checkoutLabel="Submit my order"
+                storageKey="{{ player.id }}"
+            />
 
             {% if this.isCartVisible %}
+                {% set isCartClearDisabled = this.isCartEmpty %}
                 <div class="shop__cart-actions">
                     <button
                         type="button"
                         {{ live_action('clearCart') }}
-                        data-loading="addAttribute(disabled)"
-                        {{ this.isCartEmpty ? 'disabled' }}
+                        {{ isCartClearDisabled ? 'disabled' }}
+                        {% if not isCartClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}
                     >
                         Clear cart
-                    </button>
-                    <button
-                        type="button"
-                        {{ live_action('submitOrder') }}
-                        {{ (this.isLockedForTurn or this.isCartEmpty or this.hasIncompleteAllocations) ? 'disabled' }}
-                        class="shop__submit"
-                    >
-                        Submit my order
                     </button>
                 </div>
             {% endif %}

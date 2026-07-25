@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
+use App\Entity\Order;
 use App\Entity\Player;
+use App\Repository\OrderRepository;
 use App\Shop\Cart;
 use App\Shop\CartRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -94,6 +96,49 @@ final class CartComponentTest extends WebTestCase
         $this->assertStringContainsString('Remaining: 20', $crawler->filter('.allocation-picker')->text());
     }
 
+    /**
+     * checkout() converged onto Cart from Shop/PlayerOrders (see App\Component\Cart)
+     * specifically to fix the parent submit/checkout button going stale after a
+     * Cart-only re-render; the cross-component AJAX re-render itself isn't
+     * observable in this single-component harness (covered by the browser
+     * check), but the emitUp('orderPlaced') signal it relies on is.
+     */
+    #[Test]
+    public function checkoutWithACompleteCartCreatesTheOrderAndEmitsOrderPlaced(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $this->seedCart($client, (string) $player->id, 'pottery');
+
+        $component = $this->createCart($player, client: $client);
+        $component->call('checkout');
+
+        $order = self::getContainer()->get(OrderRepository::class)
+            ->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(['pottery'], $order->keys());
+
+        $this->assertComponentEmitEvent($component, 'orderPlaced');
+    }
+
+    #[Test]
+    public function checkoutWithAnIncompleteAllocationIsBlockedAndShowsTheGuardMessage(): void
+    {
+        $player = $this->createPlayer();
+        $client = self::getContainer()->get('test.client');
+        $cart = Cart::fromKeys(['monument']);
+        $cart->withAllocation('monument', 'science', 5);
+        $this->saveCart($client, (string) $player->id, $cart);
+
+        $component = $this->createCart($player, client: $client);
+        $rendered = $component->call('checkout')->render()->toString();
+
+        $this->assertNull(self::getContainer()->get(OrderRepository::class)
+            ->findOneByPlayerAndWindow($player, $player->game->currentTurn));
+        $this->assertStringContainsString('Allocation required for promotion on', $rendered);
+        $this->assertStringContainsString('monument', $rendered);
+    }
+
     private function createPlayer(): Player
     {
         $game = new GameSession();
@@ -124,12 +169,17 @@ final class CartComponentTest extends WebTestCase
      */
     private function seedCart(KernelBrowser $client, string $storageKey, string ...$keys): void
     {
+        $this->saveCart($client, $storageKey, Cart::fromKeys($keys));
+    }
+
+    private function saveCart(KernelBrowser $client, string $storageKey, Cart $cart): void
+    {
         $session = self::getContainer()->get('session.factory')->createSession();
         $request = new Request();
         $request->setSession($session);
         $requestStack = self::getContainer()->get(RequestStack::class);
         $requestStack->push($request);
-        self::getContainer()->get(CartRepository::class)->save($storageKey, Cart::fromKeys($keys));
+        self::getContainer()->get(CartRepository::class)->save($storageKey, $cart);
         $requestStack->pop();
         $session->save();
 

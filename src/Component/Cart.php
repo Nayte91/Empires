@@ -10,20 +10,28 @@ use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Shop\Cart as CartDomain;
 use App\Shop\CartRepository;
+use App\Shop\Command\SellDirect;
+use App\Shop\Command\SubmitOrder;
 use App\Shop\Dto\OrderLine;
+use App\Shop\Exception\ShopException;
 use App\Shop\Promotion\AppliedPromotion;
 use App\Shop\Promotion\PromotionEngine;
 use App\Shop\Promotion\PromotionType;
 use App\Shop\Service\LineQuoter;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Symfony\Component\Messenger\Exception\HandlerFailedException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 #[AsLiveComponent(template: 'organisms/cart.html.twig')]
 final class Cart
 {
+    use ComponentToolsTrait;
     use DefaultActionTrait;
     use HasIncompleteAllocationsTrait;
 
@@ -39,13 +47,65 @@ final class Cart
     #[LiveProp]
     public string $storageKey; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
+    /** Button label — "Submit my order" for the player shop, "Confirm purchase" for the operator POS. */
+    #[LiveProp(updateFromParent: true)]
+    public string $checkoutLabel = 'Submit my order';
+
+    /** Whether checkout dispatches SellDirect (POS, immediate validation) instead of SubmitOrder (player shop, pending order). */
+    #[LiveProp(updateFromParent: true)]
+    public bool $directSale = false;
+
+    /** Opaque ordering-window index for the POS, where it may differ from the current turn; null lets checkout() default to the current one. */
+    #[LiveProp(updateFromParent: true)]
+    public ?int $window = null;
+
+    /** Mirrors ProductGrid's own `locked` prop — gates checkout when the turn's order is already validated (e.g. stray shop-cart items surviving a POS-side validation of the same turn). */
+    #[LiveProp(updateFromParent: true)]
+    public bool $locked = false;
+
+    public ?string $error = null;
+
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
         private readonly CartRepository $cartRepository,
+        private readonly MessageBusInterface $commandBus,
         private readonly LineQuoter $lineQuoter,
         private readonly PromotionEngine $promotionEngine,
         private readonly ShopConnector $shopConnector,
     ) {}
+
+    #[LiveAction]
+    public function checkout(): void
+    {
+        try {
+            $cart = $this->getCart();
+            $window = $this->window ?? $this->shopConnector->currentWindow($this->player->game);
+            $command = $this->directSale
+                ? new SellDirect($this->player->id, $cart->items, $window)
+                : new SubmitOrder($this->player->id, $cart->items, $window);
+
+            $this->commandBus->dispatch($command);
+            $this->cartRepository->clear($this->storageKey);
+            $this->error = null;
+            $this->emitUp('orderPlaced');
+        } catch (HandlerFailedException $exception) {
+            foreach ($exception->getWrappedExceptions() as $wrapped) {
+                if ($wrapped instanceof ShopException) {
+                    $this->error = $wrapped->getMessage();
+
+                    return;
+                }
+
+                if ($wrapped instanceof UniqueConstraintViolationException) {
+                    $this->error = 'Order already submitted for this turn, please retry.';
+
+                    return;
+                }
+            }
+
+            throw $exception;
+        }
+    }
 
     #[LiveAction]
     public function remove(#[LiveArg] string $key): void
@@ -164,6 +224,11 @@ final class Cart
     public function hasIncompleteAllocations(): bool
     {
         return $this->isCartHasIncompleteAllocations($this->getCart(), $this->advanceCatalog);
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->getCart()->isEmpty();
     }
 
     private function getCart(): CartDomain

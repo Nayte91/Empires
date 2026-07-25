@@ -71,9 +71,9 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $component->render()->crawler();
 
         // The pending order preloads a complete, single-item ticket, so "Confirm
-        // purchase" (App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
-        // read directly — unaffected by the nested-Cart rendering below) is enabled.
-        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        // purchase" — App\Component\Cart::hasIncompleteAllocations/isEmpty, read
+        // from the nested Cart component itself — is enabled.
+        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($component->component()->posOpen);
         $this->assertSame($game->currentTurn, $component->component()->posTurn);
     }
@@ -87,7 +87,7 @@ final class PosConsoleTest extends WebTestCase
         $component->call('openPos', ['turn' => $game->currentTurn]);
         $crawler = $component->render()->crawler();
 
-        $this->assertTrue($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -137,11 +137,7 @@ final class PosConsoleTest extends WebTestCase
 
         $this->posCartFor($client, $bob, Cart::fromKeys(['pottery', 'democracy']));
 
-        // A fresh PlayerOrders instance, posTurn set directly rather than via an
-        // openPos() call — see the class docblock: interleaving .call() between two
-        // TestLiveComponent instances sharing one client breaks the second one's
-        // checksum, since props() reads whichever component last responded on it.
-        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout');
+        $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
@@ -159,7 +155,7 @@ final class PosConsoleTest extends WebTestCase
         $ticket->withGift('anatomy', 'astronavigation');
         $this->posCartFor($client, $bob, $ticket);
 
-        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout');
+        $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
@@ -183,7 +179,7 @@ final class PosConsoleTest extends WebTestCase
 
         $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -198,7 +194,7 @@ final class PosConsoleTest extends WebTestCase
 
         $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
 
-        $this->assertTrue($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]
@@ -211,7 +207,7 @@ final class PosConsoleTest extends WebTestCase
         $ticket->withAllocation('monument', 'science', 5);
         $this->posCartFor($client, $bob, $ticket);
 
-        $rendered = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout')->render()->toString();
+        $rendered = $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
         $this->assertNull($this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
         $this->assertStringContainsString('Allocation required for promotion on', $rendered);
@@ -229,11 +225,10 @@ final class PosConsoleTest extends WebTestCase
         $ticket->withAllocation('monument', 'science', 10);
         $this->posCartFor($client, $bob, $ticket);
 
-        $component = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn);
-        $crawler = $component->render()->crawler();
-        $this->assertFalse($crawler->filter('dialog > button')->getNode(0)->hasAttribute('disabled'));
+        $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
+        $this->assertFalse($crawler->filter('.shop__submit')->getNode(0)->hasAttribute('disabled'));
 
-        $component->call('checkout');
+        $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
@@ -277,7 +272,7 @@ final class PosConsoleTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
 
         $this->posCartFor($client, $bob, Cart::fromKeys(['pottery']));
-        $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: 1)->call('checkout');
+        $this->createPosCart($bob, 1, $client)->call('checkout');
 
         $pastOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, 1);
         $this->assertInstanceOf(Order::class, $pastOrder);
@@ -294,7 +289,7 @@ final class PosConsoleTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
 
         $this->posCartFor($client, $alice, Cart::fromKeys(['pottery']));
-        $rendered = $this->createPlayerOrders($alice, $client, posOpen: true, posTurn: $game->currentTurn)->call('checkout')->render()->toString();
+        $rendered = $this->createPosCart($alice, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
         $this->assertStringContainsString('already been validated', $rendered);
     }
@@ -445,6 +440,22 @@ final class PosConsoleTest extends WebTestCase
             'ordersStamp' => '',
             'posOpen' => $posOpen,
             'posTurn' => $posTurn,
+        ], $client);
+    }
+
+    /**
+     * Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout)
+     * — PlayerOrders only hosts the dialog. $client must be shared with the
+     * PlayerOrders instance that opened the POS (openPos()) so this Cart reads
+     * the same session-backed ticket.
+     */
+    private function createPosCart(Player $player, int $turn, KernelBrowser $client): TestLiveComponent
+    {
+        return $this->createLiveComponent('Cart', [
+            'player' => $player,
+            'storageKey' => 'pos.'.$player->id->toRfc4122(),
+            'directSale' => true,
+            'window' => $turn,
         ], $client);
     }
 

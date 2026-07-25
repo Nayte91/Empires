@@ -47,5 +47,20 @@
         </ul>
 
         <p class="shop__cart-total">Total: {{ this.total }}</p>
+
+        {% if error %}
+            <p class="shop__error" role="alert">{{ error }}</p>
+        {% endif %}
+
+        {% set isDisabled = locked or this.isEmpty or this.hasIncompleteAllocations %}
+        <button
+            type="button"
+            {{ live_action('checkout') }}
+            {{ isDisabled ? 'disabled' }}
+            {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+            class="shop__submit"
+        >
+            {{ checkoutLabel }}
+        </button>
     {% endif %}
 </div>
