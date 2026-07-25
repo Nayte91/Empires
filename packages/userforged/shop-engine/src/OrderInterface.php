@@ -9,8 +9,8 @@ use Userforged\ShopEngine\Dto\OrderLine;
 
 /**
  * The lib's view of an order: buyer ref, window, status, lines, plus the
- * marking-store contract (port). The host persists it (e.g. as
- * App\Entity\Order, Doctrine-mapped).
+ * marking-store contract (port). The host persists it (e.g. as a
+ * Doctrine-mapped entity).
  *
  * getMarking()/setMarking() are here even though no library code calls them
  * directly: config/workflow.yaml declares

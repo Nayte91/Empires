@@ -8,11 +8,18 @@ services:
     App\:
         resource: '../src/'
 
-    # Phase 1 crutch: userforged/shop-engine is a path-repository package, not
-    # yet wired via a Symfony bundle (Phase 2). Without this glob its classes
-    # are outside App\'s resource and vanish from the container silently.
-    Userforged\ShopEngine\:
-        resource: '../packages/userforged/shop-engine/src/'
+    # userforged/shop-engine now registers its own services via its bundle,
+    # scanning only packages/userforged/shop-engine/src/. That scan never sees
+    # these App\ classes, so the automatic "singly implemented interface"
+    # aliasing (which used to bridge port -> adapter when both lived in this
+    # same services.yaml) no longer fires across the bundle boundary — these
+    # aliases restore it explicitly.
+    Userforged\ShopEngine\CartStorageInterface: '@App\Game\Shop\SessionCartStorage'
+    Userforged\ShopEngine\OrderRepositoryInterface: '@App\Repository\OrderRepository'
+    Userforged\ShopEngine\BuyerProviderInterface: '@App\Game\Shop\PlayerBuyerProvider'
+    Userforged\ShopEngine\FulfillmentInterface: '@App\Game\Shop\AdvanceFulfillment'
+    Userforged\ShopEngine\ProductProviderInterface: '@App\Game\Shop\AdvanceProductProvider'
+    Userforged\ShopEngine\FacetProviderInterface: '@App\Game\Shop\ShopConnector'
 
 when@test:
     services:

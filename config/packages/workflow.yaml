@@ -1,2 +1,0 @@
-imports:
-    - { resource: '../../packages/userforged/shop-engine/config/workflow.yaml' }

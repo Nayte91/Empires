@@ -15,4 +15,5 @@ return [
     Doctrine\Bundle\MigrationsBundle\DoctrineMigrationsBundle::class => ['all' => true],
     DAMA\DoctrineTestBundle\DAMADoctrineTestBundle::class => ['test' => true],
     Symfony\Bundle\MercureBundle\MercureBundle::class => ['all' => true],
+    Userforged\ShopEngine\UserforgedShopEngineBundle::class => ['all' => true],
 ];

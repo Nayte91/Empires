@@ -1,0 +1,31 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    Userforged\ShopEngine\:
+        resource: '../src/'
+        exclude:
+            - '../src/UserforgedShopEngineBundle.php'
+            - '../src/Cart.php'
+            - '../src/Dto/'
+            - '../src/Command/'
+            - '../src/Exception/'
+            - '../src/Event/OrderRejected.php'
+            - '../src/Event/OrdersErased.php'
+            - '../src/Event/OrderSold.php'
+            - '../src/Event/OrderSubmitted.php'
+            - '../src/Event/OrderValidated.php'
+            - '../src/Promotion/AppliedPromotion.php'
+            - '../src/Promotion/ElectiveBenefit.php'
+            - '../src/Promotion/OptionCredits.php'
+            - '../src/Promotion/ProductPromotion.php'
+            - '../src/Promotion/PromotionType.php'
+            - '../src/OrderStatus.php'
+            - '../src/*Interface.php'
+
+    # The interface and its default adapter both live in this package, but the
+    # automatic "singly implemented interface" aliasing only fires when a
+    # class scans the interface as abstract in the same resource pass — which
+    # doesn't happen here since TransactionInterface.php is excluded above.
+    Userforged\ShopEngine\TransactionInterface: '@Userforged\ShopEngine\Doctrine\DoctrineTransaction'

@@ -141,9 +141,8 @@ one possible context.
   implementation, even though no other library code calls them directly). `id`,
   `total`, `validatedAt`, `createdAt` are deliberately off the interface — verified
   unread by any library code; they ship when a caller actually needs them, not
-  before. The host persists it (in Empires: `App\Entity\Order`, Doctrine-mapped, with
-  the lines as an embedded JSON document by default — a dedicated line table is the
-  host's choice).
+  before. The host persists it (in Empires: a Doctrine entity, with the lines as an
+  embedded JSON document by default — a dedicated line table is the host's choice).
 - **Status machine** — powered by `symfony/workflow`. Core default is deliberately
   tiny: `draft → pending → confirmed` + `cancelled` from any non-final state. Hosts
   extend the definition (paid, shipped, refunded…) without touching the engine; guards
@@ -158,18 +157,18 @@ one possible context.
   yet built: Empires relies on `(buyer, window)` uniqueness directly, with no number
   generator.
 
-**Portability status (code vs config).** As of the ports above, the lib's `src/` *code*
-names no host class — every `App\Entity\Order`, `App\Repository\PlayerRepository`,
+**Portability status (code vs config) — resolved.** The lib's `src/` *code* names no
+host class — every host entity, repository and
 `EntityManagerInterface` reference that used to sit in a `CommandHandler` or
 `OrderValidator` is gone, replaced by `OrderInterface`, `OrderRepositoryInterface`,
-`BuyerProviderInterface`, `TransactionInterface`. Its *config* still does:
-`config/workflow.yaml` hardcodes `supports: [App\Entity\Order]`. That is
-packaging scope, deliberately not part of this chantier — but the port set is not
-"done" in the portability sense until that line is host-supplied too. Putting
-`getMarking()`/`setMarking()` on `OrderInterface`, rather than leaving them off, is
-what makes that eventual fix a one-line config change instead of a redesign: any
-class implementing `OrderInterface` already satisfies the marking-store contract the
-state machine needs, whatever its FQCN.
+`BuyerProviderInterface`, `TransactionInterface`. Its *config* no longer does either:
+`config/workflow.yaml` ships with no `supports:` key at all — `UserforgedShopEngineBundle`
+builds it from the host-supplied `userforged_shop_engine.order_class` configuration
+(`prependExtension()`, since `framework.workflows` must be prepended before
+FrameworkBundle processes it). Putting `getMarking()`/`setMarking()` on `OrderInterface`,
+rather than leaving them off, is what made that fix a config change instead of a
+redesign: any class implementing `OrderInterface` already satisfies the marking-store
+contract the state machine needs, whatever its FQCN.
 
 ### Checkout (write side, CQRS)
 
@@ -450,7 +449,7 @@ Le bus a maintenant un abonné réel : `App\Game\Shop\ShopMercurePublisher`, enr
 
 ### `shop.event.bus` reste le point d'entrée unique (tranché)
 
-Le state machine `shop_order` (défini dans `config/workflow.yaml` — l'hôte l'importe via `config/packages/workflow.yaml`, un shim à 2 lignes) émet nativement, via l'EventDispatcher standard, des events Symfony Workflow sur ses transitions (`workflow.shop_order.completed.validate`, `.reject`, `.resubmit`). L'hypothèse de doublon avec `OrderSold`/`OrderRejected`/`OrderSubmitted` évoquée dans une version antérieure de ce document ne tient pas, par les faits :
+Le state machine `shop_order` (défini dans `config/workflow.yaml`, embarqué par `UserforgedShopEngineBundle` — l'hôte n'a plus rien à importer, seulement à enregistrer le bundle et fournir `userforged_shop_engine.order_class`) émet nativement, via l'EventDispatcher standard, des events Symfony Workflow sur ses transitions (`workflow.shop_order.completed.validate`, `.reject`, `.resubmit`). L'hypothèse de doublon avec `OrderSold`/`OrderRejected`/`OrderSubmitted` évoquée dans une version antérieure de ce document ne tient pas, par les faits :
 
 - `reject` est bloqué **inconditionnellement** par `App\Game\Shop\OrderWorkflowPolicy` (guard sur `workflow.shop_order.guard.reject`) → `completed.reject` ne se déclenche jamais en production, et `resubmit` est inatteignable par transitivité (rejeter est le seul chemin vers `rejected`) ;
 - le cas dominant d'`OrderSubmitted` (soumission simple) **ne passe par aucune transition** — le workflow démarre déjà en `pending` ;

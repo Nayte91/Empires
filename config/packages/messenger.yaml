@@ -1,6 +1,3 @@
-imports:
-    - { resource: '../../packages/userforged/shop-engine/config/messenger.yaml' }
-
 framework:
     messenger:
         # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.

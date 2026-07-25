@@ -1,7 +1,7 @@
 {
     "name": "userforged/shop-engine",
     "description": "Ordering engine (catalog, cart, checkout) — canonical shop pattern, ports-based, framework-agnostic core.",
-    "type": "library",
+    "type": "symfony-bundle",
     "license": "proprietary",
     "autoload": {
         "psr-4": {
@@ -12,7 +12,9 @@
         "php": ">=8.5",
         "psr/event-dispatcher": "^1.0",
         "psr/log": "^3.0",
+        "symfony/config": "^8.1",
         "symfony/dependency-injection": "^8.1",
+        "symfony/http-kernel": "^8.1",
         "symfony/messenger": "^8.1",
         "symfony/uid": "^8.1",
         "symfony/workflow": "^8.1",
@@ -20,6 +22,12 @@
         "doctrine/dbal": "^4.4",
         "doctrine/doctrine-bundle": "^3.3",
         "doctrine/orm": "^3.6"
+    },
+    "require-dev": {
+        "symfony/framework-bundle": "^8.1"
+    },
+    "suggest": {
+        "symfony/framework-bundle": "To register UserforgedShopEngineBundle — a Symfony bundle is an adapter, not the core; the engine itself needs no framework."
     },
     "_comment_require": [
         "The second group is transitional, not part of the target surface.",

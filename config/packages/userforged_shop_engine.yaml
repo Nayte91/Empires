@@ -1,0 +1,2 @@
+userforged_shop_engine:
+    order_class: App\Entity\Order
