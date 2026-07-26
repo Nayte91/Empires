@@ -31,9 +31,9 @@ final readonly class EraseOrdersHandler
         }
 
         $orders = array_map(
-                fn(int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $window),
-                $command->windows,
-            )
+            fn (int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $window),
+            $command->windows,
+        )
                 |> array_filter(...)
                 |> array_values(...);
 
