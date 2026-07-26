@@ -10,6 +10,8 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvancePriceResolver;
+use App\Game\Shop\CreditEntry;
+use App\Game\Shop\CreditSource;
 use App\Game\Shop\Entitlement;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
@@ -202,7 +204,7 @@ final class ShopConnectorTest extends WebTestCase
         // would have posted; a no-op for the default 9-player count, which has no
         // scenario credits.
         foreach ($this->scenarioCatalog->startingCreditsFor($playerCount) as $scope => $value) {
-            $player->postCredit(0, $scope, $value, 'scenario:'.$playerCount);
+            $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:'.$playerCount));
         }
 
         $this->entityManager->persist($game);

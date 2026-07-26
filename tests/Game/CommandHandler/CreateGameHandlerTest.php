@@ -7,6 +7,8 @@ namespace App\Tests\Game\CommandHandler;
 use App\Entity\Player;
 use App\Game\Command\CreateGame;
 use App\Game\CommandHandler\CreateGameHandler;
+use App\Game\Shop\CreditEntry;
+use App\Game\Shop\CreditSource;
 use App\Repository\PlayerRepository;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -42,13 +44,13 @@ final class CreateGameHandlerTest extends WebTestCase
 
         $alice = $this->findPlayer('ledger-three-players', 'alice');
 
-        $this->assertSame(
+        $this->assertEquals(
             [
-                ['turn' => 0, 'scope' => 'art', 'value' => 10, 'reason' => 'scenario:3'],
-                ['turn' => 0, 'scope' => 'civic', 'value' => 10, 'reason' => 'scenario:3'],
-                ['turn' => 0, 'scope' => 'craft', 'value' => 10, 'reason' => 'scenario:3'],
-                ['turn' => 0, 'scope' => 'religion', 'value' => 10, 'reason' => 'scenario:3'],
-                ['turn' => 0, 'scope' => 'science', 'value' => 10, 'reason' => 'scenario:3'],
+                new CreditEntry(0, 'art', 10, CreditSource::Scenario, 'scenario:3'),
+                new CreditEntry(0, 'civic', 10, CreditSource::Scenario, 'scenario:3'),
+                new CreditEntry(0, 'craft', 10, CreditSource::Scenario, 'scenario:3'),
+                new CreditEntry(0, 'religion', 10, CreditSource::Scenario, 'scenario:3'),
+                new CreditEntry(0, 'science', 10, CreditSource::Scenario, 'scenario:3'),
             ],
             $alice->creditLedger,
         );

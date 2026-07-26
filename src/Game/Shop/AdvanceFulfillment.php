@@ -42,7 +42,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
 
         foreach ($this->advanceCatalog->getAdvancesByNames($productKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {
-                $player->postCredit($player->game->currentTurn, $scope, $value, self::SOURCE_PREFIX.$advance->key);
+                $player->postCredit(new CreditEntry($player->game->currentTurn, $scope, $value, CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
             }
         }
     }
@@ -55,7 +55,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         foreach ($this->advanceCatalog->getAdvancesByNames($productKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {
                 $available = $this->balanceFor($player->creditLedger, $scope);
-                $player->postCredit($player->game->currentTurn, $scope, -min($value, $available), self::SOURCE_PREFIX.$advance->key);
+                $player->postCredit(new CreditEntry($player->game->currentTurn, $scope, -min($value, $available), CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
             }
         }
     }
@@ -65,14 +65,14 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         return $this->playerRepository->find($buyerId) ?? throw new \RuntimeException('Player not found.');
     }
 
-    /** @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger */
+    /** @param list<CreditEntry> $creditLedger */
     private function balanceFor(array $creditLedger, string $scope): int
     {
         $balance = 0;
 
         foreach ($creditLedger as $entry) {
-            if ($scope === $entry['scope']) {
-                $balance += $entry['value'];
+            if ($scope === $entry->scope) {
+                $balance += $entry->value;
             }
         }
 

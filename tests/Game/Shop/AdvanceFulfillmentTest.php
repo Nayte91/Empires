@@ -8,6 +8,8 @@ use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\CreditEntry;
+use App\Game\Shop\CreditSource;
 use App\Repository\PlayerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -41,11 +43,11 @@ final class AdvanceFulfillmentTest extends WebTestCase
 
         $this->fulfillment->grant($player->id, ['pottery']);
 
-        $this->assertSame(
+        $this->assertEquals(
             [
-                ['turn' => 4, 'scope' => 'art', 'value' => 5, 'reason' => 'advance:pottery'],
-                ['turn' => 4, 'scope' => 'craft', 'value' => 10, 'reason' => 'advance:pottery'],
-                ['turn' => 4, 'scope' => 'agriculture', 'value' => 10, 'reason' => 'advance:pottery'],
+                new CreditEntry(4, 'art', 5, CreditSource::Shop, 'advance:pottery'),
+                new CreditEntry(4, 'craft', 10, CreditSource::Shop, 'advance:pottery'),
+                new CreditEntry(4, 'agriculture', 10, CreditSource::Shop, 'advance:pottery'),
             ],
             $player->creditLedger,
         );
@@ -79,7 +81,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     public function revokingCapsTheNegativeEntryAtTheScopesAvailableBalanceRatherThanTakingTheFullAmount(): void
     {
         $player = $this->createPlayer();
-        $player->postCredit(1, 'craft', 5, 'test-fixture');
+        $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture'));
 
         $this->fulfillment->revoke($player->id, ['pottery']);
 
@@ -97,10 +99,10 @@ final class AdvanceFulfillmentTest extends WebTestCase
     public function aLaterGainAfterACappedRevokeIsNotSwallowedByAHiddenNegativeBalance(): void
     {
         $player = $this->createPlayer();
-        $player->postCredit(1, 'craft', 5, 'test-fixture');
+        $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture'));
         $this->fulfillment->revoke($player->id, ['pottery']);
 
-        $player->postCredit(2, 'craft', 5, 'later-gain');
+        $player->postCredit(new CreditEntry(2, 'craft', 5, CreditSource::Shop, 'later-gain'));
 
         $this->assertSame(5, $this->balanceFor($player->creditLedger, 'craft'));
     }
@@ -134,25 +136,25 @@ final class AdvanceFulfillmentTest extends WebTestCase
         return $player;
     }
 
-    /** @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger */
+    /** @param list<CreditEntry> $creditLedger */
     private function balanceFor(array $creditLedger, string $scope): int
     {
         $balance = 0;
 
         foreach ($creditLedger as $entry) {
-            if ($scope === $entry['scope']) {
-                $balance += $entry['value'];
+            if ($scope === $entry->scope) {
+                $balance += $entry->value;
             }
         }
 
         return $balance;
     }
 
-    /** @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger */
+    /** @param list<CreditEntry> $creditLedger */
     private function lastValueFor(array $creditLedger, string $scope): int
     {
-        $matching = array_values(array_filter($creditLedger, static fn (array $entry): bool => $scope === $entry['scope']));
+        $matching = array_values(array_filter($creditLedger, static fn (CreditEntry $entry): bool => $scope === $entry->scope));
 
-        return $matching[array_key_last($matching)]['value'] ?? throw new \RuntimeException(sprintf('No ledger entry for scope "%s".', $scope));
+        return $matching[array_key_last($matching)]?->value ?? throw new \RuntimeException(sprintf('No ledger entry for scope "%s".', $scope));
     }
 }

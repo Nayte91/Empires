@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Doctrine\CreditLedgerType;
+use App\Game\Shop\CreditEntry;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -42,8 +44,8 @@ class Player
     #[ORM\Column(type: Types::JSON)]
     public private(set) array $advances = [];
 
-    /** @var list<array{turn: int, scope: string, value: int, reason: string}> */
-    #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
+    /** @var list<CreditEntry> */
+    #[ORM\Column(type: CreditLedgerType::NAME, options: ['default' => '[]'])]
     public private(set) array $creditLedger = [];
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
@@ -112,14 +114,9 @@ class Player
      * never be edited or removed through this entity, only offset by posting a new entry with a
      * negative value — do not add a way to replace or clear `$creditLedger` wholesale.
      */
-    public function postCredit(int $turn, string $scope, int $value, string $reason): void
+    public function postCredit(CreditEntry $entry): void
     {
-        $this->creditLedger = [...$this->creditLedger, [
-            'turn' => $turn,
-            'scope' => $scope,
-            'value' => $value,
-            'reason' => $reason,
-        ]];
+        $this->creditLedger = [...$this->creditLedger, $entry];
     }
 
     private function slugify(string $name): string

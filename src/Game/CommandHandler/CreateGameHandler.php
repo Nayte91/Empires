@@ -8,6 +8,8 @@ use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Command\CreateGame;
 use App\Game\ScenarioCatalog;
+use App\Game\Shop\CreditEntry;
+use App\Game\Shop\CreditSource;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -46,7 +48,7 @@ final readonly class CreateGameHandler
                 $player->empire = $playerData['empire'];
 
                 foreach ($startingCredits as $scope => $value) {
-                    $player->postCredit(self::STARTING_CREDITS_TURN, $scope, $value, $reason);
+                    $player->postCredit(new CreditEntry(self::STARTING_CREDITS_TURN, $scope, $value, CreditSource::Scenario, $reason));
                 }
 
                 $this->entityManager->persist($player);

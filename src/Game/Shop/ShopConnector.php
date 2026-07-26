@@ -108,14 +108,14 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger
+     * @param list<CreditEntry> $creditLedger
      *
      * @return list<Entitlement>
      */
     private function ledgerEntitlements(array $creditLedger): array
     {
         return array_map(
-            static fn (array $entry): Entitlement => new Entitlement($entry['scope'], $entry['value'], $entry['reason']),
+            static fn (CreditEntry $entry): Entitlement => new Entitlement($entry->scope, $entry->value, $entry->reason),
             $creditLedger,
         );
     }

@@ -9,6 +9,8 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\CreditEntry;
+use App\Game\Shop\CreditSource;
 use App\Repository\PlayerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -48,7 +50,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
         $player = $this->createPlayer(playerCount: 3);
 
         foreach ($this->scenarioCatalog->startingCreditsFor(3) as $scope => $value) {
-            $player->postCredit(0, $scope, $value, 'scenario:3');
+            $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:3'));
         }
 
         $this->fulfillment->grant($player->id, ['pottery', 'agriculture']);
@@ -79,7 +81,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
     }
 
     /**
-     * @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger
+     * @param list<CreditEntry> $creditLedger
      *
      * @return array<string, int>
      */
@@ -88,7 +90,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
         $balances = [];
 
         foreach ($creditLedger as $entry) {
-            $balances[$entry['scope']] = ($balances[$entry['scope']] ?? 0) + $entry['value'];
+            $balances[$entry->scope] = ($balances[$entry->scope] ?? 0) + $entry->value;
         }
 
         $balances = array_filter($balances, static fn (int $value): bool => 0 !== $value);
