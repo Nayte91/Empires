@@ -7,9 +7,9 @@ namespace App\Component;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
+use App\Game\Shop\AdvanceCreditsCalculator;
 use App\Game\Shop\ShopConnector;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
-use Userforged\ShopEngine\Service\PriceCalculator;
 
 #[AsTwigComponent(name: 'molecules:Discounts', template: 'molecules/Discounts.html.twig')]
 final class Discounts
@@ -17,7 +17,7 @@ final class Discounts
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
     public function __construct(
-        private readonly PriceCalculator $priceCalculator,
+        private readonly AdvanceCreditsCalculator $creditsCalculator,
         private readonly AdvanceCatalog $advanceCatalog,
         private readonly ShopConnector $shopConnector,
     ) {}
@@ -29,7 +29,7 @@ final class Discounts
         $owned = array_values($this->advanceCatalog->getAdvancesByNames($this->player->advances));
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->priceCalculator->creditsFor($owned, $buyer->electiveCredits, $this->shopConnector->facets());
+        return $this->creditsCalculator->creditsFor($owned, $buyer->electiveCredits, $this->shopConnector->facets());
     }
 
     /** @return array<string, string> */

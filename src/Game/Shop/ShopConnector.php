@@ -9,7 +9,6 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Category;
 use App\Repository\OrderRepository;
-use Userforged\ShopEngine\BuyerInterface;
 use Userforged\ShopEngine\FacetProviderInterface;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\OptionCredits;
@@ -52,7 +51,7 @@ final readonly class ShopConnector implements FacetProviderInterface
      * never reused across a validate/erase/disown mutation, or it goes stale
      * and self-credits. Never cache this by player id across such a boundary.
      */
-    public function buyerFor(Player $player): BuyerInterface
+    public function buyerFor(Player $player): PlayerBuyer
     {
         $confirmedLines = [];
 

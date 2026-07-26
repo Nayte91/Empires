@@ -20,6 +20,7 @@ services:
     Userforged\ShopEngine\FulfillmentInterface: '@App\Game\Shop\AdvanceFulfillment'
     Userforged\ShopEngine\ProductProviderInterface: '@App\Game\Shop\AdvanceProductProvider'
     Userforged\ShopEngine\FacetProviderInterface: '@App\Game\Shop\ShopConnector'
+    Userforged\ShopEngine\PriceResolverInterface: '@App\Game\Shop\AdvancePriceResolver'
 
 when@test:
     services:

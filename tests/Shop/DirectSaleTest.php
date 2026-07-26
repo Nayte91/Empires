@@ -7,7 +7,9 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Game\Shop\AdvancePriceResolver;
 use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
@@ -26,7 +28,6 @@ use Userforged\ShopEngine\ProductProviderInterface;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Promotion\PromotionType;
-use Userforged\ShopEngine\Service\CreditPriceResolver;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
@@ -52,6 +53,7 @@ final class DirectSaleTest extends WebTestCase
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
+        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler, OrderValidator and SellDirectHandler are built by hand
@@ -63,7 +65,7 @@ final class DirectSaleTest extends WebTestCase
         // OrderRepository/PlayerRepository/ProductProviderInterface instances, following
         // OrderFlowTest's convention.
         $shopConnector = new ShopConnector($this->orderRepository);
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new CreditPriceResolver($productProvider)), new PromotionEngine(), $shopConnector);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver($advanceCatalog)), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository);

@@ -30,6 +30,10 @@ services:
     # doesn't happen here since TransactionInterface.php is excluded above.
     Userforged\ShopEngine\TransactionInterface: '@Userforged\ShopEngine\Doctrine\DoctrineTransaction'
 
-    # Same trap, same fix: CreditPriceResolver is the port's shipped default,
-    # but PriceResolverInterface.php is excluded above like every other port.
-    Userforged\ShopEngine\PriceResolverInterface: '@Userforged\ShopEngine\Service\CreditPriceResolver'
+    # PriceResolverInterface has no default adapter here: the pricing rule
+    # (best facet credit + named credits, or whatever else) is a game rule,
+    # not a pattern invariant, so it belongs to the host. An integrator who
+    # installs this package must bind this interface to their own
+    # implementation in their own services.yaml — without it, the container
+    # will complain that PriceResolverInterface has no service and no default,
+    # which is the intended signal to go write one.

@@ -9,15 +9,11 @@ use Userforged\ShopEngine\Promotion\ProductPromotion;
 
 final readonly class FakeProduct implements ProductInterface
 {
-    /**
-     * @param list<string>       $facets
-     * @param array<string, int> $credits
-     */
+    /** @param list<string> $facets */
     public function __construct(
         public string $key,
         public int $cost = 0,
         public array $facets = [],
-        public array $credits = [],
         public ?ProductPromotion $promotion = null,
     ) {}
 }

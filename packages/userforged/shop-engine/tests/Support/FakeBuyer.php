@@ -10,13 +10,9 @@ use Userforged\ShopEngine\BuyerInterface;
 
 final readonly class FakeBuyer implements BuyerInterface
 {
-    /**
-     * @param list<string>       $ownedKeys
-     * @param array<string, int> $electiveCredits
-     */
+    /** @param list<string> $ownedKeys */
     public function __construct(
         public array $ownedKeys = [],
-        public array $electiveCredits = [],
         public Uuid $id = new UuidV4(),
     ) {}
 }

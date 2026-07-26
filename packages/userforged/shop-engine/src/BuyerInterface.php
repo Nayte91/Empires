@@ -8,9 +8,9 @@ use Symfony\Component\Uid\Uuid;
 
 /**
  * The lib's view of whoever is buying: identity plus the attributes pricing
- * needs (owned product keys, elective-benefit credits already earned). The
- * library never owns users — the host maps its User/Player/Customer entity
- * onto this interface (see App\Game\Shop\ShopConnector::buyerFor()).
+ * needs (owned product keys). The library never owns users — the host maps
+ * its User/Player/Customer entity onto this interface (see
+ * App\Game\Shop\ShopConnector::buyerFor()).
  */
 interface BuyerInterface
 {
@@ -18,7 +18,4 @@ interface BuyerInterface
 
     /** @var list<string> */
     public array $ownedKeys { get; }
-
-    /** @var array<string, int> */
-    public array $electiveCredits { get; }
 }

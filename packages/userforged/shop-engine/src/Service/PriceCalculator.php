@@ -9,12 +9,15 @@ use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\PriceResolverInterface;
 use Userforged\ShopEngine\ProductInterface;
 
+/**
+ * Turns resolved prices into order lines and totals. It decides no price of
+ * its own: what a product costs a given buyer is PriceResolverInterface's
+ * answer, and this class only guarantees the engine's invariant on top of it
+ * — an integer, floored at zero, identical from catalog to quote to freeze.
+ * Promotions are applied downstream by Promotion\PromotionEngine, never here.
+ */
 final readonly class PriceCalculator
 {
-    // Starting credits granted by config/game/scenarios.yaml, and the 'payment' YAML key,
-    // are intentionally out of scope for this v1 shop pricing. 'promotion' is handled
-    // downstream by Userforged\ShopEngine\Promotion\PromotionEngine, not here.
-
     public function __construct(
         private PriceResolverInterface $priceResolver,
     ) {}
@@ -48,60 +51,5 @@ final readonly class PriceCalculator
         }
 
         return $total;
-    }
-
-    /**
-     * Aggregates every credit granted by $owned, globally rather than against a single
-     * priced product: facet credits sum across all owned (no per-product max), and
-     * every non-facet credit key is treated as a named credit toward that product slug.
-     *
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
-     * @param list<string>           $facets       valid facets (the Game→Shop seam for the
-     *                                             generic "facet" concept, see ShopConnector::facets())
-     *
-     * @return array{facets: array<string, int>, named: array<string, int>}
-     */
-    public function creditsFor(array $owned, array $bonusCredits = [], array $facets = []): array
-    {
-        $facetCredits = [];
-
-        foreach ($facets as $facet) {
-            $facetCredits[$facet] = $this->sumCreditsFor($facet, $owned, $bonusCredits);
-        }
-
-        $named = [];
-
-        foreach ($owned as $ownedProduct) {
-            /** @var array<string, int> $credits */
-            $credits = $ownedProduct->credits;
-
-            foreach ($credits as $key => $value) {
-                if (\in_array($key, $facets, true)) {
-                    continue;
-                }
-
-                $named[$key] = ($named[$key] ?? 0) + $value;
-            }
-        }
-
-        return ['facets' => $facetCredits, 'named' => $named];
-    }
-
-    /**
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
-     */
-    private function sumCreditsFor(string $creditKey, array $owned, array $bonusCredits = []): int
-    {
-        $sum = 0;
-
-        foreach ($owned as $ownedProduct) {
-            /** @var array<string, int> $credits */
-            $credits = $ownedProduct->credits;
-            $sum += $credits[$creditKey] ?? 0;
-        }
-
-        return $sum + ($bonusCredits[$creditKey] ?? 0);
     }
 }

@@ -14,8 +14,5 @@ interface ProductInterface
     /** @var list<string> */
     public array $facets { get; }
 
-    /** @var array<string, int> */
-    public array $credits { get; }
-
     public ?ProductPromotion $promotion { get; }
 }
