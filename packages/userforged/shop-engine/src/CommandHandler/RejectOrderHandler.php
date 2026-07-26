@@ -6,7 +6,6 @@ namespace Userforged\ShopEngine\CommandHandler;
 
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Workflow\WorkflowInterface;
-use Userforged\ShopEngine\BuyerProviderInterface;
 use Userforged\ShopEngine\Command\RejectOrder;
 use Userforged\ShopEngine\Event\OrderRejected;
 use Userforged\ShopEngine\Event\ShopEventPublisher;
@@ -21,15 +20,12 @@ final readonly class RejectOrderHandler
     public function __construct(
         private TransactionInterface $transaction,
         private OrderRepositoryInterface $orderRepository,
-        private BuyerProviderInterface $buyers,
         private WorkflowInterface $shopOrderStateMachine,
         private ShopEventPublisher $events,
     ) {}
 
     public function __invoke(RejectOrder $command): void
     {
-        $this->buyers->buyerFor($command->buyerId);
-
         $order = $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $command->window);
 
         if (!$order instanceof OrderInterface) {

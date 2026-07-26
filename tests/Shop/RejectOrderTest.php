@@ -108,7 +108,6 @@ final class RejectOrderTest extends WebTestCase
         $this->rejectOrderHandler = new RejectOrderHandler(
             $transaction,
             $this->orderRepository,
-            $buyerProvider,
             $shopOrderStateMachine,
             $eventBus,
         );
@@ -149,11 +148,14 @@ final class RejectOrderTest extends WebTestCase
     }
 
     #[Test]
-    public function rejectingAnOrderForAnUnknownPlayerThrows(): void
+    public function rejectingAnOrderForAnUnknownPlayerIsANoOpThatPublishesNothingEvenWhenRepeated(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $unknownPlayerId = Uuid::v7();
 
-        ($this->rejectOrderHandler)(new RejectOrder(Uuid::v7(), 1));
+        ($this->rejectOrderHandler)(new RejectOrder($unknownPlayerId, 1));
+        ($this->rejectOrderHandler)(new RejectOrder($unknownPlayerId, 1));
+
+        $this->assertSame([], $this->hub->eventNames());
     }
 
     #[Test]

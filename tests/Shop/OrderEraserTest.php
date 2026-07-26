@@ -99,7 +99,7 @@ final class OrderEraserTest extends WebTestCase
             $eventBus,
             $buyerProvider,
         );
-        $this->eraseOrdersHandler = new EraseOrdersHandler($transaction, $this->orderRepository, $buyerProvider, $eventBus, $fulfillment);
+        $this->eraseOrdersHandler = new EraseOrdersHandler($transaction, $this->orderRepository, $eventBus, $fulfillment);
     }
 
     #[Test]

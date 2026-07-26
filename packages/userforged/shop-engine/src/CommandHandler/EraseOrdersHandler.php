@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Userforged\ShopEngine\CommandHandler;
 
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Userforged\ShopEngine\BuyerProviderInterface;
 use Userforged\ShopEngine\Command\EraseOrders;
 use Userforged\ShopEngine\Event\OrdersErased;
 use Userforged\ShopEngine\Event\ShopEventPublisher;
@@ -21,7 +20,6 @@ final readonly class EraseOrdersHandler
     public function __construct(
         private TransactionInterface $transaction,
         private OrderRepositoryInterface $orderRepository,
-        private BuyerProviderInterface $buyers,
         private ShopEventPublisher $events,
         private FulfillmentInterface $fulfillment,
     ) {}
@@ -32,12 +30,12 @@ final readonly class EraseOrdersHandler
             return;
         }
 
-        $this->buyers->buyerFor($command->buyerId);
-
-        $orders = array_values(array_filter(array_map(
-            fn (int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $window),
-            $command->windows,
-        )));
+        $orders = array_map(
+                fn(int $window): ?OrderInterface => $this->orderRepository->findOneByBuyerAndWindow($command->buyerId, $window),
+                $command->windows,
+            )
+                |> array_filter(...)
+                |> array_values(...);
 
         if ([] === $orders) {
             return;

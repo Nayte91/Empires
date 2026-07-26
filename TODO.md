@@ -27,7 +27,7 @@
 |:------:|:----------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:----------:|
 | ~~**Pkg**~~ | ~~Passer le Shop en lib installable~~ | **Terminé.** Les 7 blocages de l'inventaire sont à zéro : extraction, namespace, vocabulaire, bundle, outillage et tests propres, manifeste publiable. Ne reste que ce qui n'a d'utilité qu'avec un second consommateur (licence, changelog, `.gitattributes`, CI) — détail en fin de fichier. | — | terminé |
 | **i18n** | Étendre la traduction à l'UI      | F2-⑤ n'a traduit **que les exceptions** (10 clés, domaine `shop`). Tout le reste de l'interface est de l'anglais en dur dans les templates (`Submit my order`, `Clear cart`, `Free gift:`…). Décider si on veut une vraie UI traduisible, et si oui quelles locales — le catalogue actuel est `en` seul, délibérément. | Moyenne | ta décision |
-| **Hist** | Historique des crédits sur la console opérateur | Le registre de crédits est un journal en ajout seul stocké en JSON sur `Player` — chaque écriture porte son tour, sa portée, sa valeur signée et sa raison. **C'est ce qui justifie le JSON plutôt qu'une entité** : afficher un petit historique lisible sur la vue opérateur suffit largement, personne n'auditera ça en SQL. Reste à l'afficher. | Petite | rien |
+| **Hist** | Historique des crédits sur la console opérateur | Chaque `CreditEntry` porte son tour, sa portée, sa valeur signée, sa **source** (`shop`, `scenario`, `special ability`) et sa raison. La vue peut donc distinguer « acheté » de « mise en place ». **C'est cet usage qui justifie le JSON plutôt qu'une entité** : un historique lisible suffit, personne n'auditera ça en SQL. ⚠️ Elle ne montrera **rien des commandes annulées** — leurs écritures sont retirées, pas compensées : ne pas la présenter comme un journal d'audit. | Petite | rien |
 | **Tech** | Micro-reliquats                   | `REFACTOR-WHEN` : split du moteur de promotions en classes d'action — **toujours sous son seuil** (3 familles, se déclenche à la 4ᵉ). · `src/Component/` est à **15 fichiers**, borne basse du seuil de mirroring atomic design (`templates/{atoms,molecules,organisms}/`) : à surveiller, pas encore à agir.        | Micro   | rien |
 
 ---
@@ -77,11 +77,11 @@
 
 | Emplacement | Contenu | Base |
 |:--|:--|:--|
-| `packages/…/tests/` | 60 tests du moteur — panier, cotation, promotions | `TestCase` pur, aucun kernel |
-| `tests/Shop/` | 34 tests du **câblage** — flux de commande, vente directe, effacement, rejet | `WebTestCase`, bootent l'app |
-| `tests/Game/Shop/` | l'adaptateur `SessionCartStorage` | hôte, pas lib |
+| `packages/…/tests/` | **50** tests du moteur — panier, cotation, promotions | `TestCase` pur, aucun kernel |
+| `tests/Shop/` | **34** tests du **câblage** — flux de commande, vente directe, effacement, rejet | `WebTestCase`, bootent l'app |
+| `tests/Game/Shop/` | **22** tests des adaptateurs — stockage panier, résolveur de prix, journal de crédits | hôte, pas lib |
 
-Le critère n'est pas le sujet mais la dépendance : **un test du moteur qui a besoin d'un kernel ne teste pas le moteur, il teste l'intégration** — donc il appartient à l'hôte. Total inchangé : 293 + 60 = 353.
+Le critère n'est pas le sujet mais la dépendance : **un test du moteur qui a besoin d'un kernel ne teste pas le moteur, il teste l'intégration** — donc il appartient à l'hôte. Total actuel : **318 côté app + 50 côté package = 368**.
 
 ### Après le bundle
 
@@ -98,6 +98,16 @@ Publier demanderait encore : `LICENSE`, `CHANGELOG`, un `.gitattributes` excluan
 >
 > ~~**CLAUDE.md de la lib**~~ — livré : `packages/userforged/shop-engine/CLAUDE.md` (contrat de travail, agent-centric) et son `README.md` §11 (positionnement, état de l'art, stratégies de persistance) se partagent le sujet selon un critère explicite — ce qu'un agent ne peut pas deviner d'un côté, ce qui convainc un humain de l'autre.
 
-### couleurs d'advance
+### ~~couleurs d'advance~~ — livré
 
-Dans le jeu Mega Empires, le concept de couleurs des advances mix "informatiquement" en fait 2 concepts différents : les advances sont de certaines catégories (par exemple "craft", ou "science & religion", ...), et il y a des coupons de remise, qui sont de ces mêmes couleurs (par exemple 20 de remise en arts, 10 en civic, ...). Si on découple ces 2 concepts, on voit qu'on doit être capable de donner des coupons de remise à un joueur, et simplement de tracer leur origine pour éviter la triche. Es tu d'accord avec ce découpage informatique ? Est ce que notre librairie shop-engine a un équivalent de la gestion des "coupons remise" ou tout autre nom donné officiellement à cette mécanique (par le canon du pattern, par l'OMS, ...) ? 
+La question : la « couleur » d'une advance fusionnait-elle deux concepts, sa **catégorie** et la **dénomination des crédits** qu'elle octroie ? Oui, et la donnée l'a tranché sans appel — **49 advances sur 51 accordent des crédits hors de leurs propres catégories**. Le modèle mental « les cartes bleues donnent du crédit bleu » était faux 96 % du temps.
+
+Ce qui en est sorti :
+
+- **Le prix est un port** (`PriceResolverInterface`). La règle « meilleure facette + crédits nommés » est une règle de Mega Civilization, pas du pattern shop : elle vit chez l'hôte, dans `AdvancePriceResolver`.
+- **Les crédits sont un journal** de `CreditEntry` sur `Player` — tour, portée, valeur signée, source, raison. Une portée est une couleur **ou** une clé de carte, opaque au calcul : c'est ce qui fait que les crédits nommés traversent toute la chaîne sans traitement particulier.
+- **Ajout pour un fait de jeu, retrait pour une annulation.** Un forfait est toujours un ajout en négatif, jamais un retrait.
+- **Le solde se déroule chronologiquement**, plafonné à chaque pas — ni somme brute, ni somme suivie d'un plancher, deux variantes fausses gardées par des tests.
+- Les credits de départ de `scenarios.yaml` **s'appliquent enfin**, après avoir été lus et testés sans jamais être branchés.
+
+Sur le nommage canonique : aucun terme unique n'existe. Le commerce fait de la **sélection de prix** par segment (commercetools, Medusa) — énumérable, là où le nôtre est cumulatif. Le cousin le plus proche est la **remise arrière B2B** (SAP, Oracle) : même cycle de vie, mais elle se solde. D'où la définition retenue — **un entitlement est un rebate qui ne se solde jamais**. Détail en §11 du README du package.
