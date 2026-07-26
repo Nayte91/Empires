@@ -38,26 +38,6 @@
         }
     }
 
-    .player-board__shop-link {
-        border: 1px solid var(--operator-accent);
-        border-radius: var(--operator-radius);
-        padding: 0.5em 0.9em;
-        display: inline-grid;
-        place-content: center;
-        background: var(--operator-accent);
-        color: white;
-        font-size: 0.875rem;
-        text-decoration: none;
-        transition: background-color 0.15s;
-
-        &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8%)) }
-
-        &:focus-visible {
-            outline: 2px solid var(--operator-accent);
-            outline-offset: 2px;
-        }
-    }
-
     .player-board__advances-grid {
         --grid-min-col-size: 14rem;
         display: grid;

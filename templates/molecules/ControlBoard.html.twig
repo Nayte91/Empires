@@ -3,6 +3,8 @@
         {% for stat in stats %}
             <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" />
         {% endfor %}
+
+        {% if withShopLink %}<a href="{{ this.shopUrl }}" class="shop-link">Shop</a>{% endif %}
     </div>
 
 {% if this.advisories is not empty %}

@@ -7,7 +7,6 @@ namespace App\Component;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -21,10 +20,7 @@ final class PlayerBoard
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(
-        private readonly AdvanceCatalog $advanceCatalog,
-        private readonly UrlGeneratorInterface $urlGenerator,
-    ) {}
+    public function __construct(private readonly AdvanceCatalog $advanceCatalog) {}
 
     /** @return list<Advance> */
     public function getOwnedAdvances(): array
@@ -51,13 +47,5 @@ final class PlayerBoard
             ],
             $this->getOwnedAdvances(),
         );
-    }
-
-    public function getShopUrl(): string
-    {
-        return $this->urlGenerator->generate('app_player_shop', [
-            'gameSlug' => $this->player->game->slug,
-            'playerSlug' => $this->player->slug,
-        ]);
     }
 }

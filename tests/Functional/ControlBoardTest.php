@@ -57,6 +57,34 @@ final class ControlBoardTest extends WebTestCase
     }
 
     #[Test]
+    public function theShopLinkIsAbsentUnlessAskedFor(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
+
+        $this->assertCount(0, $crawler->filter('a'));
+    }
+
+    #[Test]
+    public function theShopLinkPointsAtThePlayersOwnShop(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
+            'player' => $player,
+            'withShopLink' => true,
+        ])->crawler();
+
+        $this->assertSame(
+            '/'.$game->slug.'/player/'.$player->slug.'/shop',
+            $crawler->filter('a')->attr('href'),
+        );
+    }
+
+    #[Test]
     public function wellSupportedPlayerHasNoAdvisory(): void
     {
         $game = $this->createGame();

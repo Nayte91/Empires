@@ -10,6 +10,21 @@
         display: flex;
         flex-wrap: wrap;
         gap: 1rem 2rem;
+
+        .shop-link {
+            inline-size: fit-content;
+            border: 1px solid var(--operator-accent);
+            border-radius: var(--operator-radius);
+            padding: 0.5em 1em;
+            display: inline-grid;
+            place-content: center;
+            background: var(--operator-accent);
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.15s;
+
+            &:hover { background: hsl(from var(--operator-accent) h s calc(l - 10%)) }
+        }
     }
 
     .advisories {

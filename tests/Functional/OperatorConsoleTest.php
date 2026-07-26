@@ -117,6 +117,23 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     /**
+     * The console shares the player board's ControlBoard, but the operator drives every player
+     * from one screen — a link into a single player's shop belongs to that player's own board.
+     */
+    #[Test]
+    public function aPlayerTabPanelOffersNoShopLink(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Alice');
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
+
+        $this->assertCount(0, $playerDetails->filter('a[href$="/shop"]'));
+    }
+
+    /**
      * The stat block became a shared ControlBoard so the operator gets the advisories too:
      * the game master must see who is in trouble without opening each player board.
      */
