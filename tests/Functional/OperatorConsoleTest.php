@@ -116,6 +116,26 @@ final class OperatorConsoleTest extends WebTestCase
         $this->assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
     }
 
+    /**
+     * The stat block became a shared ControlBoard so the operator gets the advisories too:
+     * the game master must see who is in trouble without opening each player board.
+     */
+    #[Test]
+    public function aPlayerTabPanelSurfacesThatPlayersAdvisories(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Alice');
+        $player->cities = 3;
+        $player->census = 2;
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
+
+        $this->assertCount(1, $playerDetails->filter('[role="alert"] li'));
+    }
+
     #[Test]
     public function previousTurnButtonIsEnabledOnTurnTwo(): void
     {

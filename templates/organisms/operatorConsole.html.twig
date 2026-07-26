@@ -58,14 +58,10 @@
                     {% block panel %}
                         <h3>{{ player.name }}</h3>
 
-                        <div class="operator-console__player-stat">
-                            <twig:molecules:StatPicker :player="player" stat="cities" :value="player.cities" />
-                            <twig:molecules:StatPicker :player="player" stat="astPosition" :value="player.astPosition" />
-                            <twig:molecules:StatPicker :player="player" stat="census" :value="player.census" />
-                            <twig:molecules:StatPicker :player="player" stat="treasury" :value="player.treasury" />
-                            <twig:molecules:StatPicker :player="player" stat="ships" :value="player.ships" />
-                            <twig:molecules:StatPicker :player="player" stat="cards" :value="player.cards" />
-                        </div>
+                        <twig:molecules:ControlBoard
+                            :player="player"
+                            :stats="['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards']"
+                        />
 
                         <twig:PlayerOrders :player="player" :ordersStamp="this.ordersStampFor(player)" />
                     {% endblock %}

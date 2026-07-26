@@ -25,12 +25,4 @@
         border-radius: var(--operator-radius);
         padding-inline: 1rem;
     }
-
-    .operator-console__player-stat {
-        margin: 1rem;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 1rem 2rem;
-    }
 }

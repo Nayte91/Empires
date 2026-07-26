@@ -1,10 +1,8 @@
 <section {{ attributes }} class="control-board">
     <div class="controls" aria-label="Controls">
-        <twig:molecules:StatPicker :player="player" stat="cities" :value="player.cities" />
-        <twig:molecules:StatPicker :player="player" stat="ships" :value="player.ships" />
-        <twig:molecules:StatPicker :player="player" stat="census" :value="player.census" />
-        <twig:molecules:StatPicker :player="player" stat="treasury" :value="player.treasury" />
-        <twig:molecules:StatPicker :player="player" stat="cards" :value="player.cards" />
+        {% for stat in stats %}
+            <twig:molecules:StatPicker :player="player" :stat="stat" />
+        {% endfor %}
     </div>
 
 {% if this.advisories is not empty %}

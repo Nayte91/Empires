@@ -35,6 +35,27 @@ final class ControlBoardTest extends WebTestCase
         $this->assertCount(5, $crawler->filter('button[type="button"]'));
     }
 
+    /**
+     * The operator console drives the same component with its own stat list, AST position
+     * included — a stat the player must never be able to move on their own board.
+     */
+    #[Test]
+    public function anExplicitStatListRendersExactlyThoseControlsInOrder(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
+            'player' => $player,
+            'stats' => ['cities', 'astPosition', 'treasury'],
+        ])->crawler();
+
+        $this->assertSame(
+            ['stat-picker-cities-'.$player->id, 'stat-picker-astPosition-'.$player->id, 'stat-picker-treasury-'.$player->id],
+            $crawler->filter('button[commandfor]')->each(static fn ($node): string => (string) $node->attr('commandfor')),
+        );
+    }
+
     #[Test]
     public function wellSupportedPlayerHasNoAdvisory(): void
     {

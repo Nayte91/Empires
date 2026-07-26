@@ -14,6 +14,9 @@ final class ControlBoard
 {
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
+    /** @var list<string> */
+    public array $stats = ['cities', 'ships', 'census', 'treasury', 'cards'];
+
     public function __construct(private readonly PlayerAdvisor $playerAdvisor) {}
 
     /** @return list<Advisory> */

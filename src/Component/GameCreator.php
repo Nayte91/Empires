@@ -218,7 +218,7 @@ final class GameCreator
             throw $exception;
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_game_operator', ['slug' => $this->game->slug]));
+        return new RedirectResponse($this->urlGenerator->generate('app_game_dashboard', ['slug' => $this->game->slug]));
     }
 
     public function isPlayerLimitReached(): bool

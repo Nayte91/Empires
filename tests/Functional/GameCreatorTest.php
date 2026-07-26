@@ -252,7 +252,7 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
-    public function launchCreatesTheGameAndItsPlayersAndRedirectsToTheOperatorConsole(): void
+    public function launchCreatesTheGameAndItsPlayersAndRedirectsToTheGameDashboard(): void
     {
         $component = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Launch Game')
@@ -282,7 +282,7 @@ final class GameCreatorTest extends WebTestCase
 
         $response = $component->response();
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
-        $this->assertStringContainsString('/launch-game/operator', (string) $response->headers->get('Location'));
+        $this->assertStringEndsWith('/launch-game', (string) $response->headers->get('Location'));
 
         $freshEntityManager = $this->freshEntityManager();
         $game = $freshEntityManager->getRepository(GameSession::class)->findOneBy(['slug' => 'launch-game']);
