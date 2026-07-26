@@ -26,15 +26,12 @@ final readonly class ProductCatalog
      */
     public function productsFor(BuyerInterface $buyer, array $inCartKeys): array
     {
-        $ownedProducts = $this->productProvider->productsByKeys($buyer->ownedKeys);
-        $bonusCredits = $buyer->electiveCredits;
-
         return array_map(
             fn (ProductInterface $product): ?Product => \in_array($product->key, $buyer->ownedKeys, true)
                     ? null
                     : new Product(
                         key: $product->key,
-                        netCost: $this->priceCalculator->netCost($product, $ownedProducts, $bonusCredits),
+                        netCost: $this->priceCalculator->netCost($product, $buyer),
                         owned: false,
                         inCart: \in_array($product->key, $inCartKeys, true),
                     ),

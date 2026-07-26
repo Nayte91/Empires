@@ -29,3 +29,7 @@ services:
     # class scans the interface as abstract in the same resource pass — which
     # doesn't happen here since TransactionInterface.php is excluded above.
     Userforged\ShopEngine\TransactionInterface: '@Userforged\ShopEngine\Doctrine\DoctrineTransaction'
+
+    # Same trap, same fix: CreditPriceResolver is the port's shipped default,
+    # but PriceResolverInterface.php is excluded above like every other port.
+    Userforged\ShopEngine\PriceResolverInterface: '@Userforged\ShopEngine\Service\CreditPriceResolver'

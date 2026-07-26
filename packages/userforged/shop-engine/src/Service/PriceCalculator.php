@@ -4,54 +4,47 @@ declare(strict_types=1);
 
 namespace Userforged\ShopEngine\Service;
 
+use Userforged\ShopEngine\BuyerInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\PriceResolverInterface;
 use Userforged\ShopEngine\ProductInterface;
 
-final class PriceCalculator
+final readonly class PriceCalculator
 {
     // Starting credits granted by config/game/scenarios.yaml, and the 'payment' YAML key,
     // are intentionally out of scope for this v1 shop pricing. 'promotion' is handled
     // downstream by Userforged\ShopEngine\Promotion\PromotionEngine, not here.
 
-    /**
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits extra credits granted by validated
-     *                                             Option allocations (Userforged\ShopEngine\Promotion\OptionCredits),
-     *                                             merged into the facet totals alongside $owned
-     */
-    public function netCost(ProductInterface $product, array $owned, array $bonusCredits = []): int
-    {
-        $net = $product->cost - $this->facetCredits($product, $owned, $bonusCredits) - $this->namedCredits($product, $owned, $bonusCredits);
+    public function __construct(
+        private PriceResolverInterface $priceResolver,
+    ) {}
 
-        return max(0, $net);
+    /** The engine's own invariant on top of whatever the resolver decides: an integer, floored at zero. */
+    public function netCost(ProductInterface $product, BuyerInterface $buyer): int
+    {
+        return max(0, $this->priceResolver->resolve($product, $buyer));
     }
 
     /**
      * @param list<ProductInterface> $products
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
      *
      * @return list<OrderLine>
      */
-    public function priceLines(array $products, array $owned, array $bonusCredits = []): array
+    public function priceLines(array $products, BuyerInterface $buyer): array
     {
         return array_map(
-            fn (ProductInterface $product): OrderLine => new OrderLine($product->key, $this->netCost($product, $owned, $bonusCredits)),
+            fn (ProductInterface $product): OrderLine => new OrderLine($product->key, $this->netCost($product, $buyer)),
             $products,
         );
     }
 
-    /**
-     * @param list<ProductInterface> $inOrder
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
-     */
-    public function orderTotal(array $inOrder, array $owned, array $bonusCredits = []): int
+    /** @param list<ProductInterface> $inOrder */
+    public function orderTotal(array $inOrder, BuyerInterface $buyer): int
     {
         $total = 0;
 
         foreach ($inOrder as $product) {
-            $total += $this->netCost($product, $owned, $bonusCredits);
+            $total += $this->netCost($product, $buyer);
         }
 
         return $total;
@@ -93,33 +86,6 @@ final class PriceCalculator
         }
 
         return ['facets' => $facetCredits, 'named' => $named];
-    }
-
-    /**
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
-     */
-    private function facetCredits(ProductInterface $product, array $owned, array $bonusCredits = []): int
-    {
-        /** @var list<string> $facets */
-        $facets = $product->facets;
-
-        $best = 0;
-
-        foreach ($facets as $facet) {
-            $best = max($best, $this->sumCreditsFor($facet, $owned, $bonusCredits));
-        }
-
-        return $best;
-    }
-
-    /**
-     * @param list<ProductInterface> $owned
-     * @param array<string, int>     $bonusCredits
-     */
-    private function namedCredits(ProductInterface $product, array $owned, array $bonusCredits = []): int
-    {
-        return $this->sumCreditsFor($product->key, $owned, $bonusCredits);
     }
 
     /**

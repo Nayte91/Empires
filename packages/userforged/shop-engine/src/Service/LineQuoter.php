@@ -30,12 +30,11 @@ final readonly class LineQuoter
     public function quote(array $intents, BuyerInterface $buyer): array
     {
         $products = $this->productsFor($intents);
-        $owned = $this->ownedFor($buyer);
         $catalog = $this->productProvider->products();
 
-        $lines = $this->priceCalculator->priceLines($products, $owned, $buyer->electiveCredits);
+        $lines = $this->priceCalculator->priceLines($products, $buyer);
 
-        return $this->engine->apply($lines, $products, $intents, $catalog, $this->catalogNetCosts($catalog, $owned), $buyer->ownedKeys, $this->facetProvider->facets());
+        return $this->engine->apply($lines, $products, $intents, $catalog, $this->catalogNetCosts($catalog, $buyer), $buyer->ownedKeys, $this->facetProvider->facets());
     }
 
     /**
@@ -54,7 +53,7 @@ final readonly class LineQuoter
         try {
             return $this->quote($intents, $buyer);
         } catch (PromotionException) {
-            return $this->priceCalculator->priceLines($this->productsFor($intents), $this->ownedFor($buyer), $buyer->electiveCredits);
+            return $this->priceCalculator->priceLines($this->productsFor($intents), $buyer);
         }
     }
 
@@ -100,24 +99,17 @@ final readonly class LineQuoter
         return $this->productProvider->productsByKeys($keys);
     }
 
-    /** @return list<ProductInterface> */
-    private function ownedFor(BuyerInterface $buyer): array
-    {
-        return $this->productProvider->productsByKeys($buyer->ownedKeys);
-    }
-
     /**
      * @param list<ProductInterface> $catalog
-     * @param list<ProductInterface> $owned
      *
      * @return array<string, int>
      */
-    private function catalogNetCosts(array $catalog, array $owned): array
+    private function catalogNetCosts(array $catalog, BuyerInterface $buyer): array
     {
         $netCosts = [];
 
         foreach ($catalog as $product) {
-            $netCosts[$product->key] = $this->priceCalculator->netCost($product, $owned);
+            $netCosts[$product->key] = $this->priceCalculator->netCost($product, $buyer);
         }
 
         return $netCosts;

@@ -26,6 +26,7 @@ use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\ProductInterface;
 use Userforged\ShopEngine\ProductProviderInterface;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
+use Userforged\ShopEngine\Service\CreditPriceResolver;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
@@ -66,7 +67,7 @@ final class OrderEraserTest extends WebTestCase
         // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $this->shopConnector = new ShopConnector($this->orderRepository);
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(), new PromotionEngine(), $this->shopConnector);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new CreditPriceResolver($productProvider)), new PromotionEngine(), $this->shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository);
@@ -189,17 +190,19 @@ final class OrderEraserTest extends WebTestCase
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $transaction = new DoctrineTransaction($this->entityManager);
 
+        $catalogWithoutAnatomy = $this->productProviderWithout($realProductProvider, 'anatomy');
+
         $submitOrderHandler = new SubmitOrderHandler(
             $transaction,
             $this->orderRepository,
-            new LineQuoter($realProductProvider, new PriceCalculator(), new PromotionEngine(), $this->shopConnector),
+            new LineQuoter($realProductProvider, new PriceCalculator(new CreditPriceResolver($realProductProvider)), new PromotionEngine(), $this->shopConnector),
             $shopOrderStateMachine,
             $eventBus,
             $buyerProvider,
         );
         $orderValidator = new OrderValidator(
             $transaction,
-            new LineQuoter($this->productProviderWithout($realProductProvider, 'anatomy'), new PriceCalculator(), new PromotionEngine(), $this->shopConnector),
+            new LineQuoter($catalogWithoutAnatomy, new PriceCalculator(new CreditPriceResolver($catalogWithoutAnatomy)), new PromotionEngine(), $this->shopConnector),
             $shopOrderStateMachine,
             $buyerProvider,
             $eventBus,
