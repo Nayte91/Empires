@@ -7,8 +7,11 @@ namespace App\Game\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\AdvanceCatalog;
 use App\Game\Category;
+use App\Game\ScenarioCatalog;
 use App\Repository\OrderRepository;
+use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\FacetProviderInterface;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\OptionCredits;
@@ -20,7 +23,15 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
-    public function __construct(private OrderRepository $orderRepository) {}
+    private const string OWNED_ADVANCE_SOURCE_PREFIX = 'advance:';
+    private const string ELECTIVE_SOURCE = 'elective';
+    private const string SCENARIO_SOURCE = 'scenario';
+
+    public function __construct(
+        private OrderRepository $orderRepository,
+        private AdvanceCatalog $advanceCatalog,
+        private ScenarioCatalog $scenarioCatalog,
+    ) {}
 
     public function currentWindow(GameSession $game): int
     {
@@ -41,9 +52,10 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * The Game→Shop seam for BuyerInterface: fetches the player's validated
-     * orders, aggregates their Option allocations, and snapshots the result
-     * into a PlayerBuyer.
+     * The Game→Shop seam for BuyerInterface: composes the three sources of
+     * an Entitlement (owned advances, elective allocations from validated
+     * orders, and the scenario's starting credits) into a PlayerBuyer
+     * snapshot.
      *
      * A Pending order's own lines are excluded here — not in OptionCredits —
      * which is the load-bearing half of the no-self-crediting invariant: a
@@ -68,7 +80,11 @@ final readonly class ShopConnector implements FacetProviderInterface
         return new PlayerBuyer(
             id: $player->id,
             ownedKeys: $player->advances,
-            electiveCredits: OptionCredits::aggregate($confirmedLines),
+            entitlements: [
+                ...$this->ownedAdvancesEntitlements($player->advances),
+                ...$this->electiveEntitlements($confirmedLines),
+                ...$this->startingCreditsEntitlements($player->game->playerCount),
+            ],
         );
     }
 
@@ -89,5 +105,51 @@ final readonly class ShopConnector implements FacetProviderInterface
             static fn (Order $o): int => $o->turn,
             $this->orderRepository->findByPlayerFromTurn($player, $turn),
         );
+    }
+
+    /**
+     * @param list<string> $ownedKeys
+     *
+     * @return list<Entitlement>
+     */
+    private function ownedAdvancesEntitlements(array $ownedKeys): array
+    {
+        $entitlements = [];
+
+        foreach (array_values($this->advanceCatalog->getAdvancesByNames($ownedKeys)) as $advance) {
+            foreach ($advance->credits as $scope => $value) {
+                $entitlements[] = new Entitlement($scope, $value, self::OWNED_ADVANCE_SOURCE_PREFIX.$advance->key);
+            }
+        }
+
+        return $entitlements;
+    }
+
+    /**
+     * @param list<OrderLine> $confirmedLines
+     *
+     * @return list<Entitlement>
+     */
+    private function electiveEntitlements(array $confirmedLines): array
+    {
+        $entitlements = [];
+
+        foreach (OptionCredits::aggregate($confirmedLines) as $scope => $value) {
+            $entitlements[] = new Entitlement($scope, $value, self::ELECTIVE_SOURCE);
+        }
+
+        return $entitlements;
+    }
+
+    /** @return list<Entitlement> */
+    private function startingCreditsEntitlements(int $playerCount): array
+    {
+        $entitlements = [];
+
+        foreach ($this->scenarioCatalog->startingCreditsFor($playerCount) as $scope => $value) {
+            $entitlements[] = new Entitlement($scope, $value, self::SCENARIO_SOURCE);
+        }
+
+        return $entitlements;
     }
 }

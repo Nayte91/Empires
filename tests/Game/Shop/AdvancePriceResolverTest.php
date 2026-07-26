@@ -7,6 +7,7 @@ namespace App\Tests\Game\Shop;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
 use App\Game\Shop\AdvancePriceResolver;
+use App\Game\Shop\Entitlement;
 use App\Game\Shop\PlayerBuyer;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -23,7 +24,7 @@ final class AdvancePriceResolverTest extends WebTestCase
         self::bootKernel();
 
         $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $this->resolver = new AdvancePriceResolver($this->advanceCatalog);
+        $this->resolver = new AdvancePriceResolver();
     }
 
     /**
@@ -52,7 +53,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveSumsNamedCreditsFromOwnedAdvancesAndElectiveCreditsTogether(): void
     {
         $roadbuilding = $this->advance('roadbuilding');
-        $buyer = $this->makeBuyer(['engineering'], ['roadbuilding' => 15]);
+        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('roadbuilding', 15, 'elective')]);
 
         $net = $this->resolver->resolve($roadbuilding, $buyer);
 
@@ -63,7 +64,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveMergesElectiveCreditsIntoFacetCreditsWithNoAdvancesOwned(): void
     {
         $pottery = $this->advance('pottery');
-        $buyer = $this->makeBuyer([], ['craft' => 25]);
+        $buyer = $this->makeBuyer([], [new Entitlement('craft', 25, 'elective')]);
 
         $net = $this->resolver->resolve($pottery, $buyer);
 
@@ -74,7 +75,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveNeverReturnsANegativeNetCost(): void
     {
         $pottery = $this->advance('pottery');
-        $buyer = $this->makeBuyer(['engineering'], ['craft' => 100]);
+        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('craft', 100, 'elective')]);
 
         $net = $this->resolver->resolve($pottery, $buyer);
 
@@ -84,7 +85,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     /**
      * PlayerBuyer is the only BuyerInterface implementation the host ever
      * constructs (ShopConnector::buyerFor()/PlayerBuyerProvider), and the
-     * resolver leans on that to reach electiveCredits, which BuyerInterface
+     * resolver leans on that to reach entitlements, which BuyerInterface
      * itself no longer declares. Anything else must be rejected loudly
      * rather than silently treated as crediting nothing.
      */
@@ -96,7 +97,7 @@ final class AdvancePriceResolverTest extends WebTestCase
             public function __construct(
                 public Uuid $id,
                 public array $ownedKeys = [],
-                public array $electiveCredits = [],
+                public array $entitlements = [],
             ) {}
         };
 
@@ -111,11 +112,19 @@ final class AdvancePriceResolverTest extends WebTestCase
     }
 
     /**
-     * @param list<string>       $ownedKeys
-     * @param array<string, int> $electiveCredits
+     * @param list<string>      $ownedKeys
+     * @param list<Entitlement> $electiveEntitlements
      */
-    private function makeBuyer(array $ownedKeys, array $electiveCredits = []): PlayerBuyer
+    private function makeBuyer(array $ownedKeys, array $electiveEntitlements = []): PlayerBuyer
     {
-        return new PlayerBuyer(id: Uuid::v4(), ownedKeys: $ownedKeys, electiveCredits: $electiveCredits);
+        $ownedEntitlements = [];
+
+        foreach (array_values($this->advanceCatalog->getAdvancesByNames($ownedKeys)) as $advance) {
+            foreach ($advance->credits as $scope => $value) {
+                $ownedEntitlements[] = new Entitlement($scope, $value, 'advance:'.$advance->key);
+            }
+        }
+
+        return new PlayerBuyer(id: Uuid::v4(), ownedKeys: $ownedKeys, entitlements: [...$ownedEntitlements, ...$electiveEntitlements]);
     }
 }

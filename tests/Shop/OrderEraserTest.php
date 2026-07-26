@@ -8,8 +8,10 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
+use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
+use App\Game\Shop\Entitlement;
 use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
@@ -68,8 +70,9 @@ final class OrderEraserTest extends WebTestCase
         // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $this->shopConnector = new ShopConnector($this->orderRepository);
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver($advanceCatalog)), new PromotionEngine(), $this->shopConnector);
+        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
+        $this->shopConnector = new ShopConnector($this->orderRepository, $advanceCatalog, $scenarioCatalog);
+        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository);
@@ -186,7 +189,6 @@ final class OrderEraserTest extends WebTestCase
         $player = $this->createPlayer();
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository);
@@ -198,14 +200,14 @@ final class OrderEraserTest extends WebTestCase
         $submitOrderHandler = new SubmitOrderHandler(
             $transaction,
             $this->orderRepository,
-            new LineQuoter($realProductProvider, new PriceCalculator(new AdvancePriceResolver($advanceCatalog)), new PromotionEngine(), $this->shopConnector),
+            new LineQuoter($realProductProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector),
             $shopOrderStateMachine,
             $eventBus,
             $buyerProvider,
         );
         $orderValidator = new OrderValidator(
             $transaction,
-            new LineQuoter($catalogWithoutAnatomy, new PriceCalculator(new AdvancePriceResolver($advanceCatalog)), new PromotionEngine(), $this->shopConnector),
+            new LineQuoter($catalogWithoutAnatomy, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector),
             $shopOrderStateMachine,
             $buyerProvider,
             $eventBus,
@@ -235,12 +237,12 @@ final class OrderEraserTest extends WebTestCase
             1,
         ));
 
-        $this->assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($this->reloadPlayer($player))->entitlements, 'elective'));
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
         $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        $this->assertSame([], $this->shopConnector->buyerFor($this->reloadPlayer($player))->electiveCredits);
+        $this->assertSame([], $this->creditsFromSource($this->shopConnector->buyerFor($this->reloadPlayer($player))->entitlements, 'elective'));
     }
 
     #[Test]
@@ -291,6 +293,24 @@ final class OrderEraserTest extends WebTestCase
 
         $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
         $this->assertSame($publishedBySale, $this->hub->eventNames());
+    }
+
+    /**
+     * @param list<Entitlement> $entitlements
+     *
+     * @return array<string, int>
+     */
+    private function creditsFromSource(array $entitlements, string $source): array
+    {
+        $credits = [];
+
+        foreach ($entitlements as $entitlement) {
+            if ($source === $entitlement->source) {
+                $credits[$entitlement->scope] = $entitlement->value;
+            }
+        }
+
+        return $credits;
     }
 
     private function createPlayer(): Player

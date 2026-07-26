@@ -11,12 +11,12 @@ use Userforged\ShopEngine\BuyerInterface;
 final readonly class PlayerBuyer implements BuyerInterface
 {
     /**
-     * @param list<string>       $ownedKeys
-     * @param array<string, int> $electiveCredits
+     * @param list<string>      $ownedKeys
+     * @param list<Entitlement> $entitlements
      */
     public function __construct(
         public Uuid $id,
         public array $ownedKeys,
-        public array $electiveCredits,
+        public array $entitlements,
     ) {}
 }

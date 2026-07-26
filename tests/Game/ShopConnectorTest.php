@@ -7,6 +7,10 @@ namespace App\Tests\Game;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\AdvanceCatalog;
+use App\Game\ScenarioCatalog;
+use App\Game\Shop\AdvancePriceResolver;
+use App\Game\Shop\Entitlement;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -20,6 +24,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 final class ShopConnectorTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
+    private AdvanceCatalog $advanceCatalog;
     private ShopConnector $shopConnector;
 
     protected function setUp(): void
@@ -28,7 +33,9 @@ final class ShopConnectorTest extends WebTestCase
 
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $orderRepository = self::getContainer()->get(OrderRepository::class);
-        $this->shopConnector = new ShopConnector($orderRepository);
+        $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
+        $this->shopConnector = new ShopConnector($orderRepository, $this->advanceCatalog, $scenarioCatalog);
     }
 
     #[Test]
@@ -65,7 +72,7 @@ final class ShopConnectorTest extends WebTestCase
         $player = $this->createPlayer();
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
 
-        $this->assertSame(['craft' => 10, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
     }
 
     #[Test]
@@ -75,7 +82,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
         $this->createValidatedOptionOrder($player, 2, ['craft' => 5]);
 
-        $this->assertSame(['craft' => 15, 'science' => 10], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame(['craft' => 15, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
     }
 
     /**
@@ -95,19 +102,78 @@ final class ShopConnectorTest extends WebTestCase
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
-        $this->assertSame([], $this->shopConnector->buyerFor($player)->electiveCredits);
+        $this->assertSame([], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
     }
 
     #[Test]
-    public function buyerForWithNoOrdersHasEmptyElectiveCreditsAndOwnedKeys(): void
+    public function buyerForWithNoOrdersHasNoEntitlementsAndNoOwnedKeys(): void
     {
         $player = $this->createPlayer();
 
         $buyer = $this->shopConnector->buyerFor($player);
 
-        $this->assertSame([], $buyer->electiveCredits);
+        $this->assertSame([], $buyer->entitlements);
         $this->assertSame([], $buyer->ownedKeys);
         $this->assertSame($player->id, $buyer->id);
+    }
+
+    /**
+     * The scenario's starting credits are the third Entitlement source
+     * ShopConnector::buyerFor() composes, alongside owned advances and
+     * elective allocations — wired here for the first time (config/game/
+     * scenarios.yaml's `3.credits` key, previously read by nothing in
+     * production). GameSession::$playerCount defaults to 9, which the
+     * scenario file has no credits for, so this must set it explicitly.
+     */
+    #[Test]
+    public function buyerForGrantsStartingCreditsEntitlementsSourcedFromTheScenarioForAThreePlayerGame(): void
+    {
+        $player = $this->createPlayer(playerCount: 3);
+
+        $buyer = $this->shopConnector->buyerFor($player);
+
+        $this->assertSame(
+            ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10],
+            $this->creditsFromSource($buyer->entitlements, 'scenario'),
+        );
+    }
+
+    /**
+     * Mandatory coverage for the behaviour ShopConnector::buyerFor() newly
+     * unlocks: a 3-player scenario grants 10 starting credits per facet
+     * (config/game/scenarios.yaml), so pottery (cost 60, craft-faceted) nets
+     * 10 cheaper for a player who owns nothing and has no elective credits.
+     * GameSession::$playerCount defaults to 9, which has no scenario
+     * credits, so no pre-existing 9-player test is affected by this wiring.
+     */
+    #[Test]
+    public function resolvingAnAdvancesPriceForAThreePlayerGameDiscountsItByTheScenariosStartingCredits(): void
+    {
+        $player = $this->createPlayer(playerCount: 3);
+        $pottery = $this->advanceCatalog->getAdvanceByName('pottery') ?? throw new \RuntimeException('Advance "pottery" not found in the real catalog.');
+        $resolver = new AdvancePriceResolver();
+
+        $net = $resolver->resolve($pottery, $this->shopConnector->buyerFor($player));
+
+        $this->assertSame(50, $net);
+    }
+
+    /**
+     * @param list<Entitlement> $entitlements
+     *
+     * @return array<string, int>
+     */
+    private function creditsFromSource(array $entitlements, string $source): array
+    {
+        $credits = [];
+
+        foreach ($entitlements as $entitlement) {
+            if ($source === $entitlement->source) {
+                $credits[$entitlement->scope] = $entitlement->value;
+            }
+        }
+
+        return $credits;
     }
 
     /** @param array<string, int> $allocation */
@@ -124,9 +190,10 @@ final class ShopConnectorTest extends WebTestCase
         $this->entityManager->flush();
     }
 
-    private function createPlayer(): Player
+    private function createPlayer(int $playerCount = 9): Player
     {
         $game = new GameSession();
+        $game->playerCount = $playerCount;
         $player = new Player($game, 'Alice');
 
         $this->entityManager->persist($game);

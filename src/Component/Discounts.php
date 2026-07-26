@@ -6,7 +6,6 @@ namespace App\Component;
 
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
-use App\Game\Dto\Advance;
 use App\Game\Shop\AdvanceCreditsCalculator;
 use App\Game\Shop\ShopConnector;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
@@ -25,11 +24,9 @@ final class Discounts
     /** @return array{facets: array<string, int>, named: array<string, int>} */
     public function getCredits(): array
     {
-        /** @var list<Advance> $owned */
-        $owned = array_values($this->advanceCatalog->getAdvancesByNames($this->player->advances));
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->creditsCalculator->creditsFor($owned, $buyer->electiveCredits, $this->shopConnector->facets());
+        return $this->creditsCalculator->creditsFor($buyer->entitlements, $this->shopConnector->facets());
     }
 
     /** @return array<string, string> */
