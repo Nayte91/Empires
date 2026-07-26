@@ -53,7 +53,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveSumsNamedCreditsFromOwnedAdvancesAndElectiveCreditsTogether(): void
     {
         $roadbuilding = $this->advance('roadbuilding');
-        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('roadbuilding', 15, 'elective')]);
+        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('roadbuilding', 15)]);
 
         $net = $this->resolver->resolve($roadbuilding, $buyer);
 
@@ -64,7 +64,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveMergesElectiveCreditsIntoFacetCreditsWithNoAdvancesOwned(): void
     {
         $pottery = $this->advance('pottery');
-        $buyer = $this->makeBuyer([], [new Entitlement('craft', 25, 'elective')]);
+        $buyer = $this->makeBuyer([], [new Entitlement('craft', 25)]);
 
         $net = $this->resolver->resolve($pottery, $buyer);
 
@@ -75,7 +75,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     public function resolveNeverReturnsANegativeNetCost(): void
     {
         $pottery = $this->advance('pottery');
-        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('craft', 100, 'elective')]);
+        $buyer = $this->makeBuyer(['engineering'], [new Entitlement('craft', 100)]);
 
         $net = $this->resolver->resolve($pottery, $buyer);
 
@@ -121,7 +121,7 @@ final class AdvancePriceResolverTest extends WebTestCase
 
         foreach (array_values($this->advanceCatalog->getAdvancesByNames($ownedKeys)) as $advance) {
             foreach ($advance->credits as $scope => $value) {
-                $ownedEntitlements[] = new Entitlement($scope, $value, 'advance:'.$advance->key);
+                $ownedEntitlements[] = new Entitlement($scope, $value);
             }
         }
 

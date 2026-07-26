@@ -25,7 +25,7 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     #[Test]
     public function creditsForAggregatesOneOwnedAdvancesEntitlements(): void
     {
-        $agriculture = $this->entitlementsFor('advance:agriculture', ['craft' => 10, 'science' => 5, 'democracy' => 20]);
+        $agriculture = $this->entitlementsFor(['craft' => 10, 'science' => 5, 'democracy' => 20]);
 
         $credits = new AdvanceCreditsCalculator()->creditsFor($agriculture, self::FACETS);
 
@@ -36,8 +36,8 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     #[Test]
     public function creditsForCumulatesAcrossOwnedAdvances(): void
     {
-        $agriculture = $this->entitlementsFor('advance:agriculture', ['craft' => 10, 'science' => 5, 'democracy' => 20]);
-        $monarchy = $this->entitlementsFor('advance:monarchy', ['religion' => 5, 'civic' => 10, 'law' => 10]);
+        $agriculture = $this->entitlementsFor(['craft' => 10, 'science' => 5, 'democracy' => 20]);
+        $monarchy = $this->entitlementsFor(['religion' => 5, 'civic' => 10, 'law' => 10]);
 
         $credits = new AdvanceCreditsCalculator()->creditsFor([...$agriculture, ...$monarchy], self::FACETS);
 
@@ -48,8 +48,8 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     #[Test]
     public function creditsForMergesElectiveEntitlementsIntoTheFacetTotals(): void
     {
-        $agriculture = $this->entitlementsFor('advance:agriculture', ['craft' => 10, 'science' => 5, 'democracy' => 20]);
-        $elective = $this->entitlementsFor('elective', ['craft' => 10, 'science' => 10]);
+        $agriculture = $this->entitlementsFor(['craft' => 10, 'science' => 5, 'democracy' => 20]);
+        $elective = $this->entitlementsFor(['craft' => 10, 'science' => 10]);
 
         $credits = new AdvanceCreditsCalculator()->creditsFor([...$agriculture, ...$elective], self::FACETS);
 
@@ -67,8 +67,8 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     #[Test]
     public function creditsForFoldsAnyEntitlementSharingANamedKeyIntoTheSameNamedTotal(): void
     {
-        $agriculture = $this->entitlementsFor('advance:agriculture', ['craft' => 10, 'science' => 5, 'democracy' => 20]);
-        $bonus = new Entitlement('democracy', 5, 'elective');
+        $agriculture = $this->entitlementsFor(['craft' => 10, 'science' => 5, 'democracy' => 20]);
+        $bonus = new Entitlement('democracy', 5);
 
         $credits = new AdvanceCreditsCalculator()->creditsFor([...$agriculture, $bonus], self::FACETS);
 
@@ -87,8 +87,8 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     #[Test]
     public function creditsForKeepsEachFacetsFullSumWhereTheResolverWouldOnlyCreditTheBest(): void
     {
-        $pottery = $this->entitlementsFor('advance:pottery', ['art' => 5, 'craft' => 10, 'agriculture' => 10]);
-        $anatomy = $this->entitlementsFor('advance:anatomy', ['craft' => 5, 'science' => 20]);
+        $pottery = $this->entitlementsFor(['art' => 5, 'craft' => 10, 'agriculture' => 10]);
+        $anatomy = $this->entitlementsFor(['craft' => 5, 'science' => 20]);
 
         $credits = new AdvanceCreditsCalculator()->creditsFor([...$pottery, ...$anatomy], self::FACETS);
 
@@ -101,12 +101,12 @@ final class AdvanceCreditsCalculatorTest extends TestCase
      *
      * @return list<Entitlement>
      */
-    private function entitlementsFor(string $source, array $credits): array
+    private function entitlementsFor(array $credits): array
     {
         $entitlements = [];
 
         foreach ($credits as $scope => $value) {
-            $entitlements[] = new Entitlement($scope, $value, $source);
+            $entitlements[] = new Entitlement($scope, $value);
         }
 
         return $entitlements;

@@ -19,12 +19,18 @@ use Userforged\ShopEngine\FulfillmentInterface;
  * to a Player via PlayerRepository — the library never touches
  * App\Entity\Player itself.
  *
- * revoke() posts the exact negative counterpart of what grant() posted — a
- * symmetry that is non-negotiable, but each negative entry is capped at the
- * scope's current ledger balance (never below zero): writing the uncapped
- * negative would let it sit dormant and silently swallow that scope's future
- * gains once the balance recovers. See Player::postCredit()'s docblock for
- * why the ledger can only ever be appended to, never replaced.
+ * revoke() removes every ledger entry reasoned by the advance's key
+ * (Player::revokeCredits()) instead of posting a negative counterpart:
+ * cancelling an order is a correction of a mis-entry, not a game fact, so the
+ * trace is erased rather than compensated. Discriminating on the reason alone
+ * is deliberate — it sweeps up everything that advance ever produced in one
+ * pass, including anything a later capability trigger may have posted under
+ * the same reason.
+ *
+ * Removing an entry outright can never drive a scope's balance negative:
+ * ShopConnector::ledgerEntitlements() replays the remaining entries
+ * chronologically and caps each withdrawal against what is available at that
+ * point in the walk, not against what was available when it was written.
  */
 final readonly class AdvanceFulfillment implements FulfillmentInterface
 {
@@ -53,29 +59,12 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         $player->disownAdvances($productKeys);
 
         foreach ($this->advanceCatalog->getAdvancesByNames($productKeys) as $advance) {
-            foreach ($advance->credits as $scope => $value) {
-                $available = $this->balanceFor($player->creditLedger, $scope);
-                $player->postCredit(new CreditEntry($player->game->currentTurn, $scope, -min($value, $available), CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
-            }
+            $player->revokeCredits(self::SOURCE_PREFIX.$advance->key);
         }
     }
 
     private function resolve(Uuid $buyerId): Player
     {
         return $this->playerRepository->find($buyerId) ?? throw new \RuntimeException('Player not found.');
-    }
-
-    /** @param list<CreditEntry> $creditLedger */
-    private function balanceFor(array $creditLedger, string $scope): int
-    {
-        $balance = 0;
-
-        foreach ($creditLedger as $entry) {
-            if ($scope === $entry->scope) {
-                $balance += $entry->value;
-            }
-        }
-
-        return $balance;
     }
 }

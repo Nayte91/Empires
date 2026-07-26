@@ -21,8 +21,6 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
-    private const string ELECTIVE_SOURCE = 'elective';
-
     public function __construct(
         private OrderRepository $orderRepository,
     ) {}
@@ -53,10 +51,13 @@ final readonly class ShopConnector implements FacetProviderInterface
      * CreateGameHandler — plus elective allocations from validated orders)
      * into a PlayerBuyer snapshot.
      *
-     * The ledger is projected entry-for-entry: each posted credit becomes its
-     * own Entitlement, carrying its own reason as source. Nothing here sums
-     * by scope — every consumer of the resulting list (AdvancePriceResolver,
-     * AdvanceCreditsCalculator) already does that itself.
+     * The ledger is replayed chronologically into one Entitlement per scope,
+     * carrying that scope's final balance — see ledgerEntitlements() for the
+     * walk. A straight per-entry sum cannot be trusted here: revoke() removes
+     * the CreditEntry a grant posted outright rather than posting its
+     * negative counterpart (see AdvanceFulfillment), which can retroactively
+     * invalidate an intervening withdrawal's cap; only a chronological
+     * replay resolves it correctly.
      *
      * A Pending order's own lines are excluded here — not in OptionCredits —
      * which is the load-bearing half of the no-self-crediting invariant: a
@@ -108,16 +109,39 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
+     * Replays the ledger chronologically into a final balance per scope. Each
+     * entry either adds to its scope's running balance (value >= 0) or
+     * withdraws from it, capped at whatever is currently available (never
+     * below zero) — capping this at every step, rather than on the running
+     * total, is what stops an intervening withdrawal from swallowing a later
+     * gain: [+5, -10, +5] must settle at 5, never at 0.
+     *
      * @param list<CreditEntry> $creditLedger
      *
      * @return list<Entitlement>
      */
     private function ledgerEntitlements(array $creditLedger): array
     {
-        return array_map(
-            static fn (CreditEntry $entry): Entitlement => new Entitlement($entry->scope, $entry->value, $entry->reason),
-            $creditLedger,
-        );
+        $balances = [];
+
+        foreach ($creditLedger as $entry) {
+            if ($entry->value >= 0) {
+                $balances[$entry->scope] = ($balances[$entry->scope] ?? 0) + $entry->value;
+
+                continue;
+            }
+
+            $withdrawn = min(-$entry->value, $balances[$entry->scope] ?? 0);
+            $balances[$entry->scope] = ($balances[$entry->scope] ?? 0) - $withdrawn;
+        }
+
+        $entitlements = [];
+
+        foreach ($balances as $scope => $balance) {
+            $entitlements[] = new Entitlement($scope, $balance);
+        }
+
+        return $entitlements;
     }
 
     /**
@@ -130,7 +154,7 @@ final readonly class ShopConnector implements FacetProviderInterface
         $entitlements = [];
 
         foreach (OptionCredits::aggregate($confirmedLines) as $scope => $value) {
-            $entitlements[] = new Entitlement($scope, $value, self::ELECTIVE_SOURCE);
+            $entitlements[] = new Entitlement($scope, $value);
         }
 
         return $entitlements;

@@ -10,7 +10,6 @@ use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
-use App\Game\Shop\Entitlement;
 use App\Game\Shop\PlayerBuyerProvider;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
@@ -28,6 +27,7 @@ use Userforged\ShopEngine\Event\ShopEventPublisher;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\ProductInterface;
 use Userforged\ShopEngine\ProductProviderInterface;
+use Userforged\ShopEngine\Promotion\OptionCredits;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
@@ -236,12 +236,12 @@ final class OrderEraserTest extends WebTestCase
             1,
         ));
 
-        $this->assertSame(['craft' => 10, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($this->reloadPlayer($player))->entitlements, 'elective'));
+        $this->assertSame(['craft' => 10, 'science' => 10], OptionCredits::aggregate($order->lines()));
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
         $this->assertNotInstanceOf(Order::class, $this->orderRepository->find($order->id));
-        $this->assertSame([], $this->creditsFromSource($this->shopConnector->buyerFor($this->reloadPlayer($player))->entitlements, 'elective'));
+        $this->assertSame([], $this->shopConnector->buyerFor($this->reloadPlayer($player))->entitlements);
     }
 
     #[Test]
@@ -292,24 +292,6 @@ final class OrderEraserTest extends WebTestCase
 
         $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
         $this->assertSame($publishedBySale, $this->hub->eventNames());
-    }
-
-    /**
-     * @param list<Entitlement> $entitlements
-     *
-     * @return array<string, int>
-     */
-    private function creditsFromSource(array $entitlements, string $source): array
-    {
-        $credits = [];
-
-        foreach ($entitlements as $entitlement) {
-            if ($source === $entitlement->source) {
-                $credits[$entitlement->scope] = $entitlement->value;
-            }
-        }
-
-        return $credits;
     }
 
     private function createPlayer(): Player

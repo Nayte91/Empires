@@ -80,7 +80,7 @@ class Player
 
     #[ORM\Column(length: 50)]
     public string $name {
-        set(string $value) {
+        set {
             $this->name = $value;
             $this->slug = $this->slugify($value);
         }
@@ -110,13 +110,26 @@ class Player
     }
 
     /**
-     * Appends an entry to the credit ledger. The ledger is append-only: an existing entry can
-     * never be edited or removed through this entity, only offset by posting a new entry with a
-     * negative value — do not add a way to replace or clear `$creditLedger` wholesale.
+     * The ledger receives additions for game facts — a grant, and a genuine loss posted as a
+     * negative value. Removal is reserved for the cancellation of an order, which is not a game
+     * fact but a correction of a mis-entry. A forfeit is never a removal.
      */
     public function postCredit(CreditEntry $entry): void
     {
         $this->creditLedger = [...$this->creditLedger, $entry];
+    }
+
+    /**
+     * The counterpart to postCredit() for order cancellation: removes every entry whose reason
+     * matches, rather than offsetting them. array_values() keeps the property serializing as a
+     * JSON list rather than an object once entries have been filtered out.
+     */
+    public function revokeCredits(string $reason): void
+    {
+        $this->creditLedger = array_values(array_filter(
+            $this->creditLedger,
+            static fn (CreditEntry $entry): bool => $reason !== $entry->reason,
+        ));
     }
 
     private function slugify(string $name): string

@@ -10,6 +10,8 @@ use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\CreditEntry;
 use App\Game\Shop\CreditSource;
+use App\Game\Shop\ShopConnector;
+use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -19,6 +21,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
     private AdvanceFulfillment $fulfillment;
+    private ShopConnector $shopConnector;
 
     protected function setUp(): void
     {
@@ -27,7 +30,9 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $orderRepository = self::getContainer()->get(OrderRepository::class);
         $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
+        $this->shopConnector = new ShopConnector($orderRepository);
     }
 
     /**
@@ -55,72 +60,77 @@ final class AdvanceFulfillmentTest extends WebTestCase
     }
 
     /**
-     * The non-negotiable grant()/revoke() symmetry: erasing an order must
+     * The non-negotiable grant()/revoke() symmetry: revoking an order must
      * bring every scope the advance credited back to exactly what it was
-     * before the grant, never leaving a residual balance.
+     * before the grant. revoke() achieves this by removing the entries
+     * outright rather than compensating them, so the ledger itself must end
+     * up empty — not merely balanced back to zero.
      */
     #[Test]
-    public function revokingAnAdvanceThatWasJustGrantedBringsEveryScopeBackToItsPriorBalance(): void
+    public function revokingAnAdvanceThatWasJustGrantedRemovesEveryEntryItPostedRatherThanCompensatingThem(): void
     {
         $player = $this->createPlayer();
 
         $this->fulfillment->grant($player->id, ['pottery']);
         $this->fulfillment->revoke($player->id, ['pottery']);
 
-        $this->assertSame(0, $this->balanceFor($player->creditLedger, 'art'));
-        $this->assertSame(0, $this->balanceFor($player->creditLedger, 'craft'));
-        $this->assertSame(0, $this->balanceFor($player->creditLedger, 'agriculture'));
+        $this->assertSame([], $player->creditLedger);
         $this->assertSame([], $player->advances);
     }
 
     /**
-     * The plafonnage rule: a scope worth 5 can only ever lose 5, never the
-     * full 10 pottery's craft entry would otherwise take away.
+     * Discriminating on the reason alone (see AdvanceFulfillment::revoke())
+     * is deliberate and must stay scoped to it: an entry posted under a
+     * different reason, even for the same scope pottery would have credited,
+     * is untouched by revoking pottery.
      */
     #[Test]
-    public function revokingCapsTheNegativeEntryAtTheScopesAvailableBalanceRatherThanTakingTheFullAmount(): void
+    public function revokingAnAdvanceOnlyRemovesEntriesReasonedByThatAdvanceLeavingOtherReasonsUntouched(): void
     {
         $player = $this->createPlayer();
         $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture'));
 
         $this->fulfillment->revoke($player->id, ['pottery']);
 
-        $this->assertSame(-5, $this->lastValueFor($player->creditLedger, 'craft'));
-        $this->assertSame(0, $this->balanceFor($player->creditLedger, 'craft'));
+        $this->assertEquals(
+            [new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture')],
+            $player->creditLedger,
+        );
     }
 
     /**
-     * The case that breaks if the negative entry is ever written uncapped
-     * (-10 instead of -5): a hidden -5 would still be sitting in the ledger,
-     * so a later +5 gain would only bring the scope back to 0 instead of 5 —
-     * silently swallowing credits the player has genuinely earned since.
+     * The scenario that breaks if capping ever moves back to write time: a
+     * real loss can only ever spend what a grant made available. Once that
+     * grant is later revoked — removed outright, not offset — nothing
+     * re-validates the loss that relied on it: a straight sum of what
+     * remains (-10) would be negative. Only ShopConnector::ledgerEntitlements()'s
+     * chronological replay, which caps each withdrawal against what is still
+     * available at that point in the walk, keeps the balance at 0.
      */
     #[Test]
-    public function aLaterGainAfterACappedRevokeIsNotSwallowedByAHiddenNegativeBalance(): void
+    public function revokingAGrantAfterARealLossInTheSameScopeNeverDrivesTheWalkedBalanceNegative(): void
     {
         $player = $this->createPlayer();
-        $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture'));
+        $this->fulfillment->grant($player->id, ['pottery']);
+        $player->postCredit(new CreditEntry(2, 'craft', -10, CreditSource::Shop, 'real-loss'));
+
         $this->fulfillment->revoke($player->id, ['pottery']);
 
-        $player->postCredit(new CreditEntry(2, 'craft', 5, CreditSource::Shop, 'later-gain'));
-
-        $this->assertSame(5, $this->balanceFor($player->creditLedger, 'craft'));
+        $this->assertSame(0, $this->walkedBalanceFor($player, 'craft'));
     }
 
     /**
-     * Revoking credits a player never earned in the first place must not
-     * drive any scope's balance below zero.
+     * Revoking an advance the player never owned finds no entry reasoned by
+     * it, so the ledger is left exactly as it was.
      */
     #[Test]
-    public function aScopesBalanceIsNeverNegativeEvenWhenRevokingCreditsThatWereNeverGranted(): void
+    public function revokingAnAdvanceThatWasNeverGrantedLeavesTheLedgerUntouched(): void
     {
         $player = $this->createPlayer();
 
         $this->fulfillment->revoke($player->id, ['pottery']);
 
-        $this->assertGreaterThanOrEqual(0, $this->balanceFor($player->creditLedger, 'art'));
-        $this->assertGreaterThanOrEqual(0, $this->balanceFor($player->creditLedger, 'craft'));
-        $this->assertGreaterThanOrEqual(0, $this->balanceFor($player->creditLedger, 'agriculture'));
+        $this->assertSame([], $player->creditLedger);
     }
 
     private function createPlayer(int $currentTurn = 1): Player
@@ -136,25 +146,14 @@ final class AdvanceFulfillmentTest extends WebTestCase
         return $player;
     }
 
-    /** @param list<CreditEntry> $creditLedger */
-    private function balanceFor(array $creditLedger, string $scope): int
+    private function walkedBalanceFor(Player $player, string $scope): int
     {
-        $balance = 0;
-
-        foreach ($creditLedger as $entry) {
-            if ($scope === $entry->scope) {
-                $balance += $entry->value;
+        foreach ($this->shopConnector->buyerFor($player)->entitlements as $entitlement) {
+            if ($scope === $entitlement->scope) {
+                return $entitlement->value;
             }
         }
 
-        return $balance;
-    }
-
-    /** @param list<CreditEntry> $creditLedger */
-    private function lastValueFor(array $creditLedger, string $scope): int
-    {
-        $matching = array_values(array_filter($creditLedger, static fn (CreditEntry $entry): bool => $scope === $entry->scope));
-
-        return $matching[array_key_last($matching)]?->value ?? throw new \RuntimeException(sprintf('No ledger entry for scope "%s".', $scope));
+        return 0;
     }
 }

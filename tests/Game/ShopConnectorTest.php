@@ -75,7 +75,7 @@ final class ShopConnectorTest extends WebTestCase
         $player = $this->createPlayer();
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
 
-        $this->assertSame(['craft' => 10, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->creditsByScope($this->shopConnector->buyerFor($player)->entitlements));
     }
 
     #[Test]
@@ -85,7 +85,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->createValidatedOptionOrder($player, 1, ['craft' => 10, 'science' => 10]);
         $this->createValidatedOptionOrder($player, 2, ['craft' => 5]);
 
-        $this->assertSame(['craft' => 15, 'science' => 10], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
+        $this->assertSame(['craft' => 15, 'science' => 10], $this->creditsByScope($this->shopConnector->buyerFor($player)->entitlements));
     }
 
     /**
@@ -105,7 +105,7 @@ final class ShopConnectorTest extends WebTestCase
         $this->entityManager->persist($order);
         $this->entityManager->flush();
 
-        $this->assertSame([], $this->creditsFromSource($this->shopConnector->buyerFor($player)->entitlements, 'elective'));
+        $this->assertSame([], $this->creditsByScope($this->shopConnector->buyerFor($player)->entitlements));
     }
 
     #[Test]
@@ -137,8 +137,36 @@ final class ShopConnectorTest extends WebTestCase
 
         $this->assertSame(
             ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10],
-            $this->creditsFromSource($buyer->entitlements, 'scenario:3'),
+            $this->creditsByScope($buyer->entitlements),
         );
+    }
+
+    /**
+     * The negative example the spec warns against: capping the running SUM at
+     * zero would let the intervening -10 permanently erase 5 of credit —
+     * 5-10+5=0, floored, stays 0. Capping each withdrawal at its own step
+     * instead means the -10 only ever takes what is available (5) at that
+     * point, so the later +5 lands on top of what remains: 5.
+     */
+    #[Test]
+    public function theChronologicalWalkCapsEachWithdrawalAtItsOwnStepRatherThanTheRunningTotal(): void
+    {
+        $player = $this->createPlayer();
+        $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'advance:pottery'));
+        $player->postCredit(new CreditEntry(2, 'craft', -10, CreditSource::Shop, 'real-loss'));
+        $player->postCredit(new CreditEntry(3, 'craft', 5, CreditSource::Shop, 'later-gain'));
+
+        $this->assertSame(['craft' => 5], $this->creditsByScope($this->shopConnector->buyerFor($player)->entitlements));
+    }
+
+    #[Test]
+    public function aWithdrawalLargerThanTheAvailableBalanceNeverDrivesTheScopeBelowZero(): void
+    {
+        $player = $this->createPlayer();
+        $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'advance:pottery'));
+        $player->postCredit(new CreditEntry(2, 'craft', -100, CreditSource::Shop, 'real-loss'));
+
+        $this->assertSame(['craft' => 0], $this->creditsByScope($this->shopConnector->buyerFor($player)->entitlements));
     }
 
     /**
@@ -166,14 +194,12 @@ final class ShopConnectorTest extends WebTestCase
      *
      * @return array<string, int>
      */
-    private function creditsFromSource(array $entitlements, string $source): array
+    private function creditsByScope(array $entitlements): array
     {
         $credits = [];
 
         foreach ($entitlements as $entitlement) {
-            if ($source === $entitlement->source) {
-                $credits[$entitlement->scope] = $entitlement->value;
-            }
+            $credits[$entitlement->scope] = ($credits[$entitlement->scope] ?? 0) + $entitlement->value;
         }
 
         return $credits;
