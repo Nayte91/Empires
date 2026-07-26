@@ -24,8 +24,8 @@ final readonly class PromotionEngine
      *                                                same $owned basis as $lines — required to stamp the
      *                                                gift line's "amount" (the cost it would have priced at)
      * @param list<string>           $ownedKeys       buyer's currently owned product keys
-     * @param list<string>           $facets          valid Option allocation facets (the Game→Shop seam
-     *                                                for the generic "facet" concept, see ShopConnector::facets())
+     * @param list<string>           $facets          valid Option allocation facets (see
+     *                                                FacetProviderInterface::facets())
      *
      * @return list<OrderLine>
      */
@@ -320,9 +320,10 @@ final readonly class PromotionEngine
      */
     private function applyDiscount(array $lines, string $source, array $discount): array
     {
-        // Only the 'any' eligibility key is implemented in E1; facet-scoped keys
-        // (e.g. a future 'science' key restricting eligibility to science-facet
-        // lines) are left for a later phase.
+        // Only the 'any' eligibility key is implemented today; facet-scoped keys
+        // (e.g. an 'electronics' key restricting eligibility to a shop's
+        // electronics-facet lines, or a 'science' key doing the same for a
+        // game's science-facet lines) are left for later.
         $amount = $discount['any'] ?? null;
 
         if (null === $amount) {

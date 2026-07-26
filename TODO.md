@@ -2,10 +2,19 @@
 
 > **État : la lib est extraite.** `src/Shop/` n'existe plus — le code vit dans `packages/userforged/shop-engine/`, sous le namespace `Userforged\ShopEngine\`, relié à l'application par un path repository que Composer symlinke. Deux gardes-fous, à lancer ensemble :
 > ```
-> grep -rn '^use App\\' packages/userforged/shop-engine/src/                  → 0
-> grep -rniE 'player|advance|empire' packages/userforged/shop-engine/src/     → 5
+> L=packages/userforged/shop-engine
+> grep -rn  'App\\'                                $L/src/ $L/config/   → 0
+> grep -rniE 'player|advance|empire|\bgame\b'      $L/src/ $L/config/   → 5
 > ```
-> **Le second existe parce que le premier ne suffisait pas** : il ne teste que les *imports*, et a longtemps certifié « host-free » un code qui portait ~117 mots du jeu — dont `playerId` sur les 9 classes de l'API publique, pendant qu'`OrderInterface` disait `buyerId` juste à côté. Les 5 occurrences restantes sont délibérées : des énumérations qui illustrent l'agnosticisme (« a license, a game advance, stock ») et deux commentaires nommant des classes hôtes réelles.
+> **Chaque élargissement de ces greps vient d'une fuite qu'ils ont laissé passer** :
+> - le second grep existe parce que le premier ne testait que les *imports* — il certifiait « host-free » un code portant ~117 mots du jeu, dont `playerId` sur les 9 classes de l'API publique ;
+> - `App\\` a perdu son ancre `^use` parce que **6 renvois vivaient dans des docblocks**, invisibles à un grep d'imports ;
+> - `game` a été ajouté après « the **Game**→Shop seam », un cadrage architectural de l'hôte présent 3 fois ;
+> - `config/` a été ajouté parce qu'une fuite s'y cachait, hors de portée des deux greps qui ne balayaient que `src/`.
+>
+> **Une quatrième nature de fuite échappe par construction à tout grep** : les renvois vers des repères internes au projet (`F2-④`, `E1` — des codes de phase du journal de commits). Pour un intégrateur, ce sont des pointeurs vers rien. Seule une relecture les trouve.
+>
+> Les 5 occurrences tolérées sont toutes des **illustrations multi-contextes** ou des justifications d'exclusion — `FulfillmentInterface` (licence / avancée de jeu / stock), `BuyerInterface` (User/Player/Customer), `PromotionEngine` (catégorie *electronics* d'une boutique / branche *science* d'un jeu), et `OrderInterface`, qui nomme le vocabulaire de l'hôte **pour justifier de l'avoir exclu**. Ne pas les purger : ce sont elles qui démontrent l'agnosticisme.
 >
 > Spécification de la lib : `packages/userforged/shop-engine/README.md`. Ce qui suit est ce qui reste.
 

@@ -31,12 +31,13 @@ final readonly class OrderValidator
 
         $intents = $this->lineQuoter->intentsFromLines($order->lines());
         // Built right here, not before: the order is still Pending at this point,
-        // so it's correctly excluded from its own elective credits (see
-        // ShopConnector::buyerFor()'s no-self-crediting note). The buyer now
-        // also feeds the eligibility check below, which is why that check
-        // moved here instead of reading $player->advances directly — one
-        // buyerFor() call serves both. Never hoist this above the transition
-        // below, and never reuse a buyer across it.
+        // so it's correctly excluded from its own elective credits — a
+        // not-yet-validated order must never credit its own buyer. The buyer
+        // now also feeds the eligibility check below, which is why that check
+        // moved here instead of reading the buyer's owned-state directly from
+        // the host's own domain model — one buyerFor() call serves both. Never
+        // hoist this above the transition below, and never reuse a buyer
+        // across it.
         $buyer = $this->buyers->buyerFor($order->buyerId);
 
         foreach ($slugs as $slug) {
@@ -59,8 +60,8 @@ final readonly class OrderValidator
 
         // Published through afterCommit(), not right after transactional() returns:
         // when this call joins an outer scope (SellDirectHandler), a direct publish
-        // here would fire before the outer commit, reintroducing the pre-F2-④ bug
-        // (SSE message racing ahead of the SQL write).
+        // here would fire before the outer commit — an event consumer could observe
+        // a validated order before its SQL write had actually landed.
         $this->transaction->afterCommit(function () use ($order): void {
             $this->events->publish(new OrderValidated($order->buyerId, $order->window));
         });

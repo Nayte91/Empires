@@ -7,8 +7,8 @@ namespace Userforged\ShopEngine\Exception;
 /**
  * The machine-readable identity of a ShopException, one case per factory
  * method across the library's exception classes. The host maps each case to
- * a translation key (see App\Game\Shop\ShopExceptionTranslator) — the
- * library itself never learns what copy a reason produces.
+ * a translation key of its own choosing — the library itself never learns
+ * what copy a reason produces.
  */
 enum ShopExceptionReason: string
 {

@@ -31,8 +31,9 @@ services:
     Userforged\ShopEngine\TransactionInterface: '@Userforged\ShopEngine\Doctrine\DoctrineTransaction'
 
     # PriceResolverInterface has no default adapter here: the pricing rule
-    # (best facet credit + named credits, or whatever else) is a game rule,
-    # not a pattern invariant, so it belongs to the host. An integrator who
+    # (owned-product credits, loyalty tiers, negotiated rates, or whatever
+    # else the host needs — see PriceResolverInterface) is host-specific, not
+    # a pattern invariant, so it belongs to the host. An integrator who
     # installs this package must bind this interface to their own
     # implementation in their own services.yaml — without it, the container
     # will complain that PriceResolverInterface has no service and no default,

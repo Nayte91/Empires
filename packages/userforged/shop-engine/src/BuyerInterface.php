@@ -10,7 +10,7 @@ use Symfony\Component\Uid\Uuid;
  * The lib's view of whoever is buying: identity plus the attributes pricing
  * needs (owned product keys). The library never owns users — the host maps
  * its User/Player/Customer entity onto this interface (see
- * App\Game\Shop\ShopConnector::buyerFor()).
+ * BuyerProviderInterface::buyerFor()).
  */
 interface BuyerInterface
 {
