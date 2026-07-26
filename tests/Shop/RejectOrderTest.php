@@ -8,7 +8,6 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
-use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
 use App\Game\Shop\PlayerBuyerProvider;
@@ -57,7 +56,6 @@ final class RejectOrderTest extends WebTestCase
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // Same convention as OrderFlowTest/DirectSaleTest, but here it's load-bearing:
@@ -68,11 +66,11 @@ final class RejectOrderTest extends WebTestCase
         // in production — fetching the real handlers here would make every reject
         // assertion below fail. Built from the shared EntityManager/OrderRepository/
         // PlayerRepository/ProductProviderInterface instances.
-        $shopConnector = new ShopConnector($this->orderRepository, $advanceCatalog, $scenarioCatalog);
+        $shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
         // Single shared DoctrineTransaction instance, matching the singleton the
         // container injects in production. SellDirectHandler doesn't open a scope of

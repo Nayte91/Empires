@@ -25,6 +25,7 @@ final class ShopConnectorTest extends WebTestCase
 {
     private EntityManagerInterface $entityManager;
     private AdvanceCatalog $advanceCatalog;
+    private ScenarioCatalog $scenarioCatalog;
     private ShopConnector $shopConnector;
 
     protected function setUp(): void
@@ -34,8 +35,8 @@ final class ShopConnectorTest extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $orderRepository = self::getContainer()->get(OrderRepository::class);
         $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
-        $this->shopConnector = new ShopConnector($orderRepository, $this->advanceCatalog, $scenarioCatalog);
+        $this->scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
+        $this->shopConnector = new ShopConnector($orderRepository);
     }
 
     #[Test]
@@ -134,7 +135,7 @@ final class ShopConnectorTest extends WebTestCase
 
         $this->assertSame(
             ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10],
-            $this->creditsFromSource($buyer->entitlements, 'scenario'),
+            $this->creditsFromSource($buyer->entitlements, 'scenario:3'),
         );
     }
 
@@ -195,6 +196,14 @@ final class ShopConnectorTest extends WebTestCase
         $game = new GameSession();
         $game->playerCount = $playerCount;
         $player = new Player($game, 'Alice');
+
+        // Mirrors CreateGameHandler's own write (never dispatched here — this class has
+        // no bus dependency of its own) so the ledger carries what a real game creation
+        // would have posted; a no-op for the default 9-player count, which has no
+        // scenario credits.
+        foreach ($this->scenarioCatalog->startingCreditsFor($playerCount) as $scope => $value) {
+            $player->postCredit(0, $scope, $value, 'scenario:'.$playerCount);
+        }
 
         $this->entityManager->persist($game);
         $this->entityManager->persist($player);

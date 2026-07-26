@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\Shop\AdvanceFulfillment;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -85,7 +86,7 @@ final class PlayerBoardTest extends WebTestCase
     public function discountsAreRenderedForAPlayerOwningAgriculture(): void
     {
         $player = $this->createPlayer();
-        $player->ownAdvances(['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();

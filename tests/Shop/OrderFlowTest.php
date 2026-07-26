@@ -7,7 +7,6 @@ namespace App\Tests\Shop;
 use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
-use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
 use App\Game\Shop\PlayerBuyerProvider;
@@ -43,6 +42,7 @@ final class OrderFlowTest extends WebTestCase
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private OrderValidator $orderValidator;
+    private AdvanceFulfillment $fulfillment;
     private RecordingHub $hub;
 
     protected function setUp(): void
@@ -54,7 +54,6 @@ final class OrderFlowTest extends WebTestCase
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler and OrderValidator are built by hand rather than fetched
@@ -65,11 +64,11 @@ final class OrderFlowTest extends WebTestCase
         // from RejectOrderTest (the sibling file where it's load-bearing) rather than a
         // hard requirement here — worth revisiting. Built from the shared EntityManager /
         // OrderRepository / PlayerRepository / ProductProviderInterface instances.
-        $shopConnector = new ShopConnector($this->orderRepository, $advanceCatalog, $scenarioCatalog);
+        $shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
         // Single shared DoctrineTransaction instance: this file also drives
         // OrderValidator::validate() directly, standalone, so it doesn't need to
@@ -90,7 +89,7 @@ final class OrderFlowTest extends WebTestCase
             $shopOrderStateMachine,
             $buyerProvider,
             $eventBus,
-            $fulfillment,
+            $this->fulfillment,
         );
     }
 
@@ -135,7 +134,7 @@ final class OrderFlowTest extends WebTestCase
     public function validateFreezesLinesAndOwnsAdvances(): void
     {
         $player = $this->createPlayer();
-        $player->ownAdvances(['agriculture']);
+        $this->fulfillment->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));

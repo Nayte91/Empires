@@ -57,6 +57,8 @@ packages/userforged/shop-engine/   # the ordering engine, extracted as a Compose
 ```
 **Governing rule**: `Entity/` & `Repository/` are the technical Doctrine layer, shared across the app. The `Game/` bounded context owns everything else that belongs to it — value objects, enums, non-persisted state, services.
 
+**Two standards, on purpose**: **the library applies best practices; the application applies what is proportionate.** `userforged/shop-engine` is written for a reader who is not us — every port documented, no host class named, no shortcut that a second consumer would inherit. The app is written for this game: an assumed `instanceof` on a type we construct ourselves, a JSON column where an entity would be over-engineering, a display aggregate that duplicates six lines rather than share a helper it would be tempting to merge. Neither standard is sloppiness — applying the library's rigour to the app wastes effort on a reader who will never exist, and applying the app's pragmatism to the library ships that shortcut to everyone.
+
 **The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. `src/Game/Shop/` holds the *adapters* that connect it to the game (`PlayerBuyerProvider`, `AdvanceProductProvider`, `AdvanceFulfillment`, `ShopConnector`, `SessionCartStorage`, `ShopMercurePublisher`, `ShopExceptionTranslator`, `OrderWorkflowPolicy`), and `config/services.yaml` declares the six port→adapter bindings explicitly. **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
 
 ### Config-driven game data

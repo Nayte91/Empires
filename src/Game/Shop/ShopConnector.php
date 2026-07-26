@@ -7,9 +7,7 @@ namespace App\Game\Shop;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
-use App\Game\AdvanceCatalog;
 use App\Game\Category;
-use App\Game\ScenarioCatalog;
 use App\Repository\OrderRepository;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\FacetProviderInterface;
@@ -23,14 +21,10 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
-    private const string OWNED_ADVANCE_SOURCE_PREFIX = 'advance:';
     private const string ELECTIVE_SOURCE = 'elective';
-    private const string SCENARIO_SOURCE = 'scenario';
 
     public function __construct(
         private OrderRepository $orderRepository,
-        private AdvanceCatalog $advanceCatalog,
-        private ScenarioCatalog $scenarioCatalog,
     ) {}
 
     public function currentWindow(GameSession $game): int
@@ -52,10 +46,17 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * The Game→Shop seam for BuyerInterface: composes the three sources of
-     * an Entitlement (owned advances, elective allocations from validated
-     * orders, and the scenario's starting credits) into a PlayerBuyer
-     * snapshot.
+     * The Game→Shop seam for BuyerInterface: composes the two sources of an
+     * Entitlement (the player's append-only credit ledger — owned advances'
+     * printed credits and the scenario's starting credits, both posted by
+     * App\Game\Shop\AdvanceFulfillment and App\Game\CommandHandler\
+     * CreateGameHandler — plus elective allocations from validated orders)
+     * into a PlayerBuyer snapshot.
+     *
+     * The ledger is projected entry-for-entry: each posted credit becomes its
+     * own Entitlement, carrying its own reason as source. Nothing here sums
+     * by scope — every consumer of the resulting list (AdvancePriceResolver,
+     * AdvanceCreditsCalculator) already does that itself.
      *
      * A Pending order's own lines are excluded here — not in OptionCredits —
      * which is the load-bearing half of the no-self-crediting invariant: a
@@ -81,9 +82,8 @@ final readonly class ShopConnector implements FacetProviderInterface
             id: $player->id,
             ownedKeys: $player->advances,
             entitlements: [
-                ...$this->ownedAdvancesEntitlements($player->advances),
+                ...$this->ledgerEntitlements($player->creditLedger),
                 ...$this->electiveEntitlements($confirmedLines),
-                ...$this->startingCreditsEntitlements($player->game->playerCount),
             ],
         );
     }
@@ -108,21 +108,16 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * @param list<string> $ownedKeys
+     * @param list<array{turn: int, scope: string, value: int, reason: string}> $creditLedger
      *
      * @return list<Entitlement>
      */
-    private function ownedAdvancesEntitlements(array $ownedKeys): array
+    private function ledgerEntitlements(array $creditLedger): array
     {
-        $entitlements = [];
-
-        foreach (array_values($this->advanceCatalog->getAdvancesByNames($ownedKeys)) as $advance) {
-            foreach ($advance->credits as $scope => $value) {
-                $entitlements[] = new Entitlement($scope, $value, self::OWNED_ADVANCE_SOURCE_PREFIX.$advance->key);
-            }
-        }
-
-        return $entitlements;
+        return array_map(
+            static fn (array $entry): Entitlement => new Entitlement($entry['scope'], $entry['value'], $entry['reason']),
+            $creditLedger,
+        );
     }
 
     /**
@@ -136,18 +131,6 @@ final readonly class ShopConnector implements FacetProviderInterface
 
         foreach (OptionCredits::aggregate($confirmedLines) as $scope => $value) {
             $entitlements[] = new Entitlement($scope, $value, self::ELECTIVE_SOURCE);
-        }
-
-        return $entitlements;
-    }
-
-    /** @return list<Entitlement> */
-    private function startingCreditsEntitlements(int $playerCount): array
-    {
-        $entitlements = [];
-
-        foreach ($this->scenarioCatalog->startingCreditsFor($playerCount) as $scope => $value) {
-            $entitlements[] = new Entitlement($scope, $value, self::SCENARIO_SOURCE);
         }
 
         return $entitlements;

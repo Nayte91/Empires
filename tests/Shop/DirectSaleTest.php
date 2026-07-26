@@ -8,7 +8,6 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
-use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
 use App\Game\Shop\PlayerBuyerProvider;
@@ -44,6 +43,7 @@ final class DirectSaleTest extends WebTestCase
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private SellDirectHandler $sellDirectHandler;
+    private AdvanceFulfillment $fulfillment;
     private RecordingHub $hub;
 
     protected function setUp(): void
@@ -55,7 +55,6 @@ final class DirectSaleTest extends WebTestCase
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler, OrderValidator and SellDirectHandler are built by hand
@@ -66,11 +65,11 @@ final class DirectSaleTest extends WebTestCase
         // not a hard requirement here. Built from the shared EntityManager/
         // OrderRepository/PlayerRepository/ProductProviderInterface instances, following
         // OrderFlowTest's convention.
-        $shopConnector = new ShopConnector($this->orderRepository, $advanceCatalog, $scenarioCatalog);
+        $shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
         // Single shared DoctrineTransaction instance, matching the singleton the
         // container injects in production. SellDirectHandler doesn't open a scope of
@@ -95,7 +94,7 @@ final class DirectSaleTest extends WebTestCase
             $shopOrderStateMachine,
             $buyerProvider,
             $eventBus,
-            $fulfillment,
+            $this->fulfillment,
         );
         $this->sellDirectHandler = new SellDirectHandler(
             $this->orderRepository,
@@ -111,7 +110,7 @@ final class DirectSaleTest extends WebTestCase
     public function sellValidatesOrderImmediatelyAndOwnsAdvances(): void
     {
         $player = $this->createPlayer();
-        $player->ownAdvances(['agriculture']);
+        $this->fulfillment->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy', 'pottery']), $player->game->currentTurn));

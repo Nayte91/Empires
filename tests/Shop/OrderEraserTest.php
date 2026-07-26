@@ -8,7 +8,6 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
-use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
 use App\Game\Shop\Entitlement;
@@ -70,12 +69,11 @@ final class OrderEraserTest extends WebTestCase
         // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
-        $this->shopConnector = new ShopConnector($this->orderRepository, $advanceCatalog, $scenarioCatalog);
+        $this->shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         // Single shared DoctrineTransaction instance, matching the singleton the
         // container injects in production. SellDirectHandler doesn't open a scope of
@@ -188,10 +186,11 @@ final class OrderEraserTest extends WebTestCase
     {
         $player = $this->createPlayer();
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
+        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository);
+        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $shopOrderStateMachine = ShopOrderStateMachine::create();
         $transaction = new DoctrineTransaction($this->entityManager);
 

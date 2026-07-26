@@ -42,6 +42,10 @@ class Player
     #[ORM\Column(type: Types::JSON)]
     public private(set) array $advances = [];
 
+    /** @var list<array{turn: int, scope: string, value: int, reason: string}> */
+    #[ORM\Column(type: Types::JSON, options: ['default' => '[]'])]
+    public private(set) array $creditLedger = [];
+
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $cities = 0 {
         set => max(0, min(9, $value));
@@ -101,6 +105,21 @@ class Player
     public function disownAdvances(array $keys): void
     {
         $this->advances = array_values(array_diff($this->advances, $keys));
+    }
+
+    /**
+     * Appends an entry to the credit ledger. The ledger is append-only: an existing entry can
+     * never be edited or removed through this entity, only offset by posting a new entry with a
+     * negative value — do not add a way to replace or clear `$creditLedger` wholesale.
+     */
+    public function postCredit(int $turn, string $scope, int $value, string $reason): void
+    {
+        $this->creditLedger = [...$this->creditLedger, [
+            'turn' => $turn,
+            'scope' => $scope,
+            'value' => $value,
+            'reason' => $reason,
+        ]];
     }
 
     private function slugify(string $name): string

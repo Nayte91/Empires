@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\Shop\AdvanceFulfillment;
 use App\Repository\OrderRepository;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
@@ -248,12 +249,14 @@ final class KioskOperatorFlowTest extends WebTestCase
     {
         $game = new GameSession();
         $alice = new Player($game, 'Alice');
-        $alice->ownAdvances(['agriculture']);
         $bob = new Player($game, 'Bob');
 
         $this->entityManager->persist($game);
         $this->entityManager->persist($alice);
         $this->entityManager->persist($bob);
+        $this->entityManager->flush();
+
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($alice->id, ['agriculture']);
         $this->entityManager->flush();
 
         return [$game, $alice, $bob];

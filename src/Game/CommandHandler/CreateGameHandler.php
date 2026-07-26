@@ -7,14 +7,25 @@ namespace App\Game\CommandHandler;
 use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Command\CreateGame;
+use App\Game\ScenarioCatalog;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Where a game is calibrated: empires and starting hands are assigned to
+ * each player here, so the scenario's starting credits are posted to the
+ * same place, on the append-only credit ledger (Player::postCredit()), at
+ * turn 0. Storing rather than deriving from config/game/scenarios.yaml
+ * freezes what a game actually started with, immune to later catalog edits.
+ */
 #[AsMessageHandler]
 final readonly class CreateGameHandler
 {
+    private const int STARTING_CREDITS_TURN = 0;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private ScenarioCatalog $scenarioCatalog,
     ) {}
 
     public function __invoke(CreateGame $command): void
@@ -27,9 +38,17 @@ final readonly class CreateGameHandler
 
             $this->entityManager->persist($game);
 
+            $startingCredits = $this->scenarioCatalog->startingCreditsFor($command->playerCount);
+            $reason = 'scenario:'.$command->playerCount;
+
             foreach ($command->players as $playerData) {
                 $player = new Player($game, $playerData['name']);
                 $player->empire = $playerData['empire'];
+
+                foreach ($startingCredits as $scope => $value) {
+                    $player->postCredit(self::STARTING_CREDITS_TURN, $scope, $value, $reason);
+                }
+
                 $this->entityManager->persist($player);
             }
         });

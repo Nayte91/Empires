@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
+use App\Game\Shop\AdvanceFulfillment;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -86,7 +87,7 @@ final class ProductGridComponentTest extends KernelTestCase
     public function democracyIsDiscountedForAPlayerOwningAgriculture(): void
     {
         $player = $this->createPlayer();
-        $player->ownAdvances(['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
