@@ -70,7 +70,7 @@ enum Stat: string
             self::Census => Player::CENSUS_MAX,
             self::Treasury => 54,
             self::Ships => Player::SHIPS_MAX,
-            self::Cards => 8,
+            self::Cards => 20,
             self::AstPosition => Player::AST_MAX,
         };
     }

@@ -255,6 +255,102 @@ final class StatPickerTest extends WebTestCase
         $this->assertSame('7', $checked->attr('value'));
     }
 
+    /**
+     * Building a ship moves a stat this picker does not own, which is the whole reason the action
+     * name travels to the server instead of a target value.
+     */
+    #[Test]
+    public function buildingAShipPersistsBothTheFleetAndItsCost(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+        $player->treasury = 7;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'ships',
+        ])->set('pendingAction', 'buildShip')->call('save');
+
+        $reloaded = $this->reloadPlayer($player);
+
+        $this->assertSame(1, $reloaded->ships);
+        $this->assertSame(5, $reloaded->treasury);
+    }
+
+    #[Test]
+    public function cuttingToLimitUsesTheGamesOwnHandLimit(): void
+    {
+        $game = $this->createGame();
+        $game->playerCount = 12;
+        $player = $this->createPlayer($game, 'Bob');
+        $player->cards = 15;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'cards',
+        ])->set('pendingAction', 'cutToLimit')->call('save');
+
+        $this->assertSame(9, $this->reloadPlayer($player)->cards);
+    }
+
+    /**
+     * pendingAction is client-writable, so a picker must refuse an action that belongs to another
+     * stat rather than apply it to the player anyway.
+     */
+    #[Test]
+    public function anActionForeignToThePickersStatIsIgnored(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+        $player->treasury = 7;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'census',
+        ])->set('pendingAction', 'buildShip')->call('save');
+
+        $reloaded = $this->reloadPlayer($player);
+
+        $this->assertSame(0, $reloaded->ships);
+        $this->assertSame(7, $reloaded->treasury);
+    }
+
+    #[Test]
+    public function citiesPickerOffersNoActionButton(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $rendered = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'cities',
+        ])->render();
+
+        $this->assertCount(0, $rendered->crawler()->filter('[data-value]'));
+    }
+
+    #[Test]
+    public function shipsPickerRendersBothActionsAndDisablesWhatThePlayerCannotAfford(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+
+        $rendered = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'ships',
+        ])->render();
+
+        $actions = $rendered->crawler()->filter('[data-value]');
+
+        $this->assertSame(['buildShip', 'maintainShips'], $actions->each(
+            static fn ($node): string => (string) $node->attr('data-value'),
+        ));
+        $this->assertCount(2, $actions->filter('[disabled]'));
+    }
+
     private function createGame(): GameSession
     {
         $game = new GameSession();

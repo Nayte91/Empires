@@ -32,7 +32,7 @@ final class ControlBoardTest extends WebTestCase
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
-        $this->assertCount(5, $crawler->filter('button[type="button"]'));
+        $this->assertCount(5, $crawler->filter('button[commandfor]'));
     }
 
     /**

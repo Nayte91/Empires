@@ -15,6 +15,18 @@
                     </label>
                 {% endfor %}
             </fieldset>
+            {% if this.actions is not empty %}
+                <div class="stat-picker__actions">
+                    {% for action in this.actions %}
+                        {% set isDisabled = not this.isAvailable(action) %}
+                        <button type="submit" data-action="live#update"
+                                data-model="norender|pendingAction" data-value="{{ action.value }}"
+                                {{ isDisabled ? 'disabled' }}>
+                            {{ action.label }}
+                        </button>
+                    {% endfor %}
+                </div>
+            {% endif %}
             <button type="submit">OK</button>
         </form>
     </dialog>

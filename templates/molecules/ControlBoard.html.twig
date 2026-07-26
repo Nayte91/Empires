@@ -1,7 +1,7 @@
 <section {{ attributes }} class="control-board">
     <div class="controls" aria-label="Controls">
         {% for stat in stats %}
-            <twig:molecules:StatPicker :player="player" :stat="stat" />
+            <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" />
         {% endfor %}
     </div>
 

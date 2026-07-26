@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Entity\Player;
+use App\Game\Advisory\HandLimitRule;
 use App\Game\Stat;
+use App\Game\StatAction;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
@@ -28,9 +30,13 @@ final class StatPicker
     #[LiveProp(writable: true, updateFromParent: true)]
     public int $value; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
+    #[LiveProp(writable: true)]
+    public ?string $pendingAction = null;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HubInterface $hub,
+        private readonly HandLimitRule $handLimitRule,
     ) {}
 
     public function mount(Player $player, string $stat): void
@@ -40,9 +46,29 @@ final class StatPicker
         $this->value = $this->stat->read($player);
     }
 
+    /** @return list<StatAction> */
+    public function getActions(): array
+    {
+        return StatAction::forStat($this->stat);
+    }
+
+    public function isAvailable(StatAction $action): bool
+    {
+        return $action->isAvailable($this->player, $this->handLimit());
+    }
+
     #[LiveAction]
     public function save(): void
     {
+        $action = StatAction::tryFrom($this->pendingAction ?? '');
+        $this->pendingAction = null;
+
+        if (null !== $action) {
+            $this->runAction($action);
+
+            return;
+        }
+
         $current = $this->stat->read($this->player);
 
         if ($current === $this->value) {
@@ -54,6 +80,28 @@ final class StatPicker
 
         $this->entityManager->flush();
         $this->publish('player-updated');
+    }
+
+    /**
+     * An action may move a stat this picker does not own — building a ship spends treasury — so
+     * the neighbouring pickers refresh through the parent, not through this component's own value.
+     */
+    private function runAction(StatAction $action): void
+    {
+        if (!\in_array($action, $this->getActions(), true)) {
+            return;
+        }
+
+        $action->apply($this->player, $this->handLimit());
+        $this->value = $this->stat->read($this->player);
+
+        $this->entityManager->flush();
+        $this->publish('player-updated');
+    }
+
+    private function handLimit(): int
+    {
+        return $this->handLimitRule->limitFor($this->player->game->playerCount);
     }
 
     private function publish(string $event): void
