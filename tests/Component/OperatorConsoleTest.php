@@ -195,6 +195,16 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
+    public function previousTurnNeverGoesBelowTheFirstTurn(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('previousTurn');
+
+        $this->assertSame(1, $this->reloadGame($game)->currentTurn);
+    }
+
+    #[Test]
     public function nextTurnOnAFinishedGameDoesNotChangeTheCurrentTurn(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);

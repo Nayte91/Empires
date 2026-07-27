@@ -21,9 +21,7 @@ class GameSession
     public readonly string $slug;
 
     #[ORM\Column(type: Types::SMALLINT)]
-    public int $currentTurn = 1 {
-        set => max(1, min(20, $value));
-    }
+    public int $currentTurn = 1;
 
     #[ORM\Column(length: 16, nullable: true)]
     public ?string $region = 'west';

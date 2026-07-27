@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Infrastructure\Repository\OrderRepository;
+use App\Rules\Ruleset\GameData;
 use App\State\GameSession;
 use App\State\Order;
 use App\State\Player;
@@ -28,12 +29,17 @@ final class OperatorConsole
         private readonly EntityManagerInterface $entityManager,
         private readonly OrderRepository $orderRepository,
         private readonly HubInterface $hub,
+        private readonly GameData $gameData,
     ) {}
 
     #[LiveAction]
     public function nextTurn(): void
     {
         if ($this->game->finished) {
+            return;
+        }
+
+        if ($this->game->currentTurn >= $this->maxTurns()) {
             return;
         }
 
@@ -46,6 +52,10 @@ final class OperatorConsole
     public function previousTurn(): void
     {
         if ($this->game->finished) {
+            return;
+        }
+
+        if ($this->game->currentTurn <= 1) {
             return;
         }
 
@@ -85,6 +95,11 @@ final class OperatorConsole
         ));
 
         return 'T'.$player->game->currentTurn.('' === $ordersStamp ? '' : '|'.$ordersStamp);
+    }
+
+    private function maxTurns(): int
+    {
+        return $this->gameData->getLimits()['max_turns'] ?? 20;
     }
 
     private function publish(): void

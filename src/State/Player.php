@@ -15,21 +15,6 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\UniqueConstraint(name: 'uniq_player_game_slug', columns: ['game_id', 'slug'])]
 class Player
 {
-    public const int CENSUS_MIN = 0;
-    public const int CENSUS_MAX = 55;
-    public const int TREASURY_MIN = 0;
-    public const int TREASURY_MAX = 55;
-    public const int SHIPS_MIN = 0;
-    public const int SHIPS_MAX = 4;
-    public const int CARDS_MIN = 0;
-    public const int AST_MIN = 0;
-
-    // REFACTOR-WHEN: this is now a deliberately generous shared bound covering both AST versions'
-    // track lengths (16 for basic, 17 for expert), not a tight match to either — mirrors how
-    // CENSUS_MAX/TREASURY_MAX are simple static bounds while version-specific precision (exact
-    // track length per version+empire group) lives in AstCatalog, not here.
-    public const int AST_MAX = 16;
-
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;
@@ -49,34 +34,22 @@ class Player
     public private(set) array $creditLedger = [];
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
-    public int $cities = 0 {
-        set => max(0, min(9, $value));
-    }
+    public int $cities = 0;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 1])]
-    public int $census = 1 {
-        set => max(self::CENSUS_MIN, min(self::CENSUS_MAX, $value));
-    }
+    public int $census = 1;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
-    public int $treasury = 0 {
-        set => max(self::TREASURY_MIN, min(self::TREASURY_MAX, $value));
-    }
+    public int $treasury = 0;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
-    public int $ships = 0 {
-        set => max(self::SHIPS_MIN, min(self::SHIPS_MAX, $value));
-    }
+    public int $ships = 0;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
-    public int $cards = 0 {
-        set => max(self::CARDS_MIN, $value);
-    }
+    public int $cards = 0;
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
-    public int $astPosition = 0 {
-        set => max(self::AST_MIN, min(self::AST_MAX, $value));
-    }
+    public int $astPosition = 0;
 
     #[ORM\Column(length: 50)]
     public string $name {

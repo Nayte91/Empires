@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Support;
 
 use App\Rules\Ruleset\AdvanceEffectCatalog;
+use App\Rules\Ruleset\AstCatalog;
 use App\Rules\Ruleset\GameData;
 
 /**
@@ -25,6 +26,11 @@ final class GameConfig
     public static function advanceEffects(): AdvanceEffectCatalog
     {
         return new AdvanceEffectCatalog(self::path('advances.yaml'));
+    }
+
+    public static function astCatalog(): AstCatalog
+    {
+        return new AstCatalog(self::path('ast.yaml'));
     }
 
     private static function path(string $file): string

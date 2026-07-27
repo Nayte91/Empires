@@ -46,18 +46,6 @@ final class GameSessionRepositoryTest extends WebTestCase
     }
 
     #[Test]
-    public function setCurrentTurnClampsToTheOneToTwentyRange(): void
-    {
-        $game = new GameSession();
-
-        $game->currentTurn = 0;
-        $this->assertSame(1, $game->currentTurn);
-
-        $game->currentTurn = 25;
-        $this->assertSame(20, $game->currentTurn);
-    }
-
-    #[Test]
     public function findInProgressReturnsUnfinishedGamesOrderedFromMostToLeastRecent(): void
     {
         $oldest = new GameSession();

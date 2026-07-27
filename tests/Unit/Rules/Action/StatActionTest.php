@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Action;
 
-use App\State\Player;
 use App\Rules\HandSizeCalculator;
+use App\Rules\StatBoundsCalculator;
 use App\Rules\StockCalculator;
 use App\Rules\TaxCalculator;
 use App\Rules\Action\Stat;
@@ -37,11 +37,11 @@ final class StatActionTest extends TestCase
         $player = PlayerBuilder::named('Bob')->build();
         $player->astPosition = 4;
 
-        StatAction::AstForward->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::AstForward->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(5, $player->astPosition);
 
-        StatAction::AstBackward->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::AstBackward->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(4, $player->astPosition);
     }
@@ -50,15 +50,16 @@ final class StatActionTest extends TestCase
     public function astMovesAreUnavailableAtTheTrackEnds(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
-        $player->astPosition = Player::AST_MIN;
+        $bounds = $this->bounds();
+        $player->astPosition = $bounds->floorFor($player, Stat::AstPosition);
 
-        $this->assertFalse(StatAction::AstBackward->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
-        $this->assertTrue(StatAction::AstForward->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::AstBackward->isAvailable($player, $this->hand(), $bounds, $this->tax()));
+        $this->assertTrue(StatAction::AstForward->isAvailable($player, $this->hand(), $bounds, $this->tax()));
 
-        $player->astPosition = Player::AST_MAX;
+        $player->astPosition = $bounds->ceilingFor($player, Stat::AstPosition);
 
-        $this->assertTrue(StatAction::AstBackward->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
-        $this->assertFalse(StatAction::AstForward->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertTrue(StatAction::AstBackward->isAvailable($player, $this->hand(), $bounds, $this->tax()));
+        $this->assertFalse(StatAction::AstForward->isAvailable($player, $this->hand(), $bounds, $this->tax()));
     }
 
     #[Test]
@@ -67,7 +68,7 @@ final class StatActionTest extends TestCase
         $player = PlayerBuilder::named('Bob')->build();
         $player->census = 12;
 
-        StatAction::CensusDouble->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CensusDouble->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(24, $player->census);
     }
@@ -83,7 +84,7 @@ final class StatActionTest extends TestCase
         $player->census = 20;
         $player->treasury = 25;
 
-        StatAction::CensusDouble->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CensusDouble->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(30, $player->census);
     }
@@ -95,9 +96,9 @@ final class StatActionTest extends TestCase
         $player->census = 20;
         $player->treasury = 35;
 
-        $this->assertFalse(StatAction::CensusDouble->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::CensusDouble->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
 
-        StatAction::CensusDouble->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CensusDouble->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(20, $player->census);
     }
@@ -143,7 +144,7 @@ final class StatActionTest extends TestCase
         $player->cities = 4;
         $player->treasury = 10;
 
-        StatAction::PayTaxes2->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::PayTaxes2->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(18, $player->treasury);
     }
@@ -156,7 +157,7 @@ final class StatActionTest extends TestCase
         $player->census = 40;
         $player->treasury = 10;
 
-        StatAction::PayTaxes2->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::PayTaxes2->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(15, $player->treasury);
     }
@@ -168,7 +169,7 @@ final class StatActionTest extends TestCase
         $player->ships = 1;
         $player->treasury = 7;
 
-        StatAction::BuildShip->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::BuildShip->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(2, $player->ships);
         $this->assertSame(5, $player->treasury);
@@ -178,15 +179,16 @@ final class StatActionTest extends TestCase
     public function buildingAShipIsUnavailableAtTheFleetCapOrWithoutTheTwoTreasury(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
-        $player->ships = Player::SHIPS_MAX;
+        $bounds = $this->bounds();
+        $player->ships = $bounds->ceilingFor($player, Stat::Ships);
         $player->treasury = 10;
 
-        $this->assertFalse(StatAction::BuildShip->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::BuildShip->isAvailable($player, $this->hand(), $bounds, $this->tax()));
 
         $player->ships = 1;
         $player->treasury = 1;
 
-        $this->assertFalse(StatAction::BuildShip->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::BuildShip->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
     }
 
     #[Test]
@@ -196,7 +198,7 @@ final class StatActionTest extends TestCase
         $player->ships = 3;
         $player->treasury = 10;
 
-        StatAction::MaintainShips->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::MaintainShips->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(3, $player->ships);
         $this->assertSame(7, $player->treasury);
@@ -209,16 +211,16 @@ final class StatActionTest extends TestCase
         $player->ships = 0;
         $player->treasury = 10;
 
-        $this->assertFalse(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
 
         $player->ships = 4;
         $player->treasury = 3;
 
-        $this->assertFalse(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
 
         $player->treasury = 4;
 
-        $this->assertTrue(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertTrue(StatAction::MaintainShips->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
     }
 
     #[Test]
@@ -228,7 +230,7 @@ final class StatActionTest extends TestCase
         $player->cities = 5;
         $player->cards = 2;
 
-        StatAction::DrawCards->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::DrawCards->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(7, $player->cards);
     }
@@ -239,7 +241,7 @@ final class StatActionTest extends TestCase
         $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 0;
 
-        $this->assertFalse(StatAction::DrawCards->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::DrawCards->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
     }
 
     #[Test]
@@ -249,7 +251,7 @@ final class StatActionTest extends TestCase
         $player->game->playerCount = 12;
         $player->cards = 14;
 
-        StatAction::CutToLimit->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CutToLimit->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(9, $player->cards);
     }
@@ -262,7 +264,7 @@ final class StatActionTest extends TestCase
         $player->cards = 14;
         $player->ownAdvances(['roadbuilding']);
 
-        StatAction::CutToLimit->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CutToLimit->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(9, $player->cards);
     }
@@ -277,9 +279,9 @@ final class StatActionTest extends TestCase
         $player = PlayerBuilder::named('Bob')->build();
         $player->cards = 3;
 
-        $this->assertFalse(StatAction::CutToLimit->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
+        $this->assertFalse(StatAction::CutToLimit->isAvailable($player, $this->hand(), $this->bounds(), $this->tax()));
 
-        StatAction::CutToLimit->apply($player, $this->hand(), $this->stock(), $this->tax());
+        StatAction::CutToLimit->apply($player, $this->hand(), $this->bounds(), $this->tax());
 
         $this->assertSame(3, $player->cards);
     }
@@ -292,6 +294,11 @@ final class StatActionTest extends TestCase
     private function stock(): StockCalculator
     {
         return new StockCalculator(GameConfig::gameData());
+    }
+
+    private function bounds(): StatBoundsCalculator
+    {
+        return new StatBoundsCalculator(GameConfig::gameData(), $this->stock(), GameConfig::astCatalog());
     }
 
     private function tax(): TaxCalculator

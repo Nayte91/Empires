@@ -36,15 +36,16 @@ final readonly class StockCalculator
     }
 
     /**
-     * The highest a stat can reach right now. For a stock holder its twin has already claimed part
-     * of the pile; any other stat answers to its own bound alone.
+     * The highest a stock holder can reach right now: its twin has already claimed part of the
+     * pile. Callers ask only about the two stats that draw from the stock — see drawsFromStock() —
+     * every other stat's ceiling is owned by {@see \App\Rules\StatBoundsCalculator}.
      */
     public function ceilingFor(Player $player, Stat $stat): int
     {
         return match ($stat) {
             Stat::Census => $this->pool() - $player->treasury,
             Stat::Treasury => $this->pool() - $player->census,
-            default => $stat->max(),
+            default => throw new \LogicException(sprintf('%s does not draw from the shared stock.', $stat->name)),
         };
     }
 }

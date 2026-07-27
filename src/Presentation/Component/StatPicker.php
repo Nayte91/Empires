@@ -7,7 +7,7 @@ namespace App\Presentation\Component;
 use App\Rules\Action\Stat;
 use App\Rules\Action\StatAction;
 use App\Rules\HandSizeCalculator;
-use App\Rules\StockCalculator;
+use App\Rules\StatBoundsCalculator;
 use App\Rules\TaxCalculator;
 use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
@@ -39,7 +39,7 @@ final class StatPicker
         private readonly EntityManagerInterface $entityManager,
         private readonly HubInterface $hub,
         private readonly HandSizeCalculator $handSizeCalculator,
-        private readonly StockCalculator $stockCalculator,
+        private readonly StatBoundsCalculator $statBoundsCalculator,
         private readonly TaxCalculator $taxCalculator,
     ) {}
 
@@ -59,15 +59,27 @@ final class StatPicker
         ));
     }
 
+    /** The lowest value the grid may offer. */
+    public function getFloor(): int
+    {
+        return $this->statBoundsCalculator->floorFor($this->player, $this->stat);
+    }
+
     /** The highest value the grid may offer — a stock holder is bounded by what its twin left. */
     public function getCeiling(): int
     {
-        return $this->stockCalculator->ceilingFor($this->player, $this->stat);
+        return $this->statBoundsCalculator->ceilingFor($this->player, $this->stat);
+    }
+
+    /** The last tile the grid draws; everything above {@see getCeiling()} is drawn disabled. */
+    public function getDisplayCeiling(): int
+    {
+        return $this->statBoundsCalculator->displayCeilingFor($this->player, $this->stat);
     }
 
     public function isAvailable(StatAction $action): bool
     {
-        return $action->isAvailable($this->player, $this->handSizeCalculator, $this->stockCalculator, $this->taxCalculator);
+        return $action->isAvailable($this->player, $this->handSizeCalculator, $this->statBoundsCalculator, $this->taxCalculator);
     }
 
     #[LiveAction]
@@ -88,7 +100,7 @@ final class StatPicker
             return;
         }
 
-        $this->stat->write($this->player, min($this->value, $this->getCeiling()));
+        $this->stat->write($this->player, max($this->getFloor(), min($this->value, $this->getCeiling())));
         $this->value = $this->stat->read($this->player);
 
         $this->entityManager->flush();
@@ -105,7 +117,7 @@ final class StatPicker
             return;
         }
 
-        $action->apply($this->player, $this->handSizeCalculator, $this->stockCalculator, $this->taxCalculator);
+        $action->apply($this->player, $this->handSizeCalculator, $this->statBoundsCalculator, $this->taxCalculator);
         $this->value = $this->stat->read($this->player);
 
         $this->entityManager->flush();

@@ -51,30 +51,6 @@ enum Stat: string
         };
     }
 
-    public function min(): int
-    {
-        return match ($this) {
-            self::Cities => 0,
-            self::Census => 1,
-            self::Treasury => 0,
-            self::Ships => 0,
-            self::Cards => 0,
-            self::AstPosition => Player::AST_MIN,
-        };
-    }
-
-    public function max(): int
-    {
-        return match ($this) {
-            self::Cities => 9,
-            self::Census => Player::CENSUS_MAX,
-            self::Treasury => 54,
-            self::Ships => Player::SHIPS_MAX,
-            self::Cards => 20,
-            self::AstPosition => Player::AST_MAX,
-        };
-    }
-
     public function format(int $value): string
     {
         return match ($this) {

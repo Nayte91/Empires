@@ -14,6 +14,11 @@ limits:
     max_cities: 9
     max_population: 55
     max_ships: 4
+    # A permissive display ceiling for the StatPicker grid — not the hand-size limit. Exceeding a
+    # hand's actual limit (HandSizeCalculator) is a legal game state on its own; see HandLimitRule
+    # and the CutToLimit action.
+    max_cards: 20
+    max_turns: 20
     modes: ["basic", "expert"]
     min_players: 3
     max_players: 18

@@ -38,8 +38,9 @@ final class StockCalculatorTest extends TestCase
         $this->assertSame(40, $calculator->ceilingFor($player, Stat::Census));
     }
 
+    /** A stat outside the stock is not this calculator's concern — see StatBoundsCalculator. */
     #[Test]
-    public function aStatOutsideTheStockAnswersToItsOwnBound(): void
+    public function aStatOutsideTheStockCannotBeAskedItsCeilingHere(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
@@ -47,8 +48,10 @@ final class StockCalculatorTest extends TestCase
         $calculator = $this->calculator();
 
         $this->assertFalse($calculator->drawsFromStock(Stat::Cities));
-        $this->assertSame(Stat::Cities->max(), $calculator->ceilingFor($player, Stat::Cities));
-        $this->assertSame(Stat::Cards->max(), $calculator->ceilingFor($player, Stat::Cards));
+
+        $this->expectException(\LogicException::class);
+
+        $calculator->ceilingFor($player, Stat::Cities);
     }
 
     #[Test]

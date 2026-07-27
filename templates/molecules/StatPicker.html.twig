@@ -8,7 +8,7 @@
             <fieldset class="stat-picker__tiles">
                 <legend>{{ stat.label }} — {{ player.name }}</legend>
                 {% set ceiling = this.ceiling %}
-                {% for n in stat.min..stat.max %}
+                {% for n in this.floor..this.displayCeiling %}
                     <label class="stat-picker__tile">
                         <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
                                data-model="norender|value" {{ value == n ? 'checked' }}
