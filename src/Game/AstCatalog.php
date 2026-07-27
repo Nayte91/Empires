@@ -41,10 +41,7 @@ final class AstCatalog
     /** @var array<string, list<AstEraDefinition>> keyed by "{version}:{group}" */
     private array $columnEras = [];
 
-    public function __construct(
-        #[Autowire('%kernel.project_dir%/config/game/ast.yaml')]
-        private readonly string $astDataPath,
-    ) {}
+    public function __construct(#[Autowire('%kernel.project_dir%/config/game/ast.yaml')] private readonly string $astDataPath) {}
 
     public function resolveEmpireGroup(ASTVersion $version, ?string $empireSlug): string
     {

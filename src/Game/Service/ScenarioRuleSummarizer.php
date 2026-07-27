@@ -11,10 +11,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 final readonly class ScenarioRuleSummarizer
 {
     /** @param iterable<ScenarioRule> $rules */
-    public function __construct(
-        #[AutowireIterator('app.scenario_rule')]
-        private iterable $rules,
-    ) {}
+    public function __construct(#[AutowireIterator('app.scenario_rule')] private iterable $rules) {}
 
     /** @return list<string> */
     public function summarize(CreateGame $game): array

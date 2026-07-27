@@ -21,9 +21,7 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
-    public function __construct(
-        private OrderRepository $orderRepository,
-    ) {}
+    public function __construct(private OrderRepository $orderRepository) {}
 
     public function currentWindow(GameSession $game): int
     {

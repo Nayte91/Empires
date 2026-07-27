@@ -17,9 +17,7 @@ final class GameDashboard
     public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
     private ?string $operatorQrCache = null;
 
-    public function __construct(
-        private readonly UrlGeneratorInterface $urlGenerator,
-    ) {}
+    public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}
 
     public function getOperatorUrl(): string
     {

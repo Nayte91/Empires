@@ -12,9 +12,7 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 
 final class AvailableGameSlugValidator extends ConstraintValidator
 {
-    public function __construct(
-        private readonly GameSessionRepository $gameSessionRepository,
-    ) {}
+    public function __construct(private readonly GameSessionRepository $gameSessionRepository) {}
 
     public function validate(mixed $value, Constraint $constraint): void
     {

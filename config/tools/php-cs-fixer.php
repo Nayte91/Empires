@@ -21,6 +21,9 @@ return new Config()
         '@PHP8x4Migration' => true,
         '@PHP8x4Migration:risky' => true,
         'declare_strict_types' => true,
+        // Experimental upstream, deliberate here: a lone promoted parameter stays on one line,
+        // two or more get a line each.
+        'multiline_promoted_properties' => ['minimum_number_of_parameters' => 2],
         'native_function_invocation' => false,
         'php_unit_internal_class' => false,
         'php_unit_test_class_requires_covers' => false,

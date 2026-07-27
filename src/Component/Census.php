@@ -23,9 +23,7 @@ final class Census
     #[LiveProp]
     public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(
-        private readonly CensusOrderCalculator $censusOrderCalculator,
-    ) {}
+    public function __construct(private readonly CensusOrderCalculator $censusOrderCalculator) {}
 
     /** @return list<Player> */
     public function getOrderedPlayers(): array

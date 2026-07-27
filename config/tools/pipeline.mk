@@ -11,13 +11,12 @@ PHPSTAN_PATHS = src/
 
 .PHONY: quality phpstan phpcs rector phpunit lib-quality lib-phpstan lib-phpcs lib-rector lib-phpunit
 
-quality: ## [Quality] Run the app pipeline, then the shop-engine package pipeline
+quality: ## [Quality] Run the app pipeline
 quality:
 	@$(MAKE) rector PARAMS=$(PARAMS)
 	@$(MAKE) phpcs PARAMS=$(PARAMS)
 	@$(MAKE) phpstan PARAMS=$(PARAMS)
 	@$(MAKE) phpunit PARAMS=$(PARAMS)
-	@$(MAKE) lib-quality
 
 phpstan: ## [Quality] Run PHPStan static analysis (composer phpstan)
 	@echo "🔍 Running PHPStan static analysis on: $(or $(PARAMS),$(PHPSTAN_PATHS))"

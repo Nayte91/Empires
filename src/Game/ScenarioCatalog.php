@@ -14,10 +14,7 @@ final class ScenarioCatalog
     /** @var null|array<int|string, mixed> */
     private ?array $scenarios = null;
 
-    public function __construct(
-        #[Autowire('%kernel.project_dir%/config/game/scenarios.yaml')]
-        private readonly string $scenariosPath,
-    ) {}
+    public function __construct(#[Autowire('%kernel.project_dir%/config/game/scenarios.yaml')] private readonly string $scenariosPath) {}
 
     /** @return list<string> */
     public function empiresFor(int $playerCount, ?string $region): array
