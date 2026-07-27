@@ -20,8 +20,10 @@ use Doctrine\ORM\EntityManagerInterface;
 final class PlayerBuilder
 {
     private ?Game $game = null;
-    private ?string $empire = null;
     private ?int $cities = null;
+
+    /** A player in a game always holds an empire; tests that turn on which one call withEmpire(). */
+    private string $empire = 'minoa';
 
     /** @var list<string> */
     private array $advances = [];
@@ -67,9 +69,7 @@ final class PlayerBuilder
     {
         $player = new Player($this->game ?? GameBuilder::create()->build(), $this->name);
 
-        if (null !== $this->empire) {
-            $player->empire = $this->empire;
-        }
+        $player->empire = $this->empire;
 
         if (null !== $this->cities) {
             $player->cities = $this->cities;

@@ -20,8 +20,9 @@
     <tbody>
         {% for row in this.playerRows %}
             {% set player = row.player %}
-            <tr>
+            <tr data-empire="{{ player.empire }}">
                 <td>
+                    <twig:atoms:Marker empire="{{ player.empire }}" />
                     <twig:molecules:Modal class="game-dashboard__name-modal">
                         <twig:block name="button">
                             {{ player.name }}
@@ -34,7 +35,7 @@
                         </twig:block>
                     </twig:molecules:Modal>
                 </td>
-                <td data-empire="{{ player.empire }}">{{ this.empireAdjective(player) ?? '—' }}</td>
+                <td>{{ this.empireAdjective(player) ?? '—' }}</td>
                 <td>{{ player.treasury }}</td>
                 <td>{{ player.census }}</td>
                 <td>{{ player.ships }}</td>

@@ -11,11 +11,7 @@
         <p class="shop__error" role="alert">{{ error }}</p>
     {% endif %}
 
-    <section>
-        <h2>Your discounts</h2>
-
-        <twig:molecules:Discounts :player="player" />
-    </section>
+    <twig:molecules:Discounts :player="player" />
 
     <div class="shop__layout">
         <aside class="shop__cart">

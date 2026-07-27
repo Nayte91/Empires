@@ -264,7 +264,7 @@ final class GameCreator
     public function getAvailableEmpires(): array
     {
         return array_map($this->empireCatalog->findByName(...), $this->remainingEmpires())
-                |> (fn($x) => array_filter($x, static fn(?Empire $empire): bool => $empire instanceof Empire,))
+                |> (static fn ($x): array => array_filter($x, static fn (?Empire $empire): bool => $empire instanceof Empire))
                 |> array_values(...);
     }
 

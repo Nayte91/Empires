@@ -21,14 +21,21 @@
     }
 
     &:open summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
+
+    /* the panel spaces its own children, so they bring no vertical margin of their own */
+    > h3 { margin-block: 0 }
 }
 
 .tab::details-content {
     order: 2;
+    /* Not redundant with the global reset: `*` does not match ::details-content, and this box
+       carries a flex-basis of 100% plus 1.5rem of padding — content-box here overflows the row. */
     box-sizing: border-box;
     flex: 1 0 100%;
     border: var(--tab-border);
     border-radius: 0 var(--tab-radius) var(--tab-radius) var(--tab-radius);
+    display: grid;
+    gap: 1rem;
     padding: 1.5rem;
     background: white;
 }

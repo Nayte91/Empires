@@ -1,4 +1,6 @@
-<section class="shop__products" aria-label="Available advances">
+<section class="shop__products">
+    <h2>Catalog</h2>
+
     {% for row in this.rows %}
         {% if compact %}
             {% include 'molecules/productTile.html.twig' with {row, action: 'add'} only %}

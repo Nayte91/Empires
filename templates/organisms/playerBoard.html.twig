@@ -9,24 +9,16 @@
 
     <twig:molecules:ControlBoard :player="player" :withShopLink="true" />
 
-    <div class="player-board__panels">
-        <section aria-label="Discounts">
-            <h2>Discounts</h2>
+    <div class="panels">
+        <twig:molecules:Outlook :player="player" />
 
-            <twig:molecules:Discounts :player="player" />
-        </section>
-
-        <section aria-label="Outlook">
-            <h2>Outlook</h2>
-
-            <twig:molecules:Outlook :player="player" />
-        </section>
+        <twig:molecules:Discounts :player="player" />
     </div>
 
-    <section class="player-board__advances" aria-label="Owned advances">
+    <section aria-label="Owned advances">
         <h2>Advances</h2>
 
-        <div class="player-board__advances-grid">
+        <div class="advances-grid">
             {% for row in this.ownedRows %}
                 {% include 'molecules/productCard.html.twig' with {row, readonly: true} only %}
             {% else %}

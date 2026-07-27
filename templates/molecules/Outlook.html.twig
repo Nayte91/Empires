@@ -1,8 +1,12 @@
-<ul class="outlook" role="status">
-    {% for advisory in this.advisories %}
-        <li
-            data-level="{{ advisory.level.value }}"
-            {% if advisory.advance %}data-advance="{{ advisory.advance }}" title="{{ advisory.advance|capitalize }}"{% endif %}
-        >{{ advisory.message }}</li>
-    {% endfor %}
-</ul>
+<section class="outlook">
+    <h2>Outlook</h2>
+
+    <ul role="status">
+        {% for advisory in this.advisories %}
+            <li
+                data-level="{{ advisory.level.value }}"
+                {% if advisory.advance %}data-advance="{{ advisory.advance }}" title="{{ advisory.advance|capitalize }}"{% endif %}
+            >{{ advisory.message }}</li>
+        {% endfor %}
+    </ul>
+</section>

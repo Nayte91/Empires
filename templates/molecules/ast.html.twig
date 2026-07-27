@@ -21,7 +21,7 @@
         {% for player in this.rankedPlayers %}
             {% set columnEras = this.columnErasFor(player) %}
             <tr data-empire="{{ player.empire }}">
-                <th scope="row"><b>{{ player.empire|capitalize }}</b> ({{ player.name }})</th>
+                <th scope="row"><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></th>
                 {% for position in range(0, this.trackLength - 1) %}
                     <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
                         {%- if position == 0 -%}

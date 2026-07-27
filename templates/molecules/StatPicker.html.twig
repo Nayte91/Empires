@@ -5,30 +5,37 @@
     <dialog id="stat-picker-{{ stat.value }}-{{ player.id }}" class="modal stat-picker__dialog"
             data-action="close->live#action" data-live-action-param="save">
         <form method="dialog">
-            <fieldset class="stat-picker__tiles">
-                <legend>{{ stat.label }} — {{ player.name }}</legend>
-                {% set ceiling = this.ceiling %}
-                {% for n in this.floor..this.displayCeiling %}
-                    <label class="stat-picker__tile">
-                        <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
-                               data-model="norender|value" {{ value == n ? 'checked' }}
-                               {{ n > ceiling ? 'disabled' }}>
-                        <span>{{ stat.format(n) }}</span>
-                    </label>
-                {% endfor %}
-            </fieldset>
-            {% if this.actions is not empty %}
-                <div class="stat-picker__actions">
-                    {% for action in this.actions %}
-                        {% set isDisabled = not this.isAvailable(action) %}
-                        <button type="submit" data-action="live#update"
-                                data-model="norender|pendingAction" data-value="{{ action.value }}"
-                                {{ isDisabled ? 'disabled' }}>
-                            {{ action.label }}
-                        </button>
+            <h2>{{ stat.label }} — {{ player.name }}</h2>
+
+            <section>
+                <fieldset>
+                    {% set ceiling = this.ceiling %}
+                    {% for n in this.floor..this.displayCeiling %}
+                        <label>
+                            <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
+                                   data-model="norender|value" {{ value == n ? 'checked' }}
+                                   {{ n > ceiling ? 'disabled' }}>
+                            <span>{{ stat.format(n) }}</span>
+                        </label>
                     {% endfor %}
-                </div>
-            {% endif %}
+                </fieldset>
+
+                {% if this.actions is not empty %}
+                    <menu>
+                        {% for action in this.actions %}
+                            {% set isDisabled = not this.isAvailable(action) %}
+                            <li>
+                                <button type="submit" data-action="live#update"
+                                        data-model="norender|pendingAction" data-value="{{ action.value }}"
+                                        {{ isDisabled ? 'disabled' }}>
+                                    {{ action.label }}
+                                </button>
+                            </li>
+                        {% endfor %}
+                    </menu>
+                {% endif %}
+            </section>
+
             <button type="submit">OK</button>
         </form>
     </dialog>

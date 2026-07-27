@@ -89,6 +89,6 @@ final class ControlBoardTest extends WebTestCase
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
-        $this->assertCount(0, $crawler->filter('li'));
+        $this->assertCount(0, $crawler->filter('li[data-level]'));
     }
 }

@@ -1,22 +1,26 @@
-<table class="discounts">
-    <thead>
-        <tr>
-            <th scope="col">Category</th>
-            <th scope="col">Credit</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for category, amount in this.credits.facets %}
-            <tr class="discounts__category" data-advance-category="{{ category }}">
-                <td>{{ category|capitalize }}</td>
-                <td><b>{{ amount }}</b></td>
-            </tr>
-        {% endfor %}
-        {% for name, amount in this.credits.named %}
+<section class="discounts">
+    <h2>Discounts</h2>
+
+    <table>
+        <thead>
             <tr>
-                <td>{{ name|replace({'_': ' '})|capitalize }}</td>
-                <td><b>{{ amount }}</b></td>
+                <th scope="col">Category</th>
+                <th scope="col">Credit</th>
             </tr>
-        {% endfor %}
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            {% for category, amount in this.credits.facets %}
+                <tr data-advance-category="{{ category }}">
+                    <td>{{ category|capitalize }}</td>
+                    <td><b>{{ amount }}</b></td>
+                </tr>
+            {% endfor %}
+            {% for name, amount in this.credits.named %}
+                <tr>
+                    <td>{{ name|replace({'_': ' '})|capitalize }}</td>
+                    <td><b>{{ amount }}</b></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
