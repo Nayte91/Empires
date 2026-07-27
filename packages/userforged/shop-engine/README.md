@@ -79,13 +79,13 @@ one possible context.
   `credits` (`array<string, int>`), `promotion` (`?ProductPromotion`). Deliberately
   **no display fields** (name, image, description): the library never renders
   anything, so it never needs them — the host rebuilds display rows from its own
-  catalog (in Empires: `App\Game\Dto\Advance` implements it directly, zero
+  catalog (in Empires: `App\Rules\Ruleset\Advance` implements it directly, zero
   accessors). The library never persists products.
 - `ProductProviderInterface` (**port**) — **delivered**: `products()` and
   `productsByKeys(list<string> $keys)`, both returning `list<ProductInterface>`.
   Ordering is the provider's responsibility — callers must not re-sort. Adapters:
   Doctrine repository, config file (YAML/JSON), remote API, in-memory (in Empires:
-  `App\Game\Shop\AdvanceProductProvider`, wrapping `AdvanceCatalog`).
+  `App\Rules\Shop\AdvanceProductProvider`, wrapping `AdvanceCatalog`).
 - `CatalogInterface` — the *per-buyer* view of the products: the provider's output
   filtered by eligibility rules. Target, not yet built.
 - `ProductEligibilityInterface` (**port**, chainable) — decides whether a buyer may see
@@ -100,11 +100,11 @@ one possible context.
 - `BuyerInterface` — **delivered**: identity (`id`) plus the attributes pricing needs
   (`ownedKeys`, `electiveCredits`). The library never owns users; the host maps its
   User/Player/Customer entity onto this interface (in Empires:
-  `App\Game\Shop\PlayerBuyer`, built by `ShopConnector::buyerFor()`). This is the
+  `App\Rules\Shop\PlayerBuyer`, built by `ShopConnector::buyerFor()`). This is the
   primary connector to the host's world.
 - `BuyerProviderInterface` (**port**) — **delivered**: `buyerFor(Uuid $buyerId):
   BuyerInterface`, resolving a buyer id into a `BuyerInterface` without any library
-  caller touching the host's repository directly. Adapter: `App\Game\Shop\PlayerBuyerProvider`,
+  caller touching the host's repository directly. Adapter: `App\Infrastructure\Shop\PlayerBuyerProvider`,
   composing `PlayerRepository` + `ShopConnector::buyerFor()`. It absorbed the four
   `PlayerRepository::find() ?? throw` sites that used to sit in the `CommandHandler`s
   and `OrderValidator`.
@@ -151,7 +151,7 @@ one possible context.
 - `OrderRepositoryInterface` (**port**) — **delivered**: `findOneByBuyerAndWindow()`,
   `create()`, `remove()` — the latter two only schedule the write in the current unit
   of work, not durable until the enclosing transactional scope commits. Adapter:
-  `App\Repository\OrderRepository`; `create()` uses `getReference()`, so it needs no
+  `App\Infrastructure\Repository\OrderRepository`; `create()` uses `getReference()`, so it needs no
   `PlayerRepository` of its own.
 - `OrderNumberInterface` (**port**) — identity scheme is contextual (sequential
   invoice numbers vs UUIDs vs `(buyer, window)` uniqueness — all valid). Target, not
@@ -247,8 +247,8 @@ extension instead — the earn/burn distinction is the boundary between the two.
 **Facets are a port.** `FacetProviderInterface` (**port**) — **delivered**:
 `facets(): list<string>`. The engine never knows what the allocation facets *are*
 (product categories, brands, departments, game colors…): the host connector
-supplies the facet list (in Empires: `App\Game\Shop\ShopConnector::facets()`,
-mapping `App\Game\Category` cases), the engine validates **structurally** against
+supplies the facet list (in Empires: `App\Rules\Shop\ShopConnector::facets()`,
+mapping `App\Rules\Ruleset\Category` cases), the engine validates **structurally** against
 the benefit's configuration, the host's price resolver interprets the stored
 allocations. `LineQuoter` takes it as a constructor dependency — the change that let
 `quote()`/`quotePreview()` drop their `$facets` parameter (six call sites
@@ -438,7 +438,7 @@ final class OnOrderSold
 
 ### Côté hôte : premier abonné (implémenté)
 
-Le bus a maintenant un abonné réel : `App\Game\Shop\ShopMercurePublisher`, enregistré sur `bus: 'shop.event.bus'` uniquement (jamais `#[AsEventListener]` en plus — les deux canaux publieraient en double, voir §"Deux canaux" plus haut). Il traduit les events granulaires de la lib vers les deux noms Mercure déjà consommés par le frontend (`order-updated`, `player-updated`) :
+Le bus a maintenant un abonné réel : `App\Infrastructure\Mercure\ShopMercurePublisher`, enregistré sur `bus: 'shop.event.bus'` uniquement (jamais `#[AsEventListener]` en plus — les deux canaux publieraient en double, voir §"Deux canaux" plus haut). Il traduit les events granulaires de la lib vers les deux noms Mercure déjà consommés par le frontend (`order-updated`, `player-updated`) :
 
 - `OrderSubmitted` → `order-updated`
 - `OrderValidated` → `order-updated` puis `player-updated`
@@ -452,7 +452,7 @@ Le bus a maintenant un abonné réel : `App\Game\Shop\ShopMercurePublisher`, enr
 
 Le state machine `shop_order` (défini dans `config/workflow.yaml`, embarqué par `UserforgedShopEngineBundle` — l'hôte n'a plus rien à importer, seulement à enregistrer le bundle et fournir `userforged_shop_engine.order_class`) émet nativement, via l'EventDispatcher standard, des events Symfony Workflow sur ses transitions (`workflow.shop_order.completed.validate`, `.reject`, `.resubmit`). L'hypothèse de doublon avec `OrderSold`/`OrderRejected`/`OrderSubmitted` évoquée dans une version antérieure de ce document ne tient pas, par les faits :
 
-- `reject` est bloqué **inconditionnellement** par `App\Game\Shop\OrderWorkflowPolicy` (guard sur `workflow.shop_order.guard.reject`) → `completed.reject` ne se déclenche jamais en production, et `resubmit` est inatteignable par transitivité (rejeter est le seul chemin vers `rejected`) ;
+- `reject` n'est **jamais atteint par cet hôte** : la transition et `RejectOrderHandler` existent bien dans la lib, mais Empires n'expose aucun chemin vers la commande (ni action d'interface, ni dispatch) depuis le retrait de sa chaîne de rejet — Mega Civilization n'a pas de commande refusée. Donc `completed.reject` ne se déclenche pas, et `resubmit` est inatteignable par transitivité (rejeter est le seul chemin vers `rejected`). **C'est une propriété de cet hôte-ci, pas de la lib** : un consommateur qui câble `RejectOrder` verra ces deux transitions s'activer, et devra alors trancher lui-même la question du doublon traitée ici ;
 - le cas dominant d'`OrderSubmitted` (soumission simple) **ne passe par aucune transition** — le workflow démarre déjà en `pending` ;
 - l'effacement (`OrdersErased`) n'a pas de transition du tout ;
 - `completed.validate` se déclenche **avant le flush** — un listener y pousserait un état pas encore persisté, exactement le bug que la bascule d'`OrderValidated` après `wrapInTransaction()` corrige (voir plus haut).
