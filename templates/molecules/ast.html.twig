@@ -39,7 +39,7 @@
         <tr>
             <th scope="row">Victory Points</th>
             {% for position in range(0, this.trackLength - 1) %}
-                <td{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{{ constant('App\\Game\\Service\\ScoreCalculator::POINTS_PER_AST_POSITION') * position }}</td>
+                <td{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{{ constant('App\\Rules\\ScoreCalculator::POINTS_PER_AST_POSITION') * position }}</td>
             {% endfor %}
         </tr>
     </tfoot>

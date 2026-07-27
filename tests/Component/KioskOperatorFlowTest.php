@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\GameSession;
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Game\Shop\AdvanceFulfillment;
-use App\Repository\OrderRepository;
+use App\State\GameSession;
+use App\State\Order;
+use App\State\Player;
+use App\Engine\Shop\AdvanceFulfillment;
+use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
@@ -130,7 +130,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         // createLiveComponent() defaults both kiosks to the same 'test.client'
         // service, i.e. the same session. Isolation is proven by
         // SessionCartStorage keying cart storage per player UUID (see
-        // App\Game\Shop\SessionCartStorage::sessionKey()), read here through
+        // App\Infrastructure\Shop\SessionCartStorage::sessionKey()), read here through
         // Shop's own isCartEmpty() (the "Submit my order" gate) rather than
         // through the nested Cart component's rendering, which does not
         // reflect session state when embedded (see ShopComponentTest's
@@ -175,7 +175,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->createPosCart($order->player, $order->turn, $client)->call('checkout');
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — Shop only hosts it. */
+    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — Shop only hosts it. */
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -184,7 +184,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         ], $client);
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — PlayerOrders only hosts it. */
+    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — PlayerOrders only hosts it. */
     private function createPosCart(Player $player, int $turn, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [

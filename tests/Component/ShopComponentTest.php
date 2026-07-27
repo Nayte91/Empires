@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Repository\OrderRepository;
+use App\State\Order;
+use App\State\Player;
+use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
@@ -27,15 +27,15 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
- * Cart line/gift/allocation rendering lives in App\Component\Cart, covered by
- * CartComponentTest; the product grid lives in App\Component\ProductGrid,
+ * Cart line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered by
+ * CartComponentTest; the product grid lives in App\Presentation\Component\ProductGrid,
  * covered by ProductGridComponentTest. This file keeps what Shop owns: its
  * own add() LiveAction (including the nested ProductGrid+Cart re-render it
  * drives), order submission, pending/validated/rejected order views, and the
  * Mercure/route wiring.
  *
  * The guard sequence add() runs — already-owned refusal, then de-duplication — now lives in
- * App\Game\Shop\CartItemAdder, shared with App\Component\PlayerOrders, so it is covered once and
+ * App\Presentation\Shop\CartItemAdder, shared with App\Presentation\Component\PlayerOrders, so it is covered once and
  * here. What stays per host is what each host wraps around it: Shop's turn lock below, and the
  * POS dialog that renders PlayerOrders' refusal, in PosConsoleTest.
  */
@@ -401,7 +401,7 @@ final class ShopComponentTest extends WebTestCase
         $crawler = $freshComponent->render()->crawler();
 
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
-        // Category order is art/civic/craft/religion/science (App\Game\Category): only
+        // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
         // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
@@ -439,7 +439,7 @@ final class ShopComponentTest extends WebTestCase
         $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout) — Shop only hosts it. */
+    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — Shop only hosts it. */
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [

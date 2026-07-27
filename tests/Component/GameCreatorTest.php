@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use App\Game\ASTVersion;
-use App\Game\Command\CreateGame;
-use App\Game\GameData;
-use App\Game\ScenarioCatalog;
+use App\State\GameSession;
+use App\State\Player;
+use App\State\ASTVersion;
+use App\Rules\Action\CreateGame;
+use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\ScenarioCatalog;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;

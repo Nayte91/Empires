@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Repository\OrderRepository;
+use App\State\Order;
+use App\State\Player;
+use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
@@ -23,8 +23,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 /**
  * The Cart LiveComponent is shared between the player kiosk (Shop, storageKey
  * = player id) and the operator POS (PlayerOrders, storageKey = 'pos.'.player
- * id) — see App\Component\Cart. It only owns cart lines/gift/allocation/total;
- * the product grid and the add() action live on App\Component\ProductGrid and
+ * id) — see App\Presentation\Component\Cart. It only owns cart lines/gift/allocation/total;
+ * the product grid and the add() action live on App\Presentation\Component\ProductGrid and
  * its hosts, covered by ProductGridComponentTest/ShopComponentTest/PosConsoleTest.
  */
 final class CartComponentTest extends WebTestCase
@@ -107,7 +107,7 @@ final class CartComponentTest extends WebTestCase
     }
 
     /**
-     * checkout() converged onto Cart from Shop/PlayerOrders (see App\Component\Cart)
+     * checkout() converged onto Cart from Shop/PlayerOrders (see App\Presentation\Component\Cart)
      * specifically to fix the parent submit/checkout button going stale after a
      * Cart-only re-render; the cross-component AJAX re-render itself isn't
      * observable in this single-component harness (covered by the browser

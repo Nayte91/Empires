@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
-use App\Game\AdvanceEffectCatalog;
-use App\Game\GameData;
+use App\Rules\Ruleset\AdvanceEffectCatalog;
+use App\Rules\Ruleset\GameData;
 
 /**
  * The yaml readers, built against the real config/game/ files, for tests that construct a

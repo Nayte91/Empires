@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use App\Game\Dto\AstEraDefinition;
+use App\State\GameSession;
+use App\State\Player;
+use App\Rules\Ruleset\AstEraDefinition;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;

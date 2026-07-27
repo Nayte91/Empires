@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use App\Game\ASTVersion;
+use App\State\GameSession;
+use App\State\Player;
+use App\State\ASTVersion;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;

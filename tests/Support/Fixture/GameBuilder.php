@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
-use App\Entity\GameSession;
+use App\State\GameSession;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

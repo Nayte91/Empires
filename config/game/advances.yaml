@@ -6,7 +6,7 @@ categories:
     science:  { color: "#39B54A" }
 
 # `effects:` is how an advance declares the game rules it bends. Each entry names one effect the
-# services look up by name (App\Game\AdvanceEffect), so no calculator ever spells out an advance
+# services look up by name (App\Rules\Ruleset\AdvanceEffect), so no calculator ever spells out an advance
 # key: move the entry to another advance here and the rule follows it. Every effect is declared
 # exactly once, so the comment above each list is the rule itself, stated where it is granted.
 advances:

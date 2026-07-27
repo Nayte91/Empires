@@ -41,25 +41,49 @@ Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|php
 
 ## 🏗 Project Architecture
 
+`src/` is sorted by **application layer**, not by framework artefact. The goal it serves: Empires must be able to run *either* as free data entry (today) *or* driven by a game engine — the way a chess program lets you move pieces freely or play a real game.
+
+**The keystone: free mode is not "the mode without an engine", it is the mode where the engine is human.** The operator view (`nextTurn` / `previousTurn` / `finishGame`) *is* the engine's clock, held by a person — the main thing a real engine would take away.
+
 ```
 src/
-├── Component/    # Twig/Live Components (Ast, GameCreator, GameDashboard, OperatorConsole,
-│                 #   PlayerBoard, Shop, OrderTab, Discounts, ThemeColors)
-├── Controller/   # GameController, HomeController, PlayerController
-├── Entity/       # GameSession, Player, Order (Doctrine) — technical persistence layer only
-├── Game/         # bounded context: ScenarioCatalog, AdvanceCatalog, AstCatalog, EmpireCatalog,
-│                 #   GameData (yaml config readers), ASTType/Category enums, Dto/ (Advance, Empire,
-│                 #   AstEraDefinition read models), Service/ (ScoreCalculator)
-└── Repository/   # Doctrine repos (GameSessionRepository, PlayerRepository, OrderRepository)
+├── State/           # the material state, passive: GameSession, Player, Order (Doctrine),
+│                    #   plus the shape of any persisted column (CreditEntry, CreditSource, ASTVersion)
+├── Rules/           # what is true / permitted / follows — never persists
+│   ├── Ruleset/     #   the rules-as-data readers: *Catalog, GameData + their read models
+│   ├── Action/      #   which actions exist and when they are legal: Stat, StatAction, CreateGame
+│   ├── Advisory/    #   the advisory (non-blocking) rules + PlayerAdvisor
+│   ├── Scenario/    #   what a prospective game will look like
+│   └── *Calculator  #   Stock, Tax, HandSize, CitySupport, Score, Standings, CityBuild, CensusOrder
+├── Engine/          # owns the only write path: Handler/ + Shop/ (fulfilment)
+├── Presentation/    # Component/, Controller/, Twig/, Shop/ (user-facing messages)
+├── Infrastructure/  # Repository/, Doctrine/, Mercure/, Shop/ (session + buyer lookup)
+└── Kernel.php
 
 packages/userforged/shop-engine/   # the ordering engine, extracted as a Composer package
                                    #   → has its own CLAUDE.md; read it before touching it
 ```
-**Governing rule**: `Entity/` & `Repository/` are the technical Doctrine layer, shared across the app. The `Game/` bounded context owns everything else that belongs to it — value objects, enums, non-persisted state, services.
+
+**Governing rule — `Rules` answers, `Rules` never persists.** That is what lets one rule set serve both modes: a rule that throws only serves an engine; a rule that returns a verdict serves both. Reading a repository from `Rules` is fine (`ShopConnector` does); writing is not.
+
+**Dependency direction**, enforced by three greps — run them after any move:
+```
+Presentation ─┐
+              ├──> Engine ──> Rules ──> State          Infrastructure: nobody names it,
+Agent (future) ┘                └──> Ruleset (yaml)     everyone receives it by interface
+
+grep -rn '^use App\Engine\|^use App\Presentation'          src/Rules/ src/State/   → 0
+grep -rn 'EntityManagerInterface\|->flush()\|->persist('   src/Rules/ src/State/   → 0
+grep -rn '^use App\Presentation'                           src/Engine/             → 0
+```
+
+`Engine/` is not speculative: four of a game engine's six organs already exist (`legal`, `next`, `score`, half of `terminal`). What is missing is the clock and the action log — the clock currently being the operator. There is deliberately **no `Agent/`**: unlike `Engine/`, it would have nothing to hold.
+
+**Class names say the role, not the layer** — the namespace already says the layer. `App\Rules\TaxCalculator`, never `TaxRules` (stutter) nor `Tax` (reads as data). `Advisor`, `Summarizer`, `Resolver`, `Provider` coexist on purpose: each names a different job.
 
 **Two standards, on purpose**: **the library applies best practices; the application applies what is proportionate.** `userforged/shop-engine` is written for a reader who is not us — every port documented, no host class named, no shortcut that a second consumer would inherit. The app is written for this game: an assumed `instanceof` on a type we construct ourselves, a JSON column where an entity would be over-engineering, a display aggregate that duplicates six lines rather than share a helper it would be tempting to merge. Neither standard is sloppiness — applying the library's rigour to the app wastes effort on a reader who will never exist, and applying the app's pragmatism to the library ships that shortcut to everyone.
 
-**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. `src/Game/Shop/` holds the *adapters* that connect it to the game (`PlayerBuyerProvider`, `AdvanceProductProvider`, `AdvanceFulfillment`, `ShopConnector`, `SessionCartStorage`, `ShopMercurePublisher`, `ShopExceptionTranslator`), and `config/services.yaml` declares the six port→adapter bindings explicitly. **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
+**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. Its 15 adapters are **split by layer, not grouped** — each keeps a `Shop/` path segment, so `find src -path '*/Shop/*'` still finds the twelve that kept it (`CreditEntry`/`CreditSource` went to `State/`, `ShopMercurePublisher` to `Infrastructure/Mercure/`). The split is what makes `config/services.yaml`'s seven port→adapter bindings readable: you can see at a glance that exactly one port writes (`FulfillmentInterface` → `Engine/`) and all the others answer questions (`Rules/`) or reach outside (`Infrastructure/`). **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
 
 ### Config-driven game data
 ```
@@ -109,20 +133,20 @@ docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # sin
 ```
 
 ```
-tests/                                   # 432 tests — the application, sorted by layer
-├── Unit/          # pure TestCase, no kernel
-├── Integration/   # container + DB, no rendering
-├── Component/     # Twig / Live component render
-├── Functional/    # HTTP client + routes only
+tests/                                   # 431 tests — the application; tier first, layer second
+├── Unit/          # pure TestCase, no kernel   ─┐ below this first level, the tree mirrors src/:
+├── Integration/   # container + DB, no rendering ┤   Unit/State/, Unit/Rules/Advisory/,
+├── Component/     # Twig / Live component render ┘   Integration/Engine/Handler/, …
+├── Functional/    # HTTP client + routes only     — crosses every layer, so it mirrors none
 ├── Support/       # hand-written doubles + the GameBuilder/PlayerBuilder object mother
 └── bootstrap.php  # drops+recreates the SQLite schema once per run; DAMA (config/tools/phpunit.xml + bundles.php) rolls back each test
 
 packages/userforged/shop-engine/tests/   # 121 tests — the engine, pure TestCase, no kernel
 ```
 
-**432 + 121 = 553.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
+**431 + 121 = 552.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
 
-**The layer is the first thing you read, the domain the second.** The tier is decided by dependency, not by subject: an engine test that needs a kernel is not testing the engine, it is testing the wiring — so it lives in the app's `Integration/`, never in the package.
+**The tier is the first thing you read, the layer the second.** The tier is decided by dependency, not by subject: an engine test that needs a kernel is not testing the engine, it is testing the wiring — so it lives in the app's `Integration/`, never in the package. Below the tier, the path mirrors `src/` — with two deliberate exceptions, `Functional/` and `Integration/ShopFlow/`: an end-to-end or flow test crosses every layer, so it inhabits none.
 
 **Never run two phpunit invocations at once.** `bootstrap.php` drops and recreates the schema against a single shared SQLite file on every run, so concurrent suites destroy each other — the failure surfaces as an irreproducible flake. Delegations that touch `tests/` must be sequential.
 

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
+use App\State\GameSession;
+use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**

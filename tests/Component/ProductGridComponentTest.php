@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Game\Shop\AdvanceFulfillment;
+use App\State\Order;
+use App\State\Player;
+use App\Engine\Shop\AdvanceFulfillment;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
@@ -23,7 +23,7 @@ use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 use Symfony\UX\TwigComponent\Test\RenderedComponent;
 
 /**
- * App\Component\ProductGrid is a plain TwigComponent (no add() action of its
+ * App\Presentation\Component\ProductGrid is a plain TwigComponent (no add() action of its
  * own — the LiveAction lives on its host, Shop or PlayerOrders, see
  * ShopComponentTest/PosConsoleTest) rendering the catalog for a given
  * storageKey. These tests exercise it directly via renderTwigComponent().
@@ -106,7 +106,7 @@ final class ProductGridComponentTest extends KernelTestCase
     }
 
     /**
-     * `locked` is the host's turn-lock reaching the card (App\Component\Shop::isLockedForTurn):
+     * `locked` is the host's turn-lock reaching the card (App\Presentation\Component\Shop::isLockedForTurn):
      * a product that is neither owned nor in the cart must still refuse the add
      * once the turn's order has been validated.
      */

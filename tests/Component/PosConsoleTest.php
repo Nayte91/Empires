@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Entity\GameSession;
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Repository\OrderRepository;
+use App\State\GameSession;
+use App\State\Order;
+use App\State\Player;
+use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
@@ -38,9 +38,9 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * order (Userforged\ShopEngine\CommandHandler\EraseOrdersHandler cascade), all from the
  * per-player PlayerOrders LiveComponent (organisms/playerOrders).
  *
- * Ticket line/gift/allocation rendering lives in App\Component\Cart, covered
+ * Ticket line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered
  * by CartComponentTest (POS mode); the product grid lives in
- * App\Component\ProductGrid, covered by ProductGridComponentTest.
+ * App\Presentation\Component\ProductGrid, covered by ProductGridComponentTest.
  *
  * Once a precondition ticket has been seeded on the shared client, the
  * PlayerOrders component under test is always freshly constructed afterwards
@@ -50,7 +50,7 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * a stale checksum. `posOpen`/`posTurn` are passed directly to the fresh
  * instance instead of driving them through an actual openPos() call.
  *
- * add()'s guard sequence is App\Game\Shop\CartItemAdder's, shared with App\Component\Shop and
+ * add()'s guard sequence is App\Presentation\Shop\CartItemAdder's, shared with App\Presentation\Component\Shop and
  * covered in ShopComponentTest. What this file owns of add() is what only the POS has: the pos.
  * cart key, and organisms/posDialog as the one and only template that renders PlayerOrders' error.
  */
@@ -70,7 +70,7 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $component->render()->crawler();
 
         // The pending order preloads a complete, single-item ticket, so "Confirm
-        // purchase" — App\Component\Cart::hasIncompleteAllocations/isEmpty, read
+        // purchase" — App\Presentation\Component\Cart::hasIncompleteAllocations/isEmpty, read
         // from the nested Cart component itself — is enabled.
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($component->component()->posOpen);
@@ -105,7 +105,7 @@ final class PosConsoleTest extends WebTestCase
     }
 
     /**
-     * The refusal itself belongs to App\Game\Shop\CartItemAdder and is covered in
+     * The refusal itself belongs to App\Presentation\Shop\CartItemAdder and is covered in
      * ShopComponentTest. What only the POS can witness is where the copy surfaces:
      * organisms/posDialog is the sole template rendering PlayerOrders' error, so
      * an error raised with no dialog open would be shown nowhere at all.
@@ -173,7 +173,7 @@ final class PosConsoleTest extends WebTestCase
 
         $rendered = $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
-        $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
+        $this->assertNotInstanceOf(\App\State\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn));
         $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
         $this->assertStringContainsString('monument', $rendered);
     }
@@ -222,7 +222,7 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $component->render()->crawler();
 
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
-        // Category order is art/civic/craft/religion/science (App\Game\Category): only
+        // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
         // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
     }
@@ -404,7 +404,7 @@ final class PosConsoleTest extends WebTestCase
     }
 
     /**
-     * Checkout now lives on the Cart LiveComponent (see App\Component\Cart::checkout)
+     * Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout)
      * — PlayerOrders only hosts the dialog. $client must be shared with the
      * PlayerOrders instance that opened the POS (openPos()) so this Cart reads
      * the same session-backed ticket.

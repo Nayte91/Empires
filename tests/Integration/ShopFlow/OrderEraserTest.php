@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\ShopFlow;
 
-use App\Entity\Order;
-use App\Entity\Player;
-use App\Game\AdvanceCatalog;
-use App\Game\Shop\AdvanceFulfillment;
-use App\Game\Shop\AdvancePriceResolver;
-use App\Game\Shop\PlayerBuyerProvider;
-use App\Game\Shop\ShopConnector;
-use App\Repository\OrderRepository;
-use App\Repository\PlayerRepository;
+use App\State\Order;
+use App\State\Player;
+use App\Rules\Ruleset\AdvanceCatalog;
+use App\Engine\Shop\AdvanceFulfillment;
+use App\Rules\Shop\AdvancePriceResolver;
+use App\Infrastructure\Shop\PlayerBuyerProvider;
+use App\Rules\Shop\ShopConnector;
+use App\Infrastructure\Repository\OrderRepository;
+use App\Infrastructure\Repository\PlayerRepository;
 use Userforged\ShopEngine\Command\EraseOrders;
 use Userforged\ShopEngine\Command\SellDirect;
 use Userforged\ShopEngine\Command\SubmitOrder;

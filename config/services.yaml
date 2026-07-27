@@ -14,13 +14,13 @@ services:
     # aliasing (which used to bridge port -> adapter when both lived in this
     # same services.yaml) no longer fires across the bundle boundary — these
     # aliases restore it explicitly.
-    Userforged\ShopEngine\CartStorageInterface: '@App\Game\Shop\SessionCartStorage'
-    Userforged\ShopEngine\OrderRepositoryInterface: '@App\Repository\OrderRepository'
-    Userforged\ShopEngine\BuyerProviderInterface: '@App\Game\Shop\PlayerBuyerProvider'
-    Userforged\ShopEngine\FulfillmentInterface: '@App\Game\Shop\AdvanceFulfillment'
-    Userforged\ShopEngine\ProductProviderInterface: '@App\Game\Shop\AdvanceProductProvider'
-    Userforged\ShopEngine\FacetProviderInterface: '@App\Game\Shop\ShopConnector'
-    Userforged\ShopEngine\PriceResolverInterface: '@App\Game\Shop\AdvancePriceResolver'
+    Userforged\ShopEngine\CartStorageInterface: '@App\Infrastructure\Shop\SessionCartStorage'
+    Userforged\ShopEngine\OrderRepositoryInterface: '@App\Infrastructure\Repository\OrderRepository'
+    Userforged\ShopEngine\BuyerProviderInterface: '@App\Infrastructure\Shop\PlayerBuyerProvider'
+    Userforged\ShopEngine\FulfillmentInterface: '@App\Engine\Shop\AdvanceFulfillment'
+    Userforged\ShopEngine\ProductProviderInterface: '@App\Rules\Shop\AdvanceProductProvider'
+    Userforged\ShopEngine\FacetProviderInterface: '@App\Rules\Shop\ShopConnector'
+    Userforged\ShopEngine\PriceResolverInterface: '@App\Rules\Shop\AdvancePriceResolver'
 
 when@test:
     services:

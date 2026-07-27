@@ -1,0 +1,77 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Unit\Rules\Advisory;
+
+use App\State\GameSession;
+use App\State\Player;
+use App\Rules\Advisory\CitySupportRule;
+use App\Rules\Advisory\HandLimitRule;
+use App\Rules\Advisory\TaxPaymentRule;
+use App\Rules\CitySupportCalculator;
+use App\Rules\HandSizeCalculator;
+use App\Rules\Advisory\PlayerAdvisor;
+use App\Rules\StockCalculator;
+use App\Rules\TaxCalculator;
+use App\Tests\Support\GameConfig;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class PlayerAdvisorTest extends TestCase
+{
+    #[Test]
+    public function wellSupportedPlayerGetsNoAdvisories(): void
+    {
+        $player = new Player(new GameSession(), 'Bob');
+        $player->cities = 2;
+        $player->census = 10;
+
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule($this->hand())]);
+
+        $this->assertSame([], $advisor->advisoriesFor($player));
+    }
+
+    #[Test]
+    public function troubledPlayerGetsAllAdvisoriesInPriorityOrder(): void
+    {
+        $player = new Player(new GameSession(), 'Bob');
+        $player->cities = 5;
+        $player->census = 1;
+        $player->treasury = 50;
+        $player->cards = 9;
+
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule($this->hand())]);
+        $advisories = $advisor->advisoriesFor($player);
+
+        $this->assertCount(3, $advisories);
+        $this->assertSame("You can't support your cities!", $advisories[0]->message);
+        $this->assertSame("You can't pay your taxes!", $advisories[1]->message);
+        $this->assertSame('You must discard a card!', $advisories[2]->message);
+    }
+
+    #[Test]
+    public function playerTriggeringOnlyHandLimitGetsSingleAdvisory(): void
+    {
+        $player = new Player(new GameSession(), 'Bob');
+        $player->cities = 2;
+        $player->census = 10;
+        $player->cards = 9;
+
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule($this->hand())]);
+        $advisories = $advisor->advisoriesFor($player);
+
+        $this->assertCount(1, $advisories);
+        $this->assertSame('You must discard a card!', $advisories[0]->message);
+    }
+
+    private function tax(): TaxCalculator
+    {
+        return new TaxCalculator(new StockCalculator(GameConfig::gameData()), GameConfig::advanceEffects());
+    }
+
+    private function hand(): HandSizeCalculator
+    {
+        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
+    }
+}

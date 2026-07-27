@@ -22,8 +22,8 @@ return RectorConfig::configure()
         // for a #[LiveListener]: its only job is to trigger the component's
         // own re-render, nothing to execute.
         RemoveEmptyClassMethodRector::class => [
-            __DIR__.'/../../src/Component/Shop.php',
-            __DIR__.'/../../src/Component/PlayerOrders.php',
+            __DIR__.'/../../src/Presentation/Component/Shop.php',
+            __DIR__.'/../../src/Presentation/Component/PlayerOrders.php',
         ],
     ])
     ->withCache(__DIR__.'/../../var/cache/rector')
