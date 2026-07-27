@@ -34,7 +34,6 @@ use Userforged\ShopEngine\Service\PriceCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
-use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -57,13 +56,9 @@ final class OrderEraserTest extends WebTestCase
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SellDirectHandler, OrderValidator and EraseOrdersHandler are built by hand
-        // rather than fetched from the container, so they share the guard-free
-        // ShopOrderStateMachine test double instead of the container's registered
-        // shop_order workflow (see OrderFlowTest/RejectOrderTest). This file never
-        // exercises reject — the guard that motivates the test double — so this is
-        // inherited convention, not a hard requirement here. Built from the shared
-        // EntityManager/OrderRepository/PlayerRepository, following DirectSaleTest's
-        // convention.
+        // rather than fetched from the container, so this file can drive them directly
+        // and share one EntityManager/OrderRepository/PlayerRepository with the
+        // fixtures. The shop_order workflow itself comes from the container.
         // RecordingHub (registered for the real HubInterface under config/services.yaml
         // when@test) keeps every publish() call in-process — no network I/O happens
         // during the suite, and the sequence stays assertable.
@@ -71,7 +66,7 @@ final class OrderEraserTest extends WebTestCase
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $this->shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector);
-        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
@@ -191,7 +186,7 @@ final class OrderEraserTest extends WebTestCase
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
-        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $transaction = new DoctrineTransaction($this->entityManager);
 
         $catalogWithoutAnatomy = $this->productProviderWithout($realProductProvider, 'anatomy');

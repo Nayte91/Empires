@@ -9,7 +9,6 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\Uuid;
-use Userforged\ShopEngine\Event\OrderRejected;
 use Userforged\ShopEngine\Event\OrdersErased;
 use Userforged\ShopEngine\Event\OrderSubmitted;
 use Userforged\ShopEngine\Event\OrderValidated;
@@ -18,8 +17,8 @@ use Userforged\ShopEngine\Event\OrderValidated;
  * The Game→Shop seam, Mercure side: this is the only publisher of
  * shop-originated Mercure updates. `packages/userforged/shop-engine/`
  * dispatches granular,
- * business-named events (`OrderSubmitted`, `OrderValidated`, `OrderRejected`,
- * `OrdersErased`) on `shop.event.bus`; collapsing them onto the two Mercure
+ * business-named events (`OrderSubmitted`, `OrderValidated`, `OrdersErased`)
+ * on `shop.event.bus`; collapsing them onto the two Mercure
  * event names the frontend already listens for (`order-updated`,
  * `player-updated`) is a decision that belongs to this host, not the lib —
  * the lib must never learn about Mercure or these two names.
@@ -28,10 +27,6 @@ use Userforged\ShopEngine\Event\OrderValidated;
  * calling `OrderValidator::validate()` internally, which already publishes
  * `OrderValidated` for the same mutation. Mapping `OrderSold` too would
  * double-publish.
- *
- * `OrderRejected` is mapped even though it is unreachable in production:
- * `OrderWorkflowPolicy` blocks the `reject` transition outright. The lib
- * still ships the event, so the seam still translates it.
  *
  * Each handler resolves `playerId` to a `Player` via `PlayerRepository`, then
  * publishes to `'empires/game/'.$player->game->id` — matching the topic the
@@ -67,12 +62,6 @@ final readonly class ShopMercurePublisher
     {
         $this->publish($event->buyerId, 'order-updated');
         $this->publish($event->buyerId, 'player-updated');
-    }
-
-    #[AsMessageHandler(bus: 'shop.event.bus')]
-    public function onOrderRejected(OrderRejected $event): void
-    {
-        $this->publish($event->buyerId, 'order-updated');
     }
 
     #[AsMessageHandler(bus: 'shop.event.bus')]

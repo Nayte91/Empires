@@ -11,9 +11,7 @@ use App\Game\Dto\Advance;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
-use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
-use Symfony\Component\Workflow\WorkflowInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -24,7 +22,6 @@ use Userforged\ShopEngine\BuyerInterface;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Command\EraseOrders;
-use Userforged\ShopEngine\Command\RejectOrder;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\Exception\ShopExceptionReason;
 use Userforged\ShopEngine\OrderStatus;
@@ -57,7 +54,6 @@ final class PlayerOrders
         private readonly MessageBusInterface $commandBus,
         private readonly ShopConnector $shopConnector,
         private readonly ShopExceptionTranslator $shopExceptionTranslator,
-        private readonly WorkflowInterface $shopOrderStateMachine,
     ) {}
 
     #[LiveAction]
@@ -117,23 +113,6 @@ final class PlayerOrders
         }
     }
 
-    #[LiveAction]
-    public function rejectOrder(#[LiveArg] int $turn): void
-    {
-        try {
-            $this->commandBus->dispatch(new RejectOrder($this->player->id, $turn));
-            $this->error = null;
-        } catch (HandlerFailedException $exception) {
-            $message = $this->shopExceptionTranslator->messageFor($exception);
-
-            if (null === $message) {
-                throw $exception;
-            }
-
-            $this->error = $message;
-        }
-    }
-
     /** Re-renders PlayerOrders so its order cards reflect the order Cart::checkout() just placed. */
     #[LiveListener('orderPlaced')]
     public function onOrderPlaced(): void {}
@@ -160,7 +139,7 @@ final class PlayerOrders
      * One card per turn, current turn first, whether an order exists for it or
      * not — a kiosk-submitted pending order fills its turn's card.
      *
-     * @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int, rejectable: bool}>
+     * @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int}>
      */
     public function getCards(): array
     {
@@ -175,7 +154,7 @@ final class PlayerOrders
         // to reuse here because the loop is read-only — nothing between turns
         // mutates orders/advances. This must NOT be hoisted any further up
         // (e.g. into a service-level cache keyed by player id): any LiveAction
-        // that validates/erases/rejects an order and then re-renders in the same
+        // that validates or erases an order and then re-renders in the same
         // request needs a freshly-built buyer, or it self-credits stale data.
         $buyer = $this->shopConnector->buyerFor($this->player);
 
@@ -192,7 +171,7 @@ final class PlayerOrders
      * Totals are frozen on the order once validated, otherwise recalculated
      * against the buyer's currently owned advances.
      *
-     * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int, rejectable: bool}
+     * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int}
      */
     private function summarizeTurn(int $turn, ?Order $order, BuyerInterface $buyer): array
     {
@@ -218,7 +197,6 @@ final class PlayerOrders
             'slugs' => $slugs,
             'total' => $total,
             'vp' => array_sum(array_map(static fn (Advance $advance): int => $advance->points, $advances)),
-            'rejectable' => $order instanceof Order && $this->shopOrderStateMachine->can($order, 'reject'),
         ];
     }
 

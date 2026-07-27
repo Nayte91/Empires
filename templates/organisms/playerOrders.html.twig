@@ -11,7 +11,6 @@
                 :slugs="card.slugs"
                 :total="card.total"
                 :vp="card.vp"
-                :rejectable="card.rejectable"
             >
                 {% if card.status == 'validated' %}
                     <button type="button" commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}" command="show-modal">
@@ -48,16 +47,6 @@
                     >
                         {{ card.status == 'pending' ? 'Verify' : (card.status == 'missing' ? 'Buy' : 'Edit') }}
                     </button>
-
-                    {% if card.rejectable %}
-                        <button
-                            type="button"
-                            {{ live_action('rejectOrder', {turn: card.turn}) }}
-                            data-loading="addAttribute(disabled)"
-                        >
-                            Reject
-                        </button>
-                    {% endif %}
                 {% endif %}
             </twig:molecules:orderCard>
         {% endfor %}

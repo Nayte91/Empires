@@ -31,7 +31,6 @@ use Userforged\ShopEngine\Service\PriceCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
-use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -56,16 +55,12 @@ final class OrderFlowTest extends WebTestCase
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler and OrderValidator are built by hand rather than fetched
-        // from the container. This wires them to the guard-free ShopOrderStateMachine
-        // test double (tests/Support/Workflow/ShopOrderStateMachine.php) instead of the
-        // container's registered shop_order workflow, which carries OrderWorkflowPolicy's
-        // guard on reject. This file never exercises reject, so it's inherited convention
-        // from RejectOrderTest (the sibling file where it's load-bearing) rather than a
-        // hard requirement here — worth revisiting. Built from the shared EntityManager /
-        // OrderRepository / PlayerRepository / ProductProviderInterface instances.
+        // from the container, so this file can drive them directly and share one
+        // EntityManager / OrderRepository / PlayerRepository / ProductProviderInterface
+        // with the fixtures. The shop_order workflow itself comes from the container.
         $shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
-        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);

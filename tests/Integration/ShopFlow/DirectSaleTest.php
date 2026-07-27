@@ -30,7 +30,6 @@ use Userforged\ShopEngine\Service\PriceCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
-use App\Tests\Support\Workflow\ShopOrderStateMachine;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -55,16 +54,13 @@ final class DirectSaleTest extends WebTestCase
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler, OrderValidator and SellDirectHandler are built by hand
-        // rather than fetched from the container, so they share the guard-free
-        // ShopOrderStateMachine test double instead of the container's registered
-        // shop_order workflow (see OrderFlowTest). This file never exercises reject —
-        // the guard that motivates the test double — so this is inherited convention,
-        // not a hard requirement here. Built from the shared EntityManager/
-        // OrderRepository/PlayerRepository/ProductProviderInterface instances, following
-        // OrderFlowTest's convention.
+        // rather than fetched from the container, so this file can drive them directly
+        // and share one EntityManager/OrderRepository/PlayerRepository/
+        // ProductProviderInterface with the fixtures, following OrderFlowTest's
+        // convention. The shop_order workflow itself comes from the container.
         $shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
-        $shopOrderStateMachine = ShopOrderStateMachine::create();
+        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
         $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
