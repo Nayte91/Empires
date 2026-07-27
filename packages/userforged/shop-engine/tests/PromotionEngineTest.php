@@ -13,6 +13,7 @@ use Userforged\ShopEngine\Promotion\ProductPromotion;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Tests\Support\FakeProduct;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +22,7 @@ final class PromotionEngineTest extends TestCase
     private const array FACETS = ['art', 'civic', 'craft', 'religion', 'science'];
 
     #[Test]
-    public function libraryDiscountsTheMostExpensiveOtherLine(): void
+    public function aDiscountAppliesToTheMostExpensiveOtherLine(): void
     {
         $lines = [
             new OrderLine('library', 220),
@@ -29,9 +30,9 @@ final class PromotionEngineTest extends TestCase
             new OrderLine('pottery', 60),
         ];
         $inOrder = [
-            $this->makeAdvance('library', new ProductPromotion(discount: ['any' => 40])),
-            $this->makeAdvance('democracy'),
-            $this->makeAdvance('pottery'),
+            self::makeProduct('library', new ProductPromotion(discount: ['any' => 40])),
+            self::makeProduct('democracy'),
+            self::makeProduct('pottery'),
         ];
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
@@ -50,10 +51,10 @@ final class PromotionEngineTest extends TestCase
     }
 
     #[Test]
-    public function libraryAloneInTheOrderIsANoOp(): void
+    public function aDiscountSourceAloneInTheOrderIsANoOp(): void
     {
         $lines = [new OrderLine('library', 220)];
-        $inOrder = [$this->makeAdvance('library', new ProductPromotion(discount: ['any' => 40]))];
+        $inOrder = [self::makeProduct('library', new ProductPromotion(discount: ['any' => 40]))];
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
 
@@ -69,8 +70,8 @@ final class PromotionEngineTest extends TestCase
             new OrderLine('pottery', 30),
         ];
         $inOrder = [
-            $this->makeAdvance('library', new ProductPromotion(discount: ['any' => 40])),
-            $this->makeAdvance('pottery'),
+            self::makeProduct('library', new ProductPromotion(discount: ['any' => 40])),
+            self::makeProduct('pottery'),
         ];
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
@@ -89,9 +90,9 @@ final class PromotionEngineTest extends TestCase
             new OrderLine('mathematics', 200),
         ];
         $inOrder = [
-            $this->makeAdvance('library', new ProductPromotion(discount: ['any' => 40])),
-            $this->makeAdvance('democracy'),
-            $this->makeAdvance('mathematics'),
+            self::makeProduct('library', new ProductPromotion(discount: ['any' => 40])),
+            self::makeProduct('democracy'),
+            self::makeProduct('mathematics'),
         ];
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
@@ -112,9 +113,9 @@ final class PromotionEngineTest extends TestCase
             new OrderLine('target', 200),
         ];
         $inOrder = [
-            $this->makeAdvance('source_a', new ProductPromotion(discount: ['any' => 40])),
-            $this->makeAdvance('source_b', new ProductPromotion(discount: ['any' => 30])),
-            $this->makeAdvance('target'),
+            self::makeProduct('source_a', new ProductPromotion(discount: ['any' => 40])),
+            self::makeProduct('source_b', new ProductPromotion(discount: ['any' => 30])),
+            self::makeProduct('target'),
         ];
 
         $result = new PromotionEngine()->apply($lines, $inOrder);
@@ -128,78 +129,73 @@ final class PromotionEngineTest extends TestCase
         $this->assertSame(30, $result[2]->promotion->amount);
     }
 
+    /**
+     * @param list<string>      $ownedKeys
+     * @param list<string>      $inOrderKeys
+     * @param list<FakeProduct> $catalog
+     * @param list<string>      $expected
+     */
     #[Test]
-    public function giftCandidatesOnlyMatchAdvancesInAGiftedFacet(): void
+    #[DataProvider('provideGiftCandidatesOffersOnlyWhatTheGiftActuallyGrantsCases')]
+    public function giftCandidatesOffersOnlyWhatTheGiftActuallyGrants(array $ownedKeys, array $inOrderKeys, array $catalog, array $expected): void
     {
-        $granting = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $scienceAdvance = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
-        $artAdvance = $this->makeAdvance('sculpture', cost: 50, facets: ['art']);
+        $granting = $this->giftGrantingProduct();
 
-        $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$scienceAdvance, $artAdvance]);
+        $candidates = new PromotionEngine()->giftCandidates($granting, $ownedKeys, $inOrderKeys, $catalog);
 
-        $this->assertSame(['astronavigation'], $candidates);
+        $this->assertSame($expected, $candidates);
     }
 
-    #[Test]
-    public function giftCandidatesExcludeAdvancesAtOrAboveTheThreshold(): void
+    public static function provideGiftCandidatesOffersOnlyWhatTheGiftActuallyGrantsCases(): iterable
     {
-        $granting = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $cheap = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
-        $atThreshold = $this->makeAdvance('coinage', cost: 100, facets: ['science']);
+        yield 'a product outside every gifted facet is excluded' => [
+            [],
+            [],
+            [self::makeProduct('astronavigation', cost: 80, facets: ['science']), self::makeProduct('sculpture', cost: 50, facets: ['art'])],
+            ['astronavigation'],
+        ];
 
-        $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$cheap, $atThreshold]);
+        yield 'a product at or above the facet threshold is excluded' => [
+            [],
+            [],
+            [self::makeProduct('astronavigation', cost: 80, facets: ['science']), self::makeProduct('coinage', cost: 100, facets: ['science'])],
+            ['astronavigation'],
+        ];
 
-        $this->assertSame(['astronavigation'], $candidates);
-    }
+        yield 'a product the buyer already owns is excluded' => [
+            ['astronavigation'],
+            [],
+            [self::makeProduct('astronavigation', cost: 80, facets: ['science']), self::makeProduct('empiricism', cost: 60, facets: ['science'])],
+            ['empiricism'],
+        ];
 
-    #[Test]
-    public function giftCandidatesExcludeAlreadyOwnedAdvances(): void
-    {
-        $granting = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $owned = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
-        $free = $this->makeAdvance('empiricism', cost: 60, facets: ['science']);
+        yield 'a product already sitting in the order is excluded' => [
+            [],
+            ['astronavigation'],
+            [self::makeProduct('astronavigation', cost: 80, facets: ['science']), self::makeProduct('empiricism', cost: 60, facets: ['science'])],
+            ['empiricism'],
+        ];
 
-        $candidates = new PromotionEngine()->giftCandidates($granting, ['astronavigation'], [], [$owned, $free]);
-
-        $this->assertSame(['empiricism'], $candidates);
-    }
-
-    #[Test]
-    public function giftCandidatesExcludeAdvancesAlreadyInTheOrder(): void
-    {
-        $granting = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $inOrder = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
-        $free = $this->makeAdvance('empiricism', cost: 60, facets: ['science']);
-
-        $candidates = new PromotionEngine()->giftCandidates($granting, [], ['astronavigation'], [$inOrder, $free]);
-
-        $this->assertSame(['empiricism'], $candidates);
-    }
-
-    #[Test]
-    public function giftCandidatesReturnsEveryEligibleAdvance(): void
-    {
-        $granting = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $first = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
-        $second = $this->makeAdvance('empiricism', cost: 60, facets: ['science']);
-
-        $candidates = new PromotionEngine()->giftCandidates($granting, [], [], [$first, $second]);
-
-        $this->assertSame(['astronavigation', 'empiricism'], $candidates);
+        yield 'every eligible product is offered, not merely the first' => [
+            [],
+            [],
+            [self::makeProduct('astronavigation', cost: 80, facets: ['science']), self::makeProduct('empiricism', cost: 60, facets: ['science'])],
+            ['astronavigation', 'empiricism'],
+        ];
     }
 
     #[Test]
     public function applyWithAValidGiftIntentAppendsAZeroCostLineStampedWithWhatItWouldHaveCost(): void
     {
-        $anatomy = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $astronavigation = $this->makeAdvance('astronavigation', cost: 80, facets: ['science']);
+        $granting = $this->giftGrantingProduct();
+        $astronavigation = self::makeProduct('astronavigation', cost: 80, facets: ['science']);
 
         $lines = [new OrderLine('anatomy', 270)];
         $intents = [new LineIntent('anatomy', gift: 'astronavigation')];
-        $catalog = [$anatomy, $astronavigation];
+        $catalog = [$granting, $astronavigation];
         $catalogNetCosts = ['anatomy' => 270, 'astronavigation' => 80];
 
-        $result = new PromotionEngine()->apply($lines, [$anatomy], $intents, $catalog, $catalogNetCosts, []);
+        $result = new PromotionEngine()->apply($lines, [$granting], $intents, $catalog, $catalogNetCosts, []);
 
         $this->assertCount(2, $result);
         $giftLine = $result[1];
@@ -214,21 +210,21 @@ final class PromotionEngineTest extends TestCase
     #[Test]
     public function applyWithAnInvalidGiftChoiceThrowsPromotionException(): void
     {
-        $anatomy = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $tooExpensive = $this->makeAdvance('coinage', cost: 200, facets: ['science']);
+        $granting = $this->giftGrantingProduct();
+        $tooExpensive = self::makeProduct('coinage', cost: 200, facets: ['science']);
 
         $lines = [new OrderLine('anatomy', 270)];
         $intents = [new LineIntent('anatomy', gift: 'coinage')];
 
         $this->expectException(PromotionException::class);
 
-        new PromotionEngine()->apply($lines, [$anatomy], $intents, [$anatomy, $tooExpensive], ['anatomy' => 270, 'coinage' => 200], []);
+        new PromotionEngine()->apply($lines, [$granting], $intents, [$granting, $tooExpensive], ['anatomy' => 270, 'coinage' => 200], []);
     }
 
     #[Test]
     public function applyWithAValidAllocationStampsTheSourceLineAndLeavesNetCostUnchanged(): void
     {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
+        $monument = $this->electiveProduct();
 
         $lines = [new OrderLine('monument', 180)];
         $intents = [new LineIntent('monument', allocation: ['craft' => 10, 'science' => 10])];
@@ -242,72 +238,41 @@ final class PromotionEngineTest extends TestCase
         $this->assertSame(['craft' => 10, 'science' => 10], $result[0]->promotion->allocation);
     }
 
+    /**
+     * The two reasons are not interchangeable and the message is the only
+     * thing telling them apart: an under-spent budget is a transient state
+     * while the buyer is still choosing (allocationRequired), whereas a bad
+     * facet, a wrong sum or an off-step amount can only reach the engine from
+     * a client that bypassed the UI (invalidAllocation).
+     *
+     * @param array<string, int> $allocation
+     */
     #[Test]
-    public function applyWithAnEmptyAllocationThrowsAllocationRequired(): void
+    #[DataProvider('provideApplyRejectsAnUnusableAllocationCases')]
+    public function applyRejectsAnUnusableAllocation(array $allocation, string $expectedMessage): void
     {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
+        $monument = $this->electiveProduct();
 
         $lines = [new OrderLine('monument', 180)];
-        $intents = [new LineIntent('monument')];
+        $intents = [new LineIntent('monument', allocation: $allocation)];
 
         $this->expectException(PromotionException::class);
-        $this->expectExceptionMessageMatches('/Allocation required for promotion on "monument"/');
+        $this->expectExceptionMessageMatches($expectedMessage);
 
         new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
     }
 
-    #[Test]
-    public function applyWithAPartialAllocationThrowsAllocationRequired(): void
+    public static function provideApplyRejectsAnUnusableAllocationCases(): iterable
     {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
+        yield 'nothing allocated yet' => [[], '/Allocation required for promotion on "monument"/'];
 
-        $lines = [new OrderLine('monument', 180)];
-        $intents = [new LineIntent('monument', allocation: ['craft' => 10])];
+        yield 'the budget only partially spent' => [['craft' => 10], '/Allocation required for promotion on "monument"/'];
 
-        $this->expectException(PromotionException::class);
-        $this->expectExceptionMessageMatches('/Allocation required for promotion on "monument"/');
+        yield 'more than the budget spent' => [['craft' => 15, 'science' => 15], '/Invalid allocation for promotion on "monument"/'];
 
-        new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
-    }
+        yield 'a facet the host never declared' => [['nonsense' => 20], '/Invalid allocation for promotion on "monument"/'];
 
-    #[Test]
-    public function applyWithAWrongSumThrowsInvalidAllocation(): void
-    {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
-
-        $lines = [new OrderLine('monument', 180)];
-        $intents = [new LineIntent('monument', allocation: ['craft' => 15, 'science' => 15])];
-
-        $this->expectException(PromotionException::class);
-        $this->expectExceptionMessageMatches('/Invalid allocation for promotion on "monument"/');
-
-        new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
-    }
-
-    #[Test]
-    public function applyWithAnUnknownFacetThrowsInvalidAllocation(): void
-    {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
-
-        $lines = [new OrderLine('monument', 180)];
-        $intents = [new LineIntent('monument', allocation: ['nonsense' => 20])];
-
-        $this->expectException(PromotionException::class);
-
-        new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
-    }
-
-    #[Test]
-    public function applyWithANonMultipleOfFiveThrowsInvalidAllocation(): void
-    {
-        $monument = $this->makeAdvance('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
-
-        $lines = [new OrderLine('monument', 180)];
-        $intents = [new LineIntent('monument', allocation: ['craft' => 12, 'science' => 8])];
-
-        $this->expectException(PromotionException::class);
-
-        new PromotionEngine()->apply($lines, [$monument], $intents, facets: self::FACETS);
+        yield 'an amount that is not a multiple of the step' => [['craft' => 12, 'science' => 8], '/Invalid allocation for promotion on "monument"/'];
     }
 
     #[Test]
@@ -347,8 +312,8 @@ final class PromotionEngineTest extends TestCase
     #[Test]
     public function applyResolvesTheOptionPromotionOfAGiftAppendedLineAgainstTheCatalogAndPreservesItsGiftStamp(): void
     {
-        $anatomy = $this->makeAdvance('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
-        $writtenRecord = $this->makeAdvance(
+        $granting = $this->giftGrantingProduct();
+        $writtenRecord = self::makeProduct(
             'written_record',
             new ProductPromotion(option: new ElectiveBenefit(budget: 10, step: 5)),
             cost: 60,
@@ -360,10 +325,10 @@ final class PromotionEngineTest extends TestCase
             new LineIntent('anatomy', gift: 'written_record'),
             new LineIntent('written_record', allocation: ['civic' => 5, 'science' => 5]),
         ];
-        $catalog = [$anatomy, $writtenRecord];
+        $catalog = [$granting, $writtenRecord];
         $catalogNetCosts = ['anatomy' => 270, 'written_record' => 60];
 
-        $result = new PromotionEngine()->apply($lines, [$anatomy], $intents, $catalog, $catalogNetCosts, [], self::FACETS);
+        $result = new PromotionEngine()->apply($lines, [$granting], $intents, $catalog, $catalogNetCosts, [], self::FACETS);
 
         $this->assertCount(2, $result);
         $giftLine = $result[1];
@@ -385,8 +350,20 @@ final class PromotionEngineTest extends TestCase
         $this->assertSame(['civic' => 5, 'science' => 5], $roundTrippedIntents[1]->allocation);
     }
 
+    /** A product whose promotion gifts anything in the "science" facet costing under 100. */
+    private function giftGrantingProduct(): FakeProduct
+    {
+        return self::makeProduct('anatomy', new ProductPromotion(gift: ['science' => 100]), cost: 270, facets: ['science']);
+    }
+
+    /** A product whose promotion hands the buyer a 20-point budget to split across facets, 5 at a time. */
+    private function electiveProduct(): FakeProduct
+    {
+        return self::makeProduct('monument', new ProductPromotion(option: new ElectiveBenefit(budget: 20, step: 5)), cost: 180);
+    }
+
     /** @param list<string> $facets */
-    private function makeAdvance(string $key, ?ProductPromotion $promotion = null, int $cost = 0, array $facets = []): FakeProduct
+    private static function makeProduct(string $key, ?ProductPromotion $promotion = null, int $cost = 0, array $facets = []): FakeProduct
     {
         return new FakeProduct(key: $key, cost: $cost, facets: $facets, promotion: $promotion);
     }
