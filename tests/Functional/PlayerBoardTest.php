@@ -65,7 +65,7 @@ final class PlayerBoardTest extends WebTestCase
             ),
         );
 
-        $this->assertSame(['Cities 0', 'Ships 0', 'Census 1', 'Treasury 0', 'Cards 0'], $labels);
+        $this->assertSame(['Cities 0', 'Ships 0', 'Population 1', 'Treasury 0', 'Cards 0'], $labels);
     }
 
     #[Test]

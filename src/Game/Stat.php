@@ -43,7 +43,7 @@ enum Stat: string
     {
         return match ($this) {
             self::Cities => 'Cities',
-            self::Census => 'Census',
+            self::Census => 'Population',
             self::Treasury => 'Treasury',
             self::Ships => 'Ships',
             self::Cards => 'Cards',
