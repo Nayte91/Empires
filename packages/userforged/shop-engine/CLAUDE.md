@@ -69,7 +69,7 @@ Full comparative survey (Aimeos, django-oscar, Broadleaf, Spree/Solidus, platfor
 
 ```bash
 grep -rn '^use App\\' packages/userforged/shop-engine/src/                  # → 0
-grep -rniE 'player|advance|empire' packages/userforged/shop-engine/src/     # → 5
+grep -rniE 'player|advance|empire' packages/userforged/shop-engine/src/     # → 3
 ```
 
 Run **both**. The first only tests *imports* — for a long time it certified this package
@@ -195,13 +195,19 @@ regressions in one session.
 
 | Location | Content | Base |
 |:---|:---|:---|
-| `packages/…/tests/` | 60 tests of the **engine** — cart, quoting, promotions | `TestCase`, no kernel |
-| host `tests/Shop/` | 34 tests of the **wiring** — order flow, direct sale, erase, reject | `WebTestCase` |
+| `packages/…/tests/` | 121 tests of the **engine** — cart, quoting, promotions, serialization, exception contract, and every command handler | `TestCase`, no kernel |
+| host `tests/Integration/ShopFlow/` | 25 tests of the **wiring** — order flow, direct sale, erase | `WebTestCase` |
 | host `tests/Game/Shop/` | the `SessionCartStorage` adapter | host, not library |
 
 **A test of the engine that needs a kernel is not testing the engine — it is testing the
 integration**, so it belongs to the host whatever it talks about. A test that lands here
 must run with an autoloader and nothing else.
+
+**Rejection is the exception that proves the rule.** The host deleted its own reject flow
+entirely — no button, no action, no translation branch — so no wiring is left to test up
+there. The behaviour itself is still shipped in `RejectOrderHandler` and the `reject`
+transition, and it is covered here alone. A capability with no consumer is the one most
+likely to rot unnoticed; do not read the absence of host tests as permission to drop it.
 
 Conventions are the project's (see root `CLAUDE.md`): `#[Test]` attribute, behaviour-sentence
 names, AAA by blank lines, `$this->assert*` throughout, **no PHPUnit mocks** (hand-written
