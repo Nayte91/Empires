@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Game\Service;
 use App\Game\Service\HandSizeCalculator;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -17,7 +18,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[DataProvider('provideBaseLimitFollowsThePlayerCountCases')]
     public function baseLimitFollowsThePlayerCount(int $playerCount, int $expectedLimit): void
     {
-        $this->assertSame($expectedLimit, new HandSizeCalculator()->baseLimitFor($playerCount));
+        $this->assertSame($expectedLimit, $this->hand()->baseLimitFor($playerCount));
     }
 
     /** @return iterable<string, array{int, int}> */
@@ -40,10 +41,10 @@ final class HandSizeCalculatorTest extends TestCase
         $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount($playerCount)->build())->build();
 
         if ($ownsTheAdvance) {
-            $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
+            $player->ownAdvances(['roadbuilding']);
         }
 
-        $this->assertSame($expectedLimit, new HandSizeCalculator()->limitFor($player));
+        $this->assertSame($expectedLimit, $this->hand()->limitFor($player));
     }
 
     /** @return iterable<string, array{int, bool, int}> */
@@ -62,12 +63,17 @@ final class HandSizeCalculatorTest extends TestCase
         $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();
         $player->cards = 9;
 
-        $calculator = new HandSizeCalculator();
+        $calculator = $this->hand();
 
         $this->assertTrue($calculator->isOverLimit($player));
 
-        $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
+        $player->ownAdvances(['roadbuilding']);
 
         $this->assertFalse($calculator->isOverLimit($player));
+    }
+
+    private function hand(): HandSizeCalculator
+    {
+        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
     }
 }

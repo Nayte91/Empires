@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Game\Service;
 
 use App\Entity\Player;
+use App\Game\AdvanceEffect;
+use App\Game\AdvanceEffectCatalog;
+use App\Game\GameData;
 
 /**
  * The game's single authority on how many cards a hand may hold. The limit is no longer a property
@@ -13,27 +16,34 @@ use App\Entity\Player;
  */
 final readonly class HandSizeCalculator
 {
-    /** Road Building lets its owner keep one card more than the table allows. */
-    public const string EXTRA_CARD_ADVANCE = 'roadbuilding';
+    public function __construct(
+        private GameData $gameData,
+        private AdvanceEffectCatalog $advanceEffects,
+    ) {}
 
-    // REFACTOR-WHEN: a 3rd bracket lands on top of the player-count one and the advance one —
-    // read the whole table from config/game/game_data.yaml instead of these constants.
-    private const int HAND_LIMIT = 8;
-    private const int LARGE_GAME_HAND_LIMIT = 9;
-    private const int LARGE_GAME_PLAYER_THRESHOLD = 12;
-
-    /** What the table alone allows, before any player's own advances. */
+    /**
+     * What the table alone allows, before any player's own advances. Brackets are declared cheapest
+     * first, so the last one the player count reaches is the one that applies; a count below the
+     * first bracket falls back to it rather than to nothing.
+     */
     public function baseLimitFor(int $playerCount): int
     {
-        return $playerCount >= self::LARGE_GAME_PLAYER_THRESHOLD
-            ? self::LARGE_GAME_HAND_LIMIT
-            : self::HAND_LIMIT;
+        $brackets = $this->gameData->getLimits()['hand_size_brackets'] ?? [];
+        $limit = $brackets[0]['cards'] ?? 0;
+
+        foreach ($brackets as $bracket) {
+            if ($playerCount >= $bracket['from_players']) {
+                $limit = $bracket['cards'];
+            }
+        }
+
+        return $limit;
     }
 
     public function limitFor(Player $player): int
     {
         return $this->baseLimitFor($player->game->playerCount)
-            + (\in_array(self::EXTRA_CARD_ADVANCE, $player->advances, true) ? 1 : 0);
+            + ($this->advanceEffects->grants($player->advances, AdvanceEffect::ExtraHandCard) ? 1 : 0);
     }
 
     /** The one question consumers should ask. */

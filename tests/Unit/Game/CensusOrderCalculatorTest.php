@@ -9,6 +9,7 @@ use App\Entity\Player;
 use App\Game\EmpireCatalog;
 use App\Game\ScenarioCatalog;
 use App\Game\Service\CensusOrderCalculator;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -120,7 +121,7 @@ final class CensusOrderCalculatorTest extends TestCase
         $game = new GameSession();
         $general = new Player($game, 'Alice');
         $general->census = 40;
-        $general->ownAdvances([CensusOrderCalculator::MILITARY_ADVANCE]);
+        $general->ownAdvances(['military']);
         $civilian = new Player($game, 'Bob');
         $civilian->census = 10;
 
@@ -139,6 +140,7 @@ final class CensusOrderCalculatorTest extends TestCase
                 $projectDir.'/config/game/empires.yaml',
                 new ScenarioCatalog($projectDir.'/config/game/scenarios.yaml'),
             ),
+            GameConfig::advanceEffects(),
         );
     }
 }

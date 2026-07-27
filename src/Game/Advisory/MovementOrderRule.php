@@ -22,7 +22,7 @@ final readonly class MovementOrderRule implements AdvisoryRule
     public function evaluate(Player $player): Advisory
     {
         $rank = $this->censusOrderCalculator->rankOf($player);
-        $because = $this->censusOrderCalculator->hasMilitary($player) ? CensusOrderCalculator::MILITARY_ADVANCE : null;
+        $because = $this->censusOrderCalculator->militaryAdvanceOf($player);
 
         if ($rank === $player->game->players->count()) {
             return new Advisory('You play last this turn', AdvisoryLevel::Good, $because);

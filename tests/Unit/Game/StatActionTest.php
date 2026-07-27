@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Game;
 
 use App\Entity\Player;
-use App\Game\GameData;
 use App\Game\Service\HandSizeCalculator;
 use App\Game\Service\StockCalculator;
 use App\Game\Service\TaxCalculator;
 use App\Game\Stat;
 use App\Game\StatAction;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -119,7 +119,7 @@ final class StatActionTest extends TestCase
     public function coinageAndMonarchyTogetherOfferEveryRate(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
-        $player->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE]);
+        $player->ownAdvances(['coinage', 'monarchy']);
         $tax = $this->tax();
 
         foreach ([StatAction::PayTaxes1, StatAction::PayTaxes2, StatAction::PayTaxes3, StatAction::PayTaxes4] as $action) {
@@ -260,7 +260,7 @@ final class StatActionTest extends TestCase
     {
         $player = PlayerBuilder::named('Bob')->build();
         $player->cards = 14;
-        $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
+        $player->ownAdvances(['roadbuilding']);
 
         StatAction::CutToLimit->apply($player, $this->hand(), $this->stock(), $this->tax());
 
@@ -286,16 +286,16 @@ final class StatActionTest extends TestCase
 
     private function hand(): HandSizeCalculator
     {
-        return new HandSizeCalculator();
+        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
     }
 
     private function stock(): StockCalculator
     {
-        return new StockCalculator(new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'));
+        return new StockCalculator(GameConfig::gameData());
     }
 
     private function tax(): TaxCalculator
     {
-        return new TaxCalculator($this->stock());
+        return new TaxCalculator($this->stock(), GameConfig::advanceEffects());
     }
 }

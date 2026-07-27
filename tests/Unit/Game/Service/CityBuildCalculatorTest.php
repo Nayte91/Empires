@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Game\Service;
 
-use App\Game\GameData;
 use App\Game\Service\CityBuildCalculator;
 use App\Game\Service\CitySupportCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -80,7 +80,7 @@ final class CityBuildCalculatorTest extends TestCase
 
         foreach ([1 => 7, 2 => 6, 3 => 5] as $coins => $census) {
             $player = PlayerBuilder::named('Bob')->build();
-            $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
+            $player->ownAdvances(['architecture']);
             $player->census = $census;
 
             $player->treasury = $coins - 1;
@@ -95,7 +95,7 @@ final class CityBuildCalculatorTest extends TestCase
     public function aFourthCoinBuysNoFurtherRebate(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
-        $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
+        $player->ownAdvances(['architecture']);
         $player->census = 4;
         $player->treasury = 20;
 
@@ -123,7 +123,7 @@ final class CityBuildCalculatorTest extends TestCase
 
         $this->assertSame(1, $this->calculator()->affordableCities($player));
 
-        $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
+        $player->ownAdvances(['architecture']);
 
         $this->assertSame(2, $this->calculator()->affordableCities($player));
     }
@@ -132,7 +132,8 @@ final class CityBuildCalculatorTest extends TestCase
     {
         return new CityBuildCalculator(
             new CitySupportCalculator(),
-            new GameData(\dirname(__DIR__, 4).'/config/game/game_data.yaml'),
+            GameConfig::gameData(),
+            GameConfig::advanceEffects(),
         );
     }
 }

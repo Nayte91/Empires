@@ -6,10 +6,10 @@ namespace App\Tests\Unit\Game\Advisory;
 
 use App\Game\Advisory\CityBuildRule;
 use App\Game\AdvisoryLevel;
-use App\Game\GameData;
 use App\Game\Service\CityBuildCalculator;
 use App\Game\Service\CitySupportCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -62,7 +62,7 @@ final class CityBuildRuleTest extends TestCase
 
         $this->assertSame('You cannot build any city', $this->rule()->evaluate($player)->message);
 
-        $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
+        $player->ownAdvances(['architecture']);
 
         $this->assertSame('You can build 1 city', $this->rule()->evaluate($player)->message);
     }
@@ -85,7 +85,8 @@ final class CityBuildRuleTest extends TestCase
     {
         return new CityBuildRule(new CityBuildCalculator(
             new CitySupportCalculator(),
-            new GameData(\dirname(__DIR__, 4).'/config/game/game_data.yaml'),
+            GameConfig::gameData(),
+            GameConfig::advanceEffects(),
         ));
     }
 }

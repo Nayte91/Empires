@@ -11,6 +11,7 @@ use App\Game\AdvisoryLevel;
 use App\Game\EmpireCatalog;
 use App\Game\ScenarioCatalog;
 use App\Game\Service\CensusOrderCalculator;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -69,6 +70,7 @@ final class MovementOrderRuleTest extends TestCase
                     $projectDir.'/config/game/empires.yaml',
                     new ScenarioCatalog($projectDir.'/config/game/scenarios.yaml'),
                 ),
+                GameConfig::advanceEffects(),
             ),
         );
     }

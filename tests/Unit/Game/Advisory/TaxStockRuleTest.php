@@ -6,10 +6,10 @@ namespace App\Tests\Unit\Game\Advisory;
 
 use App\Game\AdvisoryLevel;
 use App\Game\Advisory\TaxStockRule;
-use App\Game\GameData;
 use App\Game\Service\StockCalculator;
 use App\Game\Service\TaxCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -48,7 +48,7 @@ final class TaxStockRuleTest extends TestCase
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
-        $player->ownAdvances([TaxCalculator::IMMUNITY_ADVANCE]);
+        $player->ownAdvances(['democracy']);
 
         $this->assertSame('Your cities never revolt over taxes', $this->rule()->evaluate($player)->message);
     }
@@ -60,8 +60,6 @@ final class TaxStockRuleTest extends TestCase
 
     private function tax(): TaxCalculator
     {
-        return new TaxCalculator(new StockCalculator(
-            new GameData(\dirname(__DIR__, 4).'/config/game/game_data.yaml'),
-        ));
+        return new TaxCalculator(new StockCalculator(GameConfig::gameData()), GameConfig::advanceEffects());
     }
 }

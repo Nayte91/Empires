@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Component;
 
 use App\Entity\Player;
-use App\Game\Service\TaxCalculator;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
@@ -265,10 +264,10 @@ final class StatPickerTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         $plain = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $coinage = PlayerBuilder::named('Alice')->in($game)
-            ->withAdvances([TaxCalculator::RATE_CHOICE_ADVANCE])
+            ->withAdvances(['coinage'])
             ->persist($this->entityManager);
         $both = PlayerBuilder::named('Carol')->in($game)
-            ->withAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE])
+            ->withAdvances(['coinage', 'monarchy'])
             ->persist($this->entityManager);
 
         $this->assertSame(['payTaxes2'], $this->taxActionsOf($plain));

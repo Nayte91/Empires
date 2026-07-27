@@ -5,6 +5,10 @@ categories:
     religion: { color: "#FFF200" }
     science:  { color: "#39B54A" }
 
+# `effects:` is how an advance declares the game rules it bends. Each entry names one effect the
+# services look up by name (App\Game\AdvanceEffect), so no calculator ever spells out an advance
+# key: move the entry to another advance here and the rule follows it. Every effect is declared
+# exactly once, so the comment above each list is the rule itself, stated where it is granted.
 advances:
     advanced_military:
         cost: 240
@@ -52,6 +56,9 @@ advances:
             art: 10
             science: 5
             mining: 20
+        # One city per turn costs less population, the difference paid out of the treasury.
+        effects:
+            - city_build_rebate
 
     astronavigation:
         cost: 80
@@ -107,6 +114,9 @@ advances:
             civic: 5
             science: 10
             trade_routes: 10
+        # The tax rate may move one either way, per city.
+        effects:
+            - tax_rate_choice
         aggravation:
             - corruption
 
@@ -139,6 +149,11 @@ advances:
         credits:
             art: 5
             civic: 20
+        # "During the tax collection phase you collect taxes as usual but your cities do not revolt
+        # as a result of a shortage in tax collection." Collection is untouched, and the shortage
+        # itself still exists — only the revolt it would cause is cancelled.
+        effects:
+            - tax_revolt_immunity
         mitigation:
             - civil_war
             - civil_disorder
@@ -329,6 +344,9 @@ advances:
             civic: 10
             craft: 5
             advanced_military: 20
+        # Its owner plays last in the movement phase, whatever their census.
+        effects:
+            - moves_last
         aggravation:
             - civil_war
 
@@ -354,6 +372,9 @@ advances:
             religion: 5
             civic: 10
             law: 10
+        # The tax rate may rise by one per city, and stacks with coinage's tax_rate_choice.
+        effects:
+            - tax_rate_raise
         mitigation:
             - barbarian_hordes
         aggravation:
@@ -511,6 +532,9 @@ advances:
         credits:
             craft: 20
             science: 5
+        # Its owner may keep one card more than the table allows.
+        effects:
+            - extra_hand_card
         aggravation:
             - epidemic
 

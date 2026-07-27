@@ -65,6 +65,7 @@ packages/userforged/shop-engine/   # the ordering engine, extracted as a Compose
 ```
 config/game/
 ├── advances.yaml    # advances + categories (colors)  → AdvanceCatalog
+│                   #   per-advance `effects:` (the rules an advance bends) → AdvanceEffectCatalog
 ├── ast.yaml         # AST eras, spans, basic/expert requirements → AstCatalog
 ├── empires.yaml     # empires (name, color, icons)    → EmpireCatalog
 ├── game_data.yaml   # regions, limits                 → GameData

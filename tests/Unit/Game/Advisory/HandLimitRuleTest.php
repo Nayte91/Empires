@@ -9,6 +9,7 @@ use App\Entity\Player;
 use App\Game\Advisory\HandLimitRule;
 use App\Game\Dto\Advisory;
 use App\Game\Service\HandSizeCalculator;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -26,7 +27,7 @@ final class HandLimitRuleTest extends TestCase
         $player = new Player(new GameSession(), 'Bob');
         $player->cards = 8;
 
-        $this->assertNotInstanceOf(Advisory::class, new HandLimitRule(new HandSizeCalculator())->evaluate($player));
+        $this->assertNotInstanceOf(Advisory::class, new HandLimitRule($this->hand())->evaluate($player));
     }
 
     #[Test]
@@ -35,9 +36,14 @@ final class HandLimitRuleTest extends TestCase
         $player = new Player(new GameSession(), 'Bob');
         $player->cards = 9;
 
-        $advisory = new HandLimitRule(new HandSizeCalculator())->evaluate($player);
+        $advisory = new HandLimitRule($this->hand())->evaluate($player);
 
         $this->assertInstanceOf(Advisory::class, $advisory);
         $this->assertSame('You must discard a card!', $advisory->message);
+    }
+
+    private function hand(): HandSizeCalculator
+    {
+        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
     }
 }

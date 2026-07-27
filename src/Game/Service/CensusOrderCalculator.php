@@ -6,6 +6,8 @@ namespace App\Game\Service;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\AdvanceEffect;
+use App\Game\AdvanceEffectCatalog;
 use App\Game\EmpireCatalog;
 
 /**
@@ -14,9 +16,10 @@ use App\Game\EmpireCatalog;
  */
 final readonly class CensusOrderCalculator
 {
-    public const string MILITARY_ADVANCE = 'military';
-
-    public function __construct(private EmpireCatalog $empireCatalog) {}
+    public function __construct(
+        private EmpireCatalog $empireCatalog,
+        private AdvanceEffectCatalog $advanceEffects,
+    ) {}
 
     /** @return list<Player> */
     public function orderFor(GameSession $game): array
@@ -37,7 +40,16 @@ final readonly class CensusOrderCalculator
 
     public function hasMilitary(Player $player): bool
     {
-        return in_array(self::MILITARY_ADVANCE, $player->advances, true);
+        return null !== $this->militaryAdvanceOf($player);
+    }
+
+    /**
+     * The advance that sends its owner to the back of the order, when they own one — its key, so a
+     * consumer can say which advance explains the rank without naming it itself.
+     */
+    public function militaryAdvanceOf(Player $player): ?string
+    {
+        return $this->advanceEffects->owned($player->advances, AdvanceEffect::MovesLast)[0] ?? null;
     }
 
     /** @return array{bool, int, int} */

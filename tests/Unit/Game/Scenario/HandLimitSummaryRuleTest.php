@@ -7,6 +7,7 @@ namespace App\Tests\Unit\Game\Scenario;
 use App\Game\Command\CreateGame;
 use App\Game\Scenario\HandLimitSummaryRule;
 use App\Game\Service\HandSizeCalculator;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -20,7 +21,7 @@ final class HandLimitSummaryRuleTest extends TestCase
         $game = new CreateGame();
         $game->playerCount = $playerCount;
 
-        $rule = new HandLimitSummaryRule(new HandSizeCalculator());
+        $rule = new HandLimitSummaryRule(new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects()));
 
         $this->assertSame($expectedSummary, $rule->describe($game));
     }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Game\Service;
 
 use App\Entity\Player;
+use App\Game\AdvanceEffect;
+use App\Game\AdvanceEffectCatalog;
 use App\Game\Stat;
 
 /**
@@ -18,34 +20,17 @@ use App\Game\Stat;
  */
 final readonly class TaxCalculator
 {
-    /**
-     * Democracy, verbatim: "During the tax collection phase you collect taxes as usual but your
-     * cities do not revolt as a result of a shortage in tax collection.".
-     *
-     * Two consequences the rest of this class encodes: collection is untouched, and the shortage
-     * itself still exists — only the revolt it would cause is cancelled.
-     */
-    public const string IMMUNITY_ADVANCE = 'democracy';
-
-    /** Coinage lets its owner move the rate one either way. */
-    public const string RATE_CHOICE_ADVANCE = 'coinage';
-
-    /** Monarchy lets its owner raise the rate by one, and stacks with Coinage. */
-    public const string RATE_RAISE_ADVANCE = 'monarchy';
-
-    // REFACTOR-WHEN: a 7th advance key gets hardcoded in a service — military, democracy,
-    // architecture, roadbuilding, coinage and monarchy are the six so far, spread over four
-    // calculators. config/game/advances.yaml already models per-advance effects (mitigation,
-    // aggravation); declare these there and let the services read them instead.
-
     private const int STANDARD_RATE = 2;
 
-    public function __construct(private StockCalculator $stockCalculator) {}
+    public function __construct(
+        private StockCalculator $stockCalculator,
+        private AdvanceEffectCatalog $advanceEffects,
+    ) {}
 
     /** The cheapest rate the player may elect to pay. */
     public function lowestRate(Player $player): int
     {
-        return self::STANDARD_RATE - ($this->owns($player, self::RATE_CHOICE_ADVANCE) ? 1 : 0);
+        return self::STANDARD_RATE - ($this->grants($player, AdvanceEffect::TaxRateChoice) ? 1 : 0);
     }
 
     /**
@@ -56,8 +41,8 @@ final readonly class TaxCalculator
     public function highestRate(Player $player): int
     {
         return self::STANDARD_RATE
-            + ($this->owns($player, self::RATE_CHOICE_ADVANCE) ? 1 : 0)
-            + ($this->owns($player, self::RATE_RAISE_ADVANCE) ? 1 : 0);
+            + ($this->grants($player, AdvanceEffect::TaxRateChoice) ? 1 : 0)
+            + ($this->grants($player, AdvanceEffect::TaxRateRaise) ? 1 : 0);
     }
 
     /**
@@ -87,9 +72,13 @@ final readonly class TaxCalculator
         return max(0, $this->billAt($player, $this->lowestRate($player)) - $this->availableStock($player));
     }
 
+    /**
+     * Two consequences the rest of this class encodes: collection is untouched, and the shortage
+     * itself still exists — only the revolt it would cause is cancelled.
+     */
     public function isImmune(Player $player): bool
     {
-        return $this->owns($player, self::IMMUNITY_ADVANCE);
+        return $this->grants($player, AdvanceEffect::TaxRevoltImmunity);
     }
 
     /**
@@ -113,8 +102,8 @@ final readonly class TaxCalculator
         ));
     }
 
-    private function owns(Player $player, string $advance): bool
+    private function grants(Player $player, AdvanceEffect $effect): bool
     {
-        return \in_array($advance, $player->advances, true);
+        return $this->advanceEffects->grants($player->advances, $effect);
     }
 }
