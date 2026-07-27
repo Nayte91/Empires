@@ -8,31 +8,13 @@ use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Advisory\HandLimitRule;
 use App\Game\Dto\Advisory;
+use App\Game\Service\HandSizeCalculator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class HandLimitRuleTest extends TestCase
 {
-    #[Test]
-    #[DataProvider('provideLimitForReturnsTheHandLimitForPlayerCountCases')]
-    public function limitForReturnsTheHandLimitForPlayerCount(int $playerCount, int $expectedLimit): void
-    {
-        $this->assertSame($expectedLimit, new HandLimitRule()->limitFor($playerCount));
-    }
-
-    /** @return iterable<string, array{int, int}> */
-    public static function provideLimitForReturnsTheHandLimitForPlayerCountCases(): iterable
-    {
-        yield 'standard game' => [9, 8];
-
-        yield 'just under large-game threshold' => [11, 8];
-
-        yield 'large-game threshold' => [12, 9];
-
-        yield 'large-game upper player count' => [18, 9];
-    }
-
     #[Test]
     #[DataProvider('provideHandWithinLimitYieldsNoAdvisoryCases')]
     public function handWithinLimitYieldsNoAdvisory(int $playerCount, int $cards): void
@@ -42,7 +24,7 @@ final class HandLimitRuleTest extends TestCase
         $player = new Player($game, 'Bob');
         $player->cards = $cards;
 
-        $this->assertNotInstanceOf(Advisory::class, new HandLimitRule()->evaluate($player));
+        $this->assertNotInstanceOf(Advisory::class, new HandLimitRule(new HandSizeCalculator())->evaluate($player));
     }
 
     /** @return iterable<string, array{int, int}> */
@@ -66,7 +48,7 @@ final class HandLimitRuleTest extends TestCase
         $player = new Player($game, 'Bob');
         $player->cards = $cards;
 
-        $advisory = new HandLimitRule()->evaluate($player);
+        $advisory = new HandLimitRule(new HandSizeCalculator())->evaluate($player);
 
         $this->assertInstanceOf(Advisory::class, $advisory);
         $this->assertSame('You must discard a card!', $advisory->message);

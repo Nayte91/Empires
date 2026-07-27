@@ -134,11 +134,11 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     /**
-     * The stat block became a shared ControlBoard so the operator gets the advisories too:
-     * the game master must see who is in trouble without opening each player board.
+     * Advisories left the control board for the Outlook block, which the console does not carry:
+     * the operator screen is deliberately operational only, counters and commands.
      */
     #[Test]
-    public function aPlayerTabPanelSurfacesThatPlayersAdvisories(): void
+    public function aPlayerTabPanelCarriesNoAdvisory(): void
     {
         $game = $this->createGame();
         $player = $this->createPlayer($game, 'Alice');
@@ -150,7 +150,10 @@ final class OperatorConsoleTest extends WebTestCase
 
         $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
 
-        $this->assertCount(1, $playerDetails->filter('[role="alert"] li'));
+        $this->assertSame([], array_filter(
+            $playerDetails->filter('li')->each(static fn ($node): string => trim($node->text())),
+            static fn (string $text): bool => str_contains($text, "You can't"),
+        ));
     }
 
     #[Test]

@@ -5,19 +5,20 @@ declare(strict_types=1);
 namespace App\Game\Advisory;
 
 use App\Entity\Player;
+use App\Game\AdvisoryLevel;
 use App\Game\Dto\Advisory;
+use App\Game\Service\TaxCalculator;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
 #[AsTaggedItem(priority: 20)]
-final class TaxPaymentRule implements AdvisoryRule
+final readonly class TaxPaymentRule implements AdvisoryRule
 {
-    // Mirrors Player::CENSUS_MAX / Player::TREASURY_MAX (same shared 55-token pool).
-    private const int TOTAL_TOKEN_STOCK = 55;
+    public function __construct(private TaxCalculator $taxCalculator) {}
 
     public function evaluate(Player $player): ?Advisory
     {
-        if (self::TOTAL_TOKEN_STOCK - $player->census - $player->treasury < 2 * $player->cities) {
-            return new Advisory("You can't pay your taxes!");
+        if ($this->taxCalculator->citiesRevolt($player)) {
+            return new Advisory("You can't pay your taxes!", AdvisoryLevel::Danger);
         }
 
         return null;

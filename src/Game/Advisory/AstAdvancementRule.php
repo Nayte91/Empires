@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Game\Advisory;
 
 use App\Entity\Player;
+use App\Game\AdvisoryLevel;
 use App\Game\AstCatalog;
 use App\Game\ASTVersion;
 use App\Game\Dto\Advisory;
@@ -13,9 +14,7 @@ use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 #[AsTaggedItem(priority: 1)]
 final readonly class AstAdvancementRule implements AdvisoryRule
 {
-    public function __construct(
-        private AstCatalog $astCatalog,
-    ) {}
+    public function __construct(private AstCatalog $astCatalog) {}
 
     // REFACTOR-WHEN: advances/min_advance_cost/max_advance_cost/advance_points requirements
     // are confirmed and need checking too — currently only `cities` is verified.
@@ -41,6 +40,9 @@ final readonly class AstAdvancementRule implements AdvisoryRule
             return null;
         }
 
-        return new Advisory(sprintf('%d cities are required for the %s.', $requiredCities, $nextEra->name));
+        return new Advisory(
+            sprintf('%d cities are required for the %s.', $requiredCities, $nextEra->name),
+            AdvisoryLevel::Caution,
+        );
     }
 }

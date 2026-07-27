@@ -6,12 +6,4 @@
 
         {% if withShopLink %}<a href="{{ this.shopUrl }}" class="shop-link">Shop</a>{% endif %}
     </div>
-
-{% if this.advisories is not empty %}
-    <ul class="advisories" role="alert">
-        {% for advisory in this.advisories %}
-            <li>⚠ {{ advisory.message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
 </section>

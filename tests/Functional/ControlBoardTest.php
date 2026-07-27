@@ -84,51 +84,9 @@ final class ControlBoardTest extends WebTestCase
         );
     }
 
+    /** The advisories moved to the Outlook block; the control board is now controls only. */
     #[Test]
-    public function wellSupportedPlayerHasNoAdvisory(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->cities = 2;
-        $player->census = 10;
-        $this->entityManager->flush();
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
-
-        $this->assertCount(0, $crawler->filter('[role="alert"]'));
-    }
-
-    #[Test]
-    public function underSupportedPlayerGetsAdvisory(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->cities = 3;
-        $player->census = 2;
-        $this->entityManager->flush();
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
-
-        $this->assertCount(1, $crawler->filter('[role="alert"] li'));
-    }
-
-    #[Test]
-    public function playerWithInsufficientStockGetsAdvisory(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->cities = 3;
-        $player->census = 6;
-        $player->treasury = 45;
-        $this->entityManager->flush();
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
-
-        $this->assertCount(1, $crawler->filter('[role="alert"] li'));
-    }
-
-    #[Test]
-    public function understaffedAndOverspentPlayerGetsBothAdvisories(): void
+    public function noAdvisoryIsRenderedHereAnyMore(): void
     {
         $game = $this->createGame();
         $player = $this->createPlayer($game, 'Bob');
@@ -139,24 +97,7 @@ final class ControlBoardTest extends WebTestCase
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
-        $this->assertCount(2, $crawler->filter('[role="alert"] li'));
-    }
-
-    #[Test]
-    public function playerOverHandLimitGetsAdvisory(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
-        $player->cities = 2;
-        $player->census = 10;
-        $player->cards = 9;
-        $this->entityManager->flush();
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
-            'player' => $player,
-        ])->crawler();
-
-        $this->assertCount(1, $crawler->filter('[role="alert"] li'));
+        $this->assertCount(0, $crawler->filter('li'));
     }
 
     private function createGame(): GameSession

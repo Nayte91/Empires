@@ -7,11 +7,21 @@
 >
     <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
-    <twig:molecules:ControlBoard :player="player" />
+    <twig:molecules:ControlBoard :player="player" :withShopLink="true" />
 
-    <h2>Discounts</h2>
+    <div class="player-board__panels">
+        <section aria-label="Discounts">
+            <h2>Discounts</h2>
 
-    <twig:molecules:Discounts :player="player" />
+            <twig:molecules:Discounts :player="player" />
+        </section>
+
+        <section aria-label="Outlook">
+            <h2>Outlook</h2>
+
+            <twig:molecules:Outlook :player="player" />
+        </section>
+    </div>
 
     <section class="player-board__advances" aria-label="Owned advances">
         <h2>Advances</h2>

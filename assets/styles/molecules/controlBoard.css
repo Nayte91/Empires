@@ -26,16 +26,4 @@
             &:hover { background: hsl(from var(--operator-accent) h s calc(l - 10%)) }
         }
     }
-
-    .advisories {
-        margin: 0;
-        flex: 1 1 100%;
-        list-style: none;
-        padding: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-
-        li { color: var(--operator-warning) }
-    }
 }

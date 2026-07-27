@@ -12,10 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 final readonly class PlayerAdvisor
 {
     /** @param iterable<AdvisoryRule> $rules */
-    public function __construct(
-        #[AutowireIterator('app.advisory_rule')]
-        private iterable $rules,
-    ) {}
+    public function __construct(#[AutowireIterator('app.advisory_rule')] private iterable $rules) {}
 
     /** @return list<Advisory> */
     public function advisoriesFor(Player $player): array
@@ -29,6 +26,9 @@ final readonly class PlayerAdvisor
                 $advisories[] = $advisory;
             }
         }
+
+        // Stable, so a rule's own priority still orders its peers within a level.
+        usort($advisories, static fn (Advisory $a, Advisory $b): int => $a->level->urgency() <=> $b->level->urgency());
 
         return $advisories;
     }

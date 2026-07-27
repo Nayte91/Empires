@@ -1,0 +1,43 @@
+/* REFACTOR-WHEN: a 3rd block adopts this card shape — extract it (shared class or a layer)
+   instead of copying discounts.css a third time. Two copies stay cheaper to read than the
+   indirection; three stop being. */
+.outlook {
+    inline-size: min(100%, 25rem);
+    min-block-size: 10rem;
+
+    border: 1px solid gainsboro;
+    border-radius: 0.5rem;
+    background: white;
+    /* Block flow rather than flex: a flex item is not a list item, and would lose its ::marker. */
+    padding: 1rem 1rem 1rem 2.5rem;
+    margin: 0;
+
+    li + li { margin-block-start: 0.5rem }
+
+    /* The domain grades the message; turning that grade into a colour and a sign is this file's
+       job. Overriding ::marker rather than adding a ::before keeps one symbol per line — the sign
+       replaces the bullet instead of standing next to it. A neutral line keeps the plain bullet. */
+    li[data-level="good"] {
+        color: var(--operator-success);
+
+        &::marker { content: "\2713\A0" }
+    }
+
+    li[data-level="caution"] {
+        color: var(--operator-warning);
+
+        /* FE0E forces the text presentation: left alone, some platforms render ⚠ as a colour
+           emoji, which would ignore the level colour. */
+        &::marker { content: "\26A0\FE0E\A0" }
+    }
+
+    li[data-level="danger"] {
+        color: var(--operator-error);
+
+        &::marker { content: "\2715\A0" }
+    }
+
+    /* The domain names the advance, this file draws it — the same crossed swords the census board
+       uses to flag a Military owner. */
+    li[data-advance="military"]::after { content: "\A0\2694\FE0E" }
+}

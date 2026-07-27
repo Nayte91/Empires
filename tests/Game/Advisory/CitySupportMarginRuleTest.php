@@ -1,0 +1,66 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Tests\Game\Advisory;
+
+use App\Entity\GameSession;
+use App\Entity\Player;
+use App\Game\Advisory\CitySupportMarginRule;
+use App\Game\AdvisoryLevel;
+use App\Game\Dto\Advisory;
+use App\Game\Service\CitySupportCalculator;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
+
+final class CitySupportMarginRuleTest extends TestCase
+{
+    #[Test]
+    public function theMarginIsStatedAsPopulationHeldOverTheCityCount(): void
+    {
+        $player = $this->createPlayer();
+        $player->cities = 7;
+        $player->census = 20;
+
+        $advisory = $this->rule()->evaluate($player);
+
+        $this->assertInstanceOf(Advisory::class, $advisory);
+        $this->assertSame('You are 6 population over your city count', $advisory->message);
+        $this->assertSame(AdvisoryLevel::Neutral, $advisory->level);
+    }
+
+    /** "Up to 0" reads as a mistake, so the boundary gets its own sentence. */
+    #[Test]
+    public function sittingExactlyOnTheThresholdIsWordedWithoutAFigure(): void
+    {
+        $player = $this->createPlayer();
+        $player->cities = 5;
+        $player->census = 10;
+
+        $advisory = $this->rule()->evaluate($player);
+
+        $this->assertInstanceOf(Advisory::class, $advisory);
+        $this->assertSame('You cannot afford to lose any population', $advisory->message);
+    }
+
+    /** Below the threshold the warning rule speaks instead: there is no margin left to report. */
+    #[Test]
+    public function anUnderSupportedPlayerGetsNoMarginLine(): void
+    {
+        $player = $this->createPlayer();
+        $player->cities = 5;
+        $player->census = 4;
+
+        $this->assertNotInstanceOf(\App\Game\Dto\Advisory::class, $this->rule()->evaluate($player));
+    }
+
+    private function rule(): CitySupportMarginRule
+    {
+        return new CitySupportMarginRule(new CitySupportCalculator());
+    }
+
+    private function createPlayer(): Player
+    {
+        return new Player(new GameSession(), 'Bob');
+    }
+}

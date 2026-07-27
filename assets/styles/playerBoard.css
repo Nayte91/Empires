@@ -38,6 +38,15 @@
         }
     }
 
+    /* auto-fit rather than a breakpoint: the panels sit side by side while both fit their
+       minimum, and fall back to one per row on their own once they no longer do. */
+    .player-board__panels {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+        align-items: start;
+        gap: var(--operator-gap);
+    }
+
     .player-board__advances-grid {
         --grid-min-col-size: 14rem;
         display: grid;

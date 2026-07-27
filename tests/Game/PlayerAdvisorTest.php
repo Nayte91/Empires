@@ -9,7 +9,12 @@ use App\Entity\Player;
 use App\Game\Advisory\CitySupportRule;
 use App\Game\Advisory\HandLimitRule;
 use App\Game\Advisory\TaxPaymentRule;
+use App\Game\GameData;
+use App\Game\Service\CitySupportCalculator;
+use App\Game\Service\HandSizeCalculator;
 use App\Game\Service\PlayerAdvisor;
+use App\Game\Service\StockCalculator;
+use App\Game\Service\TaxCalculator;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -22,7 +27,7 @@ final class PlayerAdvisorTest extends TestCase
         $player->cities = 2;
         $player->census = 10;
 
-        $advisor = new PlayerAdvisor([new CitySupportRule(), new TaxPaymentRule(), new HandLimitRule()]);
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule(new HandSizeCalculator())]);
 
         $this->assertSame([], $advisor->advisoriesFor($player));
     }
@@ -36,7 +41,7 @@ final class PlayerAdvisorTest extends TestCase
         $player->treasury = 50;
         $player->cards = 9;
 
-        $advisor = new PlayerAdvisor([new CitySupportRule(), new TaxPaymentRule(), new HandLimitRule()]);
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule(new HandSizeCalculator())]);
         $advisories = $advisor->advisoriesFor($player);
 
         $this->assertCount(3, $advisories);
@@ -53,10 +58,17 @@ final class PlayerAdvisorTest extends TestCase
         $player->census = 10;
         $player->cards = 9;
 
-        $advisor = new PlayerAdvisor([new CitySupportRule(), new TaxPaymentRule(), new HandLimitRule()]);
+        $advisor = new PlayerAdvisor([new CitySupportRule(new CitySupportCalculator()), new TaxPaymentRule($this->tax()), new HandLimitRule(new HandSizeCalculator())]);
         $advisories = $advisor->advisoriesFor($player);
 
         $this->assertCount(1, $advisories);
         $this->assertSame('You must discard a card!', $advisories[0]->message);
+    }
+
+    private function tax(): TaxCalculator
+    {
+        return new TaxCalculator(new StockCalculator(
+            new GameData(\dirname(__DIR__, 2).'/config/game/game_data.yaml'),
+        ));
     }
 }
