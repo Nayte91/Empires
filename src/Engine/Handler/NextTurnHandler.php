@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Engine\Event\GameUpdated;
-use App\Infrastructure\Repository\GameSessionRepository;
+use App\Infrastructure\Repository\GameRepository;
 use App\Rules\Action\NextTurn;
 use App\Rules\Ruleset\GameData;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,14 +22,14 @@ final readonly class NextTurnHandler
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private GameSessionRepository $gameSessionRepository,
+        private GameRepository $gameRepository,
         private GameData $gameData,
         private MessageBusInterface $eventBus,
     ) {}
 
     public function __invoke(NextTurn $command): void
     {
-        $game = $this->gameSessionRepository->find($command->gameId) ?? throw new \RuntimeException('Game not found.');
+        $game = $this->gameRepository->find($command->gameId) ?? throw new \RuntimeException('Game not found.');
 
         if ($game->finished) {
             return;

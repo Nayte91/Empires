@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\CitySupportRule;
 use App\Rules\CitySupportCalculator;
@@ -19,7 +19,7 @@ final class CitySupportRuleTest extends TestCase
     #[DataProvider('provideSufficientCensusYieldsNoAdvisoryCases')]
     public function sufficientCensusYieldsNoAdvisory(int $cities, int $census): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = $cities;
         $player->census = $census;
 
@@ -37,7 +37,7 @@ final class CitySupportRuleTest extends TestCase
     #[Test]
     public function insufficientCensusGetsCantSupportCitiesAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 3;
         $player->census = 5;
 

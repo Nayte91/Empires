@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\MovementOrderRule;
 use App\Rules\Advisory\AdvisoryLevel;
@@ -20,7 +20,7 @@ final class MovementOrderRuleTest extends TestCase
     #[Test]
     public function theRankIsSpelledAsAnOrdinalExceptForTheLastPlayer(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $first = new Player($game, 'Alice');
         $first->census = 30;
         $second = new Player($game, 'Bob');
@@ -45,7 +45,7 @@ final class MovementOrderRuleTest extends TestCase
     #[Test]
     public function movingFirstIsCautionedAndMovingLastIsGoodNews(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $first = new Player($game, 'Alice');
         $first->census = 30;
         $middle = new Player($game, 'Bob');

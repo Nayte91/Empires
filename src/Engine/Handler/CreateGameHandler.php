@@ -8,7 +8,7 @@ use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\ScenarioCatalog;
 use App\State\CreditEntry;
 use App\State\CreditSource;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -33,7 +33,7 @@ final readonly class CreateGameHandler
     public function __invoke(CreateGame $command): void
     {
         $this->entityManager->wrapInTransaction(function () use ($command): void {
-            $game = new GameSession($command->slug);
+            $game = new Game($command->slug);
             $game->playerCount = $command->playerCount;
             $game->region = $command->region;
             $game->setAstVersionValue($command->astVersion);

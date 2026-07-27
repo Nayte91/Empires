@@ -7,7 +7,7 @@ namespace App\Rules;
 use App\Rules\Ruleset\AdvanceEffect;
 use App\Rules\Ruleset\AdvanceEffectCatalog;
 use App\Rules\Ruleset\EmpireCatalog;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 
 /**
@@ -22,7 +22,7 @@ final readonly class CensusOrderCalculator
     ) {}
 
     /** @return list<Player> */
-    public function orderFor(GameSession $game): array
+    public function orderFor(Game $game): array
     {
         $players = $game->players->toArray();
         usort($players, fn (Player $a, Player $b): int => $this->sortKey($a) <=> $this->sortKey($b));

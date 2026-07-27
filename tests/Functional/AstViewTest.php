@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\State\ASTVersion;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,7 +22,7 @@ final class AstViewTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new GameSession();
+        $game = new Game();
         $entityManager->persist($game);
         $entityManager->flush();
 
@@ -39,7 +39,7 @@ final class AstViewTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new GameSession();
+        $game = new Game();
         $hellas = new Player($game, 'Bob');
         $hellas->empire = 'hellas';
         $minoa = new Player($game, 'Alice');
@@ -63,7 +63,7 @@ final class AstViewTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new GameSession();
+        $game = new Game();
         $game->astVersion = $astVersion;
         $entityManager->persist($game);
         $entityManager->flush();

@@ -8,7 +8,7 @@ use App\Infrastructure\Repository\OrderRepository;
 use App\Rules\Action\FinishGame;
 use App\Rules\Action\NextTurn;
 use App\Rules\Action\PreviousTurn;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Order;
 use App\State\Player;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,7 +23,7 @@ final class OperatorConsole
     use DefaultActionTrait;
 
     #[LiveProp]
-    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(
         private readonly OrderRepository $orderRepository,

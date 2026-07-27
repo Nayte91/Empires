@@ -7,7 +7,7 @@ namespace App\Presentation\Component;
 use App\Rules\Ruleset\AstCatalog;
 use App\Rules\Ruleset\AstEraDefinition;
 use App\Rules\Ruleset\EmpireCatalog;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -28,7 +28,7 @@ final class Ast
     private const string SHARED_LAYOUT_GROUP = 'standard';
 
     #[LiveProp]
-    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(
         private readonly AstCatalog $astCatalog,

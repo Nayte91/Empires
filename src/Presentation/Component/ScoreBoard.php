@@ -6,7 +6,7 @@ namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\EmpireCatalog;
 use App\Rules\StandingsCalculator;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
@@ -25,7 +25,7 @@ final class ScoreBoard
     use DefaultActionTrait;
 
     #[LiveProp]
-    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     /** @var array<string, string> */
     private array $qrCache = [];

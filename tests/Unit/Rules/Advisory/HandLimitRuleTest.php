@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\HandLimitRule;
 use App\Rules\Advisory\Advisory;
@@ -24,7 +24,7 @@ final class HandLimitRuleTest extends TestCase
     #[Test]
     public function aHandExactlyAtTheLimitYieldsNoAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cards = 8;
 
         $this->assertNotInstanceOf(Advisory::class, new HandLimitRule($this->hand())->evaluate($player));
@@ -33,7 +33,7 @@ final class HandLimitRuleTest extends TestCase
     #[Test]
     public function aHandOverTheLimitGetsTheMustDiscardAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cards = 9;
 
         $advisory = new HandLimitRule($this->hand())->evaluate($player);

@@ -12,7 +12,7 @@ use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
-class GameSession
+class Game
 {
     #[ORM\Id, ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;

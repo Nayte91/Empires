@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Controller;
 
 use App\Rules\Ruleset\AstCatalog;
-use App\State\GameSession;
+use App\State\Game;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,7 +24,7 @@ final class GameController extends AbstractController
     #[Route('/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function dashboard(
         #[MapEntity(mapping: ['slug' => 'slug'])]
-        GameSession $game
+        Game $game
     ): Response {
         return $this->render('skeletons/gameDashboard.html.twig', ['game' => $game]);
     }
@@ -32,7 +32,7 @@ final class GameController extends AbstractController
     #[Route('/{slug}/ast', name: 'app_game_ast', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function ast(
         #[MapEntity(mapping: ['slug' => 'slug'])]
-        GameSession $game
+        Game $game
     ): Response {
         return $this->render('skeletons/gameAst.html.twig', [
             'game' => $game,
@@ -43,7 +43,7 @@ final class GameController extends AbstractController
     #[Route('/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function census(
         #[MapEntity(mapping: ['slug' => 'slug'])]
-        GameSession $game
+        Game $game
     ): Response {
         return $this->render('skeletons/gameCensus.html.twig', ['game' => $game]);
     }
@@ -51,7 +51,7 @@ final class GameController extends AbstractController
     #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function operator(
         #[MapEntity(mapping: ['slug' => 'slug'])]
-        GameSession $game
+        Game $game
     ): Response {
         return $this->render('skeletons/gameOperator.html.twig', ['game' => $game]);
     }

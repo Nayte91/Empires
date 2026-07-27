@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Ruleset\AdvanceCatalog;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 
 /**
@@ -37,7 +37,7 @@ final readonly class StandingsCalculator
      *
      * @return list<Player>
      */
-    public function standings(GameSession $game): array
+    public function standings(Game $game): array
     {
         $players = $game->players->toArray();
         usort($players, fn (Player $a, Player $b): int => $this->scoreOf($b) <=> $this->scoreOf($a));

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Order;
 use App\State\Player;
 use App\Engine\Shop\AdvanceFulfillment;
@@ -140,7 +140,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->assertTrue($bobCrawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
-    /** @return array{GameSession, Player, Player} */
+    /** @return array{Game, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
         $game = GameBuilder::create()->build();
@@ -195,7 +195,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         ], $client);
     }
 
-    private function submitAndValidateAliceOrder(Player $alice, GameSession $game): void
+    private function submitAndValidateAliceOrder(Player $alice, Game $game): void
     {
         $this->submitAliceDemocracyAndPotteryOrder($alice);
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, $game->currentTurn);
@@ -244,10 +244,10 @@ final class KioskOperatorFlowTest extends WebTestCase
         return $reloaded;
     }
 
-    private function reloadGame(GameSession $game): GameSession
+    private function reloadGame(Game $game): Game
     {
-        $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
-        $this->assertInstanceOf(GameSession::class, $reloaded);
+        $reloaded = $this->freshEntityManager()->find(Game::class, $game->id);
+        $this->assertInstanceOf(Game::class, $reloaded);
 
         return $reloaded;
     }

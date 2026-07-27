@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Order;
 use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
@@ -381,7 +381,7 @@ final class PosConsoleTest extends WebTestCase
         $this->assertStringNotContainsString('also empty turn', $rendered);
     }
 
-    /** @return array{GameSession, Player, Player} */
+    /** @return array{Game, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
         $game = GameBuilder::create()->build();

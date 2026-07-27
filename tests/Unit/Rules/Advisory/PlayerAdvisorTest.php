@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\CitySupportRule;
 use App\Rules\Advisory\HandLimitRule;
@@ -23,7 +23,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function wellSupportedPlayerGetsNoAdvisories(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 2;
         $player->census = 10;
 
@@ -35,7 +35,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function troubledPlayerGetsAllAdvisoriesInPriorityOrder(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 5;
         $player->census = 1;
         $player->treasury = 50;
@@ -53,7 +53,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function playerTriggeringOnlyHandLimitGetsSingleAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 2;
         $player->census = 10;
         $player->cards = 9;

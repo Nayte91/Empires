@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\TaxPaymentRule;
 use App\Rules\Advisory\Advisory;
@@ -19,7 +19,7 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function sufficientStockYieldsNoAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 3;
         $player->census = 1;
         $player->treasury = 0;
@@ -30,7 +30,7 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function insufficientStockGetsCantPayTaxesAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 3;
         $player->census = 30;
         $player->treasury = 30;
@@ -44,7 +44,7 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function stockExactlyAtCityRequirementYieldsNoAdvisory(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 3;
         $player->census = 6;
         $player->treasury = 43;
@@ -56,7 +56,7 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function anImmunePlayerIsNeverWarnedDespiteAShortfall(): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = 3;
         $player->census = 30;
         $player->treasury = 30;

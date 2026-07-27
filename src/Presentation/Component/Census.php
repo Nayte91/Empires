@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\CensusOrderCalculator;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -21,7 +21,7 @@ final class Census
     use DefaultActionTrait;
 
     #[LiveProp]
-    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(private readonly CensusOrderCalculator $censusOrderCalculator) {}
 

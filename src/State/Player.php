@@ -60,9 +60,9 @@ class Player
     }
 
     public function __construct(
-        #[ORM\ManyToOne(targetEntity: GameSession::class, inversedBy: 'players')]
+        #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'players')]
         #[ORM\JoinColumn(nullable: false)]
-        public readonly GameSession $game,
+        public readonly Game $game,
         string $name,
     ) {
         $this->id = Uuid::v7();

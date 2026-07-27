@@ -57,7 +57,7 @@ final class CreateGameHandlerTest extends WebTestCase
     }
 
     /**
-     * GameSession::$playerCount defaults to 9, which config/game/scenarios.yaml
+     * Game::$playerCount defaults to 9, which config/game/scenarios.yaml
      * has no credits key for — the ledger must stay empty rather than posting
      * zero-value entries.
      */

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Advisory;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\AstAdvancementRule;
 use App\Rules\Ruleset\AstCatalog;
@@ -27,7 +27,7 @@ final class AstAdvancementRuleTest extends TestCase
     #[DataProvider('provideAdvisoryFiresWhenCitiesFallShortOfNextEraCases')]
     public function advisoryFiresWhenCitiesFallShortOfNextEra(ASTVersion $astVersion, ?string $empire, int $astPosition, int $cities, string $expectedMessage): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $game->astVersion = $astVersion;
         $player = new Player($game, 'Bob');
         $player->empire = $empire;
@@ -54,7 +54,7 @@ final class AstAdvancementRuleTest extends TestCase
     #[DataProvider('provideNoAdvisoryCasesCases')]
     public function noAdvisoryCases(ASTVersion $astVersion, ?string $empire, int $astPosition, int $cities): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $game->astVersion = $astVersion;
         $player = new Player($game, 'Bob');
         $player->empire = $empire;

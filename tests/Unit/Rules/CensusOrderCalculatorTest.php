@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Ruleset\EmpireCatalog;
 use App\Rules\Ruleset\ScenarioCatalog;
@@ -18,7 +18,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function higherCensusPlaysFirst(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $low = new Player($game, 'Bob');
         $low->census = 10;
         $high = new Player($game, 'Alice');
@@ -32,7 +32,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function tiedCensusIsBrokenByEmpirePosition(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $assyria = new Player($game, 'Bob');
         $assyria->census = 20;
         $assyria->empire = 'assyria';
@@ -48,7 +48,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function militaryPlayerMovesAfterHigherCensusNonMilitary(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $military = new Player($game, 'Bob');
         $military->census = 40;
         $military->ownAdvances(['military']);
@@ -63,7 +63,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function twoMilitaryPlayersAreOrderedByCensusThenPosition(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $first = new Player($game, 'Bob');
         $first->census = 20;
         $first->empire = 'assyria';
@@ -81,7 +81,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function nullOrUnknownEmpirePlaysLastAtEqualCensus(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $known = new Player($game, 'Bob');
         $known->census = 15;
         $known->empire = 'minoa';
@@ -99,7 +99,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function rankOfCountsFromOneDownTheOrder(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $first = new Player($game, 'Alice');
         $first->census = 30;
         $second = new Player($game, 'Bob');
@@ -118,7 +118,7 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function aMilitaryOwnerRanksLastDespiteTheHighestCensus(): void
     {
-        $game = new GameSession();
+        $game = new Game();
         $general = new Player($game, 'Alice');
         $general->census = 40;
         $general->ownAdvances(['military']);

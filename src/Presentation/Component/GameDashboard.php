@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\State\GameSession;
+use App\State\Game;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -14,7 +14,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 #[AsTwigComponent(template: 'organisms/gameDashboard.html.twig')]
 final class GameDashboard
 {
-    public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
     private ?string $operatorQrCache = null;
 
     public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}

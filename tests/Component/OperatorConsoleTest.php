@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
@@ -255,10 +255,10 @@ final class OperatorConsoleTest extends WebTestCase
         return self::getContainer()->get(EntityManagerInterface::class);
     }
 
-    private function reloadGame(GameSession $game): GameSession
+    private function reloadGame(Game $game): Game
     {
-        $reloaded = $this->freshEntityManager()->find(GameSession::class, $game->id);
-        $this->assertInstanceOf(GameSession::class, $reloaded);
+        $reloaded = $this->freshEntityManager()->find(Game::class, $game->id);
+        $this->assertInstanceOf(Game::class, $reloaded);
 
         return $reloaded;
     }

@@ -7,7 +7,7 @@ namespace App\Rules\Shop;
 use App\Infrastructure\Repository\OrderRepository;
 use App\Rules\Ruleset\Category;
 use App\State\CreditEntry;
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Order;
 use App\State\Player;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -24,7 +24,7 @@ final readonly class ShopConnector implements FacetProviderInterface
 {
     public function __construct(private OrderRepository $orderRepository) {}
 
-    public function currentWindow(GameSession $game): int
+    public function currentWindow(Game $game): int
     {
         return $game->currentTurn;
     }

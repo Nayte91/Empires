@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Repository;
 
-use App\State\GameSession;
+use App\State\Game;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
-/** @extends ServiceEntityRepository<GameSession> */
-final class GameSessionRepository extends ServiceEntityRepository
+/** @extends ServiceEntityRepository<Game> */
+final class GameRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, GameSession::class);
+        parent::__construct($registry, Game::class);
     }
 
-    /** @return list<GameSession> */
+    /** @return list<Game> */
     public function findInProgress(): array
     {
         return $this->createQueryBuilder('g')

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,7 +20,7 @@ final class CensusTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new GameSession();
+        $game = new Game();
         $lowCensus = new Player($game, 'Bob');
         $lowCensus->empire = 'saba';
         $lowCensus->census = 10;
@@ -47,7 +47,7 @@ final class CensusTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new GameSession();
+        $game = new Game();
         $nonMilitary = new Player($game, 'Bob');
         $nonMilitary->empire = 'saba';
         $nonMilitary->census = 10;

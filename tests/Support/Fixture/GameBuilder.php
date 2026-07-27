@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
-use App\State\GameSession;
+use App\State\Game;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * Object mother for GameSession. Replaces the eight near-identical private createGame() helpers
+ * Object mother for Game. Replaces the eight near-identical private createGame() helpers
  * the suite used to carry, so a test states the one property its scenario turns on and inherits
  * the entity's own defaults for everything else.
  *
@@ -47,9 +47,9 @@ final class GameBuilder
         return $this;
     }
 
-    public function build(): GameSession
+    public function build(): Game
     {
-        $game = new GameSession($this->slug);
+        $game = new Game($this->slug);
 
         if (null !== $this->playerCount) {
             $game->playerCount = $this->playerCount;
@@ -62,7 +62,7 @@ final class GameBuilder
         return $game;
     }
 
-    public function persist(EntityManagerInterface $entityManager): GameSession
+    public function persist(EntityManagerInterface $entityManager): Game
     {
         $game = $this->build();
 

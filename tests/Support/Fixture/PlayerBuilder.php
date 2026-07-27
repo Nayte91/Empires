@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -19,7 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
  */
 final class PlayerBuilder
 {
-    private ?GameSession $game = null;
+    private ?Game $game = null;
     private ?string $empire = null;
     private ?int $cities = null;
 
@@ -34,7 +34,7 @@ final class PlayerBuilder
     }
 
     /** Places the player in an existing game rather than in one of its own. */
-    public function in(GameSession $game): self
+    public function in(Game $game): self
     {
         $this->game = $game;
 

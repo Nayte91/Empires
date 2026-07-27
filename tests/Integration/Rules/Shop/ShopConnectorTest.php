@@ -126,7 +126,7 @@ final class ShopConnectorTest extends WebTestCase
      * ShopConnector::buyerFor() composes, alongside owned advances and
      * elective allocations — wired here for the first time (config/game/
      * scenarios.yaml's `3.credits` key, previously read by nothing in
-     * production). GameSession::$playerCount defaults to 9, which the
+     * production). Game::$playerCount defaults to 9, which the
      * scenario file has no credits for, so this must set it explicitly.
      */
     #[Test]
@@ -175,7 +175,7 @@ final class ShopConnectorTest extends WebTestCase
      * unlocks: a 3-player scenario grants 10 starting credits per facet
      * (config/game/scenarios.yaml), so pottery (cost 60, craft-faceted) nets
      * 10 cheaper for a player who owns nothing and has no elective credits.
-     * GameSession::$playerCount defaults to 9, which has no scenario
+     * Game::$playerCount defaults to 9, which has no scenario
      * credits, so no pre-existing 9-player test is affected by this wiring.
      */
     #[Test]

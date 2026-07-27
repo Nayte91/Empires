@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules;
 
-use App\State\GameSession;
+use App\State\Game;
 use App\State\Player;
 use App\Rules\Ruleset\Advance;
 use App\Rules\ScoreCalculator;
@@ -21,7 +21,7 @@ final class ScoreCalculatorTest extends TestCase
     #[DataProvider('provideScoreSumsAdvancePointsCitiesAndAstPositionCases')]
     public function scoreSumsAdvancePointsCitiesAndAstPosition(int $cities, int $astPosition, array $advancePoints, int $expectedScore): void
     {
-        $player = new Player(new GameSession(), 'Bob');
+        $player = new Player(new Game(), 'Bob');
         $player->cities = $cities;
         $player->astPosition = $astPosition;
         $advances = [];
