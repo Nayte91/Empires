@@ -37,7 +37,7 @@
 
         th { background: var(--operator-bg-subtle) }
 
-        tbody tr[data-empire] { background: color-mix(in oklab, var(--player-color, dimgray) 20%, white) }
+        tbody tr[data-empire] { background-color: color-mix(in oklab, var(--player-color) 50%, white) }
     }
 
     .game-creator__error {

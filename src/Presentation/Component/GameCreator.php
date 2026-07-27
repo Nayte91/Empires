@@ -37,10 +37,10 @@ final class GameCreator
     #[LiveProp(writable: ['slug', 'playerCount', 'region', 'astVersion'], useSerializerForHydration: true, onUpdated: ['slug' => 'onSlugUpdated', 'playerCount' => 'onScenarioUpdated', 'region' => 'onScenarioUpdated'])]
     public CreateGame $game; // @phpstan-ignore property.uninitialized (initialized in mount())
 
-    #[LiveProp(writable: true, onUpdated: 'onNewPlayerNameUpdated')]
+    #[LiveProp(writable: true)]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
-        new Assert\Expression('not this.hasPlayerNamed(value)', message: 'A player named {{ value }} already exists.'),
+        new Assert\Expression('not this.hasPlayerNamed(value)', message: 'Name already taken.'),
     ])]
     public string $newPlayerName = '';
 
@@ -71,17 +71,6 @@ final class GameCreator
         $this->validateField('game.slug', false);
     }
 
-    public function onNewPlayerNameUpdated(): void
-    {
-        $this->validateField('newPlayerName', false);
-    }
-
-    /**
-     * Stateless, direct ValidatorInterface call (not the trait's isValid()/validate()):
-     * ComponentValidationErrors::count() counts tracked field keys, not violations, so
-     * it returns non-zero as soon as any field has ever been validated — even
-     * successfully. See canLaunch() for the same reasoning.
-     */
     public function isSlugAvailable(): bool
     {
         return 0 === \count($this->validator->validateProperty($this->game, 'slug'));
@@ -137,8 +126,6 @@ final class GameCreator
         $this->newPlayerEmpire = '';
         $this->error = null;
 
-        // De-track the scratch field: the trait's PostHydrate hook replays validation
-        // on every tracked field, which would fail NotBlank on the just-cleared name.
         /** @var list<string> $validatedFields */
         $validatedFields = $this->validatedFields;
         $this->validatedFields = array_values(array_diff($validatedFields, ['newPlayerName']));
@@ -226,13 +213,6 @@ final class GameCreator
         return \count($this->game->players) >= $this->game->playerCount;
     }
 
-    /**
-     * Single source of truth for every launch() precondition (the DB unique-constraint
-     * check is inherently racy and stays a defensive catch inside launch() itself):
-     * drives both the "Create the game" button state and launch()'s entry guard.
-     *
-     * Stateless ValidatorInterface call, not the trait's isValid() — see isSlugAvailable().
-     */
     public function canLaunch(): bool
     {
         return 0 === \count($this->validator->validate($this->game)) && [] === $this->getConformityIssues();
@@ -283,10 +263,9 @@ final class GameCreator
     /** @return list<Empire> */
     public function getAvailableEmpires(): array
     {
-        return array_values(array_filter(
-            array_map($this->empireCatalog->findByName(...), $this->remainingEmpires()),
-            static fn (?Empire $empire): bool => $empire instanceof Empire,
-        ));
+        return array_map($this->empireCatalog->findByName(...), $this->remainingEmpires())
+                |> (fn($x) => array_filter($x, static fn(?Empire $empire): bool => $empire instanceof Empire,))
+                |> array_values(...);
     }
 
     /**
@@ -302,13 +281,7 @@ final class GameCreator
         return $this->gameData->getRegions();
     }
 
-    /**
-     * Backs the "Region" select: a genuinely single choice (combined map) once
-     * the scenario no longer splits into east/west — the option list must change
-     * structurally, a stale option merely disabled would survive DOM morphing.
-     *
-     * @return list<array{value: string, label: string}>
-     */
+    /** @return list<array{value: string, label: string}> */
     public function getRegionChoices(): array
     {
         if ([] === $this->scenarioCatalog->regionsFor($this->game->playerCount)) {
@@ -327,22 +300,12 @@ final class GameCreator
         return $this->scenarioRuleSummarizer->summarize($this->game);
     }
 
-    /**
-     * Public static: used both as the internal slug helper and as the NotBlank
-     * normalizer on $newPlayerName (Assert\NotBlank requires a static callable).
-     */
     public static function slugify(string $value): string
     {
         return strtolower((string) new AsciiSlugger()->slug($value));
     }
 
-    /**
-     * Empire slugs of the current scenario minus those already taken by a player.
-     * Backs both the "Empire" select (getAvailableEmpires()) and the
-     * random-assignment actions, so the two stay consistent by construction.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function remainingEmpires(): array
     {
         $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
@@ -390,13 +353,7 @@ final class GameCreator
         return $message.'.';
     }
 
-    /**
-     * Names players whose empire is no longer part of the current scenario —
-     * only a player-count/region change can create that state, the UI never offers
-     * an invalid empire.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function getInvalidEmpireIssues(): array
     {
         $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
@@ -411,13 +368,7 @@ final class GameCreator
         return $issues;
     }
 
-    /**
-     * Names players sharing the same empire. Unreachable through the UI (addPlayer()
-     * and the random-assignment actions both draw from remainingEmpires()), kept as
-     * a safety net against state built through unforeseen chains of interactions.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function getDuplicateEmpireIssues(): array
     {
         $namesByEmpire = [];

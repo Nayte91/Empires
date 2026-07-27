@@ -204,7 +204,7 @@ final class GameCreatorTest extends WebTestCase
         ;
         $rendered = $component->call('addPlayer')->render();
 
-        $this->assertStringContainsString('already exists', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertStringContainsString('Name already taken.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
         $this->assertSame(1, substr_count($rendered->toString(), '<td>Alice</td>'));
         $this->assertStringNotContainsString('<td>alice</td>', $rendered->toString());
     }
@@ -372,7 +372,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        $this->assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
+        $this->assertStringContainsString('data-model="norender|newPlayerName" value="" disabled', $rendered);
         $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
         $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
 
@@ -403,7 +403,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('game.playerCount', 3)->render()->toString();
 
-        $this->assertStringContainsString('data-model="newPlayerName" value="" disabled', $rendered);
+        $this->assertStringContainsString('data-model="norender|newPlayerName" value="" disabled', $rendered);
         $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
         $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
     }
