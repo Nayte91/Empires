@@ -49,6 +49,14 @@
         span { pointer-events: none }
         &:hover { border-color: var(--stat-picker-accent) }
 
+        /* Beyond what the shared stock leaves: shown so the ceiling is visible, not clickable. */
+        &:has(:disabled) {
+            opacity: 0.4;
+            cursor: not-allowed;
+
+            input { cursor: not-allowed }
+        }
+
         &:has(:checked) {
             border-color: var(--stat-picker-accent);
             background: hsl(from var(--stat-picker-accent) h s calc(l + 40%));

@@ -95,6 +95,41 @@ final class CensusOrderCalculatorTest extends TestCase
         $this->assertSame([$known, $unknown, $noEmpire], $order);
     }
 
+    #[Test]
+    public function rankOfCountsFromOneDownTheOrder(): void
+    {
+        $game = new GameSession();
+        $first = new Player($game, 'Alice');
+        $first->census = 30;
+        $second = new Player($game, 'Bob');
+        $second->census = 20;
+        $third = new Player($game, 'Carol');
+        $third->census = 10;
+
+        $calculator = $this->calculator();
+
+        $this->assertSame(1, $calculator->rankOf($first));
+        $this->assertSame(2, $calculator->rankOf($second));
+        $this->assertSame(3, $calculator->rankOf($third));
+    }
+
+    /** A Military owner plays last whatever their census, so their rank has to follow. */
+    #[Test]
+    public function aMilitaryOwnerRanksLastDespiteTheHighestCensus(): void
+    {
+        $game = new GameSession();
+        $general = new Player($game, 'Alice');
+        $general->census = 40;
+        $general->ownAdvances([CensusOrderCalculator::MILITARY_ADVANCE]);
+        $civilian = new Player($game, 'Bob');
+        $civilian->census = 10;
+
+        $calculator = $this->calculator();
+
+        $this->assertSame(2, $calculator->rankOf($general));
+        $this->assertSame(1, $calculator->rankOf($civilian));
+    }
+
     private function calculator(): CensusOrderCalculator
     {
         $projectDir = dirname(__DIR__, 2);

@@ -16,9 +16,7 @@ final readonly class CensusOrderCalculator
 {
     public const string MILITARY_ADVANCE = 'military';
 
-    public function __construct(
-        private EmpireCatalog $empireCatalog,
-    ) {}
+    public function __construct(private EmpireCatalog $empireCatalog) {}
 
     /** @return list<Player> */
     public function orderFor(GameSession $game): array
@@ -27,6 +25,14 @@ final readonly class CensusOrderCalculator
         usort($players, fn (Player $a, Player $b): int => $this->sortKey($a) <=> $this->sortKey($b));
 
         return $players;
+    }
+
+    /** Where a single player sits in that order, counting from 1. */
+    public function rankOf(Player $player): int
+    {
+        $rank = array_search($player, $this->orderFor($player->game), true);
+
+        return \is_int($rank) ? $rank + 1 : 1;
     }
 
     public function hasMilitary(Player $player): bool

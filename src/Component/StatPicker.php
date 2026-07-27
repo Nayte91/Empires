@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Entity\Player;
-use App\Game\Advisory\HandLimitRule;
+use App\Game\Service\HandSizeCalculator;
+use App\Game\Service\StockCalculator;
+use App\Game\Service\TaxCalculator;
 use App\Game\Stat;
 use App\Game\StatAction;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,7 +38,9 @@ final class StatPicker
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly HubInterface $hub,
-        private readonly HandLimitRule $handLimitRule,
+        private readonly HandSizeCalculator $handSizeCalculator,
+        private readonly StockCalculator $stockCalculator,
+        private readonly TaxCalculator $taxCalculator,
     ) {}
 
     public function mount(Player $player, string $stat): void
@@ -49,12 +53,21 @@ final class StatPicker
     /** @return list<StatAction> */
     public function getActions(): array
     {
-        return StatAction::forStat($this->stat);
+        return array_values(array_filter(
+            StatAction::forStat($this->stat),
+            fn (StatAction $action): bool => $action->isOffered($this->player, $this->taxCalculator),
+        ));
+    }
+
+    /** The highest value the grid may offer — a stock holder is bounded by what its twin left. */
+    public function getCeiling(): int
+    {
+        return $this->stockCalculator->ceilingFor($this->player, $this->stat);
     }
 
     public function isAvailable(StatAction $action): bool
     {
-        return $action->isAvailable($this->player, $this->handLimit());
+        return $action->isAvailable($this->player, $this->handSizeCalculator, $this->stockCalculator, $this->taxCalculator);
     }
 
     #[LiveAction]
@@ -75,7 +88,7 @@ final class StatPicker
             return;
         }
 
-        $this->stat->write($this->player, $this->value);
+        $this->stat->write($this->player, min($this->value, $this->getCeiling()));
         $this->value = $this->stat->read($this->player);
 
         $this->entityManager->flush();
@@ -92,16 +105,11 @@ final class StatPicker
             return;
         }
 
-        $action->apply($this->player, $this->handLimit());
+        $action->apply($this->player, $this->handSizeCalculator, $this->stockCalculator, $this->taxCalculator);
         $this->value = $this->stat->read($this->player);
 
         $this->entityManager->flush();
         $this->publish('player-updated');
-    }
-
-    private function handLimit(): int
-    {
-        return $this->handLimitRule->limitFor($this->player->game->playerCount);
     }
 
     private function publish(string $event): void

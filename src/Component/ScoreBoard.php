@@ -6,9 +6,8 @@ namespace App\Component;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
-use App\Game\AdvanceCatalog;
 use App\Game\EmpireCatalog;
-use App\Game\Service\ScoreCalculator;
+use App\Game\Service\StandingsCalculator;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -33,8 +32,7 @@ final class ScoreBoard
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly AdvanceCatalog $advanceCatalog,
-        private readonly ScoreCalculator $scoreCalculator,
+        private readonly StandingsCalculator $standingsCalculator,
         private readonly EmpireCatalog $empireCatalog,
     ) {}
 
@@ -55,27 +53,20 @@ final class ScoreBoard
     /** @return list<array{player: Player, url: string, qr: string, victoryPoints: int}> */
     public function getPlayerRows(): array
     {
-        $rows = array_map(
+        return array_map(
             fn (Player $player): array => [
                 'player' => $player,
                 'url' => $this->getPlayerUrl($player),
                 'qr' => $this->getPlayerQr($player),
                 'victoryPoints' => $this->getPlayerVictoryPoints($player),
             ],
-            $this->game->players->toArray(),
+            $this->standingsCalculator->standings($this->game),
         );
-
-        usort($rows, static fn (array $a, array $b): int => $b['victoryPoints'] <=> $a['victoryPoints']);
-
-        return $rows;
     }
 
     public function getPlayerVictoryPoints(Player $player): int
     {
-        return $this->scoreCalculator->scoreFor(
-            $player,
-            array_values($this->advanceCatalog->getAdvancesByNames($player->advances)),
-        );
+        return $this->standingsCalculator->scoreOf($player);
     }
 
     public function empireAdjective(Player $player): ?string

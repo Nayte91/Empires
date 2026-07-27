@@ -7,10 +7,12 @@
         <form method="dialog">
             <fieldset class="stat-picker__tiles">
                 <legend>{{ stat.label }} — {{ player.name }}</legend>
+                {% set ceiling = this.ceiling %}
                 {% for n in stat.min..stat.max %}
                     <label class="stat-picker__tile">
                         <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
-                               data-model="norender|value" {{ value == n ? 'checked' }}>
+                               data-model="norender|value" {{ value == n ? 'checked' }}
+                               {{ n > ceiling ? 'disabled' }}>
                         <span>{{ stat.format(n) }}</span>
                     </label>
                 {% endfor %}

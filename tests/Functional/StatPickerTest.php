@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Game\Service\TaxCalculator;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -318,6 +319,45 @@ final class StatPickerTest extends WebTestCase
         $this->assertSame(7, $reloaded->treasury);
     }
 
+    /** The twin's share of the stock is out of reach, so its tiles are shown but not selectable. */
+    #[Test]
+    public function treasuryTilesBeyondWhatThePopulationLeavesAreDisabled(): void
+    {
+        $game = $this->createGame();
+        $player = $this->createPlayer($game, 'Bob');
+        $player->census = 20;
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'treasury',
+        ])->render();
+
+        $this->assertCount(0, $rendered->crawler()->filter('input[value="35"][disabled]'));
+        $this->assertCount(1, $rendered->crawler()->filter('input[value="36"][disabled]'));
+    }
+
+    /**
+     * Coinage unlocks the cheaper rate, Monarchy the dearer one; the rest stay off the menu.
+     * Three players rather than one mutated in place: rendering a live component resets the
+     * EntityManager, which detaches the entity and swallows any later flush.
+     */
+    #[Test]
+    public function theTreasuryPickerOffersOnlyTheTaxRatesThePlayerUnlocked(): void
+    {
+        $game = $this->createGame();
+        $plain = $this->createPlayer($game, 'Bob');
+        $coinage = $this->createPlayer($game, 'Alice');
+        $coinage->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE]);
+        $both = $this->createPlayer($game, 'Carol');
+        $both->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE]);
+        $this->entityManager->flush();
+
+        $this->assertSame(['payTaxes2'], $this->taxActionsOf($plain));
+        $this->assertSame(['payTaxes1', 'payTaxes2', 'payTaxes3'], $this->taxActionsOf($coinage));
+        $this->assertSame(['payTaxes1', 'payTaxes2', 'payTaxes3', 'payTaxes4'], $this->taxActionsOf($both));
+    }
+
     #[Test]
     public function citiesPickerOffersNoActionButton(): void
     {
@@ -349,6 +389,17 @@ final class StatPickerTest extends WebTestCase
             static fn ($node): string => (string) $node->attr('data-value'),
         ));
         $this->assertCount(2, $actions->filter('[disabled]'));
+    }
+
+    /** @return list<string> */
+    private function taxActionsOf(Player $player): array
+    {
+        return $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'treasury',
+        ])->render()->crawler()->filter('[data-value]')->each(
+            static fn ($node): string => (string) $node->attr('data-value'),
+        );
     }
 
     private function createGame(): GameSession
