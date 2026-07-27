@@ -14,23 +14,9 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class AstViewTest extends WebTestCase
 {
+    /** Canary for the AST page: it answers, and carries both of its parts — the board and the requirements. */
     #[Test]
-    public function astViewIsAccessibleForAnExistingGame(): void
-    {
-        $client = self::createClient();
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-
-        $game = new GameSession();
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
-
-        $this->assertResponseIsSuccessful();
-    }
-
-    #[Test]
-    public function astViewContainsAstTable(): void
+    public function astViewContainsAstTableAndRequirementsSection(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -43,21 +29,6 @@ final class AstViewTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertGreaterThan(0, $crawler->filter('table')->count(), 'AST table should be present');
-    }
-
-    #[Test]
-    public function astViewContainsRequirementsSection(): void
-    {
-        $client = self::createClient();
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-
-        $game = new GameSession();
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
-
-        $this->assertResponseIsSuccessful();
         $this->assertGreaterThan(0, $crawler->filter('section h3')->count(), 'Requirements section header should be present');
     }
 

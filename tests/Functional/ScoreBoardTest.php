@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -14,23 +14,15 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class ScoreBoardTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (assigned in setUp before each test)
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function rendersCitiesAndCensusColumnsWithoutPoints(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-        $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
@@ -43,8 +35,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function rendersPlayerTreasuryValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->treasury = 12;
         $this->entityManager->flush();
 
@@ -56,8 +48,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function empireCellDisplaysTheEmpireAdjectiveInLowercase(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->empire = 'minoa';
         $this->entityManager->flush();
 
@@ -70,8 +62,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function empireCellDisplaysADashWhenPlayerHasNoEmpire(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
@@ -82,8 +74,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function rendersDefaultStatColumnsInTheNewOrder(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
@@ -94,8 +86,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function playerNameOpensModalContainingTheirPlayerBoardUrl(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game]);
         $component = $rendered->component();
@@ -112,20 +104,25 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function rendersOneQrCodePerPlayer(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-        $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
         $this->assertSame(2, substr_count($rendered, '<svg'));
     }
 
+    /**
+     * Canary for the scoreboard: the victory-point total ScoreCalculator computes reaches the cell.
+     * Each contributing term (advance points, cities, A.S.T. position) is pinned in
+     * ScoreCalculatorTest — re-deriving the sum here for every combination only duplicated it.
+     */
     #[Test]
     public function rendersVictoryPointsAsAdvancePointsPlusCities(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->ownAdvances(['advanced_military']); // 6 points
         $player->cities = 5;
         $this->entityManager->flush();
@@ -136,26 +133,11 @@ final class ScoreBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function rendersVictoryPointsIncludingAstPositionBonus(): void
-    {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
-        $player->ownAdvances(['advanced_military']); // 6 points
-        $player->cities = 5;
-        $player->astPosition = 2; // +10 points
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
-
-        $this->assertMatchesRegularExpression('/<td data-scored>21<\/td>\s*<\/tr>/', $rendered);
-    }
-
-    #[Test]
     public function playersAreSortedByVictoryPointsDescending(): void
     {
-        $game = $this->createGame();
-        $bob = $this->createPlayer($game, 'Bob');
-        $alice = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $bob->cities = 1;
         $alice->cities = 5;
         $this->entityManager->flush();
@@ -173,8 +155,8 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function scoredCitiesAndVictoryPointsAreMarkedButZeroAdvancesIsNot(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->cities = 3;
         $this->entityManager->flush();
 
@@ -190,7 +172,7 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function emptyStateColspanMatchesTheNineColumns(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
@@ -200,7 +182,7 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function captionDisplaysTheCurrentTurn(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
         $game->currentTurn = 7;
         $this->entityManager->flush();
 
@@ -212,7 +194,7 @@ final class ScoreBoardTest extends WebTestCase
     #[Test]
     public function mercureRefreshFiltersOutOrderUpdatedButKeepsGameStateEvents(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
@@ -220,23 +202,5 @@ final class ScoreBoardTest extends WebTestCase
         $this->assertStringContainsString('player-updated', $rendered);
         $this->assertStringContainsString('game-updated', $rendered);
         $this->assertStringNotContainsString('order-updated', $rendered);
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name): Player
-    {
-        $player = new Player($game, $name);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

@@ -13,21 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 
 final class CensusTest extends WebTestCase
 {
-    #[Test]
-    public function censusIsAccessibleForAnExistingGame(): void
-    {
-        $client = self::createClient();
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-
-        $game = new GameSession();
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
-
-        $this->assertResponseIsSuccessful();
-    }
-
+    /** Canary for the census page: the movement order CensusOrderCalculator computes reaches the markup. */
     #[Test]
     public function censusListsPlayersInMovementOrder(): void
     {
