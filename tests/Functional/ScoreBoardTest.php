@@ -7,6 +7,7 @@ namespace App\Tests\Functional;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -46,29 +47,26 @@ final class ScoreBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function empireCellDisplaysTheEmpireAdjectiveInLowercase(): void
+    #[DataProvider('provideEmpireCellNamesTheEmpireOrADashCases')]
+    public function empireCellNamesTheEmpireOrADash(?string $empire, string $expectedCell): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $player->empire = 'minoa';
+        $player->empire = $empire;
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
-        $this->assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+        $this->assertSame($expectedCell, trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
     }
 
-    #[Test]
-    public function empireCellDisplaysADashWhenPlayerHasNoEmpire(): void
+    /** @return iterable<string, array{?string, string}> */
+    public static function provideEmpireCellNamesTheEmpireOrADashCases(): iterable
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        yield 'an assigned empire reads as its lowercase adjective' => ['minoa', 'minoan'];
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
-        $crawler = new Crawler($rendered);
-
-        $this->assertSame('—', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+        yield 'no empire reads as a dash' => [null, '—'];
     }
 
     #[Test]

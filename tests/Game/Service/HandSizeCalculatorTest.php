@@ -32,28 +32,28 @@ final class HandSizeCalculatorTest extends TestCase
         yield 'large-game upper player count' => [18, 9];
     }
 
-    #[Test]
-    public function roadBuildingRaisesItsOwnersLimitByOne(): void
-    {
-        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();
-
-        $calculator = new HandSizeCalculator();
-
-        $this->assertSame(8, $calculator->limitFor($player));
-
-        $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
-
-        $this->assertSame(9, $calculator->limitFor($player));
-    }
-
     /** The advance stacks on the table's own bracket rather than replacing it. */
     #[Test]
-    public function theAdvanceStacksOnTheLargeGameBracket(): void
+    #[DataProvider('provideLimitForStacksTheExtraCardAdvanceOnTheTableBracketCases')]
+    public function limitForStacksTheExtraCardAdvanceOnTheTableBracket(int $playerCount, bool $ownsTheAdvance, int $expectedLimit): void
     {
-        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(12)->build())->build();
-        $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount($playerCount)->build())->build();
 
-        $this->assertSame(10, new HandSizeCalculator()->limitFor($player));
+        if ($ownsTheAdvance) {
+            $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
+        }
+
+        $this->assertSame($expectedLimit, new HandSizeCalculator()->limitFor($player));
+    }
+
+    /** @return iterable<string, array{int, bool, int}> */
+    public static function provideLimitForStacksTheExtraCardAdvanceOnTheTableBracketCases(): iterable
+    {
+        yield 'standard game without the advance' => [9, false, 8];
+
+        yield 'standard game with the advance' => [9, true, 9];
+
+        yield 'large game with the advance stacks on the raised bracket' => [12, true, 10];
     }
 
     #[Test]

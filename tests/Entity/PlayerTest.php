@@ -8,6 +8,7 @@ use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Shop\CreditEntry;
 use App\Game\Shop\CreditSource;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -24,60 +25,36 @@ final class PlayerTest extends TestCase
     }
 
     #[Test]
-    public function citiesClampsToNineAndZero(): void
+    #[DataProvider('provideEachStatClampsToItsOwnBoundsCases')]
+    public function eachStatClampsToItsOwnBounds(string $stat, int $assigned, int $expected): void
     {
         $player = new Player(new GameSession(), 'Bob');
 
-        $player->cities = 10;
-        $this->assertSame(9, $player->cities);
+        $player->{$stat} = $assigned;
 
-        $player->cities = -1;
-        $this->assertSame(0, $player->cities);
+        $this->assertSame($expected, $player->{$stat});
     }
 
-    #[Test]
-    public function censusClampsToFiftyFiveAndZero(): void
+    /** @return iterable<string, array{string, int, int}> */
+    public static function provideEachStatClampsToItsOwnBoundsCases(): iterable
     {
-        $player = new Player(new GameSession(), 'Bob');
+        yield 'cities above the nine-city ceiling' => ['cities', 10, 9];
 
-        $player->census = 56;
-        $this->assertSame(55, $player->census);
+        yield 'cities below zero' => ['cities', -1, 0];
 
-        $player->census = -1;
-        $this->assertSame(0, $player->census);
-    }
+        yield 'census above the fifty-five ceiling' => ['census', 56, 55];
 
-    #[Test]
-    public function treasuryClampsToFiftyFiveAndZero(): void
-    {
-        $player = new Player(new GameSession(), 'Bob');
+        yield 'census below zero' => ['census', -1, 0];
 
-        $player->treasury = 56;
-        $this->assertSame(55, $player->treasury);
+        yield 'treasury above the fifty-five ceiling' => ['treasury', 56, 55];
 
-        $player->treasury = -1;
-        $this->assertSame(0, $player->treasury);
-    }
+        yield 'treasury below zero' => ['treasury', -1, 0];
 
-    #[Test]
-    public function shipsClampsToFourAndZero(): void
-    {
-        $player = new Player(new GameSession(), 'Bob');
+        yield 'ships above the four-ship fleet cap' => ['ships', 5, 4];
 
-        $player->ships = 5;
-        $this->assertSame(4, $player->ships);
+        yield 'ships below zero' => ['ships', -1, 0];
 
-        $player->ships = -1;
-        $this->assertSame(0, $player->ships);
-    }
-
-    #[Test]
-    public function cardsClampsToZero(): void
-    {
-        $player = new Player(new GameSession(), 'Bob');
-
-        $player->cards = -3;
-        $this->assertSame(0, $player->cards);
+        yield 'cards below zero, the only stat with no ceiling' => ['cards', -3, 0];
     }
 
     #[Test]

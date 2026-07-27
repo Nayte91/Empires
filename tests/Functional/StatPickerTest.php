@@ -10,6 +10,7 @@ use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -20,31 +21,38 @@ final class StatPickerTest extends WebTestCase
     use InteractsWithLiveComponents;
 
     #[Test]
-    public function savePersistsTheNewValue(): void
+    #[DataProvider('provideSavePersistsTheChosenValueForEachStatCases')]
+    public function savePersistsTheChosenValueForEachStat(string $stat, int $chosen, int $expectedStored): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
-            'stat' => 'cities',
-        ])->set('value', 7)->call('save');
+            'stat' => $stat,
+        ])->set('value', $chosen)->call('save');
 
-        $this->assertSame(7, $this->reloadPlayer($player)->cities);
+        $this->assertSame($expectedStored, $this->reloadPlayer($player)->{$stat});
     }
 
-    #[Test]
-    public function saveClampsAtMaximum(): void
+    /** @return iterable<string, array{string, int, int}> */
+    public static function provideSavePersistsTheChosenValueForEachStatCases(): iterable
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        yield 'cities' => ['cities', 7, 7];
 
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'cities',
-        ])->set('value', 42)->call('save');
+        yield 'cities above the nine-city ceiling clamps' => ['cities', 42, 9];
 
-        $this->assertSame(9, $this->reloadPlayer($player)->cities);
+        yield 'census' => ['census', 30, 30];
+
+        yield 'treasury' => ['treasury', 20, 20];
+
+        yield 'ships' => ['ships', 2, 2];
+
+        yield 'cards' => ['cards', 5, 5];
+
+        yield 'ast position at the top of the track' => ['astPosition', 15, 15];
+
+        yield 'ast position mid-range' => ['astPosition', 4, 4];
     }
 
     #[Test]
@@ -94,34 +102,6 @@ final class StatPickerTest extends WebTestCase
     }
 
     #[Test]
-    public function censusSavePersistsTheNewValue(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'census',
-        ])->set('value', 30)->call('save');
-
-        $this->assertSame(30, $this->reloadPlayer($player)->census);
-    }
-
-    #[Test]
-    public function treasurySavePersistsTheNewValue(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'treasury',
-        ])->set('value', 20)->call('save');
-
-        $this->assertSame(20, $this->reloadPlayer($player)->treasury);
-    }
-
-    #[Test]
     public function censusRenderStartsAtTileOne(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
@@ -154,62 +134,6 @@ final class StatPickerTest extends WebTestCase
         $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
 
         $this->assertSame('30', $checked->attr('value'));
-    }
-
-    #[Test]
-    public function shipsSavePersistsTheNewValue(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'ships',
-        ])->set('value', 2)->call('save');
-
-        $this->assertSame(2, $this->reloadPlayer($player)->ships);
-    }
-
-    #[Test]
-    public function cardsSavePersistsTheNewValue(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'cards',
-        ])->set('value', 5)->call('save');
-
-        $this->assertSame(5, $this->reloadPlayer($player)->cards);
-    }
-
-    #[Test]
-    public function astPositionSavePersistsStorageValueAtMaximum(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'astPosition',
-        ])->set('value', 15)->call('save');
-
-        $this->assertSame(15, $this->reloadPlayer($player)->astPosition);
-    }
-
-    #[Test]
-    public function astPositionSaveMidRangePersistsStorageValue(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $this->createLiveComponent('molecules:StatPicker', [
-            'player' => $player,
-            'stat' => 'astPosition',
-        ])->set('value', 4)->call('save');
-
-        $this->assertSame(4, $this->reloadPlayer($player)->astPosition);
     }
 
     #[Test]

@@ -8,6 +8,7 @@ use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\ASTVersion;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -56,36 +57,29 @@ final class AstViewTest extends WebTestCase
     }
 
     #[Test]
-    public function astViewCaptionDisplaysBasicVersionByDefault(): void
+    #[DataProvider('provideCaptionNamesTheGamesAstVersionCases')]
+    public function captionNamesTheGamesAstVersion(ASTVersion $astVersion, string $expectedCaption): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $game = new GameSession();
+        $game->astVersion = $astVersion;
         $entityManager->persist($game);
         $entityManager->flush();
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
 
         $this->assertResponseIsSuccessful();
-        $this->assertSame('Basic version', trim($crawler->filter('caption')->text()));
+        $this->assertSame($expectedCaption, trim($crawler->filter('caption')->text()));
     }
 
-    #[Test]
-    public function astViewCaptionDisplaysExpertVersionForAnExpertGame(): void
+    /** @return iterable<string, array{ASTVersion, string}> */
+    public static function provideCaptionNamesTheGamesAstVersionCases(): iterable
     {
-        $client = self::createClient();
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        yield 'basic is the default version' => [ASTVersion::BASIC, 'Basic version'];
 
-        $game = new GameSession();
-        $game->astVersion = ASTVersion::EXPERT;
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
-
-        $this->assertResponseIsSuccessful();
-        $this->assertSame('Expert version', trim($crawler->filter('caption')->text()));
+        yield 'expert game' => [ASTVersion::EXPERT, 'Expert version'];
     }
 
     #[Test]

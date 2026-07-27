@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Game;
 
 use App\Game\ScenarioCatalog;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,67 +18,60 @@ final class ScenarioCatalogTest extends TestCase
         $this->catalog = new ScenarioCatalog(\dirname(__DIR__, 2).'/config/game/scenarios.yaml');
     }
 
+    /** @param list<string> $expectedSlugs */
     #[Test]
-    public function empiresForReturnsExactSlugsForThreeWest(): void
+    #[DataProvider('provideEmpiresForReturnsTheScenariosExactSlugsCases')]
+    public function empiresForReturnsTheScenariosExactSlugs(int $playerCount, string $region, array $expectedSlugs): void
     {
-        $this->assertSame(['hatti', 'hellas', 'minoa'], $this->catalog->empiresFor(3, 'west'));
+        $this->assertSame($expectedSlugs, $this->catalog->empiresFor($playerCount, $region));
     }
 
-    #[Test]
-    public function empiresForReturnsExactSlugsForNineEast(): void
+    /** @return iterable<string, array{int, string, list<string>}> */
+    public static function provideEmpiresForReturnsTheScenariosExactSlugsCases(): iterable
     {
-        $this->assertSame(['babylon', 'dravidia', 'indus', 'kushan', 'maurya', 'nubia', 'parthia', 'persia', 'saba'], $this->catalog->empiresFor(9, 'east'));
+        yield 'three players in the west' => [3, 'west', ['hatti', 'hellas', 'minoa']];
+
+        yield 'nine players in the east' => [9, 'east', ['babylon', 'dravidia', 'indus', 'kushan', 'maurya', 'nubia', 'parthia', 'persia', 'saba']];
     }
 
+    /** Ten players and up merge both regions into one flat, region-less list. */
     #[Test]
-    public function empiresForReturnsFlatListForCombinedTenPlayers(): void
+    #[DataProvider('provideEmpiresForReturnsAFlatListForACombinedScenarioCases')]
+    public function empiresForReturnsAFlatListForACombinedScenario(int $playerCount): void
     {
-        $empires = $this->catalog->empiresFor(10, null);
+        $empires = $this->catalog->empiresFor($playerCount, null);
 
-        $this->assertCount(10, $empires);
+        $this->assertCount($playerCount, $empires);
         $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
     }
 
-    #[Test]
-    public function empiresForReturnsFlatListForCombinedTwelvePlayers(): void
+    /** @return iterable<string, array{int}> */
+    public static function provideEmpiresForReturnsAFlatListForACombinedScenarioCases(): iterable
     {
-        $empires = $this->catalog->empiresFor(12, null);
+        yield 'ten players' => [10];
 
-        $this->assertCount(12, $empires);
-        $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
+        yield 'twelve players' => [12];
+
+        yield 'eighteen players' => [18];
     }
 
     #[Test]
-    public function empiresForReturnsFlatListForCombinedEighteenPlayers(): void
+    #[DataProvider('provideEmpiresForReturnsEmptyArrayForAnUnknownScenarioCases')]
+    public function empiresForReturnsEmptyArrayForAnUnknownScenario(int $playerCount, ?string $region): void
     {
-        $empires = $this->catalog->empiresFor(18, null);
-
-        $this->assertCount(18, $empires);
-        $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
+        $this->assertSame([], $this->catalog->empiresFor($playerCount, $region));
     }
 
-    #[Test]
-    public function empiresForReturnsEmptyArrayForUnknownPlayerCount(): void
+    /** @return iterable<string, array{int, ?string}> */
+    public static function provideEmpiresForReturnsEmptyArrayForAnUnknownScenarioCases(): iterable
     {
-        $this->assertSame([], $this->catalog->empiresFor(19, null));
-    }
+        yield 'player count above every scenario' => [19, null];
 
-    #[Test]
-    public function empiresForReturnsEmptyArrayForUnknownRegion(): void
-    {
-        $this->assertSame([], $this->catalog->empiresFor(5, 'north'));
-    }
+        yield 'region that does not exist' => [5, 'north'];
 
-    #[Test]
-    public function empiresForReturnsEmptyArrayForNullRegionBelowTenPlayers(): void
-    {
-        $this->assertSame([], $this->catalog->empiresFor(3, null));
-    }
+        yield 'no region below the ten-player combined threshold' => [3, null];
 
-    #[Test]
-    public function empiresForReturnsEmptyArrayForUnknownCombinationBelowTenPlayers(): void
-    {
-        $this->assertSame([], $this->catalog->empiresFor(2, 'west'));
+        yield 'player count and region that pair to nothing' => [2, 'west'];
     }
 
     #[Test]
@@ -88,33 +82,37 @@ final class ScenarioCatalogTest extends TestCase
         $this->assertSame(range(3, 18), $counts);
     }
 
+    /** @param list<string> $expectedRegions */
     #[Test]
-    public function regionsForReturnsEastAndWestWhenSplitByRegion(): void
+    #[DataProvider('provideRegionsForListsTheScenariosRegionsCases')]
+    public function regionsForListsTheScenariosRegions(int $playerCount, array $expectedRegions): void
     {
-        $this->assertSame(['east', 'west'], $this->catalog->regionsFor(9));
+        $this->assertSame($expectedRegions, $this->catalog->regionsFor($playerCount));
     }
 
-    #[Test]
-    public function regionsForReturnsEmptyArrayForCombinedPlayerCount(): void
+    /** @return iterable<string, array{int, list<string>}> */
+    public static function provideRegionsForListsTheScenariosRegionsCases(): iterable
     {
-        $this->assertSame([], $this->catalog->regionsFor(10));
+        yield 'a scenario split by region offers both' => [9, ['east', 'west']];
+
+        yield 'a combined scenario offers none' => [10, []];
     }
 
+    /** @param array<string, int> $expectedCredits */
     #[Test]
-    public function startingCreditsForReturnsTenPerCategoryForThreePlayers(): void
+    #[DataProvider('provideStartingCreditsForReturnsTheScenariosCreditsCases')]
+    public function startingCreditsForReturnsTheScenariosCredits(int $playerCount, array $expectedCredits): void
     {
-        $this->assertSame(['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10], $this->catalog->startingCreditsFor(3));
+        $this->assertSame($expectedCredits, $this->catalog->startingCreditsFor($playerCount));
     }
 
-    #[Test]
-    public function startingCreditsForReturnsFivePerCategoryForFourPlayers(): void
+    /** @return iterable<string, array{int, array<string, int>}> */
+    public static function provideStartingCreditsForReturnsTheScenariosCreditsCases(): iterable
     {
-        $this->assertSame(['art' => 5, 'civic' => 5, 'craft' => 5, 'religion' => 5, 'science' => 5], $this->catalog->startingCreditsFor(4));
-    }
+        yield 'three players get ten per category' => [3, ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10]];
 
-    #[Test]
-    public function startingCreditsForReturnsEmptyArrayWhenScenarioHasNoCredits(): void
-    {
-        $this->assertSame([], $this->catalog->startingCreditsFor(9));
+        yield 'four players get five per category' => [4, ['art' => 5, 'civic' => 5, 'craft' => 5, 'religion' => 5, 'science' => 5]];
+
+        yield 'a scenario with no credits key grants none' => [9, []];
     }
 }

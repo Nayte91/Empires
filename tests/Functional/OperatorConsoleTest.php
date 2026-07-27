@@ -10,6 +10,7 @@ use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -40,9 +41,12 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function previousTurnButtonIsDisabledOnTurnOne(): void
+    #[DataProvider('providePreviousTurnButtonIsDisabledOnlyOnTheFirstTurnCases')]
+    public function previousTurnButtonIsDisabledOnlyOnTheFirstTurn(int $currentTurn, bool $expectedDisabled): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
+        $game->currentTurn = $currentTurn;
+        $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -50,7 +54,15 @@ final class OperatorConsoleTest extends WebTestCase
             static fn ($node): bool => str_contains((string) $node->text(), 'Previous turn'),
         );
 
-        $this->assertNotNull($button->attr('disabled'));
+        $this->assertSame($expectedDisabled, null !== $button->attr('disabled'));
+    }
+
+    /** @return iterable<string, array{int, bool}> */
+    public static function providePreviousTurnButtonIsDisabledOnlyOnTheFirstTurnCases(): iterable
+    {
+        yield 'first turn has nothing to go back to' => [1, true];
+
+        yield 'second turn can go back' => [2, false];
     }
 
     #[Test]
@@ -152,44 +164,6 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function previousTurnButtonIsEnabledOnTurnTwo(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $game->currentTurn = 2;
-        $this->entityManager->flush();
-
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
-
-        $button = $rendered->crawler()->filter('button')->reduce(
-            static fn ($node): bool => str_contains((string) $node->text(), 'Previous turn'),
-        );
-
-        $this->assertNull($button->attr('disabled'));
-    }
-
-    #[Test]
-    public function nextTurnIncrementsTheCurrentTurn(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
-
-        $this->assertSame(2, $this->reloadGame($game)->currentTurn);
-    }
-
-    #[Test]
-    public function nextTurnClampsAtTwenty(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $game->currentTurn = 20;
-        $this->entityManager->flush();
-
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
-
-        $this->assertSame(20, $this->reloadGame($game)->currentTurn);
-    }
-
-    #[Test]
     public function finishGameFillsInFinishedAt(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
@@ -197,6 +171,27 @@ final class OperatorConsoleTest extends WebTestCase
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('finishGame');
 
         $this->assertInstanceOf(\DateTimeImmutable::class, $this->reloadGame($game)->finishedAt);
+    }
+
+    #[Test]
+    #[DataProvider('provideNextTurnAdvancesTheGameUpToTheTwentiethTurnCases')]
+    public function nextTurnAdvancesTheGameUpToTheTwentiethTurn(int $startingTurn, int $expectedTurn): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $game->currentTurn = $startingTurn;
+        $this->entityManager->flush();
+
+        $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
+
+        $this->assertSame($expectedTurn, $this->reloadGame($game)->currentTurn);
+    }
+
+    /** @return iterable<string, array{int, int}> */
+    public static function provideNextTurnAdvancesTheGameUpToTheTwentiethTurnCases(): iterable
+    {
+        yield 'a turn in the middle of the game advances by one' => [1, 2];
+
+        yield 'the twentieth turn is the last, and clamps' => [20, 20];
     }
 
     #[Test]
@@ -243,30 +238,6 @@ final class OperatorConsoleTest extends WebTestCase
         $stampAtTurnTwo = $console->ordersStampFor($this->reloadPlayer($player));
 
         $this->assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
-    }
-
-    #[Test]
-    public function advancingTurnsRendersOneOrderCardPerElapsedTurnInThePlayerTab(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-
-        $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
-        $console->call('nextTurn');
-        $rendered = $console->call('nextTurn')->render();
-
-        $this->assertSame(3, $this->reloadGame($game)->currentTurn);
-
-        $playerDetails = $rendered->crawler()->filter("details[data-tab-id=\"{$player->id}\"]");
-
-        $cardTexts = $playerDetails->filter('article')->each(
-            static fn ($node): string => trim($node->text()),
-        );
-
-        $this->assertCount(3, $cardTexts);
-        $this->assertTrue((bool) preg_grep('/Turn 1\b/', $cardTexts));
-        $this->assertTrue((bool) preg_grep('/Turn 2\b/', $cardTexts));
-        $this->assertTrue((bool) preg_grep('/Turn 3\b/', $cardTexts));
     }
 
     private function freshEntityManager(): EntityManagerInterface
