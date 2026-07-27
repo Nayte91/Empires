@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Infrastructure\Repository\OrderRepository;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Action\FinishGame;
+use App\Rules\Action\NextTurn;
+use App\Rules\Action\PreviousTurn;
 use App\State\GameSession;
 use App\State\Order;
 use App\State\Player;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -26,54 +26,26 @@ final class OperatorConsole
     public GameSession $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
         private readonly OrderRepository $orderRepository,
-        private readonly HubInterface $hub,
-        private readonly GameData $gameData,
+        private readonly MessageBusInterface $commandBus,
     ) {}
 
     #[LiveAction]
     public function nextTurn(): void
     {
-        if ($this->game->finished) {
-            return;
-        }
-
-        if ($this->game->currentTurn >= $this->maxTurns()) {
-            return;
-        }
-
-        ++$this->game->currentTurn;
-        $this->entityManager->flush();
-        $this->publish();
+        $this->commandBus->dispatch(new NextTurn($this->game->id));
     }
 
     #[LiveAction]
     public function previousTurn(): void
     {
-        if ($this->game->finished) {
-            return;
-        }
-
-        if ($this->game->currentTurn <= 1) {
-            return;
-        }
-
-        --$this->game->currentTurn;
-        $this->entityManager->flush();
-        $this->publish();
+        $this->commandBus->dispatch(new PreviousTurn($this->game->id));
     }
 
     #[LiveAction]
     public function finishGame(): void
     {
-        if ($this->game->finished) {
-            return;
-        }
-
-        $this->game->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->flush();
-        $this->publish();
+        $this->commandBus->dispatch(new FinishGame($this->game->id));
     }
 
     /**
@@ -95,18 +67,5 @@ final class OperatorConsole
         ));
 
         return 'T'.$player->game->currentTurn.('' === $ordersStamp ? '' : '|'.$ordersStamp);
-    }
-
-    private function maxTurns(): int
-    {
-        return $this->gameData->getLimits()['max_turns'] ?? 20;
-    }
-
-    private function publish(): void
-    {
-        $this->hub->publish(new Update(
-            'empires/game/'.$this->game->id,
-            '{"event":"game-updated"}',
-        ));
     }
 }

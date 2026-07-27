@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
+use App\Rules\Action\ApplyStatAction;
+use App\Rules\Action\SetStat;
 use App\Rules\Action\Stat;
 use App\Rules\Action\StatAction;
 use App\Rules\HandSizeCalculator;
 use App\Rules\StatBoundsCalculator;
 use App\Rules\TaxCalculator;
 use App\State\Player;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Mercure\HubInterface;
-use Symfony\Component\Mercure\Update;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -36,8 +36,7 @@ final class StatPicker
     public ?string $pendingAction = null;
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly HubInterface $hub,
+        private readonly MessageBusInterface $commandBus,
         private readonly HandSizeCalculator $handSizeCalculator,
         private readonly StatBoundsCalculator $statBoundsCalculator,
         private readonly TaxCalculator $taxCalculator,
@@ -94,20 +93,21 @@ final class StatPicker
             return;
         }
 
-        $current = $this->stat->read($this->player);
-
-        if ($current === $this->value) {
+        if ($this->stat->read($this->player) === $this->value) {
             return;
         }
 
-        $this->stat->write($this->player, max($this->getFloor(), min($this->value, $this->getCeiling())));
+        $this->commandBus->dispatch(new SetStat($this->player->id, $this->stat, $this->value));
         $this->value = $this->stat->read($this->player);
-
-        $this->entityManager->flush();
-        $this->publish('player-updated');
     }
 
     /**
+     * Only dispatches an action that belongs to this picker's own stat and is on the player's
+     * menu (StatAction::forStat() + isOffered(), via getActions()) — pendingAction is a
+     * client-writable LiveProp, so a foreign or unlisted action must never reach the bus. Whether
+     * the action is actually available right now is the handler's call, not this guard's: the
+     * handler is the one both a legitimate click and a crafted request go through alike.
+     *
      * An action may move a stat this picker does not own — building a ship spends treasury — so
      * the neighbouring pickers refresh through the parent, not through this component's own value.
      */
@@ -117,18 +117,7 @@ final class StatPicker
             return;
         }
 
-        $action->apply($this->player, $this->handSizeCalculator, $this->statBoundsCalculator, $this->taxCalculator);
+        $this->commandBus->dispatch(new ApplyStatAction($this->player->id, $action));
         $this->value = $this->stat->read($this->player);
-
-        $this->entityManager->flush();
-        $this->publish('player-updated');
-    }
-
-    private function publish(string $event): void
-    {
-        $this->hub->publish(new Update(
-            'empires/game/'.$this->player->game->id,
-            sprintf('{"event":"%s"}', $event),
-        ));
     }
 }
