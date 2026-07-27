@@ -59,7 +59,7 @@ packages/userforged/shop-engine/   # the ordering engine, extracted as a Compose
 
 **Two standards, on purpose**: **the library applies best practices; the application applies what is proportionate.** `userforged/shop-engine` is written for a reader who is not us — every port documented, no host class named, no shortcut that a second consumer would inherit. The app is written for this game: an assumed `instanceof` on a type we construct ourselves, a JSON column where an entity would be over-engineering, a display aggregate that duplicates six lines rather than share a helper it would be tempting to merge. Neither standard is sloppiness — applying the library's rigour to the app wastes effort on a reader who will never exist, and applying the app's pragmatism to the library ships that shortcut to everyone.
 
-**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. `src/Game/Shop/` holds the *adapters* that connect it to the game (`PlayerBuyerProvider`, `AdvanceProductProvider`, `AdvanceFulfillment`, `ShopConnector`, `SessionCartStorage`, `ShopMercurePublisher`, `ShopExceptionTranslator`, `OrderWorkflowPolicy`), and `config/services.yaml` declares the six port→adapter bindings explicitly. **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
+**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. `src/Game/Shop/` holds the *adapters* that connect it to the game (`PlayerBuyerProvider`, `AdvanceProductProvider`, `AdvanceFulfillment`, `ShopConnector`, `SessionCartStorage`, `ShopMercurePublisher`, `ShopExceptionTranslator`), and `config/services.yaml` declares the six port→adapter bindings explicitly. **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
 
 ### Config-driven game data
 ```
@@ -103,20 +103,28 @@ Routes (no `/game` prefix — verify with `debug:router` before assuming): `/cre
 ## 🧪 Testing
 
 ```bash
-make quality                                        # THE command: the app pipeline, THEN the shop-engine package's own
+make quality                                        # the app pipeline (rector, phpcs, phpstan, phpunit)
 make lib-quality                                    # the package only
 docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # single file, while iterating
 ```
 
 ```
-tests/                                              # 293 tests — the application
-├── Entity/  Functional/  Game/  Repository/  Shop/   # Support/ = hand-written doubles, not PHPUnit mocks
-└── bootstrap.php   # drops+recreates the SQLite schema once per run; DAMA (config/tools/phpunit.xml + bundles.php) rolls back each test
+tests/                                   # 432 tests — the application, sorted by layer
+├── Unit/          # pure TestCase, no kernel
+├── Integration/   # container + DB, no rendering
+├── Component/     # Twig / Live component render
+├── Functional/    # HTTP client + routes only
+├── Support/       # hand-written doubles + the GameBuilder/PlayerBuilder object mother
+└── bootstrap.php  # drops+recreates the SQLite schema once per run; DAMA (config/tools/phpunit.xml + bundles.php) rolls back each test
 
-packages/userforged/shop-engine/tests/              # 60 tests — the engine, pure TestCase, no kernel
+packages/userforged/shop-engine/tests/   # 121 tests — the engine, pure TestCase, no kernel
 ```
 
-**293 + 60 = 353.** The two suites are separate but `make quality` runs both and fails if either fails. `tests/Shop/` keeps only the four `WebTestCase` files: a test of the engine that needs a kernel is testing the *wiring*, so it belongs to the app.
+**432 + 121 = 553.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
+
+**The layer is the first thing you read, the domain the second.** The tier is decided by dependency, not by subject: an engine test that needs a kernel is not testing the engine, it is testing the wiring — so it lives in the app's `Integration/`, never in the package.
+
+**Never run two phpunit invocations at once.** `bootstrap.php` drops and recreates the schema against a single shared SQLite file on every run, so concurrent suites destroy each other — the failure surfaces as an irreproducible flake. Delegations that touch `tests/` must be sequential.
 
 ### Which tool runs on `tests/` — and why the split is not negotiable
 
@@ -128,7 +136,7 @@ packages/userforged/shop-engine/tests/              # 60 tests — the engine, p
 
 `make quality` implements exactly this split: `rector -- src/ tests/`, then `phpcs -- src/`, `phpstan -- src/`, then the full suite. Nothing else to run by hand.
 
-Never pass `PARAMS=tests/` to `make quality` — that would drag phpcs and phpstan into `tests/`, which is the one thing this split exists to prevent. To scope a run, call the tool directly (`composer rector -- tests/Shop/`).
+Never pass `PARAMS=tests/` to `make quality` — that would drag phpcs and phpstan into `tests/`, which is the one thing this split exists to prevent. To scope a run, call the tool directly (`composer rector -- tests/Unit/`).
 
 Corollary: never "settle" a test convention by running the full pipeline over `tests/` — two of its three stages contradict each other there. **Rector is the only authority on test style.**
 
@@ -151,7 +159,7 @@ Simple rule: **assertions and expectations are `$this->`, kernel/container plumb
 - **`#[Test]` attribute, never a `test*` prefix.** 340/340 methods comply. Attributes from `PHPUnit\Framework\Attributes\`, never doc-comment annotations.
 - **Names are behaviour sentences**, articles spelled out: `aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled`, `addingAnAlreadyOwnedAdvanceIsRefused`.
 - **AAA by blank lines, never `// Arrange` comments.** Docblocks explain *why a test exists*, not what it does.
-- **Base class follows the need, not the directory**: pure object → `TestCase`; needs the container or DB → `WebTestCase` (the de-facto base here — `KernelTestCase` is used once and is an anomaly). `tests/Shop/` and `tests/Game/` are each ~half unit, half DB — the folder does not predict the base class.
+- **The directory now states the base class**, which is the point of the layer split: `Unit/` is pure `TestCase`, everything else needs the container (`WebTestCase` is the de-facto base; `KernelTestCase` is used once and is an anomaly). A test whose base class contradicts its directory is misfiled — move it rather than justify it.
 - **No PHPUnit mocks.** Zero `createMock`/`createStub`/`MockObject` in the suite, deliberately. Use real objects, plus the hand-written doubles in `tests/Support/` (`NullHub` substituted for `HubInterface` under `when@test`, `ShopOrderStateMachine::create()`) and, on the package side, `packages/userforged/shop-engine/tests/Support/FakeProduct`.
 - **No cleanup, no `tearDown()`.** DAMA rolls every test back. To re-read what the DB stored, `$em->clear()` before re-fetching — note `freshEntityManager()`-style helpers return the *same* instance and do **not** reset the identity map.
 - **Private helpers at the bottom of the class**, after all `#[Test]` methods. Prefer aligning on an existing helper's name and signature — `createPlayer()`, `createCart()` and `makeAdvance()` currently have several incompatible signatures across files; don't add a new variant.
