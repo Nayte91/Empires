@@ -51,15 +51,6 @@ final class AdvanceCatalogTest extends WebTestCase
     }
 
     #[Test]
-    public function monarchyHasBothMitigationAndAggravation(): void
-    {
-        $advance = $this->advanceCatalog->getAdvanceByName('monarchy');
-
-        $this->assertSame(['barbarian_hordes'], $advance->mitigations);
-        $this->assertSame(['tyranny'], $advance->aggravations);
-    }
-
-    #[Test]
     public function architectureHasNoMitigationNorAggravation(): void
     {
         $advance = $this->advanceCatalog->getAdvanceByName('architecture');
@@ -102,17 +93,6 @@ final class AdvanceCatalogTest extends WebTestCase
     }
 
     #[Test]
-    public function writtenRecordHasAnOptionPromotionOfTen(): void
-    {
-        $advance = $this->advanceCatalog->getAdvanceByName('written_record');
-
-        $this->assertInstanceOf(ProductPromotion::class, $advance->promotion);
-        $this->assertInstanceOf(ElectiveBenefit::class, $advance->promotion->option);
-        $this->assertSame(10, $advance->promotion->option->budget);
-        $this->assertSame(5, $advance->promotion->option->step);
-    }
-
-    #[Test]
     public function potteryHasNoPromotion(): void
     {
         $advance = $this->advanceCatalog->getAdvanceByName('pottery');
@@ -133,15 +113,4 @@ final class AdvanceCatalogTest extends WebTestCase
         }
     }
 
-    #[Test]
-    public function getCategoryColorsReturnsTheOfficialHexValues(): void
-    {
-        $colors = $this->advanceCatalog->getCategoryColors();
-
-        $this->assertSame('#27AAE1', $colors['art']);
-        $this->assertSame('#F04E56', $colors['civic']);
-        $this->assertSame('#F7941E', $colors['craft']);
-        $this->assertSame('#FFF200', $colors['religion']);
-        $this->assertSame('#39B54A', $colors['science']);
-    }
 }

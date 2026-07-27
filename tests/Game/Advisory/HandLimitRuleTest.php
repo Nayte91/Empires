@@ -9,58 +9,35 @@ use App\Entity\Player;
 use App\Game\Advisory\HandLimitRule;
 use App\Game\Dto\Advisory;
 use App\Game\Service\HandSizeCalculator;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+/**
+ * The rule itself only decides "over the limit → Danger advisory, otherwise silence". Which number
+ * the limit happens to be, per player count and per advance owned, belongs to
+ * {@see HandSizeCalculator} and is pinned by its own test — restating that bracket table here made
+ * a change to it break two files instead of one.
+ */
 final class HandLimitRuleTest extends TestCase
 {
     #[Test]
-    #[DataProvider('provideHandWithinLimitYieldsNoAdvisoryCases')]
-    public function handWithinLimitYieldsNoAdvisory(int $playerCount, int $cards): void
+    public function aHandExactlyAtTheLimitYieldsNoAdvisory(): void
     {
-        $game = new GameSession();
-        $game->playerCount = $playerCount;
-        $player = new Player($game, 'Bob');
-        $player->cards = $cards;
+        $player = new Player(new GameSession(), 'Bob');
+        $player->cards = 8;
 
         $this->assertNotInstanceOf(Advisory::class, new HandLimitRule(new HandSizeCalculator())->evaluate($player));
     }
 
-    /** @return iterable<string, array{int, int}> */
-    public static function provideHandWithinLimitYieldsNoAdvisoryCases(): iterable
-    {
-        yield 'exactly at the hand limit' => [9, 8];
-
-        yield 'fresh player with default stats' => [9, 0];
-
-        yield 'large game boundary stays within raised limit' => [12, 9];
-
-        yield 'large game upper player count stays within raised limit' => [18, 9];
-    }
-
     #[Test]
-    #[DataProvider('provideOverHandLimitGetsMustDiscardAdvisoryCases')]
-    public function overHandLimitGetsMustDiscardAdvisory(int $playerCount, int $cards): void
+    public function aHandOverTheLimitGetsTheMustDiscardAdvisory(): void
     {
-        $game = new GameSession();
-        $game->playerCount = $playerCount;
-        $player = new Player($game, 'Bob');
-        $player->cards = $cards;
+        $player = new Player(new GameSession(), 'Bob');
+        $player->cards = 9;
 
         $advisory = new HandLimitRule(new HandSizeCalculator())->evaluate($player);
 
         $this->assertInstanceOf(Advisory::class, $advisory);
         $this->assertSame('You must discard a card!', $advisory->message);
-    }
-
-    /** @return iterable<string, array{int, int}> */
-    public static function provideOverHandLimitGetsMustDiscardAdvisoryCases(): iterable
-    {
-        yield 'standard game exceeds base limit' => [9, 9];
-
-        yield 'large game boundary exceeds raised limit' => [12, 10];
-
-        yield 'just under large-game threshold keeps base limit' => [11, 9];
     }
 }
