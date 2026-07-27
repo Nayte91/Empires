@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -35,21 +36,13 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  */
 final class ShopComponentTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function discountsAreRenderedInTheKioskWithTheOwnedCategoryColors(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
@@ -63,7 +56,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function addMarksTheProductInCartAndUpdatesTheCartTotal(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         // A single call()+render() round trip: proves add() re-renders the nested
@@ -78,7 +71,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function addIsANoOpAndSetsAnErrorWhenTheCartIsLocked(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery');
         $order->freeze([new OrderLine('pottery', 60)], 60);
         $order->setMarking(OrderStatus::Validated->value);
@@ -93,7 +86,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function addingAnAlreadyOwnedAdvanceIsRefused(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
@@ -107,7 +100,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function addingTheSameAdvanceTwiceIsDeduped(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         $component->call('add', ['key' => 'pottery']);
@@ -120,7 +113,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function submitOrderCreatesAPendingOrderAndEmptiesTheCart(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
 
@@ -140,7 +133,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function pendingOrderHidesTheCartAndShowsTheOrderBlockWithModify(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->createPendingOrder($player, 'pottery');
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
@@ -154,7 +147,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function editPendingOrderReloadsItsLinesIntoTheCartAndHidesTheOrderBlock(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery', 'agriculture');
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
@@ -172,7 +165,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function aValidatedOrderLocksTheKioskForTheTurn(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery');
         $order->freeze([new OrderLine('pottery', 60)], 60);
         $order->setMarking(OrderStatus::Validated->value);
@@ -199,7 +192,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery');
         $order->freeze([new OrderLine('pottery', 60)], 60);
         $order->setMarking(OrderStatus::Validated->value);
@@ -217,7 +210,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function validatedOrderShowsFrozenPricesRatherThanRecomputedOnes(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery');
         $order->freeze([new OrderLine('pottery', 999)], 999);
         $order->setMarking(OrderStatus::Validated->value);
@@ -233,7 +226,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function aRejectedOrderReopensForEditingAndResubmittingReturnsItToPending(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 'pottery');
         $order->setMarking(OrderStatus::Rejected->value);
         $this->entityManager->flush();
@@ -259,7 +252,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function mercureRefreshFiltersToGameUpdatedAndOrderUpdated(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
@@ -271,7 +264,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function getPlayerShopReturnsTwoHundredWithLiveAndMercureWiring(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         // setUp() already booted the kernel for the live-component tests above,
         // so createClient() (which forbids a pre-booted kernel) is not an option:
@@ -291,7 +284,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function choosingAGiftAppendsAZeroCostLineAndValidatingOwnsTheGiftedAdvance(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['anatomy']);
         $cart->withGift('anatomy', 'astronavigation');
@@ -320,7 +313,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function editPendingOrderReloadsTheGiftChoiceIntoTheCart(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['anatomy']);
         $cart->withGift('anatomy', 'astronavigation');
@@ -339,7 +332,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function addingMonumentWithIncompleteAllocationDisablesSubmit(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->cartFor($client, $player, Cart::fromKeys(['monument']));
 
@@ -351,7 +344,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function partiallyAllocatingTheOptionPoolKeepsSubmitDisabled(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'science', 5);
@@ -365,7 +358,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function submittingWithAPartialAllocationIsRejectedServerSideAndShowsAnError(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'science', 5);
@@ -381,7 +374,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function allocatingTheFullOptionPoolEnablesSubmitAndPersistsTheAllocationOnTheOrder(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'craft', 10);
@@ -406,7 +399,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function validatingAMonumentOrderCreditsTheDiscountsTable(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'craft', 10);
@@ -430,7 +423,7 @@ final class ShopComponentTest extends WebTestCase
     #[Test]
     public function editPendingOrderReloadsTheAllocationIntoTheCart(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'craft', 10);
@@ -449,18 +442,6 @@ final class ShopComponentTest extends WebTestCase
         // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function createPendingOrder(Player $player, string ...$slugs): Order

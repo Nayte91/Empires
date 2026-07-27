@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
-use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
@@ -31,15 +29,17 @@ use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class DirectSaleTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private SellDirectHandler $sellDirectHandler;
@@ -48,9 +48,8 @@ final class DirectSaleTest extends WebTestCase
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
@@ -109,7 +108,7 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellValidatesOrderImmediatelyAndOwnsAdvances(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->fulfillment->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
@@ -130,7 +129,7 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellingLibraryAndDemocracyDiscountsAndFreezesTheDemocracyLine(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
@@ -147,7 +146,7 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellWithExplicitPastTurnCreatesAndValidatesTheOrderOnThatTurn(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->game->currentTurn = 3;
         $this->entityManager->flush();
 
@@ -161,7 +160,7 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellReusesExistingPendingOrderRow(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $pendingOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), $player->game->currentTurn));
@@ -177,7 +176,7 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellAfterValidationOfTheTurnThrowsOrderException(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
         $this->expectException(OrderException::class);
@@ -188,25 +187,13 @@ final class DirectSaleTest extends WebTestCase
     #[Test]
     public function sellingDirectPublishesOrderUpdatedThenPlayerUpdatedOnTheGameTopic(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
         $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
         $topic = 'empires/game/'.$player->game->id;
         $this->assertSame([$topic, $topic], $this->hub->topics());
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     /**

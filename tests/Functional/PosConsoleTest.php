@@ -8,6 +8,9 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -49,16 +52,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  */
 final class PosConsoleTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function openPosPreloadsThePendingOrdersTicket(): void
@@ -420,17 +415,13 @@ final class PosConsoleTest extends WebTestCase
     /** @return array{GameSession, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
-        $game = new GameSession();
-        $alice = new Player($game, 'Alice');
-        $alice->ownAdvances(['agriculture']);
-        $bob = new Player($game, 'Bob');
+        $game = GameBuilder::create()->build();
 
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($alice);
-        $this->entityManager->persist($bob);
-        $this->entityManager->flush();
-
-        return [$game, $alice, $bob];
+        return [
+            $game,
+            PlayerBuilder::named('Alice')->in($game)->withAdvances(['agriculture'])->persist($this->entityManager),
+            PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager),
+        ];
     }
 
     private function createPlayerOrders(Player $player, ?KernelBrowser $client = null, bool $posOpen = false, int $posTurn = 0): TestLiveComponent

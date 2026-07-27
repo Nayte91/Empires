@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionType;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,15 +30,12 @@ use Symfony\UX\TwigComponent\Test\RenderedComponent;
  */
 final class ProductGridComponentTest extends KernelTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithTwigComponents;
-
-    private EntityManagerInterface $entityManager;
 
     protected function setUp(): void
     {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $this->initEntityManager();
 
         // renderTwigComponent() renders in-process, with no HTTP request to carry a
         // session — the CartStorageInterface port is session-backed, so a request with
@@ -52,7 +49,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function rendersAllFiftyOneAvailableAdvancesAsFullProductCards(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
 
@@ -62,7 +59,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function ownedAdvancesAreExcludedFromTheProductGrid(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['pottery']);
         $this->entityManager->flush();
 
@@ -74,7 +71,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function theProductCardButtonIsAFullCardOverlayWithAnAccessibleAddLabel(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
         $card = $this->extractProductCard($rendered, 'pottery');
@@ -86,7 +83,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function democracyIsDiscountedForAPlayerOwningAgriculture(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
@@ -98,7 +95,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function productAlreadyInCartHasDisabledOverlayButtonAndInCartMarker(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, Cart::fromKeys(['pottery']));
 
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
@@ -111,7 +108,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function compactProductsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $crawler = $this->renderProductGrid($player, $this->posKey($player), compact: true)->crawler();
 
@@ -133,7 +130,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function compactPropSwapsFullProductCardsForCompactProductTiles(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $fullCard = $this->renderProductGrid($player, (string) $player->id)->crawler();
         $compactTile = $this->renderProductGrid($player, $this->posKey($player), compact: true)->crawler();
@@ -145,7 +142,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function storageKeyIsolatesTwoCartsForTheSamePlayer(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $shopKey = (string) $player->id;
         $posKey = $this->posKey($player);
 
@@ -165,7 +162,7 @@ final class ProductGridComponentTest extends KernelTestCase
     #[Test]
     public function catalogReflectsDiscountsCreditedByAPreviouslyValidatedMonumentOrder(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = new Order($player, $player->game->currentTurn);
         $order->freeze(
             [new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10]))],
@@ -180,18 +177,6 @@ final class ProductGridComponentTest extends KernelTestCase
         // from the Option allocation bonus credited by validating the monument order.
         $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
         $this->assertMatchesRegularExpression('/id="product-anatomy".*?data-price-net>260</s', $rendered);
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function renderProductGrid(Player $player, string $storageKey, bool $compact = false, bool $locked = false): RenderedComponent

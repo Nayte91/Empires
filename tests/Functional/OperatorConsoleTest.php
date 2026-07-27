@@ -6,6 +6,9 @@ namespace App\Tests\Functional;
 
 use App\Entity\GameSession;
 use App\Entity\Player;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -13,21 +16,13 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class OperatorConsoleTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function mercureRefreshHasNoEventFilterSoItReceivesEveryEvent(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->toString();
 
@@ -37,7 +32,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function rendersTheCurrentTurn(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -47,7 +42,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function previousTurnButtonIsDisabledOnTurnOne(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -61,9 +56,9 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function rendersOneDetailsTabPerPlayerPlusGeneralSharingTheSameGroupWithGeneralOpenByDefault(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
-        $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -86,7 +81,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function generalPanelContainsTheTurnButtons(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -106,8 +101,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function aPlayerTabPanelContainsTheSixStatTriggerButtons(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -123,8 +118,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function aPlayerTabPanelOffersNoShopLink(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -140,8 +135,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function aPlayerTabPanelCarriesNoAdvisory(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
         $player->cities = 3;
         $player->census = 2;
         $this->entityManager->flush();
@@ -159,7 +154,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function previousTurnButtonIsEnabledOnTurnTwo(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
         $game->currentTurn = 2;
         $this->entityManager->flush();
 
@@ -175,7 +170,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function nextTurnIncrementsTheCurrentTurn(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
 
@@ -185,7 +180,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function nextTurnClampsAtTwenty(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
         $game->currentTurn = 20;
         $this->entityManager->flush();
 
@@ -197,7 +192,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function finishGameFillsInFinishedAt(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('finishGame');
 
@@ -207,7 +202,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function nextTurnOnAFinishedGameDoesNotChangeTheCurrentTurn(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
         $game->finishedAt = new \DateTimeImmutable();
         $this->entityManager->flush();
 
@@ -219,8 +214,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function aPlayerTabPanelContainsItsOrderCardsRegionWithAnEmptyCardForTheCurrentTurn(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -236,8 +231,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function ordersStampForChangesWhenTheCurrentTurnChangesEvenWithZeroOrders(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $console = $this->createLiveComponent('OperatorConsole', ['game' => $game])->component();
         $stampAtTurnOne = $console->ordersStampFor($player);
@@ -253,8 +248,8 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function advancingTurnsRendersOneOrderCardPerElapsedTurnInThePlayerTab(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $console = $this->createLiveComponent('OperatorConsole', ['game' => $game]);
         $console->call('nextTurn');
@@ -272,25 +267,6 @@ final class OperatorConsoleTest extends WebTestCase
         $this->assertTrue((bool) preg_grep('/Turn 1\b/', $cardTexts));
         $this->assertTrue((bool) preg_grep('/Turn 2\b/', $cardTexts));
         $this->assertTrue((bool) preg_grep('/Turn 3\b/', $cardTexts));
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name): Player
-    {
-        $player = new Player($game, $name);
-        $player->empire = 'minoa';
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function freshEntityManager(): EntityManagerInterface

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\Service\TaxCalculator;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -14,22 +16,14 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class StatPickerTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function savePersistsTheNewValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -42,8 +36,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function saveClampsAtMaximum(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -56,8 +50,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function saveWithUnchangedValueIsNoOp(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->cities = 5;
         $this->entityManager->flush();
 
@@ -72,8 +66,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function renderContainsTilesZeroThroughMax(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -88,8 +82,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function renderContainsOkButton(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -102,8 +96,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function censusSavePersistsTheNewValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -116,8 +110,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function treasurySavePersistsTheNewValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -130,8 +124,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function censusRenderStartsAtTileOne(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -147,8 +141,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function renderInitializesValueFromThePlayer(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->census = 30;
         $this->entityManager->flush();
 
@@ -165,8 +159,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function shipsSavePersistsTheNewValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -179,8 +173,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function cardsSavePersistsTheNewValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -193,8 +187,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function astPositionSavePersistsStorageValueAtMaximum(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -207,8 +201,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function astPositionSaveMidRangePersistsStorageValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -221,8 +215,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function astPositionRenderShowsDisplayLabelWithStorageCheckedValue(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->astPosition = 4;
         $this->entityManager->flush();
 
@@ -241,8 +235,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function mountedValueIsOverriddenByPassedValueProp(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->cities = 2;
         $this->entityManager->flush();
 
@@ -263,8 +257,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function buildingAShipPersistsBothTheFleetAndItsCost(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->treasury = 7;
         $this->entityManager->flush();
 
@@ -282,9 +276,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function cuttingToLimitUsesTheGamesOwnHandLimit(): void
     {
-        $game = $this->createGame();
-        $game->playerCount = 12;
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->withPlayerCount(12)->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->cards = 15;
         $this->entityManager->flush();
 
@@ -303,8 +296,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function anActionForeignToThePickersStatIsIgnored(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->treasury = 7;
         $this->entityManager->flush();
 
@@ -323,8 +316,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function treasuryTilesBeyondWhatThePopulationLeavesAreDisabled(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->census = 20;
         $this->entityManager->flush();
 
@@ -345,13 +338,14 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function theTreasuryPickerOffersOnlyTheTaxRatesThePlayerUnlocked(): void
     {
-        $game = $this->createGame();
-        $plain = $this->createPlayer($game, 'Bob');
-        $coinage = $this->createPlayer($game, 'Alice');
-        $coinage->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE]);
-        $both = $this->createPlayer($game, 'Carol');
-        $both->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE]);
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $plain = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        $coinage = PlayerBuilder::named('Alice')->in($game)
+            ->withAdvances([TaxCalculator::RATE_CHOICE_ADVANCE])
+            ->persist($this->entityManager);
+        $both = PlayerBuilder::named('Carol')->in($game)
+            ->withAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE])
+            ->persist($this->entityManager);
 
         $this->assertSame(['payTaxes2'], $this->taxActionsOf($plain));
         $this->assertSame(['payTaxes1', 'payTaxes2', 'payTaxes3'], $this->taxActionsOf($coinage));
@@ -361,8 +355,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function citiesPickerOffersNoActionButton(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -375,8 +369,8 @@ final class StatPickerTest extends WebTestCase
     #[Test]
     public function shipsPickerRendersBothActionsAndDisablesWhatThePlayerCannotAfford(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -400,24 +394,6 @@ final class StatPickerTest extends WebTestCase
         ])->render()->crawler()->filter('[data-value]')->each(
             static fn ($node): string => (string) $node->attr('data-value'),
         );
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name): Player
-    {
-        $player = new Player($game, $name);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function freshEntityManager(): EntityManagerInterface

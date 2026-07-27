@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Shop;
 
-use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
@@ -13,21 +12,23 @@ use App\Game\Shop\CreditSource;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
 use App\Repository\PlayerRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AdvanceFulfillmentTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private AdvanceFulfillment $fulfillment;
     private ShopConnector $shopConnector;
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $orderRepository = self::getContainer()->get(OrderRepository::class);
@@ -44,7 +45,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     #[Test]
     public function grantingAnAdvancePostsEachOfItsCreditsAtThePlayersCurrentTurnWithATraceableReason(): void
     {
-        $player = $this->createPlayer(currentTurn: 4);
+        $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withCurrentTurn(4)->build())->persist($this->entityManager);
 
         $this->fulfillment->grant($player->id, ['pottery']);
 
@@ -69,7 +70,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     #[Test]
     public function revokingAnAdvanceThatWasJustGrantedRemovesEveryEntryItPostedRatherThanCompensatingThem(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $this->fulfillment->grant($player->id, ['pottery']);
         $this->fulfillment->revoke($player->id, ['pottery']);
@@ -87,7 +88,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     #[Test]
     public function revokingAnAdvanceOnlyRemovesEntriesReasonedByThatAdvanceLeavingOtherReasonsUntouched(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->postCredit(new CreditEntry(1, 'craft', 5, CreditSource::Shop, 'test-fixture'));
 
         $this->fulfillment->revoke($player->id, ['pottery']);
@@ -110,7 +111,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     #[Test]
     public function revokingAGrantAfterARealLossInTheSameScopeNeverDrivesTheWalkedBalanceNegative(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->fulfillment->grant($player->id, ['pottery']);
         $player->postCredit(new CreditEntry(2, 'craft', -10, CreditSource::Shop, 'real-loss'));
 
@@ -126,24 +127,11 @@ final class AdvanceFulfillmentTest extends WebTestCase
     #[Test]
     public function revokingAnAdvanceThatWasNeverGrantedLeavesTheLedgerUntouched(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $this->fulfillment->revoke($player->id, ['pottery']);
 
         $this->assertSame([], $player->creditLedger);
-    }
-
-    private function createPlayer(int $currentTurn = 1): Player
-    {
-        $game = new GameSession();
-        $game->currentTurn = $currentTurn;
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function walkedBalanceFor(Player $player, string $scope): int

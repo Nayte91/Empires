@@ -9,6 +9,9 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -35,16 +38,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  */
 final class KioskOperatorFlowTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function aliceKioskAppliesAgricultureCreditsToCartPrices(): void
@@ -247,15 +242,12 @@ final class KioskOperatorFlowTest extends WebTestCase
     /** @return array{GameSession, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
-        $game = new GameSession();
-        $alice = new Player($game, 'Alice');
-        $bob = new Player($game, 'Bob');
+        $game = GameBuilder::create()->build();
+        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($alice);
-        $this->entityManager->persist($bob);
-        $this->entityManager->flush();
-
+        // Granted through the real fulfillment service rather than withAdvances(): this file
+        // needs the credit ledger the grant posts, not just the advance key.
         self::getContainer()->get(AdvanceFulfillment::class)->grant($alice->id, ['agriculture']);
         $this->entityManager->flush();
 

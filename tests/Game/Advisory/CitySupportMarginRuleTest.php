@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Advisory;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Advisory\CitySupportMarginRule;
 use App\Game\AdvisoryLevel;
 use App\Game\Dto\Advisory;
 use App\Game\Service\CitySupportCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -18,7 +17,7 @@ final class CitySupportMarginRuleTest extends TestCase
     #[Test]
     public function theMarginIsStatedAsPopulationHeldOverTheCityCount(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 7;
         $player->census = 20;
 
@@ -33,7 +32,7 @@ final class CitySupportMarginRuleTest extends TestCase
     #[Test]
     public function sittingExactlyOnTheThresholdIsWordedWithoutAFigure(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->census = 10;
 
@@ -47,7 +46,7 @@ final class CitySupportMarginRuleTest extends TestCase
     #[Test]
     public function anUnderSupportedPlayerGetsNoMarginLine(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->census = 4;
 
@@ -57,10 +56,5 @@ final class CitySupportMarginRuleTest extends TestCase
     private function rule(): CitySupportMarginRule
     {
         return new CitySupportMarginRule(new CitySupportCalculator());
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

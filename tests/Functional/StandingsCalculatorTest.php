@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Service\StandingsCalculator;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -17,25 +17,24 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class StandingsCalculatorTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
+    use GameFixtureTrait;
 
     private StandingsCalculator $standingsCalculator; // @phpstan-ignore property.uninitialized (initialized in setUp)
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->standingsCalculator = self::getContainer()->get(StandingsCalculator::class);
     }
 
     #[Test]
     public function theTableIsOrderedByScoreLeaderFirst(): void
     {
-        $game = $this->createGame();
-        $middle = $this->createPlayer($game, 'Bob', 4);
-        $leader = $this->createPlayer($game, 'Alice', 9);
-        $last = $this->createPlayer($game, 'Carol', 1);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $middle = PlayerBuilder::named('Bob')->in($game)->withCities(4)->persist($this->entityManager);
+        $leader = PlayerBuilder::named('Alice')->in($game)->withCities(9)->persist($this->entityManager);
+        $last = PlayerBuilder::named('Carol')->in($game)->withCities(1)->persist($this->entityManager);
 
         $this->assertSame([$leader, $middle, $last], $this->standingsCalculator->standings($game));
         $this->assertSame(1, $this->standingsCalculator->rankOf($leader));
@@ -45,9 +44,9 @@ final class StandingsCalculatorTest extends WebTestCase
     #[Test]
     public function theGapIsMeasuredAgainstTheLeaderAndIsZeroForThemselves(): void
     {
-        $game = $this->createGame();
-        $leader = $this->createPlayer($game, 'Alice', 9);
-        $chaser = $this->createPlayer($game, 'Bob', 4);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $leader = PlayerBuilder::named('Alice')->in($game)->withCities(9)->persist($this->entityManager);
+        $chaser = PlayerBuilder::named('Bob')->in($game)->withCities(4)->persist($this->entityManager);
 
         $this->assertSame(0, $this->standingsCalculator->gapToLeader($leader));
         $this->assertSame(5, $this->standingsCalculator->gapToLeader($chaser));
@@ -58,8 +57,8 @@ final class StandingsCalculatorTest extends WebTestCase
     #[Test]
     public function aSoloPlayerHasNoRunnerUpToMeasureAgainst(): void
     {
-        $game = $this->createGame();
-        $alone = $this->createPlayer($game, 'Alice', 5);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $alone = PlayerBuilder::named('Alice')->in($game)->withCities(5)->persist($this->entityManager);
 
         $this->assertNull($this->standingsCalculator->leadOverRunnerUp($alone));
     }
@@ -67,30 +66,11 @@ final class StandingsCalculatorTest extends WebTestCase
     #[Test]
     public function tiedLeadersBothShowAZeroMargin(): void
     {
-        $game = $this->createGame();
-        $first = $this->createPlayer($game, 'Alice', 6);
-        $second = $this->createPlayer($game, 'Bob', 6);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $first = PlayerBuilder::named('Alice')->in($game)->withCities(6)->persist($this->entityManager);
+        $second = PlayerBuilder::named('Bob')->in($game)->withCities(6)->persist($this->entityManager);
 
         $this->assertSame(0, $this->standingsCalculator->leadOverRunnerUp($first));
         $this->assertSame(0, $this->standingsCalculator->gapToLeader($second));
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name, int $cities): Player
-    {
-        $player = new Player($game, $name);
-        $player->cities = $cities;
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

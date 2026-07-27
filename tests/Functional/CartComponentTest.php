@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -29,21 +29,13 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  */
 final class CartComponentTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function removeRemovesTheGivenKey(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->seedCart($client, (string) $player->id, 'pottery', 'democracy');
 
@@ -59,7 +51,7 @@ final class CartComponentTest extends WebTestCase
     #[Test]
     public function cartShowsTheDiscountBadgeAndStruckThroughOriginalPriceWhenLibraryIsAdded(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->seedCart($client, (string) $player->id, 'library', 'democracy');
 
@@ -74,7 +66,7 @@ final class CartComponentTest extends WebTestCase
     #[Test]
     public function addingAnatomyShowsTheGiftPickerForAnEligibleScienceCandidate(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->seedCart($client, (string) $player->id, 'anatomy');
 
@@ -87,7 +79,7 @@ final class CartComponentTest extends WebTestCase
     #[Test]
     public function addingMonumentShowsTheAllocationPickerWithTheFullRemainingPool(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->seedCart($client, (string) $player->id, 'monument');
 
@@ -106,7 +98,7 @@ final class CartComponentTest extends WebTestCase
     #[Test]
     public function checkoutWithACompleteCartCreatesTheOrderAndEmitsOrderPlaced(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $this->seedCart($client, (string) $player->id, 'pottery');
 
@@ -124,7 +116,7 @@ final class CartComponentTest extends WebTestCase
     #[Test]
     public function checkoutWithAnIncompleteAllocationIsBlockedAndShowsTheGuardMessage(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'science', 5);
@@ -137,18 +129,6 @@ final class CartComponentTest extends WebTestCase
             ->findOneByPlayerAndWindow($player, $player->game->currentTurn));
         $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
         $this->assertStringContainsString('monument', $rendered);
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     private function createCart(Player $player, ?string $storageKey = null, ?KernelBrowser $client = null): TestLiveComponent

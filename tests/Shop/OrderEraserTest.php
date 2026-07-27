@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
@@ -32,15 +31,17 @@ use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class OrderEraserTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private OrderRepository $orderRepository;
     private SellDirectHandler $sellDirectHandler;
     private EraseOrdersHandler $eraseOrdersHandler;
@@ -49,9 +50,8 @@ final class OrderEraserTest extends WebTestCase
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
@@ -105,7 +105,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingAPendingOrderDeletesItAndTouchesNothingElse(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 1, ['pottery']);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
@@ -117,7 +117,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingExplicitWindowsDisownsValidatedAdvancesButNotPendingOnesAndRemovesAll(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
@@ -138,7 +138,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingOnlyTheRequestedWindowLeavesOtherOrdersIntact(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $turnOneOrder = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
         $turnTwoOrder = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), 2));
@@ -157,7 +157,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingAValidatedOrderWithAGiftLineDisownsTheGiftedAdvanceToo(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, [new LineIntent('anatomy', gift: 'astronavigation')], 1));
 
@@ -184,7 +184,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingAValidatedOrderWhoseGiftSourceVanishedFromTheCatalogBeforeValidationLeaksNothing(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
@@ -228,7 +228,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingAValidatedOrderWithAnOptionAllocationDropsItFromOptionCredits(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $order = ($this->sellDirectHandler)(new SellDirect(
             $player->id,
@@ -247,7 +247,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingWithNoWindowsIsANoOp(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = $this->createPendingOrder($player, 1, ['pottery']);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
@@ -258,7 +258,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingOrdersPublishesPlayerUpdatedThenOrderUpdatedOnTheGameTopic(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->createPendingOrder($player, 1, ['pottery']);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
@@ -271,7 +271,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingWithNoWindowsPublishesNothing(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
         $publishedBySale = $this->hub->eventNames();
 
@@ -284,7 +284,7 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingWindowsWithoutAMatchingOrderPublishesNothing(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
         $publishedBySale = $this->hub->eventNames();
 
@@ -292,18 +292,6 @@ final class OrderEraserTest extends WebTestCase
 
         $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
         $this->assertSame($publishedBySale, $this->hub->eventNames());
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     /** @param list<string> $slugs */

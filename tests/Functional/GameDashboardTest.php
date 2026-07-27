@@ -4,30 +4,22 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 final class GameDashboardTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithTwigComponents;
-
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (assigned in setUp before each test)
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function headingDisplaysTheGameSlugWithoutTurn(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
@@ -38,8 +30,8 @@ final class GameDashboardTest extends WebTestCase
     #[Test]
     public function operatorBoardOpensModalContainingTheOperatorUrl(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $component = $this->mountTwigComponent('GameDashboard', ['game' => $game]);
         $operatorUrl = $component->getOperatorUrl();
@@ -55,7 +47,7 @@ final class GameDashboardTest extends WebTestCase
     #[Test]
     public function rendersTheOperatorQrCode(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
@@ -66,7 +58,7 @@ final class GameDashboardTest extends WebTestCase
     #[Test]
     public function dashboardRootCarriesNoMercureRefreshController(): void
     {
-        $game = $this->createGame();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
         $rootTag = substr($html, 0, (int) strpos($html, '>') + 1);
@@ -74,24 +66,5 @@ final class GameDashboardTest extends WebTestCase
 
         $this->assertStringNotContainsString('data-controller', $rootTag);
         $this->assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded ScoreBoard and Ast tables.');
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name): Player
-    {
-        $player = new Player($game, $name);
-        $player->empire = 'minoa';
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

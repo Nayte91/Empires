@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Advisory;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\AdvisoryLevel;
 use App\Game\Advisory\TaxStockRule;
 use App\Game\GameData;
 use App\Game\Service\StockCalculator;
 use App\Game\Service\TaxCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +18,7 @@ final class TaxStockRuleTest extends TestCase
     #[Test]
     public function aShortfallIsStatedAsAnAmountToRecover(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -33,7 +32,7 @@ final class TaxStockRuleTest extends TestCase
     #[Test]
     public function acoveredBillIsStatedAsReassurance(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 3;
         $player->census = 10;
         $player->treasury = 10;
@@ -45,7 +44,7 @@ final class TaxStockRuleTest extends TestCase
     #[Test]
     public function immunityIsStatedEvenOnARealShortfall(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -64,10 +63,5 @@ final class TaxStockRuleTest extends TestCase
         return new TaxCalculator(new StockCalculator(
             new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'),
         ));
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

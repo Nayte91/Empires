@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Service;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Service\HandSizeCalculator;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +35,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[Test]
     public function roadBuildingRaisesItsOwnersLimitByOne(): void
     {
-        $player = $this->createPlayer(9);
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();
 
         $calculator = new HandSizeCalculator();
 
@@ -50,7 +50,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[Test]
     public function theAdvanceStacksOnTheLargeGameBracket(): void
     {
-        $player = $this->createPlayer(12);
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(12)->build())->build();
         $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
 
         $this->assertSame(10, new HandSizeCalculator()->limitFor($player));
@@ -59,7 +59,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[Test]
     public function theExtraCardIsTheDifferenceBetweenBreakingTheLimitAndNot(): void
     {
-        $player = $this->createPlayer(9);
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();
         $player->cards = 9;
 
         $calculator = new HandSizeCalculator();
@@ -69,13 +69,5 @@ final class HandSizeCalculatorTest extends TestCase
         $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
 
         $this->assertFalse($calculator->isOverLimit($player));
-    }
-
-    private function createPlayer(int $playerCount): Player
-    {
-        $game = new GameSession();
-        $game->playerCount = $playerCount;
-
-        return new Player($game, 'Bob');
     }
 }

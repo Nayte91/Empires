@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Advisory;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Advisory\CityBuildRule;
 use App\Game\AdvisoryLevel;
 use App\Game\GameData;
 use App\Game\Service\CityBuildCalculator;
 use App\Game\Service\CitySupportCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +18,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function aSingleCityIsWordedWithoutTheUpToQualifier(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 3;
         $player->census = 20;
 
@@ -32,7 +31,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function severalCitiesAreStatedAsACeiling(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 2;
         $player->census = 30;
 
@@ -42,7 +41,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function anEmpireTooPoorToBuildIsToldSoPlainly(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->census = 12;
 
@@ -56,7 +55,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function theArchitectureRebateCanTurnTheVerdictAround(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->census = 17;
         $player->treasury = 3;
@@ -72,7 +71,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function afullEmpireIsGoodNewsRatherThanAShortage(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 9;
         $player->census = 55;
 
@@ -88,10 +87,5 @@ final class CityBuildRuleTest extends TestCase
             new CitySupportCalculator(),
             new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'),
         ));
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

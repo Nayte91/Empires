@@ -4,31 +4,23 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 final class ControlBoardTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithTwigComponents;
-
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function renderShowsAllFiveStatControls(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
@@ -42,8 +34,8 @@ final class ControlBoardTest extends WebTestCase
     #[Test]
     public function anExplicitStatListRendersExactlyThoseControlsInOrder(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
             'player' => $player,
@@ -59,8 +51,8 @@ final class ControlBoardTest extends WebTestCase
     #[Test]
     public function theShopLinkIsAbsentUnlessAskedFor(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
@@ -70,8 +62,8 @@ final class ControlBoardTest extends WebTestCase
     #[Test]
     public function theShopLinkPointsAtThePlayersOwnShop(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
             'player' => $player,
@@ -88,8 +80,8 @@ final class ControlBoardTest extends WebTestCase
     #[Test]
     public function noAdvisoryIsRenderedHereAnyMore(): void
     {
-        $game = $this->createGame();
-        $player = $this->createPlayer($game, 'Bob');
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
         $player->cities = 5;
         $player->census = 1;
         $player->treasury = 50;
@@ -98,23 +90,5 @@ final class ControlBoardTest extends WebTestCase
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
         $this->assertCount(0, $crawler->filter('li'));
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name): Player
-    {
-        $player = new Player($game, $name);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

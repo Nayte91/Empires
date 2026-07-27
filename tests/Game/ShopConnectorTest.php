@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Game;
 
-use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
@@ -15,26 +14,28 @@ use App\Game\Shop\CreditSource;
 use App\Game\Shop\Entitlement;
 use App\Game\Shop\ShopConnector;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionType;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ShopConnectorTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private AdvanceCatalog $advanceCatalog;
     private ScenarioCatalog $scenarioCatalog;
     private ShopConnector $shopConnector;
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $orderRepository = self::getContainer()->get(OrderRepository::class);
         $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $this->scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
@@ -221,9 +222,12 @@ final class ShopConnectorTest extends WebTestCase
 
     private function createPlayer(int $playerCount = 9): Player
     {
-        $game = new GameSession();
-        $game->playerCount = $playerCount;
-        $player = new Player($game, 'Alice');
+        // build() rather than persist(): the ledger below has to be posted before the flush,
+        // so this fixture owns its own write.
+        $player = PlayerBuilder::named('Alice')
+            ->in(GameBuilder::create()->withPlayerCount($playerCount)->build())
+            ->build()
+        ;
 
         // Mirrors CreateGameHandler's own write (never dispatched here — this class has
         // no bus dependency of its own) so the ledger carries what a real game creation
@@ -233,7 +237,7 @@ final class ShopConnectorTest extends WebTestCase
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:'.$playerCount));
         }
 
-        $this->entityManager->persist($game);
+        $this->entityManager->persist($player->game);
         $this->entityManager->persist($player);
         $this->entityManager->flush();
 

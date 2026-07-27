@@ -6,20 +6,20 @@ namespace App\Tests\Repository;
 
 use App\Entity\GameSession;
 use App\Repository\GameSessionRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class GameSessionRepositoryTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private GameSessionRepository $gameRepository;
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->gameRepository = self::getContainer()->get(GameSessionRepository::class);
     }
 

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Shop;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\AdvancePriceResolver;
@@ -30,15 +28,17 @@ use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\Mercure\RecordingHub;
 use App\Tests\Support\Workflow\ShopOrderStateMachine;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class OrderFlowTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private OrderRepository $orderRepository;
     private SubmitOrderHandler $submitOrderHandler;
     private OrderValidator $orderValidator;
@@ -47,9 +47,8 @@ final class OrderFlowTest extends WebTestCase
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
@@ -96,7 +95,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submitWithEmptyCartThrowsCartException(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $this->expectException(CartException::class);
 
@@ -106,7 +105,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submitCreatesPendingOrderWithSlugs(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery', 'agriculture']), $player->game->currentTurn));
 
@@ -117,7 +116,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function resubmitReplacesLinesOnSameOrderAndKeepsUniqueRow(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $firstOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
         $secondOrder = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));
@@ -133,7 +132,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function validateFreezesLinesAndOwnsAdvances(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->fulfillment->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
@@ -150,7 +149,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submitWithLibraryDiscountsTheOtherLineAndPersistsThePromotionPayload(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
@@ -166,7 +165,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function validatingALibraryAndDemocracyOrderFreezesTheDiscountedTotal(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
 
         $this->orderValidator->validate($order);
@@ -180,7 +179,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submitAfterValidationOfTheTurnThrowsOrderException(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
         $this->orderValidator->validate($order);
 
@@ -192,7 +191,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submitWithAlreadyOwnedAdvanceInCartThrowsEligibilityException(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['pottery']);
         $this->entityManager->flush();
 
@@ -205,7 +204,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function submittingAnOrderPublishesOrderUpdatedOnTheGameTopic(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
@@ -216,7 +215,7 @@ final class OrderFlowTest extends WebTestCase
     #[Test]
     public function validatingAnOrderPublishesOrderUpdatedThenPlayerUpdated(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
         $this->hub->clear();
 
@@ -225,18 +224,6 @@ final class OrderFlowTest extends WebTestCase
         $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
         $topic = 'empires/game/'.$player->game->id;
         $this->assertSame([$topic, $topic], $this->hub->topics());
-    }
-
-    private function createPlayer(): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     /**

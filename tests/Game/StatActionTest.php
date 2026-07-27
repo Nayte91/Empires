@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Game;
 
-use App\Entity\GameSession;
 use App\Entity\Player;
 use App\Game\GameData;
 use App\Game\Service\HandSizeCalculator;
@@ -12,6 +11,7 @@ use App\Game\Service\StockCalculator;
 use App\Game\Service\TaxCalculator;
 use App\Game\Stat;
 use App\Game\StatAction;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -34,7 +34,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function movingForwardAndBackwardWalksTheAstOneStepAtATime(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->astPosition = 4;
 
         StatAction::AstForward->apply($player, $this->hand(), $this->stock(), $this->tax());
@@ -49,7 +49,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function astMovesAreUnavailableAtTheTrackEnds(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->astPosition = Player::AST_MIN;
 
         $this->assertFalse(StatAction::AstBackward->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
@@ -64,7 +64,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function doublingTheCensusMultipliesItByTwo(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 12;
 
         StatAction::CensusDouble->apply($player, $this->hand(), $this->stock(), $this->tax());
@@ -79,7 +79,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function doublingTheCensusStopsAtWhatTheTreasuryLeavesInThePool(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
         $player->treasury = 25;
 
@@ -91,7 +91,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function doublingIsUnavailableWhenThePoolLeavesNoRoom(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
         $player->treasury = 35;
 
@@ -106,7 +106,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function onlyTheStandardRateIsOfferedWithoutAdvances(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $tax = $this->tax();
 
         $this->assertFalse(StatAction::PayTaxes1->isOffered($player, $tax));
@@ -118,7 +118,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function coinageAndMonarchyTogetherOfferEveryRate(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE]);
         $tax = $this->tax();
 
@@ -130,7 +130,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function everyOtherActionIsAlwaysOnTheMenu(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
 
         $this->assertTrue(StatAction::CensusDouble->isOffered($player, $this->tax()));
         $this->assertTrue(StatAction::BuildShip->isOffered($player, $this->tax()));
@@ -139,7 +139,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function payingTaxesCreditsTwoPerCity(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 4;
         $player->treasury = 10;
 
@@ -151,7 +151,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function payingTaxesStopsAtWhatTheCensusLeavesInThePool(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 9;
         $player->census = 40;
         $player->treasury = 10;
@@ -164,7 +164,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function buildingAShipCostsTwoTreasury(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ships = 1;
         $player->treasury = 7;
 
@@ -177,7 +177,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function buildingAShipIsUnavailableAtTheFleetCapOrWithoutTheTwoTreasury(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ships = Player::SHIPS_MAX;
         $player->treasury = 10;
 
@@ -192,7 +192,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function maintainingTheFleetCostsOneTreasuryPerShip(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ships = 3;
         $player->treasury = 10;
 
@@ -205,7 +205,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function maintainingIsUnavailableWithoutAFleetOrWithoutTheTreasuryToCoverIt(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ships = 0;
         $player->treasury = 10;
 
@@ -224,7 +224,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function drawingAddsOneCardPerCity(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->cards = 2;
 
@@ -236,7 +236,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function drawingIsUnavailableWithoutACity(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 0;
 
         $this->assertFalse(StatAction::DrawCards->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
@@ -245,7 +245,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function cuttingBringsTheHandDownToTheGamesLimit(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->game->playerCount = 12;
         $player->cards = 14;
 
@@ -258,7 +258,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function cuttingRespectsAnAdvanceThatRaisesTheLimit(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cards = 14;
         $player->ownAdvances([HandSizeCalculator::EXTRA_CARD_ADVANCE]);
 
@@ -274,7 +274,7 @@ final class StatActionTest extends TestCase
     #[Test]
     public function cuttingAHandAlreadyUnderTheLimitLeavesItUntouched(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cards = 3;
 
         $this->assertFalse(StatAction::CutToLimit->isAvailable($player, $this->hand(), $this->stock(), $this->tax()));
@@ -297,10 +297,5 @@ final class StatActionTest extends TestCase
     private function tax(): TaxCalculator
     {
         return new TaxCalculator($this->stock());
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

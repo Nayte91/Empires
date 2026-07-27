@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Service;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\GameData;
 use App\Game\Service\StockCalculator;
 use App\Game\Service\TaxCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +16,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function theStandardRateIsTwoPerCity(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
 
         $calculator = $this->tax();
@@ -32,15 +31,15 @@ final class TaxCalculatorTest extends TestCase
     {
         $calculator = $this->tax();
 
-        $coinage = $this->createPlayer();
+        $coinage = PlayerBuilder::named('Bob')->build();
         $coinage->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE]);
         $this->assertSame([1, 2, 3], $calculator->rates($coinage));
 
-        $monarchy = $this->createPlayer();
+        $monarchy = PlayerBuilder::named('Bob')->build();
         $monarchy->ownAdvances([TaxCalculator::RATE_RAISE_ADVANCE]);
         $this->assertSame([2, 3], $calculator->rates($monarchy));
 
-        $both = $this->createPlayer();
+        $both = PlayerBuilder::named('Bob')->build();
         $both->ownAdvances([TaxCalculator::RATE_CHOICE_ADVANCE, TaxCalculator::RATE_RAISE_ADVANCE]);
         $this->assertSame([1, 2, 3, 4], $calculator->rates($both));
     }
@@ -52,7 +51,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function coinageLowersTheStockAPlayerMustRecover(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -72,7 +71,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function monarchyLeavesTheShortageWhereItWas(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -84,7 +83,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function availableStockIsWhatNeitherTheCensusNorTheTreasuryHolds(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 30;
         $player->treasury = 15;
 
@@ -94,7 +93,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function stockToRecoverIsWhatTheBillExceedsTheAvailableStock(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -105,7 +104,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function aPlayerWhoseStockCoversTheBillKeepsTheirCities(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 3;
         $player->census = 10;
         $player->treasury = 10;
@@ -121,7 +120,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function immunityStopsTheRevoltWithoutClearingTheShortfall(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -137,7 +136,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function anOrdinaryPlayerShortOfStockSeesTheirCitiesRevolt(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 30;
         $player->treasury = 15;
@@ -149,7 +148,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function collectingCreditsTheChosenRateToTheTreasury(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 4;
         $player->treasury = 10;
 
@@ -163,7 +162,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function collectingStopsAtWhatTheCensusLeavesInThePool(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 9;
         $player->census = 40;
         $player->treasury = 10;
@@ -175,7 +174,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function immunityDoesNotChangeWhatIsCollected(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 4;
         $player->treasury = 10;
         $player->ownAdvances([TaxCalculator::IMMUNITY_ADVANCE]);
@@ -188,10 +187,5 @@ final class TaxCalculatorTest extends TestCase
         return new TaxCalculator(new StockCalculator(
             new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'),
         ));
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

@@ -10,6 +10,8 @@ use App\Game\ASTVersion;
 use App\Game\Command\CreateGame;
 use App\Game\GameData;
 use App\Game\ScenarioCatalog;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -19,16 +21,8 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class GameCreatorTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function mountProposesAUuidAsTheDefaultGameSlug(): void
@@ -85,7 +79,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function slugOfAnExistingGameIsShownAsUnavailable(): void
     {
-        $this->createGame('taken-slug');
+        GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Taken Slug')
@@ -99,7 +93,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function slugOfAnExistingGameShowsAFieldErrorInRealTime(): void
     {
-        $this->createGame('taken-slug');
+        GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Taken Slug')
@@ -310,7 +304,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function slugTakenAtLaunchTimeDisplaysAnErrorAndCreatesNothing(): void
     {
-        $this->createGame('race-slug');
+        GameBuilder::create()->withSlug('race-slug')->persist($this->entityManager);
 
         $gamesBefore = $this->entityManager->getRepository(GameSession::class)->count([]);
 
@@ -498,7 +492,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function createButtonIsDisabledWhenTheSlugIsAlreadyTaken(): void
     {
-        $this->createGame('taken-slug');
+        GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Taken Slug')
@@ -736,15 +730,6 @@ final class GameCreatorTest extends WebTestCase
         $freshEntityManager = $this->freshEntityManager();
         $this->assertSame($gamesBefore, $freshEntityManager->getRepository(GameSession::class)->count([]));
         $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
-    }
-
-    private function createGame(string $slug): GameSession
-    {
-        $game = new GameSession($slug);
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
     }
 
     private function freshEntityManager(): EntityManagerInterface

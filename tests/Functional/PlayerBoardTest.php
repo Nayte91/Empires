@@ -4,31 +4,22 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Shop\AdvanceFulfillment;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class PlayerBoardTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function getPlayerBoardReturnsTwoHundredWithLiveAndMercureWiring(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug);
@@ -43,7 +34,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function unknownPlayerSlugReturns404(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/does-not-exist');
@@ -54,7 +45,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function allFiveStatPickerTriggerButtonsAreRendered(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render();
 
@@ -71,7 +62,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function ownedAdvancesAreRenderedWithoutAPurchaseButton(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['pottery']);
         $this->entityManager->flush();
 
@@ -85,7 +76,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function discountsAreRenderedForAPlayerOwningAgriculture(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
@@ -100,7 +91,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function discountCategoryRowsCarryTheOfficialCategoryColor(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
 
@@ -114,7 +105,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function mercureRefreshFiltersToPlayerUpdated(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
@@ -126,7 +117,7 @@ final class PlayerBoardTest extends WebTestCase
     #[Test]
     public function bodyBackgroundIsColoredByThePlayersEmpire(): void
     {
-        $withEmpire = $this->createPlayer();
+        $withEmpire = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $withEmpire->empire = 'minoa';
         $this->entityManager->flush();
 
@@ -140,18 +131,6 @@ final class PlayerBoardTest extends WebTestCase
 
         $client->request('GET', '/'.$withEmpire->game->slug.'/player/'.$withEmpire->slug.'/shop');
         $this->assertStringContainsString('data-empire="minoa"', (string) $client->getResponse()->getContent());
-    }
-
-    private function createPlayer(string $name = 'Alice'): Player
-    {
-        $game = new GameSession();
-        $player = new Player($game, $name);
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 
     /**

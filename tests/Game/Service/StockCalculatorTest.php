@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Service;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\GameData;
 use App\Game\Service\StockCalculator;
 use App\Game\Stat;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +16,7 @@ final class StockCalculatorTest extends TestCase
     #[Test]
     public function whatIsLeftOnTheTableIsThePileMinusBothHolders(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
         $player->treasury = 15;
 
@@ -29,7 +28,7 @@ final class StockCalculatorTest extends TestCase
     #[Test]
     public function aStockHolderIsCeilingedByItsTwin(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
         $player->treasury = 15;
 
@@ -42,7 +41,7 @@ final class StockCalculatorTest extends TestCase
     #[Test]
     public function aStatOutsideTheStockAnswersToItsOwnBound(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 20;
 
         $calculator = $this->calculator();
@@ -64,10 +63,5 @@ final class StockCalculatorTest extends TestCase
     private function calculator(): StockCalculator
     {
         return new StockCalculator(new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'));
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }

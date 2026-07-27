@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Shop;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\ScenarioCatalog;
 use App\Game\Shop\AdvanceFulfillment;
 use App\Game\Shop\CreditEntry;
 use App\Game\Shop\CreditSource;
 use App\Repository\PlayerRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -28,16 +28,16 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 final class CreditLedgerReconciliationTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager;
+    use GameFixtureTrait;
+
     private AdvanceCatalog $advanceCatalog;
     private ScenarioCatalog $scenarioCatalog;
     private AdvanceFulfillment $fulfillment;
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
         $this->scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
@@ -47,7 +47,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
     #[Test]
     public function theLedgersBalancePerScopeMatchesTheScenariosStartingCreditsPlusTheCurrentlyOwnedAdvancesCredits(): void
     {
-        $player = $this->createPlayer(playerCount: 3);
+        $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withPlayerCount(3)->build())->persist($this->entityManager);
 
         foreach ($this->scenarioCatalog->startingCreditsFor(3) as $scope => $value) {
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:3'));
@@ -97,18 +97,5 @@ final class CreditLedgerReconciliationTest extends WebTestCase
         ksort($balances);
 
         return $balances;
-    }
-
-    private function createPlayer(int $playerCount): Player
-    {
-        $game = new GameSession();
-        $game->playerCount = $playerCount;
-        $player = new Player($game, 'Alice');
-
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

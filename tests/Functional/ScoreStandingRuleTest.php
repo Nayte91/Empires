@@ -4,34 +4,33 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\Advisory\ScoreStandingRule;
 use App\Game\AdvisoryLevel;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class ScoreStandingRuleTest extends WebTestCase
 {
-    private EntityManagerInterface $entityManager; // @phpstan-ignore property.uninitialized (initialized in setUp)
+    use GameFixtureTrait;
 
     private ScoreStandingRule $rule; // @phpstan-ignore property.uninitialized (initialized in setUp)
 
     protected function setUp(): void
     {
-        self::bootKernel();
+        $this->initEntityManager();
 
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->rule = self::getContainer()->get(ScoreStandingRule::class);
     }
 
     #[Test]
     public function theLeaderReadsTheirMarginOverTheRunnerUp(): void
     {
-        $game = $this->createGame();
-        $leader = $this->createPlayer($game, 'Alice', 9);
-        $this->createPlayer($game, 'Bob', 4);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $leader = PlayerBuilder::named('Alice')->in($game)->withCities(9)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withCities(4)->persist($this->entityManager);
 
         $advisory = $this->rule->evaluate($leader);
 
@@ -42,10 +41,10 @@ final class ScoreStandingRuleTest extends WebTestCase
     #[Test]
     public function aChaserReadsTheirPlaceAndDeficit(): void
     {
-        $game = $this->createGame();
-        $this->createPlayer($game, 'Alice', 9);
-        $this->createPlayer($game, 'Bob', 6);
-        $third = $this->createPlayer($game, 'Carol', 1);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withCities(9)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withCities(6)->persist($this->entityManager);
+        $third = PlayerBuilder::named('Carol')->in($game)->withCities(1)->persist($this->entityManager);
 
         $advisory = $this->rule->evaluate($third);
 
@@ -56,9 +55,9 @@ final class ScoreStandingRuleTest extends WebTestCase
     #[Test]
     public function tiedLeadersShareTheLead(): void
     {
-        $game = $this->createGame();
-        $first = $this->createPlayer($game, 'Alice', 6);
-        $this->createPlayer($game, 'Bob', 6);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $first = PlayerBuilder::named('Alice')->in($game)->withCities(6)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withCities(6)->persist($this->entityManager);
 
         $this->assertSame('You share the lead', $this->rule->evaluate($first)->message);
     }
@@ -67,28 +66,9 @@ final class ScoreStandingRuleTest extends WebTestCase
     #[Test]
     public function aSoloPlayerSimplyLeads(): void
     {
-        $game = $this->createGame();
-        $alone = $this->createPlayer($game, 'Alice', 5);
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $alone = PlayerBuilder::named('Alice')->in($game)->withCities(5)->persist($this->entityManager);
 
         $this->assertSame('You lead the game', $this->rule->evaluate($alone)->message);
-    }
-
-    private function createGame(): GameSession
-    {
-        $game = new GameSession();
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
-
-        return $game;
-    }
-
-    private function createPlayer(GameSession $game, string $name, int $cities): Player
-    {
-        $player = new Player($game, $name);
-        $player->cities = $cities;
-        $this->entityManager->persist($player);
-        $this->entityManager->flush();
-
-        return $player;
     }
 }

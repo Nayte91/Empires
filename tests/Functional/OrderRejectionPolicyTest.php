@@ -8,9 +8,11 @@ use App\Entity\GameSession;
 use App\Entity\Order;
 use App\Entity\Player;
 use App\Repository\OrderRepository;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -26,16 +28,8 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
  */
 final class OrderRejectionPolicyTest extends WebTestCase
 {
+    use GameFixtureTrait;
     use InteractsWithLiveComponents;
-
-    private EntityManagerInterface $entityManager;
-
-    protected function setUp(): void
-    {
-        self::bootKernel();
-
-        $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
-    }
 
     #[Test]
     public function rejectOrderIsBlockedByThePolicyAndTheOrderStaysPending(): void
@@ -73,16 +67,13 @@ final class OrderRejectionPolicyTest extends WebTestCase
     /** @return array{GameSession, Player, Player} */
     private function createGameWithAliceAndBob(): array
     {
-        $game = new GameSession();
-        $alice = new Player($game, 'Alice');
-        $bob = new Player($game, 'Bob');
+        $game = GameBuilder::create()->build();
 
-        $this->entityManager->persist($game);
-        $this->entityManager->persist($alice);
-        $this->entityManager->persist($bob);
-        $this->entityManager->flush();
-
-        return [$game, $alice, $bob];
+        return [
+            $game,
+            PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager),
+            PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager),
+        ];
     }
 
     /** @param list<string> $slugs */

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Game\Service;
 
-use App\Entity\GameSession;
-use App\Entity\Player;
 use App\Game\GameData;
 use App\Game\Service\CityBuildCalculator;
 use App\Game\Service\CitySupportCalculator;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -21,7 +20,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function eachCityCostsItsBuildPriceAndItsSupportFloor(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 3;
         $player->census = 20;
 
@@ -31,7 +30,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function aWiderMarginBuysProportionallyMoreCities(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 2;
         $player->census = 30;
 
@@ -41,7 +40,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function anUnderSupportedPlayerCanFoundNothing(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 5;
         $player->census = 4;
 
@@ -51,7 +50,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function theNineCityLimitCapsWhatTheMarginWouldAllow(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 8;
         $player->census = 55;
 
@@ -62,7 +61,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function afullEmpireHasNoSlotLeft(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 9;
         $player->census = 55;
 
@@ -80,7 +79,7 @@ final class CityBuildCalculatorTest extends TestCase
         $calculator = $this->calculator();
 
         foreach ([1 => 7, 2 => 6, 3 => 5] as $coins => $census) {
-            $player = $this->createPlayer();
+            $player = PlayerBuilder::named('Bob')->build();
             $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
             $player->census = $census;
 
@@ -95,7 +94,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function aFourthCoinBuysNoFurtherRebate(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->ownAdvances([CityBuildCalculator::ARCHITECTURE_ADVANCE]);
         $player->census = 4;
         $player->treasury = 20;
@@ -106,7 +105,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function withoutArchitectureTheTreasuryBuysNothing(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->census = 7;
         $player->treasury = 20;
 
@@ -117,7 +116,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function theRebateCanBuyOneMoreCity(): void
     {
-        $player = $this->createPlayer();
+        $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 3;
         $player->census = 20;
         $player->treasury = 3;
@@ -135,10 +134,5 @@ final class CityBuildCalculatorTest extends TestCase
             new CitySupportCalculator(),
             new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'),
         );
-    }
-
-    private function createPlayer(): Player
-    {
-        return new Player(new GameSession(), 'Bob');
     }
 }
