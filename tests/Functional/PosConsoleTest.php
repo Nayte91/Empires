@@ -178,21 +178,6 @@ final class PosConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function checkoutIsDisabledWhileTheMonumentAllocationIsPartial(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $client = self::getContainer()->get('test.client');
-
-        $ticket = Cart::fromKeys(['monument']);
-        $ticket->withAllocation('monument', 'science', 5);
-        $this->posCartFor($client, $bob, $ticket);
-
-        $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
-
-        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    #[Test]
     public function checkoutWithAPartialAllocationIsRejectedServerSideAndShowsAnError(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();

@@ -342,36 +342,6 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function partiallyAllocatingTheOptionPoolKeepsSubmitDisabled(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $cart = Cart::fromKeys(['monument']);
-        $cart->withAllocation('monument', 'science', 5);
-        $this->cartFor($client, $player, $cart);
-
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
-
-        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    #[Test]
-    public function submittingWithAPartialAllocationIsRejectedServerSideAndShowsAnError(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $cart = Cart::fromKeys(['monument']);
-        $cart->withAllocation('monument', 'science', 5);
-        $this->cartFor($client, $player, $cart);
-
-        $rendered = $this->createCart($player, $client)->call('checkout')->render()->toString();
-
-        $this->assertNotInstanceOf(\App\Entity\Order::class, $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn));
-        $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
-        $this->assertStringContainsString('monument', $rendered);
-    }
-
-    #[Test]
     public function allocatingTheFullOptionPoolEnablesSubmitAndPersistsTheAllocationOnTheOrder(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);

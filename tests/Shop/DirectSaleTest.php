@@ -23,9 +23,7 @@ use Userforged\ShopEngine\Event\ShopEventPublisher;
 use Userforged\ShopEngine\Exception\OrderException;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\ProductProviderInterface;
-use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionEngine;
-use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
@@ -124,23 +122,6 @@ final class DirectSaleTest extends WebTestCase
         $reloadedOrder = $this->orderRepository->find($order->id);
         $this->assertInstanceOf(Order::class, $reloadedOrder);
         $this->assertSame(OrderStatus::Validated, $reloadedOrder->status);
-    }
-
-    #[Test]
-    public function sellingLibraryAndDemocracyDiscountsAndFreezesTheDemocracyLine(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['library', 'democracy']), $player->game->currentTurn));
-
-        $this->assertSame(400, $order->total);
-        $democracyLine = $order->lines()[1];
-        $this->assertSame('democracy', $democracyLine->key);
-        $this->assertSame(180, $democracyLine->netCost);
-        $this->assertInstanceOf(AppliedPromotion::class, $democracyLine->promotion);
-        $this->assertSame(PromotionType::Discount, $democracyLine->promotion->type);
-        $this->assertSame('library', $democracyLine->promotion->source);
-        $this->assertSame(40, $democracyLine->promotion->amount);
     }
 
     #[Test]

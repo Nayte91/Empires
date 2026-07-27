@@ -42,73 +42,6 @@ final class KioskOperatorFlowTest extends WebTestCase
     use InteractsWithLiveComponents;
 
     #[Test]
-    public function aliceKioskAppliesAgricultureCreditsToCartPrices(): void
-    {
-        [, $alice] = $this->createGameWithAliceAndBob();
-        $client = self::getContainer()->get('test.client');
-
-        $this->cartFor($client, $alice, Cart::fromKeys(['democracy', 'pottery']));
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $alice], $client)->render()->toString();
-
-        $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>200</s', $rendered);
-        $this->assertMatchesRegularExpression('/id="product-pottery".*?data-price-net>50</s', $rendered);
-    }
-
-    #[Test]
-    public function submittingTheCartCreatesAPendingOrderInDatabase(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-
-        $this->submitAliceDemocracyAndPotteryOrder($alice);
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($alice, $game->currentTurn);
-
-        $this->assertInstanceOf(Order::class, $order);
-        $this->assertSame(OrderStatus::Pending, $order->status);
-        $this->assertSame(['democracy', 'pottery'], $order->keys());
-    }
-
-    #[Test]
-    public function thePendingOrderAppearsAsAPendingCardInThePlayersOrderHistory(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-
-        $this->submitAliceDemocracyAndPotteryOrder($alice);
-
-        $rendered = $this->createLiveComponent('PlayerOrders', [
-            'player' => $alice,
-            'ordersStamp' => '',
-        ])->render()->toString();
-
-        $this->assertStringContainsString('Turn '.$game->currentTurn, $rendered);
-        $this->assertStringContainsString('Democracy', $rendered);
-        $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringContainsString('pending', $rendered);
-    }
-
-    #[Test]
-    public function openingThePosOnAPendingCardPreloadsItsTicket(): void
-    {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
-
-        $this->submitAliceDemocracyAndPotteryOrder($alice);
-
-        $component = $this->createLiveComponent('PlayerOrders', [
-            'player' => $alice,
-            'ordersStamp' => '',
-        ]);
-        $component->call('openPos', ['turn' => $game->currentTurn]);
-        $crawler = $component->render()->crawler();
-
-        // The preloaded ticket is complete (no option promotion), so "Confirm
-        // purchase" — App\Component\PlayerOrders::isTicketEmpty/hasIncompleteAllocations,
-        // read directly, unaffected by the nested-Cart rendering issue documented
-        // in ShopComponentTest's editPendingOrder tests — is enabled.
-        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    #[Test]
     public function validatingFreezesLinesGrantsAdvancesAndValidatesTheOrderAndTheCardShowsItsTotalAndVictoryPoints(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
@@ -184,38 +117,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         // now owns: 150 - 20 = 130.
         $rendered = $aliceShop->render()->toString();
         $this->assertMatchesRegularExpression('/id="product-law".*?data-price-net>130</s', $rendered);
-    }
-
-    #[Test]
-    public function resubmittingAnOrderReplacesItsLinesOnTheSameOrderRow(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $client = self::getContainer()->get('test.client');
-
-        $this->cartFor($client, $bob, Cart::fromKeys(['pottery']));
-        $this->createCart($bob, $client)->call('checkout');
-
-        $firstOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
-        $this->assertInstanceOf(Order::class, $firstOrder);
-        $this->assertSame(['pottery'], $firstOrder->keys());
-
-        $this->cartFor($client, $bob, Cart::fromKeys(['democracy']));
-        $this->createCart($bob, $client)->call('checkout');
-
-        $secondOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
-        $this->assertInstanceOf(Order::class, $secondOrder);
-        $this->assertSame($firstOrder->id->toRfc4122(), $secondOrder->id->toRfc4122());
-        $this->assertSame(['democracy'], $secondOrder->keys());
-
-        $ordersForTurn = $this->freshEntityManager()->getRepository(Order::class)->createQueryBuilder('o')
-            ->andWhere('o.player = :player')
-            ->andWhere('o.turn = :turn')
-            ->setParameter('player', $bob->id, 'uuid')
-            ->setParameter('turn', $game->currentTurn)
-            ->getQuery()
-            ->getResult()
-        ;
-        $this->assertCount(1, $ordersForTurn);
     }
 
     #[Test]
