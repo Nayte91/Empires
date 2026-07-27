@@ -9,6 +9,13 @@
 
 ---
 
+## 🧭 Direction de fond
+
+- [ ] **Convertir tous les enregistrements d'états en journaux d'actions.** Aux échecs on n'enregistre jamais la position des pièces, on enregistre les coups — la position s'en déduit. Un journal se charge en mémoire, se lit d'un fichier ou d'une base indifféremment, se rejoue et s'annule ; une position, non. C'est le préalable à tout moteur de jeu.
+  Deux amorces existent : le `creditLedger` de `Player` est un journal partiel (boutique seule), et `CreateGame` comme les commandes de `shop-engine` sont déjà des actions nommées passées par un bus.
+
+---
+
 ## 🐞 Bugs connus, à corriger
 
 - [ ] **Shop — `EraseOrdersHandler` paie une requête pour un simple contrôle d'existence.** Il appelle `buyerFor()` uniquement pour reproduire le `\RuntimeException('Player not found.')`, plus lourd que le `find()` qu'il remplace. Accepté délibérément (erase est rare). La réponse honnête à long terme est peut-être que ce contrôle n'a jamais rien porté, et que le handler devrait être un simple no-op pour un buyer inconnu.
