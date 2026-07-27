@@ -8,8 +8,9 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
+use App\Game\Shop\CartItemAdder;
+use App\Game\Shop\CartKey;
 use App\Game\Shop\ShopConnector;
-use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -23,7 +24,6 @@ use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Command\EraseOrders;
 use Userforged\ShopEngine\Dto\OrderLine;
-use Userforged\ShopEngine\Exception\ShopExceptionReason;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Service\LineQuoter;
 
@@ -49,31 +49,17 @@ final class PlayerOrders
     public function __construct(
         private readonly OrderRepository $orderRepository,
         private readonly AdvanceCatalog $advanceCatalog,
+        private readonly CartItemAdder $cartItemAdder,
         private readonly CartStorageInterface $cartStorage,
         private readonly LineQuoter $lineQuoter,
         private readonly MessageBusInterface $commandBus,
         private readonly ShopConnector $shopConnector,
-        private readonly ShopExceptionTranslator $shopExceptionTranslator,
     ) {}
 
     #[LiveAction]
     public function add(#[LiveArg] string $key): void
     {
-        if (\in_array($key, $this->player->advances, true)) {
-            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::ProductAlreadyOwned, ['key' => $key]);
-
-            return;
-        }
-
-        $cart = $this->cartStorage->load($this->posCartKey());
-
-        if ($cart->has($key)) {
-            return;
-        }
-
-        $cart->add($key);
-        $this->cartStorage->save($this->posCartKey(), $cart);
-        $this->error = null;
+        $this->error = $this->cartItemAdder->add($this->player, $this->getPosCartKey(), $key);
     }
 
     #[LiveAction]
@@ -86,7 +72,7 @@ final class PlayerOrders
         $order = $this->orderRepository->findOneByPlayerAndWindow($this->player, $turn);
 
         if (!$order instanceof Order || OrderStatus::Pending !== $order->status) {
-            $this->cartStorage->clear($this->posCartKey());
+            $this->cartStorage->clear($this->getPosCartKey());
 
             return;
         }
@@ -94,7 +80,7 @@ final class PlayerOrders
         $cart = new Cart();
         $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
-        $this->cartStorage->save($this->posCartKey(), $cart);
+        $this->cartStorage->save($this->getPosCartKey(), $cart);
     }
 
     #[LiveAction]
@@ -117,13 +103,6 @@ final class PlayerOrders
     #[LiveListener('orderPlaced')]
     public function onOrderPlaced(): void {}
 
-    public function isTicketEmpty(): bool
-    {
-        $cart = $this->cartStorage->load($this->posCartKey());
-
-        return $cart->isEmpty();
-    }
-
     /** The order (if any) for the turn currently open in the POS. */
     public function getPosOrder(): ?Order
     {
@@ -132,7 +111,13 @@ final class PlayerOrders
 
     public function getCartStamp(): string
     {
-        return $this->cartStorage->load($this->posCartKey())->stamp();
+        return $this->cartStorage->load($this->getPosCartKey())->stamp();
+    }
+
+    /** Public for organisms/posDialog, which hands it to the nested ProductGrid and Cart as their storageKey. */
+    public function getPosCartKey(): string
+    {
+        return CartKey::pos($this->player);
     }
 
     /**
@@ -198,10 +183,5 @@ final class PlayerOrders
             'total' => $total,
             'vp' => array_sum(array_map(static fn (Advance $advance): int => $advance->points, $advances)),
         ];
-    }
-
-    private function posCartKey(): string
-    {
-        return 'pos.'.$this->player->id->toRfc4122();
     }
 }

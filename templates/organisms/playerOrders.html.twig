@@ -1,8 +1,7 @@
+{# `error` is only ever set by add(), whose button lives inside the POS dialog,
+   and it is not a LiveProp — so it can never outlive the dialog. It is rendered
+   there (organisms/posDialog) and nowhere else. #}
 <div {{ attributes }} class="player-orders">
-    {% if error and not posOpen %}
-        <p role="alert">{{ error }}</p>
-    {% endif %}
-
     <section aria-label="Orders per turn">
         {% for card in this.cards %}
             <twig:molecules:orderCard

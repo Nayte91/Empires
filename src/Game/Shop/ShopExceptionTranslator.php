@@ -27,11 +27,10 @@ use Userforged\ShopEngine\Exception\ShopExceptionReason;
  * Also the single home for unwrapping a dispatched command's
  * HandlerFailedException: App\Component\Cart and App\Component\PlayerOrders
  * used to each inline the same unwrap loop. And the single home for
- * pre-check guards that never throw at all — App\Component\Shop and
- * App\Component\PlayerOrders both refuse an already-owned advance before
- * ever dispatching a command, and call messageForReason() directly so that
- * copy stays in this one catalogue instead of drifting into a hardcoded
- * duplicate.
+ * pre-check guards that never throw at all — CartItemAdder refuses an
+ * already-owned advance, and App\Component\Shop a locked turn, before ever
+ * dispatching a command; both call messageForReason() directly so that copy
+ * stays in this one catalogue instead of drifting into a hardcoded duplicate.
  */
 final readonly class ShopExceptionTranslator
 {

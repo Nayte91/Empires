@@ -19,7 +19,7 @@
 
     <div class="shop__layout">
         <aside class="shop__cart">
-            <twig:organisms:ProductGrid :player="player" :locked="this.isLockedForTurn" storageKey="{{ player.id }}" />
+            <twig:organisms:ProductGrid :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
 
             <twig:Cart
                 :player="player"
@@ -27,7 +27,7 @@
                 :cartStamp="this.getCartStamp()"
                 :locked="this.isLockedForTurn"
                 checkoutLabel="Submit my order"
-                storageKey="{{ player.id }}"
+                :storageKey="this.cartKey"
             />
 
             {% if this.isCartVisible %}

@@ -8,6 +8,8 @@ use App\Entity\Order;
 use App\Entity\Player;
 use App\Game\AdvanceCatalog;
 use App\Game\Dto\Advance;
+use App\Game\Shop\CartItemAdder;
+use App\Game\Shop\CartKey;
 use App\Game\Shop\ShopConnector;
 use App\Game\Shop\ShopExceptionTranslator;
 use App\Repository\OrderRepository;
@@ -28,6 +30,7 @@ use Userforged\ShopEngine\Service\LineQuoter;
 final class Shop
 {
     use DefaultActionTrait;
+    use OrderRowsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
@@ -38,6 +41,7 @@ final class Shop
 
     public function __construct(
         private readonly AdvanceCatalog $advanceCatalog,
+        private readonly CartItemAdder $cartItemAdder,
         private readonly CartStorageInterface $cartStorage,
         private readonly OrderRepository $orderRepository,
         private readonly LineQuoter $lineQuoter,
@@ -52,7 +56,7 @@ final class Shop
     #[LiveAction]
     public function clearCart(): void
     {
-        $this->cartStorage->clear((string) $this->player->id);
+        $this->cartStorage->clear($this->getCartKey());
     }
 
     #[LiveAction]
@@ -64,21 +68,7 @@ final class Shop
             return;
         }
 
-        if (\in_array($key, $this->player->advances, true)) {
-            $this->error = $this->shopExceptionTranslator->messageForReason(ShopExceptionReason::ProductAlreadyOwned, ['key' => $key]);
-
-            return;
-        }
-
-        $cart = $this->cartStorage->load((string) $this->player->id);
-
-        if ($cart->has($key)) {
-            return;
-        }
-
-        $cart->add($key);
-        $this->cartStorage->save((string) $this->player->id, $cart);
-        $this->error = null;
+        $this->error = $this->cartItemAdder->add($this->player, $this->getCartKey(), $key);
     }
 
     #[LiveAction]
@@ -93,7 +83,7 @@ final class Shop
         $cart = new Cart();
         $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
-        $this->cartStorage->save((string) $this->player->id, $cart);
+        $this->cartStorage->save($this->getCartKey(), $cart);
     }
 
     /** Editable order for the current turn — a rejected order reopens for revision, resubmitting it. */
@@ -108,7 +98,7 @@ final class Shop
 
     public function isCartEmpty(): bool
     {
-        $cart = $this->cartStorage->load((string) $this->player->id);
+        $cart = $this->cartStorage->load($this->getCartKey());
 
         return $cart->isEmpty();
     }
@@ -126,7 +116,7 @@ final class Shop
             ? $order->lines()
             : $this->lineQuoter->quote($this->lineQuoter->intentsFromLines($order->lines()), $this->shopConnector->buyerFor($this->player));
 
-        return $this->toRows($lines);
+        return $this->toRows($lines, $this->advanceCatalog);
     }
 
     public function getOrderTotal(): int
@@ -165,7 +155,13 @@ final class Shop
 
     public function getCartStamp(): string
     {
-        return $this->cartStorage->load((string) $this->player->id)->stamp();
+        return $this->cartStorage->load($this->getCartKey())->stamp();
+    }
+
+    /** Public for organisms/shop, which hands it to the nested ProductGrid and Cart as their storageKey. */
+    public function getCartKey(): string
+    {
+        return CartKey::shop($this->player);
     }
 
     private function getCurrentTurnOrder(): ?Order
@@ -179,30 +175,5 @@ final class Shop
         }
 
         return $this->currentOrder;
-    }
-
-    /**
-     * @param list<OrderLine> $lines
-     *
-     * @return list<array{advance: Advance, line: OrderLine}>
-     */
-    private function toRows(array $lines): array
-    {
-        return array_map(
-            function (OrderLine $line): ?array {
-                $advance = $this->advanceCatalog->getAdvanceByName($line->key);
-
-                return $advance instanceof Advance ? ['advance' => $advance, 'line' => $line] : null;
-            },
-            $lines,
-        )
-                |> array_filter(...)
-                |> array_values(...);
-    }
-
-    /** @param list<array{advance: Advance, line: OrderLine}> $rows */
-    private function sumNetCost(array $rows): int
-    {
-        return array_sum(array_map(static fn (array $row): int => $row['line']->netCost, $rows));
     }
 }

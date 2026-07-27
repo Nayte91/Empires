@@ -33,6 +33,7 @@ final class Cart
     use ComponentToolsTrait;
     use DefaultActionTrait;
     use HasIncompleteAllocationsTrait;
+    use OrderRowsTrait;
 
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
@@ -136,7 +137,7 @@ final class Cart
     {
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer));
+        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer), $this->advanceCatalog);
     }
 
     public function getTotal(): int
@@ -226,30 +227,5 @@ final class Cart
     private function getCart(): CartDomain
     {
         return $this->cartStorage->load($this->storageKey);
-    }
-
-    /**
-     * @param list<OrderLine> $lines
-     *
-     * @return list<array{advance: Advance, line: OrderLine}>
-     */
-    private function toRows(array $lines): array
-    {
-        return array_map(
-            function (OrderLine $line): ?array {
-                $advance = $this->advanceCatalog->getAdvanceByName($line->key);
-
-                return $advance instanceof Advance ? ['advance' => $advance, 'line' => $line] : null;
-            },
-            $lines,
-        )
-                |> array_filter(...)
-                |> array_values(...);
-    }
-
-    /** @param list<array{advance: Advance, line: OrderLine}> $rows */
-    private function sumNetCost(array $rows): int
-    {
-        return array_sum(array_map(static fn (array $row): int => $row['line']->netCost, $rows));
     }
 }

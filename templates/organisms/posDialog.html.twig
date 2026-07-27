@@ -23,7 +23,7 @@
             Close
         </button>
     {% else %}
-        <twig:organisms:ProductGrid :player="player" :compact="true" storageKey="pos.{{ player.id }}" />
+        <twig:organisms:ProductGrid :player="player" :compact="true" :storageKey="this.posCartKey" />
 
         <twig:Cart
             :player="player"
@@ -31,7 +31,7 @@
             :directSale="true"
             :window="posTurn"
             checkoutLabel="Confirm purchase"
-            storageKey="pos.{{ player.id }}"
+            :storageKey="this.posCartKey"
         />
     {% endif %}
 </dialog>
