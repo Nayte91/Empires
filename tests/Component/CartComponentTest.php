@@ -89,6 +89,24 @@ final class CartComponentTest extends WebTestCase
     }
 
     /**
+     * One rule, one component: the checkout button is organisms/cart's, and it
+     * gates on Cart's own hasIncompleteAllocations. Both hosts used to assert
+     * this through their own render (Shop and the POS dialog); neither adds
+     * anything to it, so it is pinned here alone.
+     */
+    #[Test]
+    public function anIncompleteOptionAllocationDisablesCheckout(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = self::getContainer()->get('test.client');
+        $this->seedCart($client, (string) $player->id, 'monument');
+
+        $crawler = $this->createCart($player, client: $client)->render()->crawler();
+
+        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /**
      * checkout() converged onto Cart from Shop/PlayerOrders (see App\Component\Cart)
      * specifically to fix the parent submit/checkout button going stale after a
      * Cart-only re-render; the cross-component AJAX re-render itself isn't

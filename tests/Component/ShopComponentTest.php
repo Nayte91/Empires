@@ -34,13 +34,10 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * drives), order submission, pending/validated/rejected order views, and the
  * Mercure/route wiring.
  *
- * Several tests here look like duplicates of a same-named test in PosConsoleTest
- * (addingAnAlreadyOwnedAdvanceIsRefused, addingTheSameAdvanceTwiceIsDeduped, the add/total pair).
- * They are not: App\Component\Shop::add() and App\Component\PlayerOrders::add() are two
- * hand-copied implementations of the same four-step guard, diverging on the kiosk-only lock guard
- * and on the cart storage key. Each pair covers one copy, so deleting either half leaves a real
- * branch untested. Once the two add() methods are extracted into one shared collaborator, these
- * pairs collapse — not before.
+ * The guard sequence add() runs — already-owned refusal, then de-duplication — now lives in
+ * App\Game\Shop\CartItemAdder, shared with App\Component\PlayerOrders, so it is covered once and
+ * here. What stays per host is what each host wraps around it: Shop's turn lock below, and the
+ * POS dialog that renders PlayerOrders' refusal, in PosConsoleTest.
  */
 final class ShopComponentTest extends WebTestCase
 {
@@ -335,18 +332,6 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $freshComponent->render()->toString();
 
         $this->assertStringContainsString('Free gift: Astronavigation', $rendered);
-    }
-
-    #[Test]
-    public function addingMonumentWithIncompleteAllocationDisablesSubmit(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['monument']));
-
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
-
-        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]

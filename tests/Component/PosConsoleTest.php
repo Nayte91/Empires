@@ -50,10 +50,9 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * a stale checksum. `posOpen`/`posTurn` are passed directly to the fresh
  * instance instead of driving them through an actual openPos() call.
  *
- * The tests sharing a name with one in ShopComponentTest are deliberate, not duplicates:
- * App\Component\PlayerOrders::add() is a hand-copied twin of App\Component\Shop::add(), differing
- * on the cart storage key and on the kiosk-only lock guard. Each file covers its own copy. See
- * ShopComponentTest's header for the full note; they collapse only once add() is extracted.
+ * add()'s guard sequence is App\Game\Shop\CartItemAdder's, shared with App\Component\Shop and
+ * covered in ShopComponentTest. What this file owns of add() is what only the POS has: the pos.
+ * cart key, and organisms/posDialog as the one and only template that renders PlayerOrders' error.
  */
 final class PosConsoleTest extends WebTestCase
 {
@@ -105,28 +104,21 @@ final class PosConsoleTest extends WebTestCase
         $this->assertStringContainsString('Total: 60', $rendered);
     }
 
+    /**
+     * The refusal itself belongs to App\Game\Shop\CartItemAdder and is covered in
+     * ShopComponentTest. What only the POS can witness is where the copy surfaces:
+     * organisms/posDialog is the sole template rendering PlayerOrders' error, so
+     * an error raised with no dialog open would be shown nowhere at all.
+     */
     #[Test]
-    public function addingAnAlreadyOwnedAdvanceIsRefused(): void
+    public function aRefusedAddSurfacesItsErrorInsideThePosDialog(): void
     {
         [$game, $alice] = $this->createGameWithAliceAndBob();
 
         $component = $this->createPlayerOrders($alice, posOpen: true, posTurn: $game->currentTurn);
-        $rendered = $component->call('add', ['key' => 'agriculture'])->render()->toString();
+        $crawler = $component->call('add', ['key' => 'agriculture'])->render()->crawler();
 
-        $this->assertStringContainsString('already owned', $rendered);
-    }
-
-    #[Test]
-    public function addingTheSameAdvanceTwiceIsDeduped(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-
-        $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
-        $component->call('add', ['key' => 'pottery']);
-        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
-
-        $this->assertSame(1, substr_count($rendered, 'class="shop__cart-line"'));
-        $this->assertStringContainsString('Total: 60', $rendered);
+        $this->assertStringContainsString('already owned', $crawler->filter('dialog p[role="alert"]')->text());
     }
 
     #[Test]
@@ -167,19 +159,6 @@ final class PosConsoleTest extends WebTestCase
         $this->assertSame(0, $giftLine->netCost);
 
         $this->assertSame(['anatomy', 'astronavigation'], $this->reloadPlayer($bob)->advances);
-    }
-
-    #[Test]
-    public function checkoutIsDisabledWhileTheMonumentAllocationIsIncomplete(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $client = self::getContainer()->get('test.client');
-
-        $this->posCartFor($client, $bob, Cart::fromKeys(['monument']));
-
-        $crawler = $this->createPlayerOrders($bob, $client, posOpen: true, posTurn: $game->currentTurn)->render()->crawler();
-
-        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
     #[Test]

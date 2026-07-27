@@ -105,6 +105,23 @@ final class ProductGridComponentTest extends KernelTestCase
         $this->assertMatchesRegularExpression('/<button[^>]*\bdisabled\b/', $card);
     }
 
+    /**
+     * `locked` is the host's turn-lock reaching the card (App\Component\Shop::isLockedForTurn):
+     * a product that is neither owned nor in the cart must still refuse the add
+     * once the turn's order has been validated.
+     */
+    #[Test]
+    public function lockedDisablesTheAddButtonOfAnOtherwiseAvailableProduct(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $unlocked = $this->renderProductGrid($player, (string) $player->id)->crawler();
+        $locked = $this->renderProductGrid($player, (string) $player->id, locked: true)->crawler();
+
+        $this->assertFalse($unlocked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($locked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
+    }
+
     #[Test]
     public function compactProductsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
     {
