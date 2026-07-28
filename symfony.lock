@@ -370,5 +370,8 @@
     },
     "twig/extra-bundle": {
         "version": "v3.21.0"
+    },
+    "userforged/shop-engine": {
+        "version": "dev-main"
     }
 }

@@ -12,13 +12,13 @@
 
         <label>
             Players
-            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="game.playerCount" value="{{ game.playerCount }}">
+            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}">
         </label>
 
         <label>
             Region
-            <select data-model="game.region" {{ this.regionChoices|length == 1 ? 'disabled' }}>
-                {% for choice in this.regionChoices %}
+            <select data-model="game.region" {{ computed.regionChoices|length == 1 ? 'disabled' }}>
+                {% for choice in computed.regionChoices %}
                     <option value="{{ choice.value }}" {{ (game.region ?? '') == choice.value ? 'selected' }}>{{ choice.label }}</option>
                 {% endfor %}
             </select>
@@ -45,7 +45,7 @@
         <div class="game-creator__add-player">
             <label>
                 New player name
-                <input type="text" data-model="norender|newPlayerName" value="{{ newPlayerName }}" {{ this.isPlayerLimitReached ? 'disabled' }}>
+                <input type="text" data-model="norender|newPlayerName" value="{{ newPlayerName }}" {{ computed.isPlayerLimitReached ? 'disabled' }}>
             </label>
 
             {% if _errors.has('newPlayerName') %}
@@ -54,17 +54,17 @@
 
             <label>
                 Empire
-                <select data-model="newPlayerEmpire" {{ this.isPlayerLimitReached ? 'disabled' }}>
+                <select data-model="newPlayerEmpire" {{ computed.isPlayerLimitReached ? 'disabled' }}>
                     <option value="" {{ newPlayerEmpire == '' ? 'selected' }}>— no empire —</option>
-                    {% for empire in this.availableEmpires %}
-                        <option value="{{ empire.name }}" {{ newPlayerEmpire == empire.name ? 'selected' }}>{{ empire.name|capitalize }}</option>
+                    {% for empire in computed.availableEmpires %}
+                        <option value="{{ empire }}" {{ newPlayerEmpire == empire ? 'selected' }}>{{ empire|capitalize }}</option>
                     {% else %}
                         <option value="" disabled>No empire available for the current settings.</option>
                     {% endfor %}
                 </select>
             </label>
 
-            {% set isAddPlayerDisabled = this.isPlayerLimitReached %}
+            {% set isAddPlayerDisabled = computed.isPlayerLimitReached %}
             <button
                 type="button"
                 {{ live_action('addPlayer') }}
@@ -75,7 +75,7 @@
             </button>
         </div>
 
-        {% if this.isPlayerLimitReached %}
+        {% if computed.isPlayerLimitReached %}
             <p class="game-creator__hint">Player limit reached ({{ game.players|length }}/{{ game.playerCount }}).</p>
         {% endif %}
 
@@ -168,11 +168,13 @@
             <p class="game-creator__slug-preview">{{ url('app_game_dashboard', {slug: game.slug}) }}</p>
         {% endif %}
 
+        {% set isLaunchDisabled = not this.canLaunch %}
         <button
             type="button"
             class="game-creator__launch"
             {{ live_action('launch') }}
-            {{ not this.canLaunch ? 'disabled' }}
+            {{ isLaunchDisabled ? 'disabled' }}
+            {% if not isLaunchDisabled %}data-loading="addAttribute(disabled)"{% endif %}
         >
             Create the game
         </button>

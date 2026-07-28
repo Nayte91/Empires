@@ -210,6 +210,47 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
+    public function addingAPlayerWhoseNameOnlyDiffersBySurroundingWhitespaceIsRefused(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('newPlayerName', '  toto  ')
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+        $component->call('addPlayer');
+
+        $component
+            ->set('newPlayerName', '  toto  ')
+            ->set('newPlayerEmpire', 'rome')
+        ;
+        $rendered = $component->call('addPlayer')->render();
+
+        $this->assertStringContainsString('Name already taken.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertSame(1, substr_count($rendered->toString(), '<td>Toto</td>'));
+    }
+
+    /**
+     * newPlayerEmpire can hold an empire outside the current scenario pool — it survives a
+     * player count or region change that re-renders the select without it. The state is set
+     * up directly here; only the server-side guard in addPlayer() keeps it out of the roster.
+     * The assertion reads the action response, not a later render(): $error is not a LiveProp,
+     * so it does not survive into a subsequent request.
+     */
+    #[Test]
+    public function addingAPlayerWithAnEmpireOutsideTheCurrentScenarioIsRefused(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 5)
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', 'celt')
+        ;
+
+        $actionResponse = $component->call('addPlayer')->response()->getContent();
+
+        $this->assertStringContainsString('Empire &quot;celt&quot; is not available.', (string) $actionResponse);
+        $this->assertSame([], $component->component()->game->players);
+    }
+
+    #[Test]
     public function addingAPlayerWithABlankNameShowsAFieldError(): void
     {
         $rendered = $this->createLiveComponent('GameCreator')
@@ -741,6 +782,8 @@ final class GameCreatorTest extends WebTestCase
     {
         preg_match('/<button\b[^>]*data-live-action-param="launch"[^>]*>/', $html, $matches);
 
-        return 1 === preg_match('/\bdisabled\b/', $matches[0] ?? '');
+        $tag = (string) preg_replace('/\sdata-loading="[^"]*"/', '', $matches[0] ?? '');
+
+        return 1 === preg_match('/\bdisabled\b/', $tag);
     }
 }

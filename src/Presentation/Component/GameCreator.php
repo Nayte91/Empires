@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\Empire;
-use App\Rules\Ruleset\EmpireRegistry;
 use App\Rules\Ruleset\GameRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Scenario\ScenarioRuleSummarizer;
@@ -50,7 +48,6 @@ final class GameCreator
     public ?string $error = null;
 
     public function __construct(
-        private readonly EmpireRegistry $empireRegistry,
         private readonly ScenarioRegistry $scenarioRegistry,
         private readonly GameRegistry $gameRegistry,
         private readonly UrlGeneratorInterface $urlGenerator,
@@ -115,13 +112,13 @@ final class GameCreator
 
         $empire = $this->newPlayerEmpire;
 
-        if ('' !== $empire && !\in_array($empire, $this->remainingEmpires(), true)) {
+        if ('' !== $empire && !\in_array($empire, $this->getAvailableEmpires(), true)) {
             $this->error = sprintf('Empire "%s" is not available.', $empire);
 
             return;
         }
 
-        $this->game->players[] = ['name' => trim($this->newPlayerName), 'empire' => $empire];
+        $this->game->players[] = ['name' => ucfirst(trim($this->newPlayerName)), 'empire' => $empire];
         $this->newPlayerName = '';
         $this->newPlayerEmpire = '';
         $this->error = null;
@@ -129,7 +126,6 @@ final class GameCreator
         /** @var list<string> $validatedFields */
         $validatedFields = $this->validatedFields;
         $this->validatedFields = array_values(array_diff($validatedFields, ['newPlayerName']));
-        $this->getErrorsObject()->set('newPlayerName', []);
     }
 
     #[LiveAction]
@@ -146,7 +142,7 @@ final class GameCreator
             return;
         }
 
-        $remaining = $this->remainingEmpires();
+        $remaining = $this->getAvailableEmpires();
 
         if ([] === $remaining) {
             return;
@@ -158,7 +154,7 @@ final class GameCreator
     #[LiveAction]
     public function assignRandomEmpires(): void
     {
-        $remaining = $this->remainingEmpires();
+        $remaining = $this->getAvailableEmpires();
         shuffle($remaining);
 
         foreach ($this->game->players as $index => $player) {
@@ -220,7 +216,7 @@ final class GameCreator
 
     public function canAssignRandomEmpires(): bool
     {
-        if ([] === $this->remainingEmpires()) {
+        if ([] === $this->getAvailableEmpires()) {
             return false;
         }
 
@@ -240,45 +236,21 @@ final class GameCreator
     /** @return list<string> */
     public function getConformityIssues(): array
     {
-        $issues = [];
-
-        $countMismatch = $this->getPlayerCountMismatchIssue();
-
-        if (null !== $countMismatch) {
-            $issues[] = $countMismatch;
-        }
-
-        array_push($issues, ...$this->getInvalidEmpireIssues());
-        array_push($issues, ...$this->getDuplicateEmpireIssues());
-
-        $missingEmpireIssue = $this->getMissingEmpireIssue();
-
-        if (null !== $missingEmpireIssue) {
-            $issues[] = $missingEmpireIssue;
-        }
-
-        return $issues;
+        return array_values(array_filter([
+            $this->getPlayerCountMismatchIssue(),
+            ...$this->getInvalidEmpireIssues(),
+            ...$this->getDuplicateEmpireIssues(),
+            $this->getMissingEmpireIssue(),
+        ], static fn (?string $issue): bool => null !== $issue));
     }
 
-    /** @return list<Empire> */
+    /** @return list<string> */
     public function getAvailableEmpires(): array
     {
-        return array_map($this->empireRegistry->findByName(...), $this->remainingEmpires())
-                |> (static fn ($x): array => array_filter($x, static fn (?Empire $empire): bool => $empire instanceof Empire))
-                |> array_values(...);
-    }
-
-    /**
-     * @return array<string, array{
-     *     name: string,
-     *     name2019: string,
-     *     name2024: string,
-     *     empires: list<string>,
-     * }>
-     */
-    public function getRegions(): array
-    {
-        return $this->gameRegistry->getRegions();
+        return array_values(array_diff(
+            $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region),
+            array_column($this->game->players, 'empire'),
+        ));
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -303,22 +275,6 @@ final class GameCreator
     public static function slugify(string $value): string
     {
         return strtolower((string) new AsciiSlugger()->slug($value));
-    }
-
-    /** @return list<string> */
-    private function remainingEmpires(): array
-    {
-        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
-
-        $taken = array_map(
-            static fn (array $player): string => $player['empire'],
-            $this->game->players,
-        );
-
-        return array_values(array_filter(
-            $scenarioEmpires,
-            static fn (string $empire): bool => !\in_array($empire, $taken, true),
-        ));
     }
 
     private function getPlayerCountMismatchIssue(): ?string
@@ -395,13 +351,7 @@ final class GameCreator
 
     private function getMissingEmpireIssue(): ?string
     {
-        $missing = 0;
-
-        foreach ($this->game->players as $player) {
-            if ('' === $player['empire']) {
-                ++$missing;
-            }
-        }
+        $missing = \count(array_filter($this->game->players, static fn (array $player): bool => '' === $player['empire']));
 
         if (0 === $missing) {
             return null;
