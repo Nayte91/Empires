@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Ruleset\EmpireCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
 use App\Rules\StandingsCalculator;
 use App\State\Game;
 use App\State\Player;
@@ -33,7 +33,7 @@ final class ScoreBoard
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly StandingsCalculator $standingsCalculator,
-        private readonly EmpireCatalog $empireCatalog,
+        private readonly EmpireRegistry $empireRegistry,
     ) {}
 
     public function getPlayerUrl(Player $player): string
@@ -71,7 +71,7 @@ final class ScoreBoard
 
     public function empireAdjective(Player $player): ?string
     {
-        return null === $player->empire ? null : $this->empireCatalog->findByName($player->empire)?->adjective;
+        return null === $player->empire ? null : $this->empireRegistry->findByName($player->empire)?->adjective;
     }
 
     private function buildQr(string $url): string

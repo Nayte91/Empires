@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Presentation\Twig;
 
-use App\Rules\Ruleset\EmpireCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
 use Twig\Attribute\AsTwigFilter;
 
 final readonly class EmpireExtension
 {
-    public function __construct(private EmpireCatalog $empireCatalog) {}
+    public function __construct(private EmpireRegistry $empireRegistry) {}
 
     #[AsTwigFilter('empire_demonym')]
     public function getDemonym(?string $slug): ?string
@@ -18,7 +18,7 @@ final readonly class EmpireExtension
             return null;
         }
 
-        return $this->empireCatalog->findByName($slug)?->demonym;
+        return $this->empireRegistry->findByName($slug)?->demonym;
     }
 
     #[AsTwigFilter('empire_adjective')]
@@ -28,6 +28,6 @@ final readonly class EmpireExtension
             return null;
         }
 
-        return $this->empireCatalog->findByName($slug)?->adjective;
+        return $this->empireRegistry->findByName($slug)?->adjective;
     }
 }

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\ShopFlow;
 
 use App\State\Order;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\Rules\Shop\AdvancePriceResolver;
 use App\Infrastructure\Shop\PlayerBuyerProvider;
@@ -50,7 +50,7 @@ final class DirectSaleTest extends WebTestCase
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
         $this->hub = self::getContainer()->get(RecordingHub::class);
 
         // SubmitOrderHandler, OrderValidator and SellDirectHandler are built by hand
@@ -62,7 +62,7 @@ final class DirectSaleTest extends WebTestCase
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $shopConnector);
         $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
+        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $shopConnector);
         // Single shared DoctrineTransaction instance, matching the singleton the
         // container injects in production. SellDirectHandler doesn't open a scope of

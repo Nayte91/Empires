@@ -6,9 +6,9 @@ namespace App\Presentation\Component;
 
 use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\Empire;
-use App\Rules\Ruleset\EmpireCatalog;
-use App\Rules\Ruleset\GameData;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
+use App\Rules\Ruleset\GameRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Scenario\ScenarioRuleSummarizer;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -50,9 +50,9 @@ final class GameCreator
     public ?string $error = null;
 
     public function __construct(
-        private readonly EmpireCatalog $empireCatalog,
-        private readonly ScenarioCatalog $scenarioCatalog,
-        private readonly GameData $gameData,
+        private readonly EmpireRegistry $empireRegistry,
+        private readonly ScenarioRegistry $scenarioRegistry,
+        private readonly GameRegistry $gameRegistry,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly MessageBusInterface $commandBus,
         private readonly ValidatorInterface $validator,
@@ -85,7 +85,7 @@ final class GameCreator
 
     public function onScenarioUpdated(): void
     {
-        $regions = $this->scenarioCatalog->regionsFor($this->game->playerCount);
+        $regions = $this->scenarioRegistry->regionsFor($this->game->playerCount);
 
         if ([] === $regions) {
             $this->game->region = null;
@@ -263,7 +263,7 @@ final class GameCreator
     /** @return list<Empire> */
     public function getAvailableEmpires(): array
     {
-        return array_map($this->empireCatalog->findByName(...), $this->remainingEmpires())
+        return array_map($this->empireRegistry->findByName(...), $this->remainingEmpires())
                 |> (static fn ($x): array => array_filter($x, static fn (?Empire $empire): bool => $empire instanceof Empire))
                 |> array_values(...);
     }
@@ -278,13 +278,13 @@ final class GameCreator
      */
     public function getRegions(): array
     {
-        return $this->gameData->getRegions();
+        return $this->gameRegistry->getRegions();
     }
 
     /** @return list<array{value: string, label: string}> */
     public function getRegionChoices(): array
     {
-        if ([] === $this->scenarioCatalog->regionsFor($this->game->playerCount)) {
+        if ([] === $this->scenarioRegistry->regionsFor($this->game->playerCount)) {
             return [['value' => '', 'label' => 'East + West']];
         }
 
@@ -308,7 +308,7 @@ final class GameCreator
     /** @return list<string> */
     private function remainingEmpires(): array
     {
-        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
+        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
 
         $taken = array_map(
             static fn (array $player): string => $player['empire'],
@@ -356,7 +356,7 @@ final class GameCreator
     /** @return list<string> */
     private function getInvalidEmpireIssues(): array
     {
-        $scenarioEmpires = $this->scenarioCatalog->empiresFor($this->game->playerCount, $this->game->region);
+        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
         $issues = [];
 
         foreach ($this->game->players as $player) {
@@ -424,6 +424,6 @@ final class GameCreator
      */
     private function getLimits(): array
     {
-        return $this->gameData->getLimits();
+        return $this->gameRegistry->getLimits();
     }
 }

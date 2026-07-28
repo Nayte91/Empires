@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use Userforged\ShopEngine\Cart;
 
 trait HasIncompleteAllocationsTrait
 {
     /** Check if any option-promoted line has an unspent balance. */
-    protected function isCartHasIncompleteAllocations(Cart $cart, AdvanceCatalog $advanceCatalog): bool
+    protected function isCartHasIncompleteAllocations(Cart $cart, AdvanceRegistry $advanceRegistry): bool
     {
         foreach ($cart->items as $item) {
-            $target = $advanceCatalog->getAdvanceByName($item->key)?->promotion?->option?->budget;
+            $target = $advanceRegistry->getAdvanceByName($item->key)?->promotion?->option?->budget;
 
             if (null === $target) {
                 continue;

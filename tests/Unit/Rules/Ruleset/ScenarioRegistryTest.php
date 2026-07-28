@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Ruleset;
 
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\ScenarioRegistry;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class ScenarioCatalogTest extends TestCase
+final class ScenarioRegistryTest extends TestCase
 {
-    private ScenarioCatalog $catalog;
+    private ScenarioRegistry $registry;
 
     protected function setUp(): void
     {
-        $this->catalog = new ScenarioCatalog(\dirname(__DIR__, 4).'/config/game/scenarios.yaml');
+        $this->registry = new ScenarioRegistry(\dirname(__DIR__, 4).'/config/game/scenarios.yaml');
     }
 
     /** @param list<string> $expectedSlugs */
@@ -23,7 +23,7 @@ final class ScenarioCatalogTest extends TestCase
     #[DataProvider('provideEmpiresForReturnsTheScenariosExactSlugsCases')]
     public function empiresForReturnsTheScenariosExactSlugs(int $playerCount, string $region, array $expectedSlugs): void
     {
-        $this->assertSame($expectedSlugs, $this->catalog->empiresFor($playerCount, $region));
+        $this->assertSame($expectedSlugs, $this->registry->empiresFor($playerCount, $region));
     }
 
     /** @return iterable<string, array{int, string, list<string>}> */
@@ -39,7 +39,7 @@ final class ScenarioCatalogTest extends TestCase
     #[DataProvider('provideEmpiresForReturnsAFlatListForACombinedScenarioCases')]
     public function empiresForReturnsAFlatListForACombinedScenario(int $playerCount): void
     {
-        $empires = $this->catalog->empiresFor($playerCount, null);
+        $empires = $this->registry->empiresFor($playerCount, null);
 
         $this->assertCount($playerCount, $empires);
         $this->assertSame($empires, array_values(array_filter($empires, is_string(...))));
@@ -59,7 +59,7 @@ final class ScenarioCatalogTest extends TestCase
     #[DataProvider('provideEmpiresForReturnsEmptyArrayForAnUnknownScenarioCases')]
     public function empiresForReturnsEmptyArrayForAnUnknownScenario(int $playerCount, ?string $region): void
     {
-        $this->assertSame([], $this->catalog->empiresFor($playerCount, $region));
+        $this->assertSame([], $this->registry->empiresFor($playerCount, $region));
     }
 
     /** @return iterable<string, array{int, ?string}> */
@@ -77,7 +77,7 @@ final class ScenarioCatalogTest extends TestCase
     #[Test]
     public function playerCountsContainsAllScenarioCounts(): void
     {
-        $counts = $this->catalog->playerCounts();
+        $counts = $this->registry->playerCounts();
 
         $this->assertSame(range(3, 18), $counts);
     }
@@ -87,7 +87,7 @@ final class ScenarioCatalogTest extends TestCase
     #[DataProvider('provideRegionsForListsTheScenariosRegionsCases')]
     public function regionsForListsTheScenariosRegions(int $playerCount, array $expectedRegions): void
     {
-        $this->assertSame($expectedRegions, $this->catalog->regionsFor($playerCount));
+        $this->assertSame($expectedRegions, $this->registry->regionsFor($playerCount));
     }
 
     /** @return iterable<string, array{int, list<string>}> */
@@ -103,7 +103,7 @@ final class ScenarioCatalogTest extends TestCase
     #[DataProvider('provideStartingCreditsForReturnsTheScenariosCreditsCases')]
     public function startingCreditsForReturnsTheScenariosCredits(int $playerCount, array $expectedCredits): void
     {
-        $this->assertSame($expectedCredits, $this->catalog->startingCreditsFor($playerCount));
+        $this->assertSame($expectedCredits, $this->registry->startingCreditsFor($playerCount));
     }
 
     /** @return iterable<string, array{int, array<string, int>}> */

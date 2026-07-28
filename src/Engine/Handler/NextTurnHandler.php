@@ -7,7 +7,7 @@ namespace App\Engine\Handler;
 use App\Engine\Event\GameUpdated;
 use App\Infrastructure\Repository\GameRepository;
 use App\Rules\Action\NextTurn;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\GameRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,7 +23,7 @@ final readonly class NextTurnHandler
     public function __construct(
         private EntityManagerInterface $entityManager,
         private GameRepository $gameRepository,
-        private GameData $gameData,
+        private GameRegistry $gameRegistry,
         private MessageBusInterface $eventBus,
     ) {}
 
@@ -47,6 +47,6 @@ final readonly class NextTurnHandler
 
     private function maxTurns(): int
     {
-        return $this->gameData->getLimits()['max_turns'] ?? 20;
+        return $this->gameRegistry->getLimits()['max_turns'] ?? 20;
     }
 }

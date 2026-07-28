@@ -8,8 +8,8 @@ use App\State\Game;
 use App\State\Player;
 use App\State\ASTVersion;
 use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\GameData;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\GameRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,7 +37,7 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function playerCountInputBoundsComeFromGameDataLimits(): void
     {
-        $limits = self::getContainer()->get(GameData::class)->getLimits();
+        $limits = self::getContainer()->get(GameRegistry::class)->getLimits();
 
         $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
 
@@ -603,7 +603,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('assignRandomEmpire', ['index' => 1])->render()->toString();
 
-        $scenarioEmpires = self::getContainer()->get(ScenarioCatalog::class)->empiresFor(9, 'west');
+        $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->empiresFor(9, 'west');
         $players = $component->component()->game->players;
 
         $this->assertNotSame('', $players[1]['empire']);
@@ -657,7 +657,7 @@ final class GameCreatorTest extends WebTestCase
 
         $component->call('assignRandomEmpires');
 
-        $scenarioEmpires = self::getContainer()->get(ScenarioCatalog::class)->empiresFor(3, 'west');
+        $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->empiresFor(3, 'west');
         $assignedEmpires = array_map(
             static fn (array $player): string => $player['empire'],
             $component->component()->game->players,

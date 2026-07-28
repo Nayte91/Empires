@@ -6,8 +6,8 @@ namespace App\Tests\Unit\Rules;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Ruleset\EmpireCatalog;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\CensusOrderCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
@@ -136,9 +136,9 @@ final class CensusOrderCalculatorTest extends TestCase
         $projectDir = dirname(__DIR__, 3);
 
         return new CensusOrderCalculator(
-            new EmpireCatalog(
+            new EmpireRegistry(
                 $projectDir.'/config/game/empires.yaml',
-                new ScenarioCatalog($projectDir.'/config/game/scenarios.yaml'),
+                new ScenarioRegistry($projectDir.'/config/game/scenarios.yaml'),
             ),
             GameConfig::advanceEffects(),
         );

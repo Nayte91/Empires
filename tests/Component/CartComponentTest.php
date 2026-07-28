@@ -24,8 +24,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * The Cart LiveComponent is shared between the player kiosk (Shop, storageKey
  * = player id) and the operator POS (PlayerOrders, storageKey = 'pos.'.player
  * id) — see App\Presentation\Component\Cart. It only owns cart lines/gift/allocation/total;
- * the product grid and the add() action live on App\Presentation\Component\ProductGrid and
- * its hosts, covered by ProductGridComponentTest/ShopComponentTest/PosConsoleTest.
+ * the catalog and the add() action live on App\Presentation\Component\Catalog and
+ * its hosts, covered by CatalogComponentTest/ShopComponentTest/PosConsoleTest.
  */
 final class CartComponentTest extends WebTestCase
 {
@@ -184,7 +184,7 @@ final class CartComponentTest extends WebTestCase
         $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
-    /** Scopes assertions to the cart's line items, as opposed to the product grid (which repeats advance names). */
+    /** Scopes assertions to the cart's line items, as opposed to the catalog (which repeats advance names). */
     private function extractCartLinesSection(string $html): string
     {
         $start = strpos($html, '<ul class="shop__cart-lines">');

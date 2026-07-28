@@ -4,26 +4,26 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules\Ruleset;
 
-use App\Rules\Ruleset\AstCatalog;
+use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
 use App\Rules\Ruleset\AstEraDefinition;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-final class AstCatalogTest extends TestCase
+final class AstRegistryTest extends TestCase
 {
-    private AstCatalog $astCatalog;
+    private AstRegistry $astRegistry;
 
     protected function setUp(): void
     {
-        $this->astCatalog = new AstCatalog(\dirname(__DIR__, 4).'/config/game/ast.yaml');
+        $this->astRegistry = new AstRegistry(\dirname(__DIR__, 4).'/config/game/ast.yaml');
     }
 
     #[Test]
     public function getErasReturnsTheSevenErasInFileOrder(): void
     {
-        $eras = $this->astCatalog->getEras();
+        $eras = $this->astRegistry->getEras();
 
         $this->assertCount(7, $eras);
         $this->assertSame(['start', 'stone_age', 'early_bronze_age', 'middle_bronze_age', 'late_bronze_age', 'early_iron_age', 'late_iron_age'], array_map(static fn (AstEraDefinition $era): string => $era->key, $eras));
@@ -32,7 +32,7 @@ final class AstCatalogTest extends TestCase
     #[Test]
     public function stoneAgeHasEmptyRequirementsForBothModes(): void
     {
-        $stoneAge = $this->astCatalog->getEras()[1];
+        $stoneAge = $this->astRegistry->getEras()[1];
 
         $this->assertSame([], $stoneAge->basicRequirements);
         $this->assertSame([], $stoneAge->expertRequirements);
@@ -41,7 +41,7 @@ final class AstCatalogTest extends TestCase
     #[Test]
     public function lateIronAgeHasItsFullBasicAndExpertRequirements(): void
     {
-        $lateIronAge = $this->astCatalog->getEraForPosition(15, ASTVersion::BASIC, 'standard');
+        $lateIronAge = $this->astRegistry->getEraForPosition(15, ASTVersion::BASIC, 'standard');
 
         $this->assertSame('late_iron_age', $lateIronAge->key);
         $this->assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
@@ -52,7 +52,7 @@ final class AstCatalogTest extends TestCase
     #[DataProvider('provideGetEraForPositionResolvesTheStandardBasicTrackCases')]
     public function getEraForPositionResolvesTheStandardBasicTrack(int $position, string $expectedEraKey): void
     {
-        $this->assertSame($expectedEraKey, $this->astCatalog->getEraForPosition($position, ASTVersion::BASIC, 'standard')->key);
+        $this->assertSame($expectedEraKey, $this->astRegistry->getEraForPosition($position, ASTVersion::BASIC, 'standard')->key);
     }
 
     /** @return iterable<string, array{int, string}> */
@@ -74,15 +74,15 @@ final class AstCatalogTest extends TestCase
     #[Test]
     public function getEraForPositionResolvesDifferentlyPerEmpireGroup(): void
     {
-        $this->assertSame('middle_bronze_age', $this->astCatalog->getEraForPosition(8, ASTVersion::BASIC, 'standard')->key);
-        $this->assertSame('early_bronze_age', $this->astCatalog->getEraForPosition(8, ASTVersion::BASIC, 'slow_starter')->key);
+        $this->assertSame('middle_bronze_age', $this->astRegistry->getEraForPosition(8, ASTVersion::BASIC, 'standard')->key);
+        $this->assertSame('early_bronze_age', $this->astRegistry->getEraForPosition(8, ASTVersion::BASIC, 'slow_starter')->key);
     }
 
     #[Test]
     #[DataProvider('provideGetTrackLengthReturnsTheCorrectTotalForEachTrackCases')]
     public function getTrackLengthReturnsTheCorrectTotalForEachTrack(ASTVersion $astVersion, string $group, int $expectedLength): void
     {
-        $this->assertSame($expectedLength, $this->astCatalog->getTrackLength($astVersion, $group));
+        $this->assertSame($expectedLength, $this->astRegistry->getTrackLength($astVersion, $group));
     }
 
     /** @return iterable<string, array{ASTVersion, string, int}> */
@@ -103,7 +103,7 @@ final class AstCatalogTest extends TestCase
     #[DataProvider('provideResolveEmpireGroupReturnsTheGroupForTheVersionCases')]
     public function resolveEmpireGroupReturnsTheGroupForTheVersion(ASTVersion $astVersion, ?string $empireSlug, string $expectedGroup): void
     {
-        $this->assertSame($expectedGroup, $this->astCatalog->resolveEmpireGroup($astVersion, $empireSlug));
+        $this->assertSame($expectedGroup, $this->astRegistry->resolveEmpireGroup($astVersion, $empireSlug));
     }
 
     /** @return iterable<string, array{ASTVersion, ?string, string}> */

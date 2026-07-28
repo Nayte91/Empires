@@ -67,11 +67,11 @@ final class PlayerAdvisorTest extends TestCase
 
     private function tax(): TaxCalculator
     {
-        return new TaxCalculator(new StockCalculator(GameConfig::gameData()), GameConfig::advanceEffects());
+        return new TaxCalculator(new StockCalculator(GameConfig::gameRegistry()), GameConfig::advanceEffects());
     }
 
     private function hand(): HandSizeCalculator
     {
-        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
+        return new HandSizeCalculator(GameConfig::gameRegistry(), GameConfig::advanceEffects());
     }
 }

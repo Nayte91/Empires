@@ -26,6 +26,6 @@ final class ScenarioRuleSummarizerTest extends TestCase
 
     private function hand(): HandSizeCalculator
     {
-        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
+        return new HandSizeCalculator(GameConfig::gameRegistry(), GameConfig::advanceEffects());
     }
 }

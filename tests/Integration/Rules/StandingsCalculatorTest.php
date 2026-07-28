@@ -12,7 +12,7 @@ use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 /**
- * A WebTestCase because resolving what a player owns needs the advance catalogue, which only the
+ * A WebTestCase because resolving what a player owns needs the advance registry, which only the
  * container can build.
  */
 final class StandingsCalculatorTest extends WebTestCase

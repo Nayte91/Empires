@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
-use App\Rules\Ruleset\AstCatalog;
+use App\Rules\Ruleset\AstRegistry;
 use App\State\Game;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class GameController extends AbstractController
 {
-    public function __construct(private readonly AstCatalog $astCatalog) {}
+    public function __construct(private readonly AstRegistry $astRegistry) {}
 
     #[Route('/create', name: 'app_game_create', methods: ['GET'], priority: 10)]
     public function create(): Response
@@ -36,7 +36,7 @@ final class GameController extends AbstractController
     ): Response {
         return $this->render('skeletons/gameAst.html.twig', [
             'game' => $game,
-            'eras' => $this->astCatalog->getEras(),
+            'eras' => $this->astRegistry->getEras(),
         ]);
     }
 

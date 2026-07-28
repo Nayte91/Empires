@@ -7,7 +7,7 @@ namespace App\Rules\Ruleset;
 use App\State\ASTVersion;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-final class AstCatalog
+final class AstRegistry
 {
     private const array ERA_NAMES = [
         'start' => 'Start',

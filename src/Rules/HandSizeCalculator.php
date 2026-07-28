@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Ruleset\AdvanceEffect;
-use App\Rules\Ruleset\AdvanceEffectCatalog;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\AdvanceEffectRegistry;
+use App\Rules\Ruleset\GameRegistry;
 use App\State\Player;
 
 /**
@@ -17,8 +17,8 @@ use App\State\Player;
 final readonly class HandSizeCalculator
 {
     public function __construct(
-        private GameData $gameData,
-        private AdvanceEffectCatalog $advanceEffects,
+        private GameRegistry $gameRegistry,
+        private AdvanceEffectRegistry $advanceEffects,
     ) {}
 
     /**
@@ -28,7 +28,7 @@ final readonly class HandSizeCalculator
      */
     public function baseLimitFor(int $playerCount): int
     {
-        $brackets = $this->gameData->getLimits()['hand_size_brackets'] ?? [];
+        $brackets = $this->gameRegistry->getLimits()['hand_size_brackets'] ?? [];
         $limit = $brackets[0]['cards'] ?? 0;
 
         foreach ($brackets as $bracket) {

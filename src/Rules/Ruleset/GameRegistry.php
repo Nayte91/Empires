@@ -6,9 +6,9 @@ namespace App\Rules\Ruleset;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-// REFACTOR-WHEN: a 3rd responsibility joins limits/regions — split them (regions -> ScenarioCatalog,
+// REFACTOR-WHEN: a 3rd responsibility joins limits/regions — split them (regions -> ScenarioRegistry,
 // limits -> a dedicated class) instead of growing this class further.
-final readonly class GameData
+final readonly class GameRegistry
 {
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/game_data.yaml')] private string $gameDataPath) {}
 

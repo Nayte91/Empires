@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\State\CreditEntry;
 use App\State\CreditSource;
 use App\State\Game;
@@ -27,7 +27,7 @@ final readonly class CreateGameHandler
 
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private ScenarioCatalog $scenarioCatalog,
+        private ScenarioRegistry $scenarioRegistry,
     ) {}
 
     public function __invoke(CreateGame $command): void
@@ -40,7 +40,7 @@ final readonly class CreateGameHandler
 
             $this->entityManager->persist($game);
 
-            $startingCredits = $this->scenarioCatalog->startingCreditsFor($command->playerCount);
+            $startingCredits = $this->scenarioRegistry->startingCreditsFor($command->playerCount);
             $reason = 'scenario:'.$command->playerCount;
 
             foreach ($command->players as $playerData) {

@@ -23,12 +23,12 @@ use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 use Symfony\UX\TwigComponent\Test\RenderedComponent;
 
 /**
- * App\Presentation\Component\ProductGrid is a plain TwigComponent (no add() action of its
+ * App\Presentation\Component\Catalog is a plain TwigComponent (no add() action of its
  * own — the LiveAction lives on its host, Shop or PlayerOrders, see
  * ShopComponentTest/PosConsoleTest) rendering the catalog for a given
  * storageKey. These tests exercise it directly via renderTwigComponent().
  */
-final class ProductGridComponentTest extends KernelTestCase
+final class CatalogComponentTest extends KernelTestCase
 {
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
@@ -39,7 +39,7 @@ final class ProductGridComponentTest extends KernelTestCase
 
         // renderTwigComponent() renders in-process, with no HTTP request to carry a
         // session — the CartStorageInterface port is session-backed, so a request with
-        // its own session is pushed once here for every ProductGrid render/cart-storage
+        // its own session is pushed once here for every Catalog render/cart-storage
         // seed in this file to share.
         $request = new Request();
         $request->setSession(self::getContainer()->get('session.factory')->createSession());
@@ -51,19 +51,19 @@ final class ProductGridComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
 
         $this->assertSame(51, substr_count($rendered, '<article'));
     }
 
     #[Test]
-    public function ownedAdvancesAreExcludedFromTheProductGrid(): void
+    public function ownedAdvancesAreExcludedFromTheCatalog(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['pottery']);
         $this->entityManager->flush();
 
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
 
         $this->assertStringNotContainsString('id="product-pottery"', $rendered);
     }
@@ -73,7 +73,7 @@ final class ProductGridComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
         $card = $this->extractProductCard($rendered, 'pottery');
 
         $this->assertStringContainsString('<span class="sr-only">Add Pottery</span>', $card);
@@ -87,7 +87,7 @@ final class ProductGridComponentTest extends KernelTestCase
         self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
         $this->entityManager->flush();
 
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
 
         $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>200</s', $rendered);
     }
@@ -98,7 +98,7 @@ final class ProductGridComponentTest extends KernelTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, Cart::fromKeys(['pottery']));
 
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
         $card = $this->extractProductCard($rendered, 'pottery');
 
         $this->assertStringContainsString('data-in-cart', $card);
@@ -115,8 +115,8 @@ final class ProductGridComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $unlocked = $this->renderProductGrid($player, (string) $player->id)->crawler();
-        $locked = $this->renderProductGrid($player, (string) $player->id, locked: true)->crawler();
+        $unlocked = $this->renderCatalog($player, (string) $player->id)->crawler();
+        $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
 
         $this->assertFalse($unlocked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($locked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
@@ -127,7 +127,7 @@ final class ProductGridComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $crawler = $this->renderProductGrid($player, $this->posKey($player), compact: true)->crawler();
+        $crawler = $this->renderCatalog($player, $this->posKey($player), compact: true)->crawler();
 
         $pottery = $crawler->filter('#product-pottery');
         $this->assertSame('button', $pottery->nodeName());
@@ -149,8 +149,8 @@ final class ProductGridComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $fullCard = $this->renderProductGrid($player, (string) $player->id)->crawler();
-        $compactTile = $this->renderProductGrid($player, $this->posKey($player), compact: true)->crawler();
+        $fullCard = $this->renderCatalog($player, (string) $player->id)->crawler();
+        $compactTile = $this->renderCatalog($player, $this->posKey($player), compact: true)->crawler();
 
         $this->assertSame('article', $fullCard->filter('#product-pottery')->nodeName());
         $this->assertSame('button', $compactTile->filter('#product-pottery')->nodeName());
@@ -167,11 +167,11 @@ final class ProductGridComponentTest extends KernelTestCase
         $storage->save($shopKey, Cart::fromKeys(['pottery']));
         $storage->save($posKey, Cart::fromKeys(['democracy']));
 
-        $shopCrawler = $this->renderProductGrid($player, $shopKey)->crawler();
+        $shopCrawler = $this->renderCatalog($player, $shopKey)->crawler();
         $this->assertTrue($shopCrawler->filter('#product-pottery')->getNode(0)->hasAttribute('data-in-cart'));
         $this->assertFalse($shopCrawler->filter('#product-democracy')->getNode(0)->hasAttribute('data-in-cart'));
 
-        $posCrawler = $this->renderProductGrid($player, $posKey, compact: true)->crawler();
+        $posCrawler = $this->renderCatalog($player, $posKey, compact: true)->crawler();
         $this->assertStringContainsString('product-tile--in-cart', (string) $posCrawler->filter('#product-democracy')->attr('class'));
         $this->assertStringNotContainsString('product-tile--in-cart', (string) $posCrawler->filter('#product-pottery')->attr('class'));
     }
@@ -192,13 +192,13 @@ final class ProductGridComponentTest extends KernelTestCase
         // anatomy (science-only, cost 270) carries no credit of its own from monument's
         // recipe (config/game/advances.yaml), so its -10 net cost drop can only come
         // from the Option allocation bonus credited by validating the monument order.
-        $rendered = $this->renderProductGrid($player, (string) $player->id)->toString();
+        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
         $this->assertMatchesRegularExpression('/id="product-anatomy".*?data-price-net>260</s', $rendered);
     }
 
-    private function renderProductGrid(Player $player, string $storageKey, bool $compact = false, bool $locked = false): RenderedComponent
+    private function renderCatalog(Player $player, string $storageKey, bool $compact = false, bool $locked = false): RenderedComponent
     {
-        return $this->renderTwigComponent('organisms:ProductGrid', [
+        return $this->renderTwigComponent('organisms:Catalog', [
             'player' => $player,
             'storageKey' => $storageKey,
             'compact' => $compact,

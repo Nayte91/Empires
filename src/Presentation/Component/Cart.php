@@ -6,7 +6,7 @@ namespace App\Presentation\Component;
 
 use App\Presentation\Shop\ShopExceptionTranslator;
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
 use App\State\Player;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
@@ -59,14 +59,14 @@ final class Cart
     #[LiveProp(updateFromParent: true)]
     public ?int $window = null;
 
-    /** Mirrors ProductGrid's own `locked` prop — gates checkout when the turn's order is already validated (e.g. stray shop-cart items surviving a POS-side validation of the same turn). */
+    /** Mirrors Catalog's own `locked` prop — gates checkout when the turn's order is already validated (e.g. stray shop-cart items surviving a POS-side validation of the same turn). */
     #[LiveProp(updateFromParent: true)]
     public bool $locked = false;
 
     public ?string $error = null;
 
     public function __construct(
-        private readonly AdvanceCatalog $advanceCatalog,
+        private readonly AdvanceRegistry $advanceRegistry,
         private readonly CartStorageInterface $cartStorage,
         private readonly MessageBusInterface $commandBus,
         private readonly LineQuoter $lineQuoter,
@@ -137,7 +137,7 @@ final class Cart
     {
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer), $this->advanceCatalog);
+        return $this->toRows($this->lineQuoter->quotePreview($this->getCart()->items, $buyer), $this->advanceRegistry);
     }
 
     public function getTotal(): int
@@ -148,7 +148,7 @@ final class Cart
     /** @return list<Advance> */
     public function getGiftCandidates(string $for): array
     {
-        $source = $this->advanceCatalog->getAdvanceByName($for);
+        $source = $this->advanceRegistry->getAdvanceByName($for);
 
         if (!$source instanceof Advance) {
             return [];
@@ -158,10 +158,10 @@ final class Cart
             $source,
             $this->player->advances,
             $this->getCart()->keys(),
-            $this->advanceCatalog->getAdvances(),
+            $this->advanceRegistry->getAdvances(),
         );
 
-        return array_values($this->advanceCatalog->getAdvancesByNames($candidateKeys));
+        return array_values($this->advanceRegistry->getAdvancesByNames($candidateKeys));
     }
 
     public function getChosenGiftFor(string $sourceKey): ?Advance
@@ -173,7 +173,7 @@ final class Cart
                 && PromotionType::Gift === $line->promotion->type
                 && $line->promotion->source === $sourceKey
             ) {
-                return $this->advanceCatalog->getAdvanceByName($line->key);
+                return $this->advanceRegistry->getAdvanceByName($line->key);
             }
         }
 
@@ -209,14 +209,14 @@ final class Cart
 
     public function getAllocationRemaining(string $key): int
     {
-        $target = $this->advanceCatalog->getAdvanceByName($key)?->promotion->option->budget ?? 0;
+        $target = $this->advanceRegistry->getAdvanceByName($key)?->promotion->option->budget ?? 0;
 
         return max(0, $target - array_sum($this->getAllocationFor($key)));
     }
 
     public function hasIncompleteAllocations(): bool
     {
-        return $this->isCartHasIncompleteAllocations($this->getCart(), $this->advanceCatalog);
+        return $this->isCartHasIncompleteAllocations($this->getCart(), $this->advanceRegistry);
     }
 
     public function isEmpty(): bool

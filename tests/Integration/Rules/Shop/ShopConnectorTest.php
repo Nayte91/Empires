@@ -6,8 +6,8 @@ namespace App\Tests\Integration\Rules\Shop;
 
 use App\State\Order;
 use App\State\Player;
-use App\Rules\Ruleset\AdvanceCatalog;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Shop\AdvancePriceResolver;
 use App\State\CreditEntry;
 use App\State\CreditSource;
@@ -28,8 +28,8 @@ final class ShopConnectorTest extends WebTestCase
 {
     use GameFixtureTrait;
 
-    private AdvanceCatalog $advanceCatalog;
-    private ScenarioCatalog $scenarioCatalog;
+    private AdvanceRegistry $advanceRegistry;
+    private ScenarioRegistry $scenarioRegistry;
     private ShopConnector $shopConnector;
 
     protected function setUp(): void
@@ -37,8 +37,8 @@ final class ShopConnectorTest extends WebTestCase
         $this->initEntityManager();
 
         $orderRepository = self::getContainer()->get(OrderRepository::class);
-        $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $this->scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
+        $this->advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
+        $this->scenarioRegistry = self::getContainer()->get(ScenarioRegistry::class);
         $this->shopConnector = new ShopConnector($orderRepository);
     }
 
@@ -182,7 +182,7 @@ final class ShopConnectorTest extends WebTestCase
     public function resolvingAnAdvancesPriceForAThreePlayerGameDiscountsItByTheScenariosStartingCredits(): void
     {
         $player = $this->createPlayer(playerCount: 3);
-        $pottery = $this->advanceCatalog->getAdvanceByName('pottery') ?? throw new \RuntimeException('Advance "pottery" not found in the real catalog.');
+        $pottery = $this->advanceRegistry->getAdvanceByName('pottery') ?? throw new \RuntimeException('Advance "pottery" not found in the real catalog.');
         $resolver = new AdvancePriceResolver();
 
         $net = $resolver->resolve($pottery, $this->shopConnector->buyerFor($player));
@@ -233,7 +233,7 @@ final class ShopConnectorTest extends WebTestCase
         // no bus dependency of its own) so the ledger carries what a real game creation
         // would have posted; a no-op for the default 9-player count, which has no
         // scenario credits.
-        foreach ($this->scenarioCatalog->startingCreditsFor($playerCount) as $scope => $value) {
+        foreach ($this->scenarioRegistry->startingCreditsFor($playerCount) as $scope => $value) {
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:'.$playerCount));
         }
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Action\Stat;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\GameRegistry;
 use App\State\Player;
 
 /**
@@ -15,12 +15,12 @@ use App\State\Player;
  */
 final readonly class StockCalculator
 {
-    public function __construct(private GameData $gameData) {}
+    public function __construct(private GameRegistry $gameRegistry) {}
 
     /** Tokens in play, all holders together. */
     public function pool(): int
     {
-        return $this->gameData->getLimits()['max_population'] ?? 0;
+        return $this->gameRegistry->getLimits()['max_population'] ?? 0;
     }
 
     /** Tokens no player holder has claimed, and so still on the table. */

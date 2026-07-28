@@ -50,7 +50,7 @@ src/
 ├── State/           # the material state, passive: GameSession, Player, Order (Doctrine),
 │                    #   plus the shape of any persisted column (CreditEntry, CreditSource, ASTVersion)
 ├── Rules/           # what is true / permitted / follows — never persists
-│   ├── Ruleset/     #   the rules-as-data readers: *Catalog, GameData + their read models
+│   ├── Ruleset/     #   the rules-as-data readers: *Registry + their read models
 │   ├── Action/      #   which actions exist and when they are legal: Stat, StatAction, CreateGame
 │   ├── Advisory/    #   the advisory (non-blocking) rules + PlayerAdvisor
 │   ├── Scenario/    #   what a prospective game will look like
@@ -88,12 +88,12 @@ grep -rn '^use App\Presentation'                           src/Engine/          
 ### Config-driven game data
 ```
 config/game/
-├── advances.yaml    # advances + categories (colors)  → AdvanceCatalog
-│                   #   per-advance `effects:` (the rules an advance bends) → AdvanceEffectCatalog
-├── ast.yaml         # AST eras, spans, basic/expert requirements → AstCatalog
-├── empires.yaml     # empires (name, color, icons)    → EmpireCatalog
-├── game_data.yaml   # regions, limits                 → GameData
-└── scenarios.yaml   # empires per player count/region → Game\ScenarioCatalog
+├── advances.yaml    # advances + categories (colors)  → AdvanceRegistry
+│                   #   per-advance `effects:` (the rules an advance bends) → AdvanceEffectRegistry
+├── ast.yaml         # AST eras, spans, basic/expert requirements → AstRegistry
+├── empires.yaml     # empires (name, color, icons)    → EmpireRegistry
+├── game_data.yaml   # regions, limits                 → GameRegistry
+└── scenarios.yaml   # empires per player count/region → ScenarioRegistry
 ```
 Yaml readers follow one pattern: `#[Autowire('%kernel.project_dir%/config/game/x.yaml')]` + lazy instance-property cache.
 

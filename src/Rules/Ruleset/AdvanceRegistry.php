@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 use Userforged\ShopEngine\Promotion\ElectiveBenefit;
 use Userforged\ShopEngine\Promotion\ProductPromotion;
 
-final class AdvanceCatalog
+final class AdvanceRegistry
 {
     private const string IMAGES_PATH = 'images/advances/';
     private const string IMAGE_EXTENSION = '.webp';

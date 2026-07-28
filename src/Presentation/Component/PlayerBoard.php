@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -20,12 +20,12 @@ final class PlayerBoard
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(private readonly AdvanceCatalog $advanceCatalog) {}
+    public function __construct(private readonly AdvanceRegistry $advanceRegistry) {}
 
     /** @return list<Advance> */
     public function getOwnedAdvances(): array
     {
-        return array_values($this->advanceCatalog->getAdvancesByNames($this->player->advances));
+        return array_values($this->advanceRegistry->getAdvancesByNames($this->player->advances));
     }
 
     /**

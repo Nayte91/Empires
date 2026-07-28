@@ -31,7 +31,7 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 /**
  * Acceptance tests for the per-player cashier (POS) flow: an operator opens a
  * player's order card for a given turn, builds a ticket of advances (either
- * via PlayerOrders' own add() LiveAction — including the nested ProductGrid+
+ * via PlayerOrders' own add() LiveAction — including the nested Catalog+
  * Cart re-render it drives — or, for checkout preconditions, written straight
  * into the session-backed CartStorageInterface port), checks it out directly
  * (Userforged\ShopEngine\CommandHandler\SellDirectHandler), or erases an already validated
@@ -39,8 +39,8 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
  * per-player PlayerOrders LiveComponent (organisms/playerOrders).
  *
  * Ticket line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered
- * by CartComponentTest (POS mode); the product grid lives in
- * App\Presentation\Component\ProductGrid, covered by ProductGridComponentTest.
+ * by CartComponentTest (POS mode); the catalog lives in
+ * App\Presentation\Component\Catalog, covered by CatalogComponentTest.
  *
  * Once a precondition ticket has been seeded on the shared client, the
  * PlayerOrders component under test is always freshly constructed afterwards
@@ -96,7 +96,7 @@ final class PosConsoleTest extends WebTestCase
 
         $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
         // A single call()+render() round trip: proves add() re-renders the nested
-        // ProductGrid (in-cart marker) and Cart (total) together, not just PlayerOrders itself.
+        // Catalog (in-cart marker) and Cart (total) together, not just PlayerOrders itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
         $this->assertStringContainsString('id="product-pottery"', $rendered);

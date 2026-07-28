@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Engine\Shop;
 
 use App\Infrastructure\Repository\PlayerRepository;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\CreditEntry;
 use App\State\CreditSource;
 use App\State\Player;
@@ -40,7 +40,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
 
     public function __construct(
         private PlayerRepository $playerRepository,
-        private AdvanceCatalog $advanceCatalog,
+        private AdvanceRegistry $advanceRegistry,
     ) {}
 
     public function grant(Uuid $buyerId, array $productKeys): void
@@ -48,7 +48,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         $player = $this->resolve($buyerId);
         $player->ownAdvances($productKeys);
 
-        foreach ($this->advanceCatalog->getAdvancesByNames($productKeys) as $advance) {
+        foreach ($this->advanceRegistry->getAdvancesByNames($productKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {
                 $player->postCredit(new CreditEntry($player->game->currentTurn, $scope, $value, CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
             }
@@ -60,7 +60,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         $player = $this->resolve($buyerId);
         $player->disownAdvances($productKeys);
 
-        foreach ($this->advanceCatalog->getAdvancesByNames($productKeys) as $advance) {
+        foreach ($this->advanceRegistry->getAdvancesByNames($productKeys) as $advance) {
             $player->revokeCredits(self::SOURCE_PREFIX.$advance->key);
         }
     }

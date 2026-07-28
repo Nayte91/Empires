@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Ruleset\Empire;
-use App\Rules\Ruleset\EmpireCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /** Single routing point config yaml → display for colors: emits empire and advance-category colors as CSS custom properties. */
@@ -14,8 +14,8 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final readonly class ThemeColors
 {
     public function __construct(
-        private EmpireCatalog $empireCatalog,
-        private AdvanceCatalog $advanceCatalog,
+        private EmpireRegistry $empireRegistry,
+        private AdvanceRegistry $advanceRegistry,
     ) {}
 
     /** @return array<string, string> empire slug => hex color */
@@ -23,13 +23,13 @@ final readonly class ThemeColors
     {
         return array_map(
             static fn (Empire $empire): string => $empire->color,
-            $this->empireCatalog->findAll()
+            $this->empireRegistry->findAll()
         );
     }
 
     /** @return array<string, string> category key => hex color */
     public function getAdvanceCategoryColors(): array
     {
-        return $this->advanceCatalog->getCategoryColors();
+        return $this->advanceRegistry->getCategoryColors();
     }
 }

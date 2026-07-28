@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Rules\Shop;
 
-use App\Rules\Ruleset\AdvanceCatalog;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\State\CreditEntry;
 use App\State\CreditSource;
@@ -30,8 +30,8 @@ final class CreditLedgerReconciliationTest extends WebTestCase
 {
     use GameFixtureTrait;
 
-    private AdvanceCatalog $advanceCatalog;
-    private ScenarioCatalog $scenarioCatalog;
+    private AdvanceRegistry $advanceRegistry;
+    private ScenarioRegistry $scenarioRegistry;
     private AdvanceFulfillment $fulfillment;
 
     protected function setUp(): void
@@ -39,9 +39,9 @@ final class CreditLedgerReconciliationTest extends WebTestCase
         $this->initEntityManager();
 
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
-        $this->scenarioCatalog = self::getContainer()->get(ScenarioCatalog::class);
-        $this->fulfillment = new AdvanceFulfillment($playerRepository, $this->advanceCatalog);
+        $this->advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
+        $this->scenarioRegistry = self::getContainer()->get(ScenarioRegistry::class);
+        $this->fulfillment = new AdvanceFulfillment($playerRepository, $this->advanceRegistry);
     }
 
     #[Test]
@@ -49,7 +49,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withPlayerCount(3)->build())->persist($this->entityManager);
 
-        foreach ($this->scenarioCatalog->startingCreditsFor(3) as $scope => $value) {
+        foreach ($this->scenarioRegistry->startingCreditsFor(3) as $scope => $value) {
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:3'));
         }
 
@@ -67,9 +67,9 @@ final class CreditLedgerReconciliationTest extends WebTestCase
      */
     private function expectedBalances(int $playerCount, array $ownedAdvanceKeys): array
     {
-        $expected = $this->scenarioCatalog->startingCreditsFor($playerCount);
+        $expected = $this->scenarioRegistry->startingCreditsFor($playerCount);
 
-        foreach ($this->advanceCatalog->getAdvancesByNames($ownedAdvanceKeys) as $advance) {
+        foreach ($this->advanceRegistry->getAdvancesByNames($ownedAdvanceKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {
                 $expected[$scope] = ($expected[$scope] ?? 0) + $value;
             }

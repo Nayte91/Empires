@@ -9,7 +9,7 @@ use App\Infrastructure\Shop\CartKey;
 use App\Presentation\Shop\CartItemAdder;
 use App\Presentation\Shop\ShopExceptionTranslator;
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
 use App\State\Order;
 use App\State\Player;
@@ -40,7 +40,7 @@ final class Shop
     private ?Order $currentOrder = null;
 
     public function __construct(
-        private readonly AdvanceCatalog $advanceCatalog,
+        private readonly AdvanceRegistry $advanceRegistry,
         private readonly CartItemAdder $cartItemAdder,
         private readonly CartStorageInterface $cartStorage,
         private readonly OrderRepository $orderRepository,
@@ -116,7 +116,7 @@ final class Shop
             ? $order->lines()
             : $this->lineQuoter->quote($this->lineQuoter->intentsFromLines($order->lines()), $this->shopConnector->buyerFor($this->player));
 
-        return $this->toRows($lines, $this->advanceCatalog);
+        return $this->toRows($lines, $this->advanceRegistry);
     }
 
     public function getOrderTotal(): int
@@ -158,7 +158,7 @@ final class Shop
         return $this->cartStorage->load($this->getCartKey())->stamp();
     }
 
-    /** Public for organisms/shop, which hands it to the nested ProductGrid and Cart as their storageKey. */
+    /** Public for organisms/shop, which hands it to the nested Catalog and Cart as their storageKey. */
     public function getCartKey(): string
     {
         return CartKey::shop($this->player);

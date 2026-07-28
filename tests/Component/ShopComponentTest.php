@@ -28,9 +28,9 @@ use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
  * Cart line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered by
- * CartComponentTest; the product grid lives in App\Presentation\Component\ProductGrid,
- * covered by ProductGridComponentTest. This file keeps what Shop owns: its
- * own add() LiveAction (including the nested ProductGrid+Cart re-render it
+ * CartComponentTest; the catalog lives in App\Presentation\Component\Catalog,
+ * covered by CatalogComponentTest. This file keeps what Shop owns: its
+ * own add() LiveAction (including the nested Catalog+Cart re-render it
  * drives), order submission, pending/validated/rejected order views, and the
  * Mercure/route wiring.
  *
@@ -65,7 +65,7 @@ final class ShopComponentTest extends WebTestCase
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         // A single call()+render() round trip: proves add() re-renders the nested
-        // ProductGrid (in-cart marker) and Cart (total) together, not just Shop itself.
+        // Catalog (in-cart marker) and Cart (total) together, not just Shop itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
         $this->assertStringContainsString('id="product-pottery"', $rendered);

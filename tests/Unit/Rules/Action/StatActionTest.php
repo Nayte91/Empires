@@ -288,17 +288,17 @@ final class StatActionTest extends TestCase
 
     private function hand(): HandSizeCalculator
     {
-        return new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects());
+        return new HandSizeCalculator(GameConfig::gameRegistry(), GameConfig::advanceEffects());
     }
 
     private function stock(): StockCalculator
     {
-        return new StockCalculator(GameConfig::gameData());
+        return new StockCalculator(GameConfig::gameRegistry());
     }
 
     private function bounds(): StatBoundsCalculator
     {
-        return new StatBoundsCalculator(GameConfig::gameData(), $this->stock(), GameConfig::astCatalog());
+        return new StatBoundsCalculator(GameConfig::gameRegistry(), $this->stock(), GameConfig::astRegistry());
     }
 
     private function tax(): TaxCalculator

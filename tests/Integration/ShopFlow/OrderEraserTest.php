@@ -6,7 +6,7 @@ namespace App\Tests\Integration\ShopFlow;
 
 use App\State\Order;
 use App\State\Player;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\Rules\Shop\AdvancePriceResolver;
 use App\Infrastructure\Shop\PlayerBuyerProvider;
@@ -63,12 +63,12 @@ final class OrderEraserTest extends WebTestCase
         // when@test) keeps every publish() call in-process — no network I/O happens
         // during the suite, and the sequence stays assertable.
         $productProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
         $this->shopConnector = new ShopConnector($this->orderRepository);
         $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector);
         $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
+        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         // Single shared DoctrineTransaction instance, matching the singleton the
         // container injects in production. SellDirectHandler doesn't open a scope of
@@ -181,11 +181,11 @@ final class OrderEraserTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
         $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
         $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
         $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
+        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
         $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
         $transaction = new DoctrineTransaction($this->entityManager);
 

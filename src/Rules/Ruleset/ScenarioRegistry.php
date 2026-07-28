@@ -7,7 +7,7 @@ namespace App\Rules\Ruleset;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-final class ScenarioCatalog
+final class ScenarioRegistry
 {
     private const string CREDITS_KEY = 'credits';
 

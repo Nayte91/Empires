@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Ruleset\AdvanceEffect;
-use App\Rules\Ruleset\AdvanceEffectCatalog;
-use App\Rules\Ruleset\EmpireCatalog;
+use App\Rules\Ruleset\AdvanceEffectRegistry;
+use App\Rules\Ruleset\EmpireRegistry;
 use App\State\Game;
 use App\State\Player;
 
@@ -17,8 +17,8 @@ use App\State\Player;
 final readonly class CensusOrderCalculator
 {
     public function __construct(
-        private EmpireCatalog $empireCatalog,
-        private AdvanceEffectCatalog $advanceEffects,
+        private EmpireRegistry $empireRegistry,
+        private AdvanceEffectRegistry $advanceEffects,
     ) {}
 
     /** @return list<Player> */
@@ -60,6 +60,6 @@ final readonly class CensusOrderCalculator
 
     private function empirePosition(Player $player): int
     {
-        return $this->empireCatalog->positionOf($player->empire);
+        return $this->empireRegistry->positionOf($player->empire);
     }
 }

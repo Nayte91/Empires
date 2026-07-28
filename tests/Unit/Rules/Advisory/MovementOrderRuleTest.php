@@ -8,8 +8,8 @@ use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\MovementOrderRule;
 use App\Rules\Advisory\AdvisoryLevel;
-use App\Rules\Ruleset\EmpireCatalog;
-use App\Rules\Ruleset\ScenarioCatalog;
+use App\Rules\Ruleset\EmpireRegistry;
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\CensusOrderCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
@@ -66,9 +66,9 @@ final class MovementOrderRuleTest extends TestCase
 
         return new MovementOrderRule(
             new CensusOrderCalculator(
-                new EmpireCatalog(
+                new EmpireRegistry(
                     $projectDir.'/config/game/empires.yaml',
-                    new ScenarioCatalog($projectDir.'/config/game/scenarios.yaml'),
+                    new ScenarioRegistry($projectDir.'/config/game/scenarios.yaml'),
                 ),
                 GameConfig::advanceEffects(),
             ),

@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  * behaviour and hand the player a plain advance key, so moving an effect onto another advance in
  * config/game/advances.yaml fails here — once — rather than in nine files at once.
  */
-final class AdvanceEffectCatalogTest extends TestCase
+final class AdvanceEffectRegistryTest extends TestCase
 {
     #[Test]
     #[DataProvider('provideEachEffectIsGrantedByExactlyOneAdvanceCases')]
@@ -44,22 +44,22 @@ final class AdvanceEffectCatalogTest extends TestCase
     #[Test]
     public function everyEffectTheCodeKnowsIsDeclaredByAnAdvance(): void
     {
-        $catalog = GameConfig::advanceEffects();
+        $registry = GameConfig::advanceEffects();
 
         foreach (AdvanceEffect::cases() as $effect) {
-            $this->assertNotSame([], $catalog->keysGranting($effect), $effect->value);
+            $this->assertNotSame([], $registry->keysGranting($effect), $effect->value);
         }
     }
 
     #[Test]
     public function ownershipIsAnsweredFromTheAdvancesThePlayerActuallyHolds(): void
     {
-        $catalog = GameConfig::advanceEffects();
+        $registry = GameConfig::advanceEffects();
 
-        $this->assertTrue($catalog->grants(['pottery', 'coinage'], AdvanceEffect::TaxRateChoice));
-        $this->assertSame(['coinage'], $catalog->owned(['pottery', 'coinage'], AdvanceEffect::TaxRateChoice));
+        $this->assertTrue($registry->grants(['pottery', 'coinage'], AdvanceEffect::TaxRateChoice));
+        $this->assertSame(['coinage'], $registry->owned(['pottery', 'coinage'], AdvanceEffect::TaxRateChoice));
 
-        $this->assertFalse($catalog->grants(['pottery', 'monarchy'], AdvanceEffect::TaxRateChoice));
-        $this->assertSame([], $catalog->owned([], AdvanceEffect::TaxRateChoice));
+        $this->assertFalse($registry->grants(['pottery', 'monarchy'], AdvanceEffect::TaxRateChoice));
+        $this->assertSame([], $registry->owned([], AdvanceEffect::TaxRateChoice));
     }
 }

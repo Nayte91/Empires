@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Rules\Shop;
 
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Shop\AdvancePriceResolver;
 use App\Rules\Shop\Entitlement;
@@ -16,14 +16,14 @@ use Userforged\ShopEngine\BuyerInterface;
 
 final class AdvancePriceResolverTest extends WebTestCase
 {
-    private AdvanceCatalog $advanceCatalog;
+    private AdvanceRegistry $advanceRegistry;
     private AdvancePriceResolver $resolver;
 
     protected function setUp(): void
     {
         self::bootKernel();
 
-        $this->advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $this->advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
         $this->resolver = new AdvancePriceResolver();
     }
 
@@ -108,7 +108,7 @@ final class AdvancePriceResolverTest extends WebTestCase
 
     private function advance(string $name): Advance
     {
-        return $this->advanceCatalog->getAdvanceByName($name) ?? throw new \RuntimeException(sprintf('Advance "%s" not found in the real catalog.', $name));
+        return $this->advanceRegistry->getAdvanceByName($name) ?? throw new \RuntimeException(sprintf('Advance "%s" not found in the real catalog.', $name));
     }
 
     /**
@@ -119,7 +119,7 @@ final class AdvancePriceResolverTest extends WebTestCase
     {
         $ownedEntitlements = [];
 
-        foreach (array_values($this->advanceCatalog->getAdvancesByNames($ownedKeys)) as $advance) {
+        foreach (array_values($this->advanceRegistry->getAdvancesByNames($ownedKeys)) as $advance) {
             foreach ($advance->credits as $scope => $value) {
                 $ownedEntitlements[] = new Entitlement($scope, $value);
             }

@@ -8,7 +8,7 @@ use App\Infrastructure\Repository\OrderRepository;
 use App\Infrastructure\Shop\CartKey;
 use App\Presentation\Shop\CartItemAdder;
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
 use App\State\Order;
 use App\State\Player;
@@ -48,7 +48,7 @@ final class PlayerOrders
 
     public function __construct(
         private readonly OrderRepository $orderRepository,
-        private readonly AdvanceCatalog $advanceCatalog,
+        private readonly AdvanceRegistry $advanceRegistry,
         private readonly CartItemAdder $cartItemAdder,
         private readonly CartStorageInterface $cartStorage,
         private readonly LineQuoter $lineQuoter,
@@ -114,7 +114,7 @@ final class PlayerOrders
         return $this->cartStorage->load($this->getPosCartKey())->stamp();
     }
 
-    /** Public for organisms/posDialog, which hands it to the nested ProductGrid and Cart as their storageKey. */
+    /** Public for organisms/posDialog, which hands it to the nested Catalog and Cart as their storageKey. */
     public function getPosCartKey(): string
     {
         return CartKey::pos($this->player);
@@ -163,7 +163,7 @@ final class PlayerOrders
         $slugs = $order?->keys() ?? [];
 
         /** @var list<Advance> $advances */
-        $advances = $this->advanceCatalog->getAdvancesByNames($slugs);
+        $advances = $this->advanceRegistry->getAdvancesByNames($slugs);
 
         $total = OrderStatus::Validated === $order?->status
             ? $order->total ?? 0

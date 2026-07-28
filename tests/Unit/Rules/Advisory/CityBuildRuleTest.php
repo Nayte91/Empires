@@ -85,7 +85,7 @@ final class CityBuildRuleTest extends TestCase
     {
         return new CityBuildRule(new CityBuildCalculator(
             new CitySupportCalculator(),
-            GameConfig::gameData(),
+            GameConfig::gameRegistry(),
             GameConfig::advanceEffects(),
         ));
     }

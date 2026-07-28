@@ -5,22 +5,22 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Action\Stat;
-use App\Rules\Ruleset\AstCatalog;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\AstRegistry;
+use App\Rules\Ruleset\GameRegistry;
 use App\State\Player;
 
 /**
  * The game's single authority on how far a stat may travel. It composes the authorities that
- * already own each bound rather than replacing them: GameData for the table's own limits,
- * StockCalculator for the census/treasury shared pool, AstCatalog for the exact track length of
+ * already own each bound rather than replacing them: GameRegistry for the table's own limits,
+ * StockCalculator for the census/treasury shared pool, AstRegistry for the exact track length of
  * the player's own AST version and empire group.
  */
 final readonly class StatBoundsCalculator
 {
     public function __construct(
-        private GameData $gameData,
+        private GameRegistry $gameRegistry,
         private StockCalculator $stockCalculator,
-        private AstCatalog $astCatalog,
+        private AstRegistry $astRegistry,
     ) {}
 
     public function floorFor(Player $player, Stat $stat): int
@@ -51,18 +51,18 @@ final readonly class StatBoundsCalculator
     public function ceilingFor(Player $player, Stat $stat): int
     {
         return match ($stat) {
-            Stat::Cities => $this->gameData->getLimits()['max_cities'] ?? 0,
+            Stat::Cities => $this->gameRegistry->getLimits()['max_cities'] ?? 0,
             Stat::Census, Stat::Treasury => $this->stockCalculator->ceilingFor($player, $stat),
-            Stat::Ships => $this->gameData->getLimits()['max_ships'] ?? 0,
-            Stat::Cards => $this->gameData->getLimits()['max_cards'] ?? 0,
+            Stat::Ships => $this->gameRegistry->getLimits()['max_ships'] ?? 0,
+            Stat::Cards => $this->gameRegistry->getLimits()['max_cards'] ?? 0,
             Stat::AstPosition => $this->astPositionCeiling($player),
         };
     }
 
     private function astPositionCeiling(Player $player): int
     {
-        $group = $this->astCatalog->resolveEmpireGroup($player->game->astVersion, $player->empire);
+        $group = $this->astRegistry->resolveEmpireGroup($player->game->astVersion, $player->empire);
 
-        return $this->astCatalog->getTrackLength($player->game->astVersion, $group) - 1;
+        return $this->astRegistry->getTrackLength($player->game->astVersion, $group) - 1;
     }
 }

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Rules;
 
 use App\Rules\Ruleset\AdvanceEffect;
-use App\Rules\Ruleset\AdvanceEffectCatalog;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\AdvanceEffectRegistry;
+use App\Rules\Ruleset\GameRegistry;
 use App\State\Player;
 
 /**
@@ -25,8 +25,8 @@ final readonly class CityBuildCalculator
 
     public function __construct(
         private CitySupportCalculator $citySupportCalculator,
-        private GameData $gameData,
-        private AdvanceEffectCatalog $advanceEffects,
+        private GameRegistry $gameRegistry,
+        private AdvanceEffectRegistry $advanceEffects,
     ) {}
 
     /** How many cities the player could found right now, everything considered. */
@@ -42,7 +42,7 @@ final readonly class CityBuildCalculator
 
     public function remainingCitySlots(Player $player): int
     {
-        return max(0, ($this->gameData->getLimits()['max_cities'] ?? 0) - $player->cities);
+        return max(0, ($this->gameRegistry->getLimits()['max_cities'] ?? 0) - $player->cities);
     }
 
     /**

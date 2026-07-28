@@ -132,7 +132,7 @@ final class CityBuildCalculatorTest extends TestCase
     {
         return new CityBuildCalculator(
             new CitySupportCalculator(),
-            GameConfig::gameData(),
+            GameConfig::gameRegistry(),
             GameConfig::advanceEffects(),
         );
     }

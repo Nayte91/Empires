@@ -6,7 +6,7 @@ namespace App\Rules;
 
 use App\Rules\Action\Stat;
 use App\Rules\Ruleset\AdvanceEffect;
-use App\Rules\Ruleset\AdvanceEffectCatalog;
+use App\Rules\Ruleset\AdvanceEffectRegistry;
 use App\State\Player;
 
 /**
@@ -24,7 +24,7 @@ final readonly class TaxCalculator
 
     public function __construct(
         private StockCalculator $stockCalculator,
-        private AdvanceEffectCatalog $advanceEffects,
+        private AdvanceEffectRegistry $advanceEffects,
     ) {}
 
     /** The cheapest rate the player may elect to pay. */

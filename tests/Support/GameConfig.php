@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Support;
 
-use App\Rules\Ruleset\AdvanceEffectCatalog;
-use App\Rules\Ruleset\AstCatalog;
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\AdvanceEffectRegistry;
+use App\Rules\Ruleset\AstRegistry;
+use App\Rules\Ruleset\GameRegistry;
 
 /**
  * The yaml readers, built against the real config/game/ files, for tests that construct a
@@ -18,19 +18,19 @@ use App\Rules\Ruleset\GameData;
  */
 final class GameConfig
 {
-    public static function gameData(): GameData
+    public static function gameRegistry(): GameRegistry
     {
-        return new GameData(self::path('game_data.yaml'));
+        return new GameRegistry(self::path('game_data.yaml'));
     }
 
-    public static function advanceEffects(): AdvanceEffectCatalog
+    public static function advanceEffects(): AdvanceEffectRegistry
     {
-        return new AdvanceEffectCatalog(self::path('advances.yaml'));
+        return new AdvanceEffectRegistry(self::path('advances.yaml'));
     }
 
-    public static function astCatalog(): AstCatalog
+    public static function astRegistry(): AstRegistry
     {
-        return new AstCatalog(self::path('ast.yaml'));
+        return new AstRegistry(self::path('ast.yaml'));
     }
 
     private static function path(string $file): string

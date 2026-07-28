@@ -23,7 +23,7 @@
             Close
         </button>
     {% else %}
-        <twig:organisms:ProductGrid :player="player" :compact="true" :storageKey="this.posCartKey" />
+        <twig:organisms:Catalog :player="player" :compact="true" :storageKey="this.posCartKey" />
 
         <twig:Cart
             :player="player"

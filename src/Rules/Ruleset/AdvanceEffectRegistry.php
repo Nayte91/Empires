@@ -12,10 +12,10 @@ use Symfony\Component\Yaml\Yaml;
  * questions the calculators ask of it: which advances grant an effect, and whether a given player's
  * advances are among them.
  *
- * Separate from AdvanceCatalog on purpose: that one hydrates advances as shop products and needs
+ * Separate from AdvanceRegistry on purpose: that one hydrates advances as shop products and needs
  * the asset Packages to do it, which is a dependency the rule layer has no business carrying.
  */
-final class AdvanceEffectCatalog
+final class AdvanceEffectRegistry
 {
     /** @var null|array<string, list<string>> */
     private ?array $keysByEffect = null;

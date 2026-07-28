@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Game;
 use App\State\Player;
 
@@ -12,13 +12,13 @@ use App\State\Player;
  * The game's single authority on the race: who leads, by how much, and where each player sits.
  *
  * Distinct from {@see ScoreCalculator}, which only answers "how many points". Scoring is a formula
- * over one player; standing is a comparison across the table, and it needs the advance catalogue
+ * over one player; standing is a comparison across the table, and it needs the advance registry
  * to resolve what each of them owns.
  */
 final readonly class StandingsCalculator
 {
     public function __construct(
-        private AdvanceCatalog $advanceCatalog,
+        private AdvanceRegistry $advanceRegistry,
         private ScoreCalculator $scoreCalculator,
     ) {}
 
@@ -27,7 +27,7 @@ final readonly class StandingsCalculator
     {
         return $this->scoreCalculator->scoreFor(
             $player,
-            array_values($this->advanceCatalog->getAdvancesByNames($player->advances)),
+            array_values($this->advanceRegistry->getAdvancesByNames($player->advances)),
         );
     }
 

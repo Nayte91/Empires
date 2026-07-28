@@ -15,7 +15,7 @@
 
     <div class="shop__layout">
         <aside class="shop__cart">
-            <twig:organisms:ProductGrid :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
+            <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
 
             <twig:Cart
                 :player="player"

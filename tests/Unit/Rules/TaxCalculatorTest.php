@@ -184,6 +184,6 @@ final class TaxCalculatorTest extends TestCase
 
     private function tax(): TaxCalculator
     {
-        return new TaxCalculator(new StockCalculator(GameConfig::gameData()), GameConfig::advanceEffects());
+        return new TaxCalculator(new StockCalculator(GameConfig::gameRegistry()), GameConfig::advanceEffects());
     }
 }

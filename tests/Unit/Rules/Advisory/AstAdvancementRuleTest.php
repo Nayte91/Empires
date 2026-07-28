@@ -7,7 +7,7 @@ namespace App\Tests\Unit\Rules\Advisory;
 use App\State\Game;
 use App\State\Player;
 use App\Rules\Advisory\AstAdvancementRule;
-use App\Rules\Ruleset\AstCatalog;
+use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
 use App\Rules\Advisory\Advisory;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -20,7 +20,7 @@ final class AstAdvancementRuleTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->rule = new AstAdvancementRule(new AstCatalog(\dirname(__DIR__, 4).'/config/game/ast.yaml'));
+        $this->rule = new AstAdvancementRule(new AstRegistry(\dirname(__DIR__, 4).'/config/game/ast.yaml'));
     }
 
     #[Test]

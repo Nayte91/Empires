@@ -54,9 +54,9 @@ final class StatBoundsCalculatorTest extends TestCase
     /** @return iterable<string, array{Stat, int}> */
     public static function provideCeilingForEachStatWithNoLiveDependencyCases(): iterable
     {
-        yield 'cities ceiling comes from GameData max_cities' => [Stat::Cities, 9];
+        yield 'cities ceiling comes from GameRegistry max_cities' => [Stat::Cities, 9];
 
-        yield 'ships ceiling comes from GameData max_ships' => [Stat::Ships, 4];
+        yield 'ships ceiling comes from GameRegistry max_ships' => [Stat::Ships, 4];
 
         yield 'cards ceiling is a permissive display bound, not the hand-size limit' => [Stat::Cards, 20];
     }
@@ -115,9 +115,9 @@ final class StatBoundsCalculatorTest extends TestCase
     private function calculator(): StatBoundsCalculator
     {
         return new StatBoundsCalculator(
-            GameConfig::gameData(),
-            new StockCalculator(GameConfig::gameData()),
-            GameConfig::astCatalog(),
+            GameConfig::gameRegistry(),
+            new StockCalculator(GameConfig::gameRegistry()),
+            GameConfig::astRegistry(),
         );
     }
 }

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules;
 
-use App\Rules\Ruleset\GameData;
+use App\Rules\Ruleset\GameRegistry;
 use App\Rules\StockCalculator;
 use App\Rules\Action\Stat;
 use App\Tests\Support\Fixture\PlayerBuilder;
@@ -65,6 +65,6 @@ final class StockCalculatorTest extends TestCase
 
     private function calculator(): StockCalculator
     {
-        return new StockCalculator(new GameData(\dirname(__DIR__, 3).'/config/game/game_data.yaml'));
+        return new StockCalculator(new GameRegistry(\dirname(__DIR__, 3).'/config/game/game_data.yaml'));
     }
 }

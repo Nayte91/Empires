@@ -21,7 +21,7 @@ final class HandLimitSummaryRuleTest extends TestCase
         $game = new CreateGame();
         $game->playerCount = $playerCount;
 
-        $rule = new HandLimitSummaryRule(new HandSizeCalculator(GameConfig::gameData(), GameConfig::advanceEffects()));
+        $rule = new HandLimitSummaryRule(new HandSizeCalculator(GameConfig::gameRegistry(), GameConfig::advanceEffects()));
 
         $this->assertSame($expectedSummary, $rule->describe($game));
     }

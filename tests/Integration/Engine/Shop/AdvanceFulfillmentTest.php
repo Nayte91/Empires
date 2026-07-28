@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Integration\Engine\Shop;
 
 use App\State\Player;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\State\CreditEntry;
 use App\State\CreditSource;
@@ -30,9 +30,9 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->initEntityManager();
 
         $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $advanceCatalog = self::getContainer()->get(AdvanceCatalog::class);
+        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
         $orderRepository = self::getContainer()->get(OrderRepository::class);
-        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceCatalog);
+        $this->fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
         $this->shopConnector = new ShopConnector($orderRepository);
     }
 

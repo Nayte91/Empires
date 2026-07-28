@@ -7,7 +7,7 @@ namespace App\Rules\Ruleset;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
-final class EmpireCatalog
+final class EmpireRegistry
 {
     public const string SORT_BY_POSITION = 'position';
     public const string SORT_BY_NAME = 'name';
@@ -29,7 +29,7 @@ final class EmpireCatalog
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/game/empires.yaml')]
         private readonly string $empiresConfigPath,
-        private readonly ScenarioCatalog $scenarioCatalog,
+        private readonly ScenarioRegistry $scenarioRegistry,
     ) {}
 
     /** @return array<string, Empire> */
@@ -81,7 +81,7 @@ final class EmpireCatalog
     /** @return list<Empire> */
     public function findByPlayerCountAndRegion(int $playerCount, ?string $region): array
     {
-        $slugs = $this->scenarioCatalog->empiresFor($playerCount, $region);
+        $slugs = $this->scenarioRegistry->empiresFor($playerCount, $region);
 
         return array_values(array_filter(
             array_map($this->findByName(...), $slugs),

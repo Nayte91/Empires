@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
@@ -14,8 +14,8 @@ use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\Product;
 use Userforged\ShopEngine\Service\ProductCatalog;
 
-#[AsTwigComponent(name: 'organisms:ProductGrid', template: 'organisms/productGrid.html.twig')]
-final class ProductGrid
+#[AsTwigComponent(name: 'organisms:Catalog', template: 'organisms/catalog.html.twig')]
+final class Catalog
 {
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
     public string $storageKey; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
@@ -23,7 +23,7 @@ final class ProductGrid
     public bool $compact = false;
 
     public function __construct(
-        private readonly AdvanceCatalog $advanceCatalog,
+        private readonly AdvanceRegistry $advanceRegistry,
         private readonly CartStorageInterface $cartStorage,
         private readonly ProductCatalog $productCatalog,
         private readonly ShopConnector $shopConnector,
@@ -34,7 +34,7 @@ final class ProductGrid
     {
         $advancesByKey = [];
 
-        foreach ($this->advanceCatalog->getAdvances() as $advance) {
+        foreach ($this->advanceRegistry->getAdvances() as $advance) {
             $advancesByKey[$advance->key] = $advance;
         }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Ruleset\AstCatalog;
 use App\Rules\Ruleset\AstEraDefinition;
-use App\Rules\Ruleset\EmpireCatalog;
+use App\Rules\Ruleset\AstRegistry;
+use App\Rules\Ruleset\EmpireRegistry;
 use App\State\Game;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -31,19 +31,19 @@ final class Ast
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(
-        private readonly AstCatalog $astCatalog,
-        private readonly EmpireCatalog $empireCatalog,
+        private readonly AstRegistry $astRegistry,
+        private readonly EmpireRegistry $empireRegistry,
     ) {}
 
     public function getTrackLength(): int
     {
-        return $this->astCatalog->getTrackLength($this->game->astVersion, self::SHARED_LAYOUT_GROUP);
+        return $this->astRegistry->getTrackLength($this->game->astVersion, self::SHARED_LAYOUT_GROUP);
     }
 
     /** @return list<array{era: AstEraDefinition, span: int}> */
     public function getEraHeaders(): array
     {
-        $spans = $this->astCatalog->getColumnEras($this->game->astVersion, self::SHARED_LAYOUT_GROUP);
+        $spans = $this->astRegistry->getColumnEras($this->game->astVersion, self::SHARED_LAYOUT_GROUP);
         $counts = [];
 
         foreach ($spans as $era) {
@@ -52,30 +52,30 @@ final class Ast
 
         return array_map(
             static fn (AstEraDefinition $era): array => ['era' => $era, 'span' => $counts[$era->key] ?? 0],
-            $this->astCatalog->getEras(),
+            $this->astRegistry->getEras(),
         );
     }
 
     /** @return list<AstEraDefinition> one entry per track position, in file order, using this player's own empire group */
     public function getColumnErasFor(Player $player): array
     {
-        $group = $this->astCatalog->resolveEmpireGroup($this->game->astVersion, $player->empire);
+        $group = $this->astRegistry->resolveEmpireGroup($this->game->astVersion, $player->empire);
 
-        return $this->astCatalog->getColumnEras($this->game->astVersion, $group);
+        return $this->astRegistry->getColumnEras($this->game->astVersion, $group);
     }
 
     public function getEraNameFor(Player $player): string
     {
-        $group = $this->astCatalog->resolveEmpireGroup($this->game->astVersion, $player->empire);
+        $group = $this->astRegistry->resolveEmpireGroup($this->game->astVersion, $player->empire);
 
-        return $this->astCatalog->getEraForPosition($player->astPosition, $this->game->astVersion, $group)->name;
+        return $this->astRegistry->getEraForPosition($player->astPosition, $this->game->astVersion, $group)->name;
     }
 
     /** @return list<Player> ranked by empire position on the A.S.T. */
     public function getRankedPlayers(): array
     {
         $players = $this->game->players->toArray();
-        usort($players, fn (Player $a, Player $b): int => $this->empireCatalog->positionOf($a->empire) <=> $this->empireCatalog->positionOf($b->empire));
+        usort($players, fn (Player $a, Player $b): int => $this->empireRegistry->positionOf($a->empire) <=> $this->empireRegistry->positionOf($b->empire));
 
         return $players;
     }

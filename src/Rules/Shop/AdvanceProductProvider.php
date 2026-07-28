@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Rules\Shop;
 
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use Userforged\ShopEngine\ProductInterface;
 use Userforged\ShopEngine\ProductProviderInterface;
 
 /**
- * The Game→Shop seam for ProductProviderInterface: wraps AdvanceCatalog,
- * whose getAdvances() already drives product-grid render order via
+ * The Game→Shop seam for ProductProviderInterface: wraps AdvanceRegistry,
+ * whose getAdvances() already drives catalog render order via
  * sortByCost() — that ordering is preserved here untouched.
  */
 final readonly class AdvanceProductProvider implements ProductProviderInterface
 {
-    public function __construct(private AdvanceCatalog $advanceCatalog) {}
+    public function __construct(private AdvanceRegistry $advanceRegistry) {}
 
     /** @return list<ProductInterface> */
     public function products(): array
     {
-        return $this->advanceCatalog->getAdvances();
+        return $this->advanceRegistry->getAdvances();
     }
 
     /**
@@ -33,6 +33,6 @@ final readonly class AdvanceProductProvider implements ProductProviderInterface
         // getAdvancesByNames() returns a non-reindexed array (array_filter
         // preserves the original keys), so array_values is required here to
         // hand back a genuine list — callers no longer need to do it themselves.
-        return array_values($this->advanceCatalog->getAdvancesByNames($keys));
+        return array_values($this->advanceRegistry->getAdvancesByNames($keys));
     }
 }

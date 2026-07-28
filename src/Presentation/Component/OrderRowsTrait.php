@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceCatalog;
+use App\Rules\Ruleset\AdvanceRegistry;
 use Userforged\ShopEngine\Dto\OrderLine;
 
 /**
@@ -16,7 +16,7 @@ use Userforged\ShopEngine\Dto\OrderLine;
  * A trait rather than a service on purpose: nothing here decides a rule of
  * the game, it only shapes what App\Presentation\Component\Shop and App\Presentation\Component\Cart
  * hand to their own templates (same reasoning as HasIncompleteAllocationsTrait,
- * whose AdvanceCatalog parameter it also copies rather than reaching for a
+ * whose AdvanceRegistry parameter it also copies rather than reaching for a
  * property of the using class).
  */
 trait OrderRowsTrait
@@ -26,11 +26,11 @@ trait OrderRowsTrait
      *
      * @return list<array{advance: Advance, line: OrderLine}>
      */
-    protected function toRows(array $lines, AdvanceCatalog $advanceCatalog): array
+    protected function toRows(array $lines, AdvanceRegistry $advanceRegistry): array
     {
         return array_map(
-            static function (OrderLine $line) use ($advanceCatalog): ?array {
-                $advance = $advanceCatalog->getAdvanceByName($line->key);
+            static function (OrderLine $line) use ($advanceRegistry): ?array {
+                $advance = $advanceRegistry->getAdvanceByName($line->key);
 
                 return $advance instanceof Advance ? ['advance' => $advance, 'line' => $line] : null;
             },
