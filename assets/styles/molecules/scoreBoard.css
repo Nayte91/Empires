@@ -27,7 +27,6 @@
     }
 
     td:not([data-name], [data-empire]) { text-align: center }
-    td[data-name] > * { display: inline-block }
     td[data-empire] { color: var(--player-color, dimgray) }
     tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
 

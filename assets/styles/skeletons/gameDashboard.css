@@ -20,29 +20,6 @@
 
     caption { scroll-margin-block-start: 1rem }
 
-    .game-dashboard__operator-link {
-        display: flex;
-        justify-content: center;
-    }
-
-    .game-dashboard__name-modal > button {
-        border: none;
-        background: none;
-        padding: 0;
-        color: var(--operator-accent);
-        font: inherit;
-        cursor: pointer;
-
-        &:hover { text-decoration: underline }
-    }
-
-    .game-dashboard__qr-url {
-        margin: 0;
-        color: var(--operator-text-muted);
-        font-family: monospace;
-        overflow-wrap: anywhere;
-    }
-
     @media (min-width: 60rem) {
         justify-items: center;
         gap: 2rem;

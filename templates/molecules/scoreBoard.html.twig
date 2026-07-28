@@ -18,19 +18,7 @@
         {% for row in this.playerRows %}
             {% set player = row.player %}
             <tr data-empire="{{ player.empire }}">
-                <td data-name>
-                    <twig:molecules:Modal class="game-dashboard__name-modal">
-                        <twig:block name="button">
-                            {{ player.name }}
-                        </twig:block>
-                        <twig:block name="content">
-                            <h2>{{ player.name }}</h2>
-                            {{ row.qr|raw }}
-                            <p class="game-dashboard__qr-url"><a href="{{ row.url }}">{{ row.url }}</a></p>
-                            <button type="button" {{ stimulus_action('modal', 'close') }}>Close</button>
-                        </twig:block>
-                    </twig:molecules:Modal>
-                </td>
+                <td data-name>{{ player.name }}</td>
                 <td data-empire>
                     {{ this.empireAdjective(player) ?? '—' }}
                     {% if row.military %}<small title="Military">⚔</small>{% endif %}

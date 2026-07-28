@@ -27,32 +27,19 @@ final class GameDashboardTest extends WebTestCase
         $this->assertSame($game->slug, trim($matches[1]));
     }
 
+    /** Every route out of the dashboard now lives in one place, above the scoreboard. */
     #[Test]
-    public function operatorBoardOpensModalContainingTheOperatorUrl(): void
+    public function navigationIsTheFirstBlockUnderTheTitle(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
-        $component = $this->mountTwigComponent('GameDashboard', ['game' => $game]);
-        $operatorUrl = $component->getOperatorUrl();
-
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        $this->assertStringContainsString('/'.$game->slug.'/operator', (string) $operatorUrl);
-        $this->assertStringContainsString('<dialog', $html);
-        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Operator board\s*<\/button>/', $html);
-        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $operatorUrl, $operatorUrl), $html);
-    }
-
-    #[Test]
-    public function rendersTheOperatorQrCode(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
-
-        // No players: the only QR code on the dashboard is the operator's.
-        $this->assertSame(1, substr_count($html, '<svg'));
+        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<details'), 'Navigation comes before the scoreboard.');
+        $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<details'), 'Navigation comes after the title.');
+        $this->assertSame(1, substr_count($html, '<dialog'), 'The dashboard carries exactly one dialog, Navigation’s.');
+        $this->assertStringContainsString('/'.$game->slug.'/operator', $html);
     }
 
     #[Test]

@@ -1,20 +1,7 @@
 <main class="game-dashboard">
-    {% set operatorUrl = this.operatorUrl %}
-    {% set operatorQr = this.operatorQr %}
-
     <twig:atoms:PageTitle :title="game.slug" />
 
-    <twig:molecules:Modal class="game-dashboard__name-modal game-dashboard__operator-link">
-        <twig:block name="button">
-            Operator board
-        </twig:block>
-        <twig:block name="content">
-            <h2>Operator board</h2>
-            {{ operatorQr|raw }}
-            <p class="game-dashboard__qr-url"><a href="{{ operatorUrl }}">{{ operatorUrl }}</a></p>
-            <button type="button" {{ stimulus_action('modal', 'close') }}>Close</button>
-        </twig:block>
-    </twig:molecules:Modal>
+    <twig:Navigation :game="game" />
 
     <h2><a href="#scoreboard">Scoreboard</a></h2>
     <twig:ScoreBoard :game="game" />

@@ -1,0 +1,106 @@
+.navigation {
+    inline-size: 100%;
+    max-inline-size: 60rem;
+    border: 1px solid dimgray;
+    border-radius: 0.5rem;
+    overflow: hidden;
+
+    summary {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 1rem;
+        font-weight: bold;
+        cursor: pointer;
+
+        &::before {
+            content: '▸';
+            transition: rotate 0.2s;
+        }
+
+        span {
+            margin-inline-start: auto;
+            color: darkgray;
+            font-size: 0.75rem;
+            font-weight: normal;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+    }
+
+    &[open] summary::before { rotate: 90deg }
+
+    ul {
+        display: grid;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        border-block-start: 1px solid dimgray;
+        border-inline-start: 4px solid var(--player-color, var(--operator-accent));
+    }
+
+    a {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        padding: 1rem;
+        color: inherit;
+        text-decoration: none;
+
+        small { color: darkgray }
+
+        &:hover { text-decoration: underline }
+    }
+
+    li button {
+        display: grid;
+        place-items: center;
+        inline-size: 3rem;
+        align-self: stretch;
+        border: none;
+        border-inline-start: 1px solid dimgray;
+        background: none;
+        color: inherit;
+        cursor: pointer;
+
+        svg {
+            inline-size: 1.5rem;
+            block-size: 1.5rem;
+        }
+
+        &:hover { background: rgb(255 255 255 / 0.1) }
+    }
+
+    dialog > div {
+        block-size: 70vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scroll-snap-type: y mandatory;
+    }
+
+    figure {
+        display: grid;
+        align-content: center;
+        justify-items: center;
+        gap: 1rem;
+        min-block-size: 100%;
+        margin: 0;
+        scroll-snap-align: center;
+
+        h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
+    }
+
+    @container (min-width: 40rem) {
+        ul { grid-template-columns: repeat(2, 1fr) }
+    }
+
+    @container (min-width: 60rem) {
+        ul { grid-template-columns: repeat(3, 1fr) }
+    }
+}

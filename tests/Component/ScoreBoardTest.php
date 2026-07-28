@@ -42,7 +42,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/>\s*Alice\s*<\/button>.*?<td>12<\/td>/s', $rendered);
+        $this->assertMatchesRegularExpression('/<td data-name>Alice<\/td>.*?<td>12<\/td>/s', $rendered);
     }
 
     #[Test]
@@ -83,34 +83,18 @@ final class ScoreBoardTest extends WebTestCase
         $this->assertStringNotContainsString('<td>4</td>', $rendered);
     }
 
+    /** Reaching a view is Navigation's job: the table states scores and links to nothing. */
     #[Test]
-    public function playerNameOpensModalContainingTheirPlayerBoardUrl(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game]);
-        $component = $rendered->component();
-        $playerBoardUrl = $component->getPlayerUrl($player);
-
-        $html = $rendered->render()->toString();
-
-        $this->assertStringNotContainsString('/shop', (string) $playerBoardUrl, 'Player board URL must not point to the kiosk (shop).');
-        $this->assertMatchesRegularExpression('/<button[^>]*>\s*Alice\s*<\/button>/', $html);
-        $this->assertStringContainsString(\sprintf('<a href="%s">%s</a>', $playerBoardUrl, $playerBoardUrl), $html);
-        $this->assertSame(2, substr_count($html, $playerBoardUrl), 'URL must appear only in the modal link (as both href and text).');
-    }
-
-    #[Test]
-    public function rendersOneQrCodePerPlayer(): void
+    public function theNameCellIsPlainTextCarryingNoLinkNorQrCode(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        $this->assertSame(2, substr_count($rendered, '<svg'));
+        $this->assertStringContainsString('<td data-name>Alice</td>', $rendered);
+        $this->assertStringNotContainsString('<svg', $rendered);
+        $this->assertStringNotContainsString('<dialog', $rendered);
     }
 
     /** The score belongs to the A.S.T. board now: the scoreboard must not grow a second one. */
