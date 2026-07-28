@@ -111,7 +111,7 @@ final class ShopComponentTest extends WebTestCase
         $component->call('add', ['key' => 'pottery']);
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
-        $this->assertSame(1, substr_count($rendered, 'class="shop__cart-line"'));
+        $this->assertSame(1, substr_count($rendered, 'class="line"'));
         $this->assertStringContainsString('Total: 60', $rendered);
     }
 
@@ -129,7 +129,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame(['pottery'], $order->keys());
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringNotContainsString('class="lines"', $rendered);
         $this->assertStringContainsString('Order pending for this turn.', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
         $this->assertStringContainsString('Modify', $rendered);
@@ -143,7 +143,7 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringNotContainsString('class="lines"', $rendered);
         $this->assertStringContainsString('Order pending for this turn.', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
         $this->assertStringContainsString('Modify', $rendered);
@@ -160,7 +160,7 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
 
-        $this->assertStringContainsString('shop__cart-lines', $rendered);
+        $this->assertStringContainsString('class="lines"', $rendered);
         $this->assertStringContainsString('data-in-cart', $rendered);
         $this->assertSame(2, substr_count($rendered, 'data-live-action-param="remove"'));
         $this->assertStringNotContainsString('Modify', $rendered);
@@ -180,7 +180,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertTrue($this->getShopComponent($component)->isLockedForTurn());
 
         $rendered = $component->render()->toString();
-        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringNotContainsString('class="lines"', $rendered);
         $this->assertStringNotContainsString('Modify', $rendered);
         $this->assertStringContainsString('Order validated for this turn.', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
@@ -208,7 +208,7 @@ final class ShopComponentTest extends WebTestCase
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
 
-        $this->assertStringContainsString('Democracy', $crawler->filter('.shop__cart-lines')->text());
+        $this->assertStringContainsString('Democracy', $crawler->filter('.lines')->text());
         $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
@@ -225,7 +225,7 @@ final class ShopComponentTest extends WebTestCase
 
         $this->assertStringContainsString('999', $rendered);
         $this->assertStringNotContainsString('Modify', $rendered);
-        $this->assertStringNotContainsString('shop__cart-lines', $rendered);
+        $this->assertStringNotContainsString('class="lines"', $rendered);
     }
 
     #[Test]
@@ -244,7 +244,7 @@ final class ShopComponentTest extends WebTestCase
 
         $component->call('editPendingOrder');
         $editedRendered = $component->render()->toString();
-        $this->assertStringContainsString('shop__cart-lines', $editedRendered);
+        $this->assertStringContainsString('class="lines"', $editedRendered);
         $this->assertStringContainsString('data-in-cart', $editedRendered);
 
         $this->createCart($player, $client)->call('checkout');
@@ -403,7 +403,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
         // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
         // craft and science were allocated, 10 each.
-        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
+        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker .value')->each(static fn ($node) => $node->text()));
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 

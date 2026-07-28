@@ -12,11 +12,8 @@
     gap: 1rem;
     padding: 1rem;
     background: white;
-    /* The width is fixed, so it is the message that gives way: a token with nowhere to break
-       breaks anyway rather than pushing the card wider. */
     overflow-wrap: anywhere;
 
-    /* The card names itself, the way a caption names a table. */
     h2 {
         margin: 0;
         border-block-end: 1px solid gainsboro;
@@ -24,8 +21,6 @@
         font-size: 1rem;
     }
 
-    /* Block flow rather than flex: a flex item is not a list item, and would lose its ::marker.
-       The inline padding is what the ::marker hangs in. */
     ul {
         margin: 0;
         padding-inline-start: 1.5rem;
@@ -33,9 +28,6 @@
 
     li + li { margin-block-start: 0.5rem }
 
-    /* The domain grades the message; turning that grade into a colour and a sign is this file's
-       job. Overriding ::marker rather than adding a ::before keeps one symbol per line — the sign
-       replaces the bullet instead of standing next to it. A neutral line keeps the plain bullet. */
     li[data-level="good"] {
         color: var(--operator-success);
 
@@ -45,8 +37,6 @@
     li[data-level="caution"] {
         color: var(--operator-warning);
 
-        /* FE0E forces the text presentation: left alone, some platforms render ⚠ as a colour
-           emoji, which would ignore the level colour. */
         &::marker { content: "\26A0\FE0E\A0" }
     }
 
@@ -56,7 +46,5 @@
         &::marker { content: "\2715\A0" }
     }
 
-    /* The domain names the advance, this file draws it — the same crossed swords the census board
-       uses to flag a Military owner. */
     li[data-advance="military"]::after { content: "\A0\2694\FE0E" }
 }

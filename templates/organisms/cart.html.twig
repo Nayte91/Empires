@@ -1,23 +1,23 @@
-<div {{ attributes }}>
+<div {{ attributes }} class="cart">
     {% if this.showLines %}
         <h2>Cart</h2>
 
-        <ul class="shop__cart-lines">
+        <ul class="lines">
             {% for row in this.lines %}
-                <li class="shop__cart-line">
-                    <span class="shop__cart-line-name">{{ row.advance.name|capitalize }}</span>
+                <li class="line">
+                    <span class="name">{{ row.advance.name|capitalize }}</span>
                     {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                        <small class="shop__cart-line-original">{{ row.line.netCost + row.line.promotion.amount }}</small>
+                        <small class="original">{{ row.line.netCost + row.line.promotion.amount }}</small>
                     {% endif %}
-                    <span class="shop__cart-line-cost">{{ row.line.netCost }}</span>
+                    <span class="cost">{{ row.line.netCost }}</span>
                     {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                        <span class="shop__cart-line-badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
+                        <span class="badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
                     {% endif %}
                     <button
                         type="button"
                         {{ live_action('remove', {key: row.advance.key}) }}
                         data-loading="addAttribute(disabled)"
-                        class="shop__cart-line-remove"
+                        class="remove"
                     >
                         ×
                     </button>
@@ -42,25 +42,39 @@
                     {% endif %}
                 </li>
             {% else %}
-                <li class="shop__cart-empty">Cart is empty.</li>
+                <li class="empty">Cart is empty.</li>
             {% endfor %}
         </ul>
 
-        <p class="shop__cart-total">Total: {{ this.total }}</p>
+        <p class="total">Total: {{ this.total }}</p>
 
         {% if error %}
             <p class="shop__error" role="alert">{{ error }}</p>
         {% endif %}
 
         {% set isDisabled = locked or this.isEmpty or this.hasIncompleteAllocations %}
-        <button
-            type="button"
-            {{ live_action('checkout') }}
-            {{ isDisabled ? 'disabled' }}
-            {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-            class="shop__submit"
-        >
-            {{ checkoutLabel }}
-        </button>
+        <footer>
+            <button
+                type="button"
+                {{ live_action('checkout') }}
+                {{ isDisabled ? 'disabled' }}
+                {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+                class="submit"
+            >
+                {{ checkoutLabel }}
+            </button>
+
+            {% if clearable %}
+                {% set isClearDisabled = this.isEmpty %}
+                <button
+                    type="button"
+                    {{ live_action('clear') }}
+                    {{ isClearDisabled ? 'disabled' }}
+                    {% if not isClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+                >
+                    Clear cart
+                </button>
+            {% endif %}
+        </footer>
     {% endif %}
 </div>

@@ -224,7 +224,7 @@ final class PosConsoleTest extends WebTestCase
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
         // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
         // craft and science were allocated, 10 each.
-        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker__value')->each(static fn ($node) => $node->text()));
+        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker .value')->each(static fn ($node) => $node->text()));
     }
 
     #[Test]

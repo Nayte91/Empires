@@ -1,0 +1,35 @@
+.gift-picker {
+    flex-basis: 100%;
+    margin: 0;
+    border-inline-start: 2px solid var(--operator-accent);
+    padding-inline-start: 0.75rem;
+    font-size: 0.8125rem;
+
+    &.chosen { color: var(--operator-success) }
+
+    .intro {
+        margin: 0 0 0.5rem;
+        color: var(--operator-text-muted);
+    }
+
+    .candidates {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .candidate { font-size: 0.75rem }
+
+    .cost {
+        color: var(--operator-text-muted);
+        text-decoration: line-through;
+    }
+
+    .revoke {
+        margin-inline-start: 0.5rem;
+        font-size: 0.75rem;
+    }
+}

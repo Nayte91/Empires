@@ -13,10 +13,25 @@
         <p role="alert">{{ error }}</p>
     {% endif %}
 
-    <twig:molecules:Discounts :player="player" />
-
     {% set posOrder = this.posOrder %}
-    {% if posOrder and posOrder.status.value == 'validated' %}
+    {% set isValidated = posOrder and posOrder.status.value == 'validated' %}
+
+    <div class="summary">
+        <twig:molecules:Discounts :player="player" />
+
+        {% if not isValidated %}
+            <twig:Cart
+                :player="player"
+                :cartStamp="this.getCartStamp()"
+                :directSale="true"
+                :window="posTurn"
+                checkoutLabel="Confirm purchase"
+                :storageKey="this.posCartKey"
+            />
+        {% endif %}
+    </div>
+
+    {% if isValidated %}
         <p role="status">Order validated.</p>
 
         <button type="button" {{ live_action('closePos') }} data-loading="addAttribute(disabled)">
@@ -24,14 +39,5 @@
         </button>
     {% else %}
         <twig:organisms:Catalog :player="player" :compact="true" :storageKey="this.posCartKey" />
-
-        <twig:Cart
-            :player="player"
-            :cartStamp="this.getCartStamp()"
-            :directSale="true"
-            :window="posTurn"
-            checkoutLabel="Confirm purchase"
-            :storageKey="this.posCartKey"
-        />
     {% endif %}
 </dialog>

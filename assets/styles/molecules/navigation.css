@@ -96,11 +96,7 @@
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }
 
-    @container (min-width: 40rem) {
-        ul { grid-template-columns: repeat(2, 1fr) }
-    }
+    @container (min-width: 40rem) { ul { grid-template-columns: repeat(2, 1fr) } }
 
-    @container (min-width: 60rem) {
-        ul { grid-template-columns: repeat(3, 1fr) }
-    }
+    @container (min-width: 60rem) { ul { grid-template-columns: repeat(3, 1fr) } }
 }

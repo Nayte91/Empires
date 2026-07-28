@@ -14,31 +14,18 @@
     <twig:molecules:Discounts :player="player" />
 
     <div class="shop__layout">
-        <aside class="shop__cart">
-            <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
+        <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
 
+        <aside class="shop__cart">
             <twig:Cart
                 :player="player"
                 :showLines="this.isCartVisible"
                 :cartStamp="this.getCartStamp()"
                 :locked="this.isLockedForTurn"
                 checkoutLabel="Submit my order"
+                :clearable="true"
                 :storageKey="this.cartKey"
             />
-
-            {% if this.isCartVisible %}
-                {% set isCartClearDisabled = this.isCartEmpty %}
-                <div class="shop__cart-actions">
-                    <button
-                        type="button"
-                        {{ live_action('clearCart') }}
-                        {{ isCartClearDisabled ? 'disabled' }}
-                        {% if not isCartClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                    >
-                        Clear cart
-                    </button>
-                </div>
-            {% endif %}
 
             {% if this.isOrderVisible %}
                 <div class="shop__order" data-status="{{ this.orderStatus }}">
