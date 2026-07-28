@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
+use App\Rules\CensusOrderCalculator;
 use App\Rules\Ruleset\EmpireRegistry;
-use App\Rules\StandingsCalculator;
 use App\State\Game;
 use App\State\Player;
 use Endroid\QrCode\Builder\Builder;
@@ -32,8 +32,8 @@ final class ScoreBoard
 
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly StandingsCalculator $standingsCalculator,
         private readonly EmpireRegistry $empireRegistry,
+        private readonly CensusOrderCalculator $censusOrderCalculator,
     ) {}
 
     public function getPlayerUrl(Player $player): string
@@ -50,7 +50,12 @@ final class ScoreBoard
         return $this->buildQr($this->getPlayerUrl($player));
     }
 
-    /** @return list<array{player: Player, url: string, qr: string, victoryPoints: int}> */
+    /**
+     * The rows in play order: the table is read down the movement-phase turn order. The score
+     * itself lives on the A.S.T. board, where the track already says what a position is worth.
+     *
+     * @return list<array{player: Player, url: string, qr: string, military: bool}>
+     */
     public function getPlayerRows(): array
     {
         return array_map(
@@ -58,15 +63,10 @@ final class ScoreBoard
                 'player' => $player,
                 'url' => $this->getPlayerUrl($player),
                 'qr' => $this->getPlayerQr($player),
-                'victoryPoints' => $this->getPlayerVictoryPoints($player),
+                'military' => $this->censusOrderCalculator->hasMilitary($player),
             ],
-            $this->standingsCalculator->standings($this->game),
+            $this->censusOrderCalculator->orderFor($this->game),
         );
-    }
-
-    public function getPlayerVictoryPoints(Player $player): int
-    {
-        return $this->standingsCalculator->scoreOf($player);
     }
 
     public function empireAdjective(Player $player): ?string

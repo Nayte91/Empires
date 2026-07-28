@@ -1,28 +1,24 @@
 <table
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
-    data-players
     class="score-board"
 >
-    <caption>Turn {{ game.currentTurn }}</caption>
+    <caption id="scoreboard">Turn {{ game.currentTurn }}</caption>
     <thead>
         <tr>
             <th scope="col">Name</th>
-            <th scope="col">Empire</th>
+            <th scope="col" data-empire>Empire</th>
             <th scope="col">Treasury</th>
             <th scope="col">Census</th>
-            <th scope="col">Ships</th>
             <th scope="col">Cities</th>
             <th scope="col">Cards</th>
-            <th scope="col">Advances</th>
-            <th scope="col">VP</th>
+            <th scope="col">Techs</th>
         </tr>
     </thead>
     <tbody>
         {% for row in this.playerRows %}
             {% set player = row.player %}
             <tr data-empire="{{ player.empire }}">
-                <td>
-                    <twig:atoms:Marker empire="{{ player.empire }}" />
+                <td data-name>
                     <twig:molecules:Modal class="game-dashboard__name-modal">
                         <twig:block name="button">
                             {{ player.name }}
@@ -35,18 +31,15 @@
                         </twig:block>
                     </twig:molecules:Modal>
                 </td>
-                <td>{{ this.empireAdjective(player) ?? '—' }}</td>
+                <td data-empire>
+                    {{ this.empireAdjective(player) ?? '—' }}
+                    {% if row.military %}<small title="Military">⚔</small>{% endif %}
+                </td>
                 <td>{{ player.treasury }}</td>
                 <td>{{ player.census }}</td>
-                <td>{{ player.ships }}</td>
-                <td{{ player.cities > 0 ? ' data-scored' : '' }}>{{ player.cities }}</td>
+                <td>{{ player.cities }}</td>
                 <td>{{ player.cards }}</td>
-                <td{{ player.advances|length > 0 ? ' data-scored' : '' }}>{{ player.advances|length }}</td>
-                <td{{ row.victoryPoints > 0 ? ' data-scored' : '' }}>{{ row.victoryPoints }}</td>
-            </tr>
-        {% else %}
-            <tr>
-                <td colspan="9">No players yet.</td>
+                <td>{{ player.advances|length }}</td>
             </tr>
         {% endfor %}
     </tbody>

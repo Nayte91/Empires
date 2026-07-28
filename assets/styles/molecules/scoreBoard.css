@@ -16,7 +16,6 @@
         border-block-end: 1px solid dimgray;
     }
 
-    /* headers stand on their side: the columns are only as wide as their figures */
     thead th {
         border-block-end-width: 2px;
         writing-mode: sideways-lr;
@@ -27,45 +26,25 @@
         text-align: end;
     }
 
-    /* the empire is already told by the dot on the name */
-    thead th:nth-child(2), tbody td:nth-child(2) { display: none }
-
-    td { text-align: center }
-
-    td:first-child {
-        text-align: start;
-
-        .marker {
-            margin-inline-end: 0.5em;
-            inline-size: 0.75rem;
-            vertical-align: middle;
-        }
-
-        .game-dashboard__name-modal { display: inline-block }
-    }
-
-    td[data-scored] { color: goldenrod }
-
+    td:not([data-name], [data-empire]) { text-align: center }
+    td[data-name] > * { display: inline-block }
+    td[data-empire] { color: var(--player-color, dimgray) }
     tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
+
+    @container (width < 60rem) {
+        tr > :first-child { display: none }
+        th[data-empire] { visibility: hidden }
+    }
 
     @container (min-width: 60rem) {
         inline-size: auto;
         font-size: 1.25rem;
 
-        th, td {
-            padding: 0.75em 1.5em;
-            text-align: start;
-        }
+        th, td { padding: 0.75em 1.5em }
 
         thead th {
             writing-mode: horizontal-tb;
             font-size: 0.7em;
         }
-
-        thead th:nth-child(2), tbody td:nth-child(2) { display: table-cell }
-
-        tbody td:nth-child(2) { color: var(--player-color, dimgray) }
-
-        td:first-child .marker { display: none }
     }
 }

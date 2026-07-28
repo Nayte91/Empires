@@ -16,12 +16,10 @@
         </twig:block>
     </twig:molecules:Modal>
 
-    <h2>Scoreboard</h2>
+    <h2><a href="#scoreboard">Scoreboard</a></h2>
     <twig:ScoreBoard :game="game" />
 
-    <h2><a href="{{ path('app_game_ast', {slug: game.slug}) }}">A.S.T.</a></h2>
+    <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
     <twig:Ast :game="game" />
-
-    <h2><a href="{{ path('app_game_census', {slug: game.slug}) }}">Census</a></h2>
-    <twig:Census :game="game" />
+    <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />
 </main>

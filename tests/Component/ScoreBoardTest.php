@@ -65,8 +65,22 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        // Treasury(0), Census(1), Ships(0), Cities(0), Cards(0), Advances(0), VP(0) — Name/Empire cells are not plain <td>value</td>.
-        $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
+        // Treasury(0), Census(1), Cities(0), Cards(0), Advances(0) — Name/Empire cells are not plain <td>value</td>.
+        $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
+    }
+
+    #[Test]
+    public function shipsAreNotDisplayedAtAll(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        $player->ships = 4;
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+
+        $this->assertStringNotContainsString('Ships', $rendered);
+        $this->assertStringNotContainsString('<td>4</td>', $rendered);
     }
 
     #[Test]
@@ -99,70 +113,57 @@ final class ScoreBoardTest extends WebTestCase
         $this->assertSame(2, substr_count($rendered, '<svg'));
     }
 
-    /**
-     * Canary for the scoreboard: the victory-point total ScoreCalculator computes reaches the cell.
-     * Each contributing term (advance points, cities, A.S.T. position) is pinned in
-     * ScoreCalculatorTest — re-deriving the sum here for every combination only duplicated it.
-     */
+    /** The score belongs to the A.S.T. board now: the scoreboard must not grow a second one. */
     #[Test]
-    public function rendersVictoryPointsAsAdvancePointsPlusCities(): void
+    public function noVictoryPointColumnIsRendered(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->ownAdvances(['advanced_military']); // 6 points
-        $player->cities = 5;
+        $player->cities = 5;                         // 11 victory points in total
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        $this->assertMatchesRegularExpression('/<td data-scored>11<\/td>\s*<\/tr>/', $rendered);
+        $this->assertStringNotContainsString('VP', $rendered);
+        $this->assertStringNotContainsString('data-medal', $rendered);
+        $this->assertStringNotContainsString('<td>11</td>', $rendered);
     }
 
+    /**
+     * The table is read down the movement-phase order, not down the standings: the operator uses it
+     * to call the players in turn.
+     */
     #[Test]
-    public function playersAreSortedByVictoryPointsDescending(): void
+    public function playersAreOrderedByPlayOrderRatherThanByScore(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $bob->cities = 1;
-        $alice->cities = 5;
+        $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(5)->persist($this->entityManager);
+        $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
+        $carl = PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->persist($this->entityManager);
+        $alice->census = 2;
+        $bob->census = 9;
+        $carl->census = 20;
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        $alicePosition = strpos($rendered, 'Alice');
-        $bobPosition = strpos($rendered, 'Bob');
-
-        $this->assertNotFalse($alicePosition);
-        $this->assertNotFalse($bobPosition);
-        $this->assertLessThan($bobPosition, $alicePosition, 'Higher-scoring player (Alice) must be rendered before the lower-scoring one (Bob).');
+        $this->assertLessThan(strpos($rendered, 'Alice'), strpos($rendered, 'Bob'), 'Higher census (Bob) plays before lower census (Alice).');
+        $this->assertLessThan(strpos($rendered, 'Carl'), strpos($rendered, 'Alice'), 'Military owner (Carl) plays last whatever their census.');
     }
 
     #[Test]
-    public function scoredCitiesAndVictoryPointsAreMarkedButZeroAdvancesIsNot(): void
+    public function theMilitaryAdvanceIsFlaggedNextToTheEmpireItBelongsTo(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $player->cities = 3;
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withAdvances(['military'])->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
-        $crawler = new Crawler($rendered);
-        $row = $crawler->filter('tbody tr');
+        $rows = new Crawler($rendered)->filter('tbody tr');
 
-        $this->assertNotNull($row->filter('td:nth-of-type(6)')->attr('data-scored'), 'Cities cell should be marked as scored.');
-        $this->assertNull($row->filter('td:nth-of-type(8)')->attr('data-scored'), 'Advances cell should not be marked as scored when it is zero.');
-        $this->assertNotNull($row->filter('td:nth-of-type(9)')->attr('data-scored'), 'Victory points cell should be marked as scored.');
-    }
-
-    #[Test]
-    public function emptyStateColspanMatchesTheNineColumns(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
-
-        $this->assertStringContainsString('colspan="9"', $rendered);
+        $this->assertSame('sabaean', trim($rows->eq(0)->filter('td:nth-of-type(2)')->text()));
+        $this->assertSame('minoan ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('td:nth-of-type(2)')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
     }
 
     #[Test]
@@ -174,7 +175,7 @@ final class ScoreBoardTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('<caption>Turn 7</caption>', $rendered);
+        $this->assertStringContainsString('<caption id="scoreboard">Turn 7</caption>', $rendered);
     }
 
     #[Test]

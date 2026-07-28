@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
-use App\Rules\Ruleset\AstRegistry;
 use App\State\Game;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,8 +12,6 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class GameController extends AbstractController
 {
-    public function __construct(private readonly AstRegistry $astRegistry) {}
-
     #[Route('/create', name: 'app_game_create', methods: ['GET'], priority: 10)]
     public function create(): Response
     {
@@ -27,25 +24,6 @@ final class GameController extends AbstractController
         Game $game
     ): Response {
         return $this->render('skeletons/gameDashboard.html.twig', ['game' => $game]);
-    }
-
-    #[Route('/{slug}/ast', name: 'app_game_ast', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function ast(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
-        Game $game
-    ): Response {
-        return $this->render('skeletons/gameAst.html.twig', [
-            'game' => $game,
-            'eras' => $this->astRegistry->getEras(),
-        ]);
-    }
-
-    #[Route('/{slug}/census', name: 'app_game_census', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function census(
-        #[MapEntity(mapping: ['slug' => 'slug'])]
-        Game $game
-    ): Response {
-        return $this->render('skeletons/gameCensus.html.twig', ['game' => $game]);
     }
 
     #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]

@@ -4,6 +4,7 @@
     gap: 1rem;
     min-block-size: 100vh;
     padding: 1rem;
+    padding-block-end: 100vh;
     background: #111;
     color: white;
 
@@ -16,6 +17,8 @@
             text-decoration: none;
         }
     }
+
+    caption { scroll-margin-block-start: 1rem }
 
     .game-dashboard__operator-link {
         display: flex;
