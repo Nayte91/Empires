@@ -54,12 +54,6 @@ final class Shop
     public function onOrderPlaced(): void {}
 
     #[LiveAction]
-    public function clearCart(): void
-    {
-        $this->cartStorage->clear($this->getCartKey());
-    }
-
-    #[LiveAction]
     public function add(#[LiveArg] string $key): void
     {
         if ($this->isLockedForTurn()) {

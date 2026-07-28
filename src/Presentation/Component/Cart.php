@@ -63,6 +63,10 @@ final class Cart
     #[LiveProp(updateFromParent: true)]
     public bool $locked = false;
 
+    /** Whether the footer offers to empty the cart. The POS does not: its operator erases a whole order instead. */
+    #[LiveProp(updateFromParent: true)]
+    public bool $clearable = false;
+
     public ?string $error = null;
 
     public function __construct(
@@ -106,6 +110,12 @@ final class Cart
         $cart = $this->getCart();
         $cart->remove($key);
         $this->cartStorage->save($this->storageKey, $cart);
+    }
+
+    #[LiveAction]
+    public function clear(): void
+    {
+        $this->cartStorage->clear($this->storageKey);
     }
 
     #[LiveAction]

@@ -43,7 +43,7 @@ final class CartComponentTest extends WebTestCase
         $rendered = $component->call('remove', ['key' => 'pottery'])->render()->toString();
 
         $cartLines = $this->extractCartLinesSection($rendered);
-        $this->assertSame(1, substr_count($cartLines, 'class="shop__cart-line"'));
+        $this->assertSame(1, substr_count($cartLines, 'class="line"'));
         $this->assertStringNotContainsString('Pottery', $cartLines);
         $this->assertStringContainsString('Democracy', $cartLines);
     }
@@ -57,9 +57,9 @@ final class CartComponentTest extends WebTestCase
 
         $rendered = $this->createCart($player, client: $client)->render()->toString();
 
-        $this->assertStringContainsString('shop__cart-line-badge', $rendered);
+        $this->assertStringContainsString('badge', $rendered);
         $this->assertStringContainsString('−40 library', $rendered);
-        $this->assertStringContainsString('shop__cart-line-original', $rendered);
+        $this->assertStringContainsString('original', $rendered);
         $this->assertStringContainsString('Total: 400', $rendered);
     }
 
@@ -187,11 +187,11 @@ final class CartComponentTest extends WebTestCase
     /** Scopes assertions to the cart's line items, as opposed to the catalog (which repeats advance names). */
     private function extractCartLinesSection(string $html): string
     {
-        $start = strpos($html, '<ul class="shop__cart-lines">');
-        $this->assertNotFalse($start, 'shop__cart-lines not found in rendered output.');
+        $start = strpos($html, '<ul class="lines">');
+        $this->assertNotFalse($start, 'lines not found in rendered output.');
 
         $end = strpos($html, '</ul>', $start);
-        $this->assertNotFalse($end, 'Closing </ul> for shop__cart-lines not found in rendered output.');
+        $this->assertNotFalse($end, 'Closing </ul> for lines not found in rendered output.');
 
         return substr($html, $start, $end - $start);
     }
