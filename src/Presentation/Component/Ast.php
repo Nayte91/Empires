@@ -6,7 +6,8 @@ namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\AstEraDefinition;
 use App\Rules\Ruleset\AstRegistry;
-use App\Rules\Ruleset\EmpireRegistry;
+use App\Rules\StandingsCalculator;
+use App\State\ASTVersion;
 use App\State\Game;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -32,8 +33,53 @@ final class Ast
 
     public function __construct(
         private readonly AstRegistry $astRegistry,
-        private readonly EmpireRegistry $empireRegistry,
+        private readonly StandingsCalculator $standingsCalculator,
     ) {}
+
+    /**
+     * The leading columns the compact board drops: the opening stretch nobody has to earn — Start
+     * and the Stone Age ask nothing of anyone — so it separates no empire from another. Derived
+     * from the requirements rather than counted in, so a rules change carries the board with it.
+     */
+    public function getOpeningSpan(): int
+    {
+        $span = 0;
+
+        foreach ($this->astRegistry->getColumnEras($this->game->astVersion, self::SHARED_LAYOUT_GROUP) as $era) {
+            $requirements = ASTVersion::EXPERT === $this->game->astVersion ? $era->expertRequirements : $era->basicRequirements;
+
+            if ([] !== $requirements) {
+                break;
+            }
+
+            ++$span;
+        }
+
+        return $span;
+    }
+
+    public function scoreOf(Player $player): int
+    {
+        return $this->standingsCalculator->scoreOf($player);
+    }
+
+    /**
+     * The podium colour of the player's score, or null when they are off it. A player who has not
+     * scored yet is not leading anything, so an all-zero board wears no medal at all.
+     */
+    public function medalOf(Player $player): ?string
+    {
+        if (0 === $this->scoreOf($player)) {
+            return null;
+        }
+
+        return match ($this->standingsCalculator->rankOf($player)) {
+            1 => 'gold',
+            2 => 'silver',
+            3 => 'bronze',
+            default => null,
+        };
+    }
 
     public function getTrackLength(): int
     {
@@ -71,12 +117,9 @@ final class Ast
         return $this->astRegistry->getEraForPosition($player->astPosition, $this->game->astVersion, $group)->name;
     }
 
-    /** @return list<Player> ranked by empire position on the A.S.T. */
+    /** @return list<Player> the leader first, so the board is read top-down as the standings */
     public function getRankedPlayers(): array
     {
-        $players = $this->game->players->toArray();
-        usort($players, fn (Player $a, Player $b): int => $this->empireRegistry->positionOf($a->empire) <=> $this->empireRegistry->positionOf($b->empire));
-
-        return $players;
+        return $this->standingsCalculator->standings($this->game);
     }
 }

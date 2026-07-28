@@ -1,38 +1,38 @@
+{% set openingSpan = this.openingSpan %}
 <table
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="ast"
 >
-    <caption>{{ game.astVersion.value|capitalize }} version</caption>
-    <colgroup>
-        <col>
-        {% for position in range(0, this.trackLength - 1) %}
-            <col>
-        {% endfor %}
-    </colgroup>
+    <caption id="ast">{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}</caption>
     <thead>
         <tr>
             <th scope="col"></th>
             {% for entry in this.eraHeaders %}
-                <th scope="col" colspan="{{ entry.span }}" class="{{ loop.index0 is odd ? 'alt' : '' }}">{{ entry.era.name }}</th>
+                <th scope="col" colspan="{{ entry.span }}"{{ loop.index0 is odd ? ' data-band' : '' }}>{{ entry.era.name }}</th>
             {% endfor %}
+            <th scope="col">Score</th>
         </tr>
     </thead>
     <tbody>
         {% for player in this.rankedPlayers %}
             {% set columnEras = this.columnErasFor(player) %}
-            <tr data-empire="{{ player.empire }}">
+            {% set medal = this.medalOf(player) %}
+            <tr data-empire="{{ player.empire }}"{{ player.astPosition < openingSpan ? ' data-in-opening' : '' }}>
                 <th scope="row"><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></th>
                 {% for position in range(0, this.trackLength - 1) %}
-                    <td class="{{ columnEras[position].index is odd ? 'alt' : '' }}"{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
-                        {%- if position == 0 -%}
-                            <twig:atoms:Marker :pos="player.astPosition" empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
+                    <td
+                        {{- columnEras[position].index is odd ? ' data-band' : '' }}
+                        {{- position < openingSpan ? ' data-opening' : '' }}
+                        {{- position == openingSpan ? ' data-anchor' : '' }}
+                        {{- position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
+                        {%- if position == openingSpan -%}
+                            <twig:atoms:Marker :pos="player.astPosition - openingSpan" empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
                         {%- endif -%}
                         {%- if columnEras[position].key == 'start' -%}→{%- endif -%}
                     </td>
                 {% endfor %}
+                <td data-score{% if medal %} data-medal="{{ medal }}"{% endif %}>{{ this.scoreOf(player) }}</td>
             </tr>
-        {% else %}
-            <tr><td colspan="{{ this.trackLength + 1 }}">No players yet.</td></tr>
         {% endfor %}
     </tbody>
     <tfoot>
@@ -41,6 +41,7 @@
             {% for position in range(0, this.trackLength - 1) %}
                 <td{{ position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>{{ constant('App\\Rules\\ScoreCalculator::POINTS_PER_AST_POSITION') * position }}</td>
             {% endfor %}
+            <td></td>
         </tr>
     </tfoot>
 </table>

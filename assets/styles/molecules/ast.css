@@ -1,13 +1,14 @@
 .ast {
-    isolation: isolate;
-    --ast-cell-size: 1.25rem;
-    --marker-pitch: var(--ast-cell-size);
+    --ast-rule: 1px solid rgb(255 255 255 / 0.15);
+    --turn-edge: 1px double gold;
+    --ast-cell-size: 3rem;
     --ast-band-tint: rgb(255 255 255 / 0.07);
+    isolation: isolate;
     justify-self: center;
-    border: 1px solid rgb(255 255 255 / 0.15);
+    border: var(--ast-rule);
     border-radius: var(--operator-radius);
     border-collapse: collapse;
-    font-size: 0.75rem;
+    font-size: 1rem;
     text-align: center;
 
     caption {
@@ -20,100 +21,90 @@
     }
 
     th, td {
-        border: 1px solid rgb(255 255 255 / 0.15);
+        border: var(--ast-rule);
         transition: border-color 0.4s linear;
     }
 
-    td {
-        inline-size: var(--ast-cell-size);
-    }
+    td { inline-size: var(--ast-cell-size) }
 
-    td[data-current-turn] { border: 1px double gold }
+    td[data-current-turn] { border-inline: var(--turn-edge) }
+    tbody tr:first-child td[data-current-turn] { border-block-start: var(--turn-edge) }
+    tfoot td[data-current-turn] { border-block-end: var(--turn-edge) }
 
-    /* the era bands keep telling the eras apart once their labels are gone */
-    thead { display: none }
+    [data-band] { background: var(--ast-band-tint) }
 
     th {
-        padding-inline: 0.25rem;
+        padding-inline: 1em;
         text-align: start;
         text-shadow: 0 0 2px black, 0 0 2px black;
     }
 
-    tbody th {
-        inline-size: 3.5rem;
-        max-inline-size: 3.5rem;
-        overflow: hidden;
-        background-color: var(--player-color, dimgray);
+    thead th {
+        padding-inline: 0.25em;
+        padding-block: 0.5em;
+        color: darkgray;
+        font-size: 0.75rem;
+        line-height: 1.25;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        overflow-wrap: break-word;
+        hyphens: auto;
+        text-align: center;
 
-        small { display: none }
+        &[colspan="1"] { padding: 0 }
     }
 
-    tbody td:first-of-type { position: relative }
+    tbody th {
+        inline-size: 10rem;
+        overflow: hidden;
+        background-color: var(--player-color, dimgray);
+    }
+
+    tbody td[data-anchor] { position: relative }
     tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
 
-    /* the marker becomes a pawn on the track: absolute, and moved by its position */
     .marker {
         position: absolute;
         z-index: 1;
         inset-block-start: 50%;
         inset-inline-start: 50%;
-        inline-size: 1rem;
-        transform: translate(calc(-50% + var(--marker-pitch) * var(--marker-pos)), -50%);
+        inline-size: 1.5rem;
+        transform: translate(calc(-50% + var(--ast-cell-size) * var(--marker-pos)), -50%);
         transition: transform 0.4s linear;
     }
 
-    .alt { background: var(--ast-band-tint) }
+    td[data-score] {
+        color: white;
 
-    tfoot {
-        color: goldenrod;
-
-        /* "Victory Points" does not fit the compressed label column */
-        th {
-            font-size: 0;
-
-            &::before {
-                content: 'VP';
-                font-size: 0.75rem;
-            }
-        }
+        &[data-medal="gold"] { color: gold }
+        &[data-medal="silver"] { color: silver }
+        &[data-medal="bronze"] { color: peru }
     }
 
-    @container (min-width: 60rem) {
-        --ast-cell-size: 3rem;
-        font-size: 1rem;
+    tfoot { color: darkgray }
 
-        thead { display: table-header-group }
+    @container (width < 60rem) {
+        --ast-cell-size: 1.5rem;
+        font-size: 0.75rem;
 
-        thead th {
-            padding-inline: 0.25em;
-            padding-block: 0.5em;
-            color: darkgray;
-            font-size: 0.75rem;
-            line-height: 1.25;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            overflow-wrap: break-word;
-            hyphens: auto;
-            text-align: center;
+        thead, tfoot, [data-opening] { display: none }
+        [data-in-opening] .marker { display: none }
+        tr:has([data-opening][data-current-turn]) [data-anchor] { border-inline-start: var(--turn-edge) }
 
-            &[colspan="1"] { padding: 0 }
+        tbody {
+            th {
+                box-sizing: content-box;
+                inline-size: 8ch;
+                max-inline-size: 8ch;
+                padding-inline: 0.25rem;
+
+                small { display: none }
+            }
+
+            tr:last-child td[data-current-turn] { border-block-end: var(--turn-edge) }
         }
 
-        th { padding-inline: 1em }
-
-        tfoot th {
-            font-size: inherit;
-
-            &::before { content: none }
-        }
-
-        tbody th {
-            inline-size: 10rem;
-            max-inline-size: none;
-        }
-
-        tbody th small { display: inline }
-
-        .marker { inline-size: 1.5rem }
+        td[data-score] { inline-size: 1.75rem }
+        .marker { inline-size: 1rem }
     }
 }
