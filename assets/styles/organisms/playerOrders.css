@@ -11,7 +11,9 @@
         color: var(--operator-error);
     }
 
-    section {
+    /* Direct child only: the POS dialog is a sibling of this section, and its own sections
+       (the catalog) must keep the layout their component gives them. */
+    > section {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 18rem));
         justify-content: center;

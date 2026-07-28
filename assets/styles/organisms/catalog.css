@@ -1,0 +1,19 @@
+/* The catalog lays itself out wherever it is rendered — the player's shop page and the operator's
+   POS dialog — instead of borrowing a grid from whichever host happens to surround it. */
+.catalog {
+    --grid-min-col-size: 14rem;
+    display: grid;
+    align-content: start;
+    grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min-col-size), 100%), 1fr));
+    gap: var(--operator-gap);
+
+    /* The catalog names itself, like the Outlook and Discounts cards. The title spans the whole
+       grid rather than taking a product's slot. */
+    h2 {
+        grid-column: 1 / -1;
+        margin: 0;
+        border-block-end: 1px solid var(--operator-border);
+        padding-block-end: 0.5rem;
+        font-size: 1rem;
+    }
+}
