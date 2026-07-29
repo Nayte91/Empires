@@ -41,10 +41,10 @@ final class RosterTest extends WebTestCase
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
-        $cells = new Crawler($rendered)->filter('tbody tr td');
+        $row = new Crawler($rendered)->filter('tbody tr');
 
-        $this->assertStringContainsString('(Alice)', $cells->eq(0)->text());
-        $this->assertSame('12', trim($cells->eq(1)->text()));
+        $this->assertStringContainsString('(Alice)', $row->filter('th[data-empire]')->text());
+        $this->assertSame('12', trim($row->filter('td')->eq(0)->text()));
     }
 
     /** One identity cell, like the A.S.T. rows: the people first, the player they belong to in parentheses. */
@@ -57,8 +57,8 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
-        $this->assertSame('minoan', trim($crawler->filter('tbody tr td:first-of-type b')->text()));
-        $this->assertSame('(Alice)', trim($crawler->filter('tbody tr td:first-of-type small[data-player]')->text()));
+        $this->assertSame('minoan', trim($crawler->filter('tbody tr th[data-empire] b')->text()));
+        $this->assertSame('(Alice)', trim($crawler->filter('tbody tr th[data-empire] small[data-player]')->text()));
     }
 
     #[Test]
@@ -150,8 +150,8 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
 
-        $this->assertSame('sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('td:first-of-type')->text())));
-        $this->assertSame('minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('td:first-of-type')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
+        $this->assertSame('sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('th[data-empire]')->text())));
+        $this->assertSame('minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('th[data-empire]')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
     }
 
     #[Test]

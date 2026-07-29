@@ -26,13 +26,14 @@
         text-align: end;
     }
 
-    td:not([data-empire]) { text-align: center }
-    td[data-empire] { color: var(--player-color, dimgray) }
+    td { text-align: center }
     tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
+    @container (width < 60rem) { small[data-player] { display: none }}
 
-    @container (width < 60rem) {
-        th[data-empire] { visibility: hidden }
-        small[data-player] { display: none }
+    tbody th {
+        color: var(--player-color);
+        font-weight: normal;
+        text-align: start;
     }
 
     @container (min-width: 60rem) {
