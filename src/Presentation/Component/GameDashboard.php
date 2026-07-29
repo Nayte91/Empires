@@ -9,7 +9,7 @@ use App\Rules\Ruleset\AstRegistry;
 use App\State\Game;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-/** Static shell containing game metadata and embedded live components (AST, ScoreBoard). */
+/** Static shell containing game metadata and embedded live components (AST, Roster). */
 #[AsTwigComponent(template: 'organisms/gameDashboard.html.twig')]
 final class GameDashboard
 {
