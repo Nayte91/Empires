@@ -1,80 +1,82 @@
-<div {{ attributes }} class="cart">
+<div {{ attributes }}>
     {% if this.showLines %}
-        <h2>Cart</h2>
+        <details class="cart panel" open>
+            <summary>Cart</summary>
 
-        <ul class="lines">
-            {% for row in this.lines %}
-                <li class="line">
-                    <span class="name">{{ row.advance.name|capitalize }}</span>
-                    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                        <small class="original">{{ row.line.netCost + row.line.promotion.amount }}</small>
-                    {% endif %}
-                    <span class="cost">{{ row.line.netCost }}</span>
-                    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                        <span class="badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
-                    {% endif %}
-                    <button
-                        type="button"
-                        {{ live_action('remove', {key: row.advance.key}) }}
-                        data-loading="addAttribute(disabled)"
-                        class="remove"
-                    >
-                        ×
-                    </button>
+            <ul class="lines">
+                {% for row in this.lines %}
+                    <li class="line">
+                        <span class="name">{{ row.advance.name|capitalize }}</span>
+                        {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                            <small class="original">{{ row.line.netCost + row.line.promotion.amount }}</small>
+                        {% endif %}
+                        <span class="cost">{{ row.line.netCost }}</span>
+                        {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+                            <span class="badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
+                        {% endif %}
+                        <button
+                            type="button"
+                            {{ live_action('remove', {key: row.advance.key}) }}
+                            data-loading="addAttribute(disabled)"
+                            class="remove"
+                        >
+                            ×
+                        </button>
 
-                    {% if row.advance.promotion and row.advance.promotion.gift is not empty %}
-                        {% include 'molecules/giftPicker.html.twig' with {
-                            row: row,
-                            chooseAction: 'chooseGift',
-                            revokeAction: 'revokeGift',
-                            candidates: this.getGiftCandidates(row.advance.key),
-                            chosenGift: this.getChosenGiftFor(row.advance.key),
-                        } only %}
-                    {% endif %}
+                        {% if row.advance.promotion and row.advance.promotion.gift is not empty %}
+                            {% include 'molecules/giftPicker.html.twig' with {
+                                row: row,
+                                chooseAction: 'chooseGift',
+                                revokeAction: 'revokeGift',
+                                candidates: this.getGiftCandidates(row.advance.key),
+                                chosenGift: this.getChosenGiftFor(row.advance.key),
+                            } only %}
+                        {% endif %}
 
-                    {% if row.advance.promotion and row.advance.promotion.option is not null %}
-                        {% include 'molecules/allocationPicker.html.twig' with {
-                            row: row,
-                            allocateAction: 'allocate',
-                            remaining: this.getAllocationRemaining(row.advance.key),
-                            allocation: this.getAllocationFor(row.advance.key),
-                        } only %}
-                    {% endif %}
-                </li>
-            {% else %}
-                <li class="empty">Cart is empty.</li>
-            {% endfor %}
-        </ul>
+                        {% if row.advance.promotion and row.advance.promotion.option is not null %}
+                            {% include 'molecules/allocationPicker.html.twig' with {
+                                row: row,
+                                allocateAction: 'allocate',
+                                remaining: this.getAllocationRemaining(row.advance.key),
+                                allocation: this.getAllocationFor(row.advance.key),
+                            } only %}
+                        {% endif %}
+                    </li>
+                {% else %}
+                    <li class="empty">Cart is empty.</li>
+                {% endfor %}
+            </ul>
 
-        <p class="total">Total: {{ this.total }}</p>
+            <p class="total">Total: {{ this.total }}</p>
 
-        {% if error %}
-            <p class="shop__error" role="alert">{{ error }}</p>
-        {% endif %}
+            {% if error %}
+                <p class="shop__error" role="alert">{{ error }}</p>
+            {% endif %}
 
-        {% set isDisabled = locked or this.isEmpty or this.hasIncompleteAllocations %}
-        <footer>
-            <button
-                type="button"
-                {{ live_action('checkout') }}
-                {{ isDisabled ? 'disabled' }}
-                {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                class="submit"
-            >
-                {{ checkoutLabel }}
-            </button>
-
-            {% if clearable %}
-                {% set isClearDisabled = this.isEmpty %}
+            {% set isDisabled = locked or this.isEmpty or this.hasIncompleteAllocations %}
+            <footer>
                 <button
                     type="button"
-                    {{ live_action('clear') }}
-                    {{ isClearDisabled ? 'disabled' }}
-                    {% if not isClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+                    {{ live_action('checkout') }}
+                    {{ isDisabled ? 'disabled' }}
+                    {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+                    class="submit"
                 >
-                    Clear cart
+                    {{ checkoutLabel }}
                 </button>
-            {% endif %}
-        </footer>
+
+                {% if clearable %}
+                    {% set isClearDisabled = this.isEmpty %}
+                    <button
+                        type="button"
+                        {{ live_action('clear') }}
+                        {{ isClearDisabled ? 'disabled' }}
+                        {% if not isClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+                    >
+                        Clear cart
+                    </button>
+                {% endif %}
+            </footer>
+        </details>
     {% endif %}
 </div>

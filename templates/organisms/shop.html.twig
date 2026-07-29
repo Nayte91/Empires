@@ -11,7 +11,7 @@
         <p class="shop__error" role="alert">{{ error }}</p>
     {% endif %}
 
-    <twig:molecules:Discounts :player="player" />
+    <twig:molecules:Discounts :player="player" :open="true" />
 
     <div class="shop__layout">
         <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
