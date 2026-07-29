@@ -41,12 +41,15 @@ final class RosterTest extends WebTestCase
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $cells = new Crawler($rendered)->filter('tbody tr td');
 
-        $this->assertMatchesRegularExpression('/<td data-name>Alice<\/td>.*?<td>12<\/td>/s', $rendered);
+        $this->assertStringContainsString('(Alice)', $cells->eq(0)->text());
+        $this->assertSame('12', trim($cells->eq(1)->text()));
     }
 
+    /** One identity cell, like the A.S.T. rows: the people first, the player they belong to in parentheses. */
     #[Test]
-    public function empireCellNamesTheEmpireAdjective(): void
+    public function empireCellNamesTheEmpireAdjectiveThenThePlayerInParentheses(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
@@ -54,7 +57,8 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
-        $this->assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
+        $this->assertSame('minoan', trim($crawler->filter('tbody tr td:first-of-type b')->text()));
+        $this->assertSame('(Alice)', trim($crawler->filter('tbody tr td:first-of-type small[data-player]')->text()));
     }
 
     #[Test]
@@ -65,7 +69,7 @@ final class RosterTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
-        // Treasury(0), Census(1), Cities(0), Cards(0), Advances(0) — Name/Empire cells are not plain <td>value</td>.
+        // Treasury(0), Census(1), Cities(0), Cards(0), Advances(0) — the identity cell is not a plain <td>value</td>.
         $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
     }
 
@@ -92,7 +96,7 @@ final class RosterTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('<td data-name>Alice</td>', $rendered);
+        $this->assertStringContainsString('<small data-player>(Alice)</small>', $rendered);
         $this->assertStringNotContainsString('<svg', $rendered);
         $this->assertStringNotContainsString('<dialog', $rendered);
     }
@@ -146,8 +150,8 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
 
-        $this->assertSame('sabaean', trim($rows->eq(0)->filter('td:nth-of-type(2)')->text()));
-        $this->assertSame('minoan ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('td:nth-of-type(2)')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
+        $this->assertSame('sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('td:first-of-type')->text())));
+        $this->assertSame('minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('td:first-of-type')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
     }
 
     #[Test]

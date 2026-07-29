@@ -5,7 +5,6 @@
     <caption id="roster">Turn {{ game.currentTurn }}</caption>
     <thead>
         <tr>
-            <th scope="col">Name</th>
             <th scope="col" data-empire>Empire</th>
             <th scope="col">Treasury</th>
             <th scope="col">Census</th>
@@ -18,9 +17,9 @@
         {% for row in this.playerRows %}
             {% set player = row.player %}
             <tr data-empire="{{ player.empire }}">
-                <td data-name>{{ player.name }}</td>
                 <td data-empire>
-                    {{ player.empire|empire_adjective }}
+                    <b>{{ player.empire|empire_adjective }}</b>
+                    <small data-player>({{ player.name }})</small>
                     {% if row.military %}<small title="Military">⚔</small>{% endif %}
                 </td>
                 <td>{{ player.treasury }}</td>
