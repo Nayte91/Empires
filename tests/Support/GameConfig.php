@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Tests\Support;
 
 use App\Rules\Ruleset\AdvanceEffectRegistry;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Ruleset\AstRegistry;
 use App\Rules\Ruleset\GameRegistry;
+use Symfony\Component\Asset\Package;
+use Symfony\Component\Asset\Packages;
+use Symfony\Component\Asset\VersionStrategy\EmptyVersionStrategy;
 
 /**
  * The yaml readers, built against the real config/game/ files, for tests that construct a
@@ -31,6 +35,12 @@ final class GameConfig
     public static function astRegistry(): AstRegistry
     {
         return new AstRegistry(self::path('ast.yaml'));
+    }
+
+    /** The packages serve one field no rule reads, an advance's image URL; hence the empty strategy. */
+    public static function advanceRegistry(): AdvanceRegistry
+    {
+        return new AdvanceRegistry(self::path('advances.yaml'), new Packages(new Package(new EmptyVersionStrategy())));
     }
 
     private static function path(string $file): string

@@ -1,0 +1,6 @@
+.evolution {
+    position: relative;
+    inline-size: 100%;
+    max-inline-size: 40rem;
+    block-size: 20rem;
+}

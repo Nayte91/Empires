@@ -1,5 +1,5 @@
 <a class="game-tile" href="{{ path('app_game_dashboard', {slug: game.slug}) }}">
     <span class="game-tile__title">{{ game.slug }}</span>
-    <span class="game-tile__turn">Turn {{ game.currentTurn }} / 20</span>
+    <span class="game-tile__turn">Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' : ' / 20' }}</span>
     <span class="game-tile__players">{{ game.players|length }} players</span>
 </a>

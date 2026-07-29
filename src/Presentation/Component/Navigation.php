@@ -37,26 +37,37 @@ final class Navigation
             return $this->targetsCache;
         }
 
-        $operatorUrl = $this->urlGenerator->generate(
-            'app_game_operator',
-            ['slug' => $this->game->slug],
-            UrlGeneratorInterface::ABSOLUTE_URL,
-        );
-
-        $targets = [[
-            'key' => 'operator',
-            'label' => 'Operator',
-            'caption' => 'console',
-            'empire' => null,
-            'url' => $operatorUrl,
-            'qr' => $this->buildQr($operatorUrl),
-        ]];
+        $targets = $this->game->finished ? [] : [$this->operatorTarget()];
 
         foreach ($this->game->players as $player) {
             $targets[] = $this->playerTarget($player);
         }
 
         return $this->targetsCache = $targets;
+    }
+
+    /**
+     * Dropped once the game is finished: the console still answers, but every one of its controls
+     * refuses a finished game, so offering the way in would only promise something.
+     *
+     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}
+     */
+    private function operatorTarget(): array
+    {
+        $url = $this->urlGenerator->generate(
+            'app_game_operator',
+            ['slug' => $this->game->slug],
+            UrlGeneratorInterface::ABSOLUTE_URL,
+        );
+
+        return [
+            'key' => 'operator',
+            'label' => 'Operator',
+            'caption' => 'console',
+            'empire' => null,
+            'url' => $url,
+            'qr' => $this->buildQr($url),
+        ];
     }
 
     /**

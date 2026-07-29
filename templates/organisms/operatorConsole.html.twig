@@ -1,5 +1,5 @@
 {% set title = game.slug %}
-{% set subtitle = 'Turn ' ~ game.currentTurn %}
+{% set subtitle = 'Turn ' ~ game.currentTurn ~ (game.finished ? ' — finished' : '') %}
 
 <main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id})) }}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Repository;
 
+use App\State\Game;
 use App\State\Order;
 use App\State\Player;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -11,6 +12,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 use Userforged\ShopEngine\OrderInterface;
 use Userforged\ShopEngine\OrderRepositoryInterface;
+use Userforged\ShopEngine\OrderStatus;
 
 /** @extends ServiceEntityRepository<Order> */
 final class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface
@@ -60,6 +62,26 @@ final class OrderRepository extends ServiceEntityRepository implements OrderRepo
             ->andWhere('o.turn >= :turn')
             ->setParameter('player', $player->id, 'uuid')
             ->setParameter('turn', $turn)
+            ->addOrderBy('o.turn', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+     * Every validated basket of a whole game, in turn order — the raw material of the
+     * post-game advance history. Pending baskets are excluded: they were never delivered.
+     *
+     * @return list<Order>
+     */
+    public function findValidatedByGame(Game $game): array
+    {
+        return $this->createQueryBuilder('o')
+            ->join('o.player', 'p')
+            ->andWhere('p.game = :game')
+            ->andWhere('o.status = :status')
+            ->setParameter('game', $game->id, 'uuid')
+            ->setParameter('status', OrderStatus::Validated->value)
             ->addOrderBy('o.turn', 'ASC')
             ->getQuery()
             ->getResult()
