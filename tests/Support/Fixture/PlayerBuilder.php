@@ -67,9 +67,7 @@ final class PlayerBuilder
 
     public function build(): Player
     {
-        $player = new Player($this->game ?? GameBuilder::create()->build(), $this->name);
-
-        $player->empire = $this->empire;
+        $player = new Player($this->game ?? GameBuilder::create()->build(), $this->name, $this->empire);
 
         if (null !== $this->cities) {
             $player->cities = $this->cities;

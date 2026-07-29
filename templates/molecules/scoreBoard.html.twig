@@ -20,7 +20,7 @@
             <tr data-empire="{{ player.empire }}">
                 <td data-name>{{ player.name }}</td>
                 <td data-empire>
-                    {{ this.empireAdjective(player) ?? '—' }}
+                    {{ player.empire|empire_adjective }}
                     {% if row.military %}<small title="Military">⚔</small>{% endif %}
                 </td>
                 <td>{{ player.treasury }}</td>

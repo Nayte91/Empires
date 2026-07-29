@@ -19,9 +19,9 @@ final class CensusOrderCalculatorTest extends TestCase
     public function higherCensusPlaysFirst(): void
     {
         $game = new Game();
-        $low = new Player($game, 'Bob');
+        $low = new Player($game, 'Bob', 'assyria');
         $low->census = 10;
-        $high = new Player($game, 'Alice');
+        $high = new Player($game, 'Alice', 'minoa');
         $high->census = 30;
 
         $order = $this->calculator()->orderFor($game);
@@ -33,12 +33,10 @@ final class CensusOrderCalculatorTest extends TestCase
     public function tiedCensusIsBrokenByEmpirePosition(): void
     {
         $game = new Game();
-        $assyria = new Player($game, 'Bob');
+        $assyria = new Player($game, 'Bob', 'assyria');
         $assyria->census = 20;
-        $assyria->empire = 'assyria';
-        $minoa = new Player($game, 'Alice');
+        $minoa = new Player($game, 'Alice', 'minoa');
         $minoa->census = 20;
-        $minoa->empire = 'minoa';
 
         $order = $this->calculator()->orderFor($game);
 
@@ -49,10 +47,10 @@ final class CensusOrderCalculatorTest extends TestCase
     public function militaryPlayerMovesAfterHigherCensusNonMilitary(): void
     {
         $game = new Game();
-        $military = new Player($game, 'Bob');
+        $military = new Player($game, 'Bob', 'assyria');
         $military->census = 40;
         $military->ownAdvances(['military']);
-        $nonMilitary = new Player($game, 'Alice');
+        $nonMilitary = new Player($game, 'Alice', 'minoa');
         $nonMilitary->census = 5;
 
         $order = $this->calculator()->orderFor($game);
@@ -64,13 +62,11 @@ final class CensusOrderCalculatorTest extends TestCase
     public function twoMilitaryPlayersAreOrderedByCensusThenPosition(): void
     {
         $game = new Game();
-        $first = new Player($game, 'Bob');
+        $first = new Player($game, 'Bob', 'assyria');
         $first->census = 20;
-        $first->empire = 'assyria';
         $first->ownAdvances(['military']);
-        $second = new Player($game, 'Alice');
+        $second = new Player($game, 'Alice', 'minoa');
         $second->census = 20;
-        $second->empire = 'minoa';
         $second->ownAdvances(['military']);
 
         $order = $this->calculator()->orderFor($game);
@@ -79,32 +75,28 @@ final class CensusOrderCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function nullOrUnknownEmpirePlaysLastAtEqualCensus(): void
+    public function anUnknownEmpirePlaysLastAtEqualCensus(): void
     {
         $game = new Game();
-        $known = new Player($game, 'Bob');
+        $known = new Player($game, 'Bob', 'minoa');
         $known->census = 15;
-        $known->empire = 'minoa';
-        $unknown = new Player($game, 'Alice');
+        $unknown = new Player($game, 'Alice', 'atlantis');
         $unknown->census = 15;
-        $unknown->empire = 'atlantis';
-        $noEmpire = new Player($game, 'Kangoo');
-        $noEmpire->census = 15;
 
         $order = $this->calculator()->orderFor($game);
 
-        $this->assertSame([$known, $unknown, $noEmpire], $order);
+        $this->assertSame([$known, $unknown], $order);
     }
 
     #[Test]
     public function rankOfCountsFromOneDownTheOrder(): void
     {
         $game = new Game();
-        $first = new Player($game, 'Alice');
+        $first = new Player($game, 'Alice', 'minoa');
         $first->census = 30;
-        $second = new Player($game, 'Bob');
+        $second = new Player($game, 'Bob', 'saba');
         $second->census = 20;
-        $third = new Player($game, 'Carol');
+        $third = new Player($game, 'Carol', 'assyria');
         $third->census = 10;
 
         $calculator = $this->calculator();
@@ -119,10 +111,10 @@ final class CensusOrderCalculatorTest extends TestCase
     public function aMilitaryOwnerRanksLastDespiteTheHighestCensus(): void
     {
         $game = new Game();
-        $general = new Player($game, 'Alice');
+        $general = new Player($game, 'Alice', 'minoa');
         $general->census = 40;
         $general->ownAdvances(['military']);
-        $civilian = new Player($game, 'Bob');
+        $civilian = new Player($game, 'Bob', 'saba');
         $civilian->census = 10;
 
         $calculator = $this->calculator();

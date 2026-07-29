@@ -23,7 +23,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function wellSupportedPlayerGetsNoAdvisories(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = 2;
         $player->census = 10;
 
@@ -35,7 +35,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function troubledPlayerGetsAllAdvisoriesInPriorityOrder(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = 5;
         $player->census = 1;
         $player->treasury = 50;
@@ -53,7 +53,7 @@ final class PlayerAdvisorTest extends TestCase
     #[Test]
     public function playerTriggeringOnlyHandLimitGetsSingleAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = 2;
         $player->census = 10;
         $player->cards = 9;

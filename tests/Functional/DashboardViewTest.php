@@ -45,14 +45,11 @@ final class DashboardViewTest extends WebTestCase
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $game = new Game();
-        $hellas = new Player($game, 'Bob');
-        $hellas->empire = 'hellas';
+        $hellas = new Player($game, 'Bob', 'hellas');
         $hellas->cities = 2;
-        $minoa = new Player($game, 'Alice');
-        $minoa->empire = 'minoa';
+        $minoa = new Player($game, 'Alice', 'minoa');
         $minoa->cities = 7;
-        $hatti = new Player($game, 'Kangoo');
-        $hatti->empire = 'hatti';
+        $hatti = new Player($game, 'Kangoo', 'hatti');
         $hatti->cities = 4;
         $entityManager->persist($game);
         $entityManager->flush();

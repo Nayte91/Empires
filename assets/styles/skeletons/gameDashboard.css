@@ -9,19 +9,10 @@
     color: white;
 
     h2 {
-        margin: 0;
         text-align: center;
 
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
+        a { color: inherit }
     }
 
     caption { scroll-margin-block-start: 1rem }
-
-    @media (min-width: 60rem) {
-        justify-items: center;
-        gap: 2rem;
-    }
 }

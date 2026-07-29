@@ -22,9 +22,6 @@ class Player
     #[ORM\Column(length: 64)]
     public private(set) string $slug; // @phpstan-ignore property.uninitialized (always assigned by the $name hook, itself always set in the constructor)
 
-    #[ORM\Column(length: 30, nullable: true)]
-    public ?string $empire = null;
-
     /** @var list<string> */
     #[ORM\Column(type: Types::JSON)]
     public private(set) array $advances = [];
@@ -64,6 +61,8 @@ class Player
         #[ORM\JoinColumn(nullable: false)]
         public readonly Game $game,
         string $name,
+        #[ORM\Column(length: 30)]
+        public string $empire,
     ) {
         $this->id = Uuid::v7();
         $this->name = $name;

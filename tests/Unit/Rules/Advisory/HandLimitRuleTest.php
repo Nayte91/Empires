@@ -24,7 +24,7 @@ final class HandLimitRuleTest extends TestCase
     #[Test]
     public function aHandExactlyAtTheLimitYieldsNoAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cards = 8;
 
         $this->assertNotInstanceOf(Advisory::class, new HandLimitRule($this->hand())->evaluate($player));
@@ -33,7 +33,7 @@ final class HandLimitRuleTest extends TestCase
     #[Test]
     public function aHandOverTheLimitGetsTheMustDiscardAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cards = 9;
 
         $advisory = new HandLimitRule($this->hand())->evaluate($player);

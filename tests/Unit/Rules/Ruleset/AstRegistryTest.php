@@ -101,12 +101,12 @@ final class AstRegistryTest extends TestCase
 
     #[Test]
     #[DataProvider('provideResolveEmpireGroupReturnsTheGroupForTheVersionCases')]
-    public function resolveEmpireGroupReturnsTheGroupForTheVersion(ASTVersion $astVersion, ?string $empireSlug, string $expectedGroup): void
+    public function resolveEmpireGroupReturnsTheGroupForTheVersion(ASTVersion $astVersion, string $empireSlug, string $expectedGroup): void
     {
         $this->assertSame($expectedGroup, $this->astRegistry->resolveEmpireGroup($astVersion, $empireSlug));
     }
 
-    /** @return iterable<string, array{ASTVersion, ?string, string}> */
+    /** @return iterable<string, array{ASTVersion, string, string}> */
     public static function provideResolveEmpireGroupReturnsTheGroupForTheVersionCases(): iterable
     {
         yield 'minoa is a slow starter in basic' => [ASTVersion::BASIC, 'minoa', 'slow_starter'];
@@ -116,8 +116,6 @@ final class AstRegistryTest extends TestCase
         yield 'kushan has an extended stone age in expert' => [ASTVersion::EXPERT, 'kushan', 'extended_stone_age'];
 
         yield 'kushan is standard in basic' => [ASTVersion::BASIC, 'kushan', 'standard'];
-
-        yield 'null empire defaults to standard' => [ASTVersion::BASIC, null, 'standard'];
 
         yield 'unknown empire falls back to standard' => [ASTVersion::BASIC, 'not-a-real-empire', 'standard'];
     }
