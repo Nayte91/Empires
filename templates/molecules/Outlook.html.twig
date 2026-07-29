@@ -1,5 +1,5 @@
-<section class="outlook">
-    <h2>Outlook</h2>
+<details class="outlook panel" open>
+    <summary>Outlook</summary>
 
     <ul role="status">
         {% for advisory in this.advisories %}
@@ -9,4 +9,4 @@
             >{{ advisory.message }}</li>
         {% endfor %}
     </ul>
-</section>
+</details>

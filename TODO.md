@@ -47,6 +47,8 @@
 
 ## 🔍 Observations relevées en session (aucune urgence)
 
+- **`catalog` peut rejoindre `.panel`.** Il y gagnerait une bordure qu'il n'a jamais eue et devrait déplacer sa grille de produits sur `.catalog::details-content`. (`tab` n'entrera jamais : même balise, autre usage.)
+- **`templates/molecules/Modal.html.twig` n'a aucun appelant** — les trois `<dialog>` du projet (posDialog, playerOrders, navigation) écrivent leur balisage et partagent la classe `.modal`. Template mort, à supprimer ou à faire adopter.
 - **`PromotionEngine::applyGifts()` avale en silence un produit source disparu du catalogue.** `findProduct()` renvoie `null` → `continue`, sans exception ni journal : la ligne cadeau s'évapore au re-cotage et personne n'est prévenu. Pas urgent — aucun scénario de production ne retire un produit du catalogue en cours de partie — mais c'est une défaillance muette, à connaître avant d'ouvrir le catalogue à de la configuration dynamique.
 - **`Dto\Product::$owned` est mort sur son chemin d'appel.** `ProductCatalog::productsFor()` le câble en dur à `false` et il ne peut jamais valoir autre chose, les produits possédés étant filtrés une ligne plus haut.
 - **`enabled_locales` n'est pas configuré** dans `config/packages/translation.yaml` : `bin/console lint:translations` sans argument répond « No translation files » et exige `--locale=en`.

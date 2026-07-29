@@ -1,25 +1,5 @@
-/* REFACTOR-WHEN: a 3rd block adopts this card shape — extract it (shared class or a layer)
-   instead of copying discounts.css a third time. Two copies stay cheaper to read than the
-   indirection; three stop being. */
 .outlook {
-    inline-size: min(100%, 25rem);
-    min-block-size: 10rem;
-
-    border: 1px solid gainsboro;
-    border-radius: 0.5rem;
-    display: grid;
-    align-content: start;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
     overflow-wrap: anywhere;
-
-    h2 {
-        margin: 0;
-        border-block-end: 1px solid gainsboro;
-        padding-block-end: 0.5rem;
-        font-size: 1rem;
-    }
 
     ul {
         margin: 0;

@@ -1,34 +1,11 @@
 .navigation {
     inline-size: 100%;
     max-inline-size: 60rem;
-    border: 1px solid dimgray;
-    border-radius: 0.5rem;
     overflow: hidden;
 
-    summary {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 1rem;
-        font-weight: bold;
-        cursor: pointer;
+    &:open::details-content { padding: 0 }
 
-        &::before {
-            content: '▸';
-            transition: rotate 0.2s;
-        }
-
-        span {
-            margin-inline-start: auto;
-            color: darkgray;
-            font-size: 0.75rem;
-            font-weight: normal;
-            letter-spacing: 0.05em;
-            text-transform: uppercase;
-        }
-    }
-
-    &[open] summary::before { rotate: 90deg }
+    &:open > summary { border-block-end: none }
 
     ul {
         display: grid;
@@ -97,6 +74,5 @@
     }
 
     @container (min-width: 40rem) { ul { grid-template-columns: repeat(2, 1fr) } }
-
     @container (min-width: 60rem) { ul { grid-template-columns: repeat(3, 1fr) } }
 }

@@ -74,7 +74,7 @@ final class OperatorConsoleTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        $details = $rendered->crawler()->filter('details');
+        $details = $rendered->crawler()->filter('details[name="operator-tabs"]');
 
         $this->assertCount(3, $details);
 

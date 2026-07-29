@@ -1,22 +1,4 @@
 .discounts {
-    inline-size: min(100%, 25rem);
-
-    border: 1px solid gainsboro;
-    border-radius: 0.5rem;
-    display: grid;
-    align-content: start;
-    gap: 1rem;
-    padding: 1rem;
-    background: white;
-
-    /* The card names itself, the way a caption names a table. */
-    h2 {
-        margin: 0;
-        border-block-end: 1px solid gainsboro;
-        padding-block-end: 0.5rem;
-        font-size: 1rem;
-    }
-
     table {
         inline-size: 100%;
         border-spacing: 0;
@@ -24,16 +6,16 @@
 
     th, td {
         padding: 0.5rem;
-        border-block-end: 1px solid gainsboro;
+        border-block-end: 1px solid var(--operator-border);
     }
 
     th {
-        color: dimgray;
+        color: var(--operator-text-muted);
         text-transform: uppercase;
     }
 
     tbody {
-        tr:nth-child(even) { background: whitesmoke }
+        tr:nth-child(even) { background: var(--operator-bg-subtle) }
         tr[data-advance-category] { color: var(--category-color) }
         tr:last-child td { border-block-end: none }
     }

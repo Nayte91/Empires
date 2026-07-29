@@ -2,7 +2,7 @@
     --tab-radius: 0.375rem;
     --tab-border: 1px solid gainsboro;
 
-    summary {
+    > summary {
         order: 1;
         flex: 1 0 auto;
         border: var(--tab-border);
@@ -20,11 +20,13 @@
         &::-webkit-details-marker { display: none }
     }
 
-    &:open summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
+    &:open > summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
 
     /* the panel spaces its own children, so they bring no vertical margin of their own */
     > h3 { margin-block: 0 }
 }
+
+.tab:not(:open)::details-content { display: none }
 
 .tab::details-content {
     order: 2;
