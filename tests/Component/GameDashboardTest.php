@@ -27,7 +27,7 @@ final class GameDashboardTest extends WebTestCase
         $this->assertSame($game->slug, trim($matches[1]));
     }
 
-    /** Every route out of the dashboard now lives in one place, above the scoreboard. */
+    /** Every route out of the dashboard now lives in one place, above the roster. */
     #[Test]
     public function navigationIsTheFirstBlockUnderTheTitle(): void
     {
@@ -36,7 +36,7 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<details'), 'Navigation comes before the scoreboard.');
+        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<details'), 'Navigation comes before the roster.');
         $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<details'), 'Navigation comes after the title.');
         $this->assertSame(1, substr_count($html, '<dialog'), 'The dashboard carries exactly one dialog, Navigation’s.');
         $this->assertStringContainsString('/'.$game->slug.'/operator', $html);
@@ -52,6 +52,6 @@ final class GameDashboardTest extends WebTestCase
         $beforeFirstTable = substr($html, 0, (int) strpos($html, '<table'));
 
         $this->assertStringNotContainsString('data-controller', $rootTag);
-        $this->assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded ScoreBoard and Ast tables.');
+        $this->assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded Roster and Ast tables.');
     }
 }

@@ -12,11 +12,11 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
- * Read-only display of player scores and achievements. Re-rendered by a
+ * Who plays when, and what each of them holds. Read-only, re-rendered by a
  * Mercure ping whenever the operator console changes the game.
  */
-#[AsLiveComponent(template: 'molecules/scoreBoard.html.twig')]
-final class ScoreBoard
+#[AsLiveComponent(template: 'molecules/roster.html.twig')]
+final class Roster
 {
     use DefaultActionTrait;
 

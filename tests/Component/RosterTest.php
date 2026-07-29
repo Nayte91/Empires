@@ -12,7 +12,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
-final class ScoreBoardTest extends WebTestCase
+final class RosterTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
@@ -24,7 +24,7 @@ final class ScoreBoardTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringContainsString('Cities', $rendered);
         $this->assertStringContainsString('Census', $rendered);
@@ -40,7 +40,7 @@ final class ScoreBoardTest extends WebTestCase
         $player->treasury = 12;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertMatchesRegularExpression('/<td data-name>Alice<\/td>.*?<td>12<\/td>/s', $rendered);
     }
@@ -51,7 +51,7 @@ final class ScoreBoardTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $crawler = new Crawler($rendered);
 
         $this->assertSame('minoan', trim($crawler->filter('tbody tr td:nth-of-type(2)')->text()));
@@ -63,7 +63,7 @@ final class ScoreBoardTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         // Treasury(0), Census(1), Cities(0), Cards(0), Advances(0) — Name/Empire cells are not plain <td>value</td>.
         $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
@@ -77,7 +77,7 @@ final class ScoreBoardTest extends WebTestCase
         $player->ships = 4;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringNotContainsString('Ships', $rendered);
         $this->assertStringNotContainsString('<td>4</td>', $rendered);
@@ -90,14 +90,14 @@ final class ScoreBoardTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringContainsString('<td data-name>Alice</td>', $rendered);
         $this->assertStringNotContainsString('<svg', $rendered);
         $this->assertStringNotContainsString('<dialog', $rendered);
     }
 
-    /** The score belongs to the A.S.T. board now: the scoreboard must not grow a second one. */
+    /** The score belongs to the A.S.T. board now: the roster must not grow a second one. */
     #[Test]
     public function noVictoryPointColumnIsRendered(): void
     {
@@ -107,7 +107,7 @@ final class ScoreBoardTest extends WebTestCase
         $player->cities = 5;                         // 11 victory points in total
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringNotContainsString('VP', $rendered);
         $this->assertStringNotContainsString('data-medal', $rendered);
@@ -130,7 +130,7 @@ final class ScoreBoardTest extends WebTestCase
         $carl->census = 20;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertLessThan(strpos($rendered, 'Alice'), strpos($rendered, 'Bob'), 'Higher census (Bob) plays before lower census (Alice).');
         $this->assertLessThan(strpos($rendered, 'Carl'), strpos($rendered, 'Alice'), 'Military owner (Carl) plays last whatever their census.');
@@ -143,7 +143,7 @@ final class ScoreBoardTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withAdvances(['military'])->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
 
         $this->assertSame('sabaean', trim($rows->eq(0)->filter('td:nth-of-type(2)')->text()));
@@ -157,9 +157,9 @@ final class ScoreBoardTest extends WebTestCase
         $game->currentTurn = 7;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('<caption id="scoreboard">Turn 7</caption>', $rendered);
+        $this->assertStringContainsString('<caption id="roster">Turn 7</caption>', $rendered);
     }
 
     #[Test]
@@ -167,7 +167,7 @@ final class ScoreBoardTest extends WebTestCase
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('ScoreBoard', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
         $this->assertStringContainsString('player-updated', $rendered);

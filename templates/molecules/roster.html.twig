@@ -1,8 +1,8 @@
 <table
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
-    class="score-board"
+    class="roster"
 >
-    <caption id="scoreboard">Turn {{ game.currentTurn }}</caption>
+    <caption id="roster">Turn {{ game.currentTurn }}</caption>
     <thead>
         <tr>
             <th scope="col">Name</th>

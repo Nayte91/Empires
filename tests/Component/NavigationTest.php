@@ -18,7 +18,7 @@ final class NavigationTest extends WebTestCase
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
 
-    /** It sits above the scoreboard, so it must cost one line until someone asks for it. */
+    /** It sits above the roster, so it must cost one line until someone asks for it. */
     #[Test]
     public function thePanelIsCollapsedUntilItIsOpened(): void
     {
