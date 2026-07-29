@@ -1,10 +1,10 @@
 .game-dashboard {
     container-type: inline-size;
-    display: grid;
-    gap: 1rem;
     min-block-size: 100vh;
     padding: 1rem;
-    padding-block-end: 100vh;
+    display: grid;
+    place-content: start center;
+    gap: 1rem;
     background: #111;
     color: white;
 
@@ -23,6 +23,5 @@
     @media (min-width: 60rem) {
         justify-items: center;
         gap: 2rem;
-        padding: 2rem;
     }
 }

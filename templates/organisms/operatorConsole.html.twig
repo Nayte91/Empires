@@ -7,66 +7,62 @@
 >
     <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
-    <section class="operator-console__players">
-        <h2>Players</h2>
+    <div class="tab-group">
+        {% embed 'atoms/tab.html.twig' with {
+            group: 'operator-tabs',
+            tabId: 'general',
+            label: 'General',
+            open: true,
+        } %}
+            {% block panel %}
+                <div class="operator-console__turn-controls">
+                    {% if game.finished %}
+                        <span class="operator-console__finished-badge">Finished</span>
+                    {% else %}
+                        <button
+                            type="button"
+                            {{ live_action('previousTurn') }}
+                            {{ game.currentTurn == 1 ? 'disabled' }}
+                        >
+                            « Previous turn
+                        </button>
+                        <button
+                            type="button"
+                            {{ live_action('nextTurn') }}
+                            data-loading="addAttribute(disabled)"
+                        >
+                            Next turn »
+                        </button>
+                        <button
+                            type="button"
+                            {{ live_action('finishGame') }}
+                            data-loading="addAttribute(disabled)"
+                        >
+                            Finish game
+                        </button>
+                    {% endif %}
+                </div>
+            {% endblock %}
+        {% endembed %}
 
-        <div class="tab-group">
+        {% for player in game.players %}
             {% embed 'atoms/tab.html.twig' with {
                 group: 'operator-tabs',
-                tabId: 'general',
-                label: 'General',
-                open: true,
+                tabId: player.id,
+                label: player.empire|empire_demonym|capitalize,
+                empire: player.empire,
             } %}
                 {% block panel %}
-                    <div class="operator-console__turn-controls">
-                        {% if game.finished %}
-                            <span class="operator-console__finished-badge">Finished</span>
-                        {% else %}
-                            <button
-                                type="button"
-                                {{ live_action('previousTurn') }}
-                                {{ game.currentTurn == 1 ? 'disabled' }}
-                            >
-                                « Previous turn
-                            </button>
-                            <button
-                                type="button"
-                                {{ live_action('nextTurn') }}
-                                data-loading="addAttribute(disabled)"
-                            >
-                                Next turn »
-                            </button>
-                            <button
-                                type="button"
-                                {{ live_action('finishGame') }}
-                                data-loading="addAttribute(disabled)"
-                            >
-                                Finish game
-                            </button>
-                        {% endif %}
-                    </div>
+                    <h3>{{ player.name }}</h3>
+
+                    <twig:molecules:ControlBoard
+                        :player="player"
+                        :stats="['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards']"
+                    />
+
+                    <twig:PlayerOrders :player="player" :ordersStamp="this.ordersStampFor(player)" />
                 {% endblock %}
             {% endembed %}
-
-            {% for player in game.players %}
-                {% embed 'atoms/tab.html.twig' with {
-                    group: 'operator-tabs',
-                    tabId: player.id,
-                    label: player.empire|empire_demonym|capitalize,
-                    empire: player.empire,
-                } %}
-                    {% block panel %}
-                        <h3>{{ player.name }}</h3>
-
-                        <twig:molecules:ControlBoard
-                            :player="player"
-                            :stats="['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards']"
-                        />
-
-                        <twig:PlayerOrders :player="player" :ordersStamp="this.ordersStampFor(player)" />
-                    {% endblock %}
-                {% endembed %}
-            {% endfor %}
-        </div>
-    </section>
+        {% endfor %}
+    </div>
 </main>

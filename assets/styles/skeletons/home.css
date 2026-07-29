@@ -1,5 +1,3 @@
-/* Home page — games grid */
-
 main {
     display: grid;
     grid-template-columns: min(75rem, 100%);
@@ -16,9 +14,7 @@ main {
     padding: 0;
     list-style: none;
 
-    @media (min-width: 48rem) {
-        grid-template-columns: repeat(3, 1fr);
-    }
+    @media (min-width: 48rem) { grid-template-columns: repeat(3, 1fr) }
 }
 
 .game-tile {

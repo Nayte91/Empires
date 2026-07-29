@@ -1,9 +1,13 @@
 .operator-console {
+    container-type: inline-size;
+    min-block-size: 100vh;
+    padding: 1rem;
     display: grid;
-    max-inline-size: 75rem;
-    margin-inline: auto;
-    gap: var(--operator-gap);
-    background-color: hsl(40 85% 95%);
+    place-content: start center;
+    gap: 1rem;
+    background: #111;
+
+    #page-title { color: white }
 
     .operator-console__turn-controls {
         display: flex;
@@ -18,11 +22,5 @@
         background: var(--operator-success-bg);
         color: var(--operator-success);
         font-weight: bold;
-    }
-
-    .operator-console__players {
-        border: 1px solid var(--operator-border);
-        border-radius: var(--operator-radius);
-        padding-inline: 1rem;
     }
 }
