@@ -1,0 +1,133 @@
+.standings {
+    --rail: 0.1875rem;
+    --hairline: 1px solid rgb(255 255 255 / 0.12);
+    font-variant-numeric: tabular-nums;
+
+    h3 {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 1rem 1rem 0.625rem;
+        color: darkgray;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+
+        small {
+            margin-inline-start: auto;
+            color: #6f6f6f;
+            font-weight: normal;
+            letter-spacing: normal;
+            text-transform: none;
+        }
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li:nth-child(odd) { background: rgb(255 255 255 / 0.04); }
+
+    summary {
+        display: grid;
+        grid-template-columns: var(--rail) 1.25rem 1fr auto;
+        align-items: center;
+        gap: 0.6875rem;
+        min-block-size: 3.5rem;
+        padding: 0.5rem 1rem 0.5rem 0;
+        border-block-start: var(--hairline);
+        cursor: pointer;
+
+        /* the row is the control; the disclosure triangle would only compete with it */
+        &::-webkit-details-marker { display: none }
+        &::marker { content: '' }
+
+        &:hover { background: rgb(255 255 255 / 0.07); }
+    }
+
+    [data-rail] {
+        align-self: stretch;
+        background: var(--player-color, dimgray);
+    }
+
+    [data-rank] {
+        padding-inline-start: 0.3125rem;
+        color: darkgray;
+        font-size: 0.75rem;
+    }
+
+    [data-seat] {
+        min-inline-size: 0;
+
+        b {
+            display: block;
+            overflow: hidden;
+            font-size: 0.90625rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        small {
+            display: block;
+            margin-block-start: 0.125rem;
+            color: darkgray;
+            font-size: 0.6875rem;
+        }
+    }
+
+    [data-headline] {
+        font-size: 1.0625rem;
+        font-weight: 600;
+
+        small {
+            color: darkgray;
+            font-size: 0.59375rem;
+            font-weight: 500;
+            letter-spacing: 0.08em;
+        }
+    }
+
+    dl {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        margin: 0;
+        padding: 0.875rem 1rem;
+        border-block-start: 1px solid rgb(255 255 255 / 0.1);
+        background: rgb(255 255 255 / 0.06);
+        text-align: center;
+    }
+
+    dd {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    dt {
+        order: 1;
+        margin-block-start: 0.3125rem;
+        color: darkgray;
+        font-size: 0.5625rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    /* value above label, so each stat reads as one block */
+    dl > div {
+        display: flex;
+        flex-direction: column;
+    }
+
+    > p {
+        margin: 0;
+        padding: 1rem 1rem 1.5rem;
+        color: #6f6f6f;
+        font-size: 0.71875rem;
+        line-height: 1.5;
+    }
+}

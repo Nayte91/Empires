@@ -84,9 +84,9 @@ final class NavigationTest extends WebTestCase
         $this->assertCount(3, $panels->filter('svg'));
     }
 
-    /** The panels are stacked and scrolled through, so each trigger must name the one it jumps to. */
+    /** The sheet shows one seat, so each trigger must name the panel it opens. */
     #[Test]
-    public function eachTriggerNamesThePanelItScrollsTo(): void
+    public function eachTriggerNamesThePanelItOpens(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
@@ -95,24 +95,79 @@ final class NavigationTest extends WebTestCase
 
         $this->assertSame(
             ['operator', 'alice'],
-            $crawler->filter('li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-modal-key-param')),
+            $crawler->filter('details li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-modal-key-param')),
         );
         $this->assertSame(
             ['modal#open', 'modal#open'],
-            $crawler->filter('li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-action')),
+            $crawler->filter('details li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-action')),
         );
     }
 
-    /** A panel states whose view it opens, and nothing else: the URL is the QR code's job. */
+    /**
+     * The phone's form of the list. Both forms are rendered — the breakpoint picks one — so the
+     * QR panels must not be: fifteen inline SVGs are the expensive part of this component.
+     */
     #[Test]
-    public function aPanelCarriesItsNameAndItsQrCodeWithoutSpellingTheUrlOut(): void
+    public function theSeatListRepeatsTheTargetsWithoutRepeatingTheirQrPanels(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+
+        $crawler = $this->render($game);
+
+        $this->assertCount(2, $crawler->filter('.seat-list li'));
+        $this->assertCount(1, $crawler->filter('dialog'));
+        $this->assertCount(2, $crawler->filter('dialog figure'));
+        $this->assertSame(
+            ['operator', 'alice'],
+            $crawler->filter('.seat-list li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-modal-key-param')),
+        );
+    }
+
+    /** The filter runs client-side, so every row carries what it can be matched on. */
+    #[Test]
+    public function eachSeatCarriesItsNameAndEmpireFoldedForSearching(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+
+        $row = $this->render($game)->filter('.seat-list li')->eq(1);
+
+        $this->assertStringContainsString('alice', (string) $row->attr('data-search'));
+        $this->assertStringContainsString('minoa', (string) $row->attr('data-search'));
+        $this->assertSame('minoan', trim($row->filter('small')->text()));
+    }
+
+    /** The operator is not an empire, so its row says what it is instead of naming one. */
+    #[Test]
+    public function theOperatorRowNamesTheConsoleRatherThanAnEmpire(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+
+        $rows = $this->render($game)->filter('.seat-list li');
+
+        $this->assertSame('console · this device', trim($rows->eq(0)->filter('small')->text()));
+        $this->assertNotNull($rows->eq(0)->attr('data-operator'));
+        $this->assertSame('minoan', trim($rows->eq(1)->filter('small')->text()));
+    }
+
+    /**
+     * A card states whose view it opens, what they are, and the address the code carries — for
+     * anyone who would rather type it than scan it. The address stays text: tapping it here would
+     * open the seat's board on the operator's own phone, which is the one thing it must not do.
+     */
+    #[Test]
+    public function aCardCarriesTheNameTheRoleTheCodeAndTheAddressItStandsFor(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
         $panel = $this->render($game)->filter('dialog figure[data-key="operator"]');
 
         $this->assertSame('Operator', $panel->filter('h2')->text());
+        $this->assertSame('console', trim($panel->filter('small')->text()));
         $this->assertCount(1, $panel->filter('svg'));
+        $this->assertStringEndsWith('/'.$game->slug.'/operator', trim($panel->filter('figcaption')->text()));
         $this->assertCount(0, $panel->filter('a'));
     }
 

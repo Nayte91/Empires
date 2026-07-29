@@ -1,30 +1,78 @@
-<details class="navigation panel dark" {{ attributes.defaults(stimulus_controller('modal')) }}>
-    <summary>Navigation</summary>
+{% set targets = this.targets %}
 
-    <ul>
-        {% for target in this.targets %}
-            {% set caption = target.empire ? target.empire|empire_adjective : target.caption %}
-            <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
-                <a href="{{ target.url }}">
-                    {{ target.label }}
-                    <small>{{ caption }}</small>
-                </a>
-                <button type="button" title="QR code — {{ target.label }}" {{ stimulus_action('modal', 'open', null, {key: target.key}) }}>
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zM13 3h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zM13 13h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>
-                </button>
-            </li>
-        {% endfor %}
-    </ul>
+<div {{ attributes.defaults(stimulus_controller('modal')|stimulus_controller('seat-filter')) }} class="navigation-panel">
+    <details class="navigation panel dark">
+        <summary>Navigation</summary>
 
-    <dialog class="modal" {{ stimulus_target('modal', 'dialog') }}>
+        <ul>
+            {% for target in targets %}
+                {% set caption = target.empire ? target.empire|empire_adjective : target.caption %}
+                <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
+                    <a href="{{ target.url }}">
+                        {{ target.label }}
+                        <small>{{ caption }}</small>
+                    </a>
+                    <button type="button" title="QR code — {{ target.label }}" {{ stimulus_action('modal', 'open', null, {key: target.key}) }}>
+                        {{ include('atoms/qrGlyph.html.twig') }}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+    </details>
+
+    <div class="seat-list">
+        <search>
+            <label>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5L20 20"/></svg>
+                <input type="search" placeholder="Filter seats" aria-label="Filter seats"
+                       {{ stimulus_action('seat-filter', 'filter', 'input') }}
+                       {{ stimulus_target('seat-filter', 'query') }}>
+            </label>
+        </search>
+
+        <ul>
+            {% for target in targets %}
+                {% set isOperator = target.key == 'operator' %}
+                {% set adjective = target.empire ? target.empire|empire_adjective : null %}
+                <li
+                    {% if target.empire %}data-empire="{{ target.empire }}"{% endif %}
+                    {% if isOperator %}data-operator{% endif %}
+                    data-search="{{ (target.label ~ ' ' ~ (adjective ?? '') ~ ' ' ~ (target.empire ?? ''))|lower }}"
+                    {{ stimulus_target('seat-filter', 'seat') }}
+                >
+                    <span data-rail></span>
+                    <span data-seat>
+                        <b>{{ target.label }}</b>
+                        <small>
+                            {%- if isOperator -%}
+                                console · this device
+                            {%- else -%}
+                                {{ adjective }}
+                            {%- endif -%}
+                        </small>
+                    </span>
+                    <button type="button" title="QR code — {{ target.label }}" {{ stimulus_action('modal', 'open', null, {key: target.key}) }}>
+                        {{ include('atoms/qrGlyph.html.twig') }}
+                    </button>
+                </li>
+            {% endfor %}
+        </ul>
+
+        <p data-empty hidden {{ stimulus_target('seat-filter', 'empty') }}>No seat matches that.</p>
+        <p data-note>Tap a code to show its QR, then hold the phone up.</p>
+    </div>
+
+    <dialog class="modal qr-sheet" {{ stimulus_target('modal', 'dialog') }} {{ stimulus_action('modal', 'dismiss', 'click') }}>
         <div>
-            {% for target in this.targets %}
+            {% for target in targets %}
                 <figure data-key="{{ target.key }}"{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                     <h2>{{ target.label }}</h2>
+                    <small>{{ target.empire ? target.empire|empire_adjective : target.caption }}</small>
                     {{ target.qr|raw }}
+                    <figcaption>{{ target.url }}</figcaption>
                 </figure>
             {% endfor %}
         </div>
         <button type="button" {{ stimulus_action('modal', 'close') }}>Close</button>
     </dialog>
-</details>
+</div>

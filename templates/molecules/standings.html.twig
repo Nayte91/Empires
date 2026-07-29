@@ -1,0 +1,38 @@
+<section
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
+    class="standings"
+>
+    <h3>
+        Standings
+        <small>tap a row for the full sheet</small>
+    </h3>
+
+    <ul>
+        {% for row in this.rows %}
+            {% set player = row.player %}
+            <li{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
+                <details name="standings">
+                    <summary>
+                        <span data-rail></span>
+                        <span data-rank>{{ row.rank }}</span>
+                        <span data-seat>
+                            <b>{{ player.name }}</b>
+                            <small>{{ player.empire|empire_adjective }} · {{ row.band }}</small>
+                        </span>
+                        <span data-headline>{{ row.score }} <small>VP</small></span>
+                    </summary>
+
+                    <dl>
+                        <div><dt>Trea</dt><dd>{{ player.treasury }}</dd></div>
+                        <div><dt>Pop</dt><dd>{{ player.census }}</dd></div>
+                        <div><dt>Cities</dt><dd>{{ player.cities }}</dd></div>
+                        <div><dt>Cards</dt><dd>{{ player.cards }}</dd></div>
+                        <div><dt>Adv</dt><dd>{{ row.advances }}</dd></div>
+                    </dl>
+                </details>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <p>Sorted by victory points; ties keep turn order.</p>
+</section>

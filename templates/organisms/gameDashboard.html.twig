@@ -1,12 +1,47 @@
-<main class="game-dashboard">
-    <twig:atoms:PageTitle :title="game.slug" />
+{% set tab = this.currentTab %}
 
-    <twig:Navigation :game="game" />
+<main class="game-dashboard" data-tab="{{ tab }}" {{ stimulus_controller('tab') }}>
+    <header>
+        <b>Empires</b>
+        <span data-game>{{ game.slug }}</span>
+        <span data-turn>Turn {{ game.currentTurn }}</span>
+        <small>{{ game.players|length }} players</small>
+    </header>
 
-    <h2><a href="#roster">Roster</a></h2>
-    <twig:Roster :game="game" />
+    <twig:atoms:PageTitle :title="game.slug" :subtitle="game.astVersion.value|capitalize ~ ' version'" />
 
-    <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
-    <twig:Ast :game="game" />
-    <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />
+    <section id="panel-nav" aria-label="Navigation">
+        <twig:Navigation :game="game" />
+    </section>
+
+    <section id="panel-score" aria-label="Roster">
+        <h2><a href="#roster">Roster</a></h2>
+        <twig:Roster :game="game" />
+        <twig:Standings :game="game" />
+    </section>
+
+    <section id="panel-ast" aria-label="Archaeological Succession Timeline">
+        <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
+        <twig:Ast :game="game" />
+        <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />
+        <twig:BandTimeline :game="game" />
+    </section>
+
+    <nav aria-label="Dashboard sections">
+        <a href="?tab=nav"{{ tab == 'nav' ? ' aria-current="page"' : '' }}
+           {{ stimulus_action('tab', 'show', 'click', {panel: 'nav'}) }} {{ stimulus_target('tab', 'link') }}>
+            {{ include('atoms/qrGlyph.html.twig') }}
+            Navigation
+        </a>
+        <a href="?tab=score"{{ tab == 'score' ? ' aria-current="page"' : '' }}
+           {{ stimulus_action('tab', 'show', 'click', {panel: 'score'}) }} {{ stimulus_target('tab', 'link') }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg>
+            Scoreboard
+        </a>
+        <a href="?tab=ast"{{ tab == 'ast' ? ' aria-current="page"' : '' }}
+           {{ stimulus_action('tab', 'show', 'click', {panel: 'ast'}) }} {{ stimulus_target('tab', 'link') }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12h18"/><circle cx="8" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/></svg>
+            A.S.T.
+        </a>
+    </nav>
 </main>

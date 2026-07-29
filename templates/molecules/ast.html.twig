@@ -1,8 +1,9 @@
 {% set openingSpan = this.openingSpan %}
-<table
+<div
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
-    class="ast"
+    class="ast-board"
 >
+<table class="ast">
     <caption id="ast">{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
     <thead>
         <tr>
@@ -18,7 +19,7 @@
             {% set columnEras = this.columnErasFor(player) %}
             {% set medal = this.medalOf(player) %}
             <tr data-empire="{{ player.empire }}"{{ player.astPosition < openingSpan ? ' data-in-opening' : '' }}>
-                <th scope="row"><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></th>
+                <th scope="row"><span data-mark></span><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></th>
                 {% for position in range(0, this.trackLength - 1) %}
                     <td
                         {{- columnEras[position].index is odd ? ' data-band' : '' }}
@@ -45,3 +46,4 @@
         </tr>
     </tfoot>
 </table>
+</div>

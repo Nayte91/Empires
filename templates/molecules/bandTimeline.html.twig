@@ -1,0 +1,69 @@
+{% set columns = this.columns %}
+
+<section
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
+    class="band-timeline"
+>
+    <h3>Archaeological Succession Table</h3>
+
+    <div data-scroll>
+    <table>
+        <caption>A.S.T. position of each empire</caption>
+        <thead>
+            <tr>
+                <td></td>
+                {% for header in this.headers %}
+                    <th scope="col" colspan="{{ header.span }}"{{ header.era.index is odd ? ' data-band' : '' }}>
+                        <abbr title="{{ header.era.name }}">{{ this.abbreviationOf(header.era) }}</abbr>
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in this.rows %}
+                {% set player = row.player %}
+                <tr{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
+                    <th scope="row">
+                        <span data-mark></span>
+                        <span>{{ player.empire|default('—')|capitalize }}</span>
+                    </th>
+                    {% for position in 0..columns|length - 1 %}
+                        {% set era = row.columns[position] %}
+                        <td
+                            {{- era.index is odd ? ' data-band' : '' }}
+                            {{- position > 0 and row.columns[position - 1].key != era.key ? ' data-age-start' : '' }}
+                            {{- position == row.position ? ' data-here' : '' }}>
+                            {%- if position == row.position -%}
+                                <span data-marker title="{{ player.name }} — {{ row.era.name }}"></span>
+                            {%- endif -%}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th scope="row">VP</th>
+                {% for points in this.scale %}
+                    <td>{{ points }}</td>
+                {% endfor %}
+            </tr>
+        </tfoot>
+    </table>
+    </div>
+
+    <h3>Requirements to advance</h3>
+
+    <ul>
+        {% for band in this.bands %}
+            {% set reached = this.isReached(band) %}
+            <li{{ reached ? ' data-reached' : '' }}>
+                <span aria-hidden="true">{{ reached ? '✓' : '·' }}</span>
+                <span>
+                    <b>{{ band.name }}</b>
+                    <small>{{ this.requirementOf(band) ?? 'none' }}</small>
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>

@@ -51,7 +51,8 @@ final class GameDashboardTest extends WebTestCase
         $rootTag = substr($html, 0, (int) strpos($html, '>') + 1);
         $beforeFirstTable = substr($html, 0, (int) strpos($html, '<table'));
 
-        $this->assertStringNotContainsString('data-controller', $rootTag);
+        // The shell drives the tabs; subscribing to a topic stays the embedded components' job.
+        $this->assertStringNotContainsString('mercure-refresh', $rootTag);
         $this->assertStringNotContainsString('mercure-refresh', $beforeFirstTable, 'mercure-refresh must only appear on the embedded Roster and Ast tables.');
     }
 }

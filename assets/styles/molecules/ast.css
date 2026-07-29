@@ -1,3 +1,10 @@
+/* the track is wider than a phone: one horizontal swipe, empire column pinned */
+.ast-board {
+    --ast-surface: #111;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+}
+
 .ast {
     --ast-rule: 1px solid rgb(255 255 255 / 0.15);
     --turn-edge: 1px double gold;
@@ -36,7 +43,14 @@
     th {
         padding-inline: 1em;
         text-align: start;
-        text-shadow: 0 0 2px black, 0 0 2px black;
+    }
+
+    /* pinned: it must stay legible with the track sliding underneath it */
+    thead th:first-child, tbody th, tfoot th {
+        position: sticky;
+        z-index: 2;
+        inset-inline-start: 0;
+        background: var(--ast-surface);
     }
 
     thead th {
@@ -54,10 +68,20 @@
         &[colspan="1"] { padding: 0 }
     }
 
+    /* colour is a mark, never a fill — same rule the score board follows */
     tbody th {
         inline-size: 10rem;
         overflow: hidden;
-        background-color: var(--player-color, dimgray);
+        border-inline-end: var(--ast-rule);
+
+        [data-mark] {
+            display: inline-block;
+            inline-size: 0.5rem;
+            aspect-ratio: 1;
+            margin-inline-end: 0.4375rem;
+            border-radius: 50%;
+            background: var(--player-color, dimgray);
+        }
     }
 
     tbody td[data-anchor] { position: relative }
@@ -87,15 +111,11 @@
         --ast-cell-size: 1.5rem;
         font-size: 0.75rem;
 
-        thead, tfoot, [data-opening] { display: none }
-        [data-in-opening] .marker { display: none }
-        tr:has([data-opening][data-current-turn]) [data-anchor] { border-inline-start: var(--turn-edge) }
-
         tbody {
             th {
                 box-sizing: content-box;
-                inline-size: 8ch;
-                max-inline-size: 8ch;
+                inline-size: 5.125rem;
+                max-inline-size: 5.125rem;
                 padding-inline: 0.25rem;
 
                 small { display: none }

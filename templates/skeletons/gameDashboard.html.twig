@@ -10,8 +10,10 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/roster.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/standings.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/bandTimeline.css') }}">
 {% endblock %}
 
 {% block main %}
-    {{ component('GameDashboard', {game}) }}
+    {{ component('GameDashboard', {game, tab: app.request.query.get('tab')|default('nav')}) }}
 {% endblock %}

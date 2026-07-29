@@ -54,25 +54,202 @@
         &:hover { background: rgb(255 255 255 / 0.1) }
     }
 
-    dialog > div {
-        block-size: 70vh;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        scroll-snap-type: y mandatory;
-    }
-
-    figure {
-        display: grid;
-        align-content: center;
-        justify-items: center;
-        gap: 1rem;
-        min-block-size: 100%;
-        margin: 0;
-        scroll-snap-align: center;
-
-        h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
-    }
-
     @container (min-width: 40rem) { ul { grid-template-columns: repeat(2, 1fr) } }
     @container (min-width: 60rem) { ul { grid-template-columns: repeat(3, 1fr) } }
 }
+
+/* The phone's form of the same list: no disclosure, no columns — a filter and one row per seat. */
+.seat-list {
+    --rail: 0.1875rem;
+
+    search {
+        display: block;
+        margin: 0.875rem 1rem;
+    }
+
+    label {
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+        padding: 0.6875rem 0.75rem;
+        border: 1px solid rgb(255 255 255 / 0.22);
+        border-radius: 0.5rem;
+
+        svg {
+            flex: none;
+            inline-size: 0.9375rem;
+            block-size: 0.9375rem;
+            color: darkgray;
+        }
+    }
+
+    input {
+        flex: 1;
+        min-inline-size: 0;
+        border: 0;
+        background: transparent;
+        color: white;
+        font-size: 0.84375rem;
+
+        &::placeholder { color: darkgray }
+    }
+
+    ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        display: grid;
+        grid-template-columns: var(--rail) 1fr 2.75rem;
+        align-items: center;
+        gap: 0.6875rem;
+        min-block-size: 3.5rem;
+        padding: 0.5rem 1rem 0.5rem 0;
+        border-block-start: 1px solid rgb(255 255 255 / 0.12);
+    }
+
+    /* the operator is not an empire, so it wears the console's own colour */
+    [data-operator] {
+        --player-color: steelblue;
+        background: rgb(70 130 180 / 0.1);
+    }
+
+    [data-rail] {
+        align-self: stretch;
+        background: var(--player-color, dimgray);
+    }
+
+    [data-seat] {
+        min-inline-size: 0;
+        padding-inline-start: 0.3125rem;
+
+        b {
+            display: block;
+            overflow: hidden;
+            font-size: 0.875rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        small {
+            display: block;
+            margin-block-start: 0.125rem;
+            color: darkgray;
+            font-size: 0.6875rem;
+        }
+    }
+
+    button {
+        display: grid;
+        place-items: center;
+        inline-size: 2.75rem;
+        block-size: 2.75rem;
+        border: 1px solid rgb(255 255 255 / 0.24);
+        border-radius: 0.5rem;
+        background: transparent;
+        color: white;
+        cursor: pointer;
+
+        &:hover { background: rgb(255 255 255 / 0.12) }
+
+        svg {
+            inline-size: 1.0625rem;
+            block-size: 1.0625rem;
+        }
+    }
+
+    p {
+        margin: 0;
+        color: #6f6f6f;
+        font-size: 0.71875rem;
+        line-height: 1.5;
+    }
+
+    [data-empty] {
+        padding: 1.125rem 1rem;
+        color: darkgray;
+        font-size: 0.78125rem;
+    }
+
+    [data-note] { padding: 1rem 1rem 1.5rem }
+}
+
+/* The QR sheet: a scrim over the whole screen and one card held in the middle of it. The dialog
+   itself is the scrim, so a tap anywhere off a card lands on it and dismisses. */
+.modal.qr-sheet[open] {
+    inline-size: 100%;
+    max-inline-size: none;
+    block-size: 100%;
+    max-block-size: none;
+    margin: 0;
+    padding: 1.5rem;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 1rem;
+
+    /* the cards scroll, the way out does not */
+    > div {
+        display: grid;
+        gap: 1.5rem;
+        align-content: center;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+
+    /* the sheet is about one seat: the other fourteen stay in the DOM, out of sight */
+    &[data-scoped] figure:not([data-current]) { display: none }
+
+    figure {
+        display: grid;
+        justify-items: center;
+        margin: 0;
+        padding: 1.375rem;
+        border-radius: 0.875rem;
+        background: white;
+        box-shadow: 0 1.125rem 2.75rem rgb(0 0 0 / 0.45);
+        color: #1a1815;
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    figure > small {
+        margin-block-start: 0.3125rem;
+        color: rgb(26 24 21 / 0.55);
+        font-size: 0.71875rem;
+    }
+
+    svg {
+        inline-size: 100%;
+        max-inline-size: 14.75rem;
+        aspect-ratio: 1;
+        block-size: auto;
+        margin-block-start: 1.125rem;
+        border: 1px solid rgb(26 24 21 / 0.12);
+    }
+
+    /* the address the code carries, for anyone who would rather type it than scan it */
+    figcaption {
+        margin-block-start: 0.875rem;
+        color: rgb(26 24 21 / 0.55);
+        font-family: ui-monospace, Menlo, monospace;
+        font-size: 0.6875rem;
+        line-height: 1.4;
+        word-break: break-all;
+    }
+
+    /* the scrim dismisses; the button is the visible way to say so */
+    > button { justify-self: center }
+}
+
+.modal.qr-sheet::backdrop { background: rgb(10 10 10 / 0.72) }

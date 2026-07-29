@@ -1,0 +1,169 @@
+.band-timeline {
+    /* sixteen positions have to share what the label column leaves: keep it lean */
+    --label-column: 3.75rem;
+    --cell: 1.375rem;
+    --band-tint: rgb(255 255 255 / 0.07);
+    --hairline: 1px solid rgb(255 255 255 / 0.12);
+    padding: 1rem 1rem 1.5rem;
+
+    h3 {
+        margin: 0;
+        color: darkgray;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+    }
+
+    /* the track fills the phone when it can and slides when it cannot */
+    [data-scroll] {
+        margin-block-start: 0.875rem;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+    }
+
+    table {
+        inline-size: 100%;
+        min-inline-size: max-content;
+        border-collapse: collapse;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* a position is a square: that fixes the column width, and the scroll follows from it */
+    thead th, tbody td, tfoot td {
+        inline-size: var(--cell);
+        min-inline-size: var(--cell);
+    }
+
+    caption { position: absolute; clip-path: inset(50%); }
+
+    [data-band] { background: var(--band-tint); }
+
+    thead th {
+        padding-block: 0.3125rem;
+        border-block-end: 1px solid rgb(255 255 255 / 0.28);
+        color: darkgray;
+        font-size: 0.5rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    abbr {
+        text-decoration: none;
+        cursor: help;
+    }
+
+    tbody tr { block-size: var(--cell); }
+
+    /* the label column keeps its width; nothing is frozen, so nothing covers anything */
+    thead td:first-child, tbody th[scope="row"], tfoot th {
+        inline-size: var(--label-column);
+        min-inline-size: var(--label-column);
+        text-align: start;
+    }
+
+    /* the empire reads as a name, never as a coloured bar behind one */
+    tbody th[scope="row"] {
+        display: flex;
+        align-items: center;
+        gap: 0.3125rem;
+        min-inline-size: 0;
+        block-size: var(--cell);
+        padding-inline-end: 0.3125rem;
+        border-block-start: var(--hairline);
+        font-size: 0.625rem;
+        font-weight: 500;
+
+        span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    [data-mark] {
+        flex: none;
+        inline-size: 0.4375rem;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--player-color, dimgray);
+    }
+
+    /* where this empire's own age turns over — the header spans one reading, each row plays its own */
+    [data-age-start] { border-inline-start-color: rgb(255 255 255 / 0.45); }
+
+    /* every position delimited, so a marker reads as sitting on one square rather than in a band */
+    tbody td {
+        block-size: var(--cell);
+        border: var(--hairline);
+        text-align: center;
+    }
+
+    [data-marker] {
+        display: inline-block;
+        inline-size: 0.875rem;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: var(--player-color, dimgray);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.45);
+        vertical-align: middle;
+    }
+
+    tfoot tr { block-size: 1.875rem; }
+
+    tfoot th, tfoot td {
+        border-block-start: 1px solid rgb(255 255 255 / 0.18);
+        color: darkgray;
+        font-size: 0.5rem;
+        font-weight: normal;
+    }
+
+    tfoot th {
+        font-size: 0.625rem;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+    }
+
+    tfoot td { text-align: center; }
+
+    h3 + ul { margin-block-start: 0.5rem; }
+
+    ul {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 0.875rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    li {
+        display: flex;
+        gap: 0.4375rem;
+        padding-block: 0.5rem;
+        border-block-end: 1px solid rgb(255 255 255 / 0.1);
+        font-size: 0.6875rem;
+        line-height: 1.3;
+
+        span:first-child { color: #6f6f6f; }
+        &[data-reached] span:first-child { color: #a4ce53; }
+
+        b { font-weight: 600; }
+
+        small {
+            display: block;
+            color: darkgray;
+            font-size: inherit;
+        }
+    }
+
+    /* the last row of each column closes the list, so it carries no rule */
+    li:nth-last-child(-n+2):nth-child(odd),
+    li:last-child {
+        border-block-end: 0;
+    }
+
+    h3 ~ h3 { margin-block-start: 1.375rem; }
+}
