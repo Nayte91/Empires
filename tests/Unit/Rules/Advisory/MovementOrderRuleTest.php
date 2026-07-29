@@ -21,13 +21,13 @@ final class MovementOrderRuleTest extends TestCase
     public function theRankIsSpelledAsAnOrdinalExceptForTheLastPlayer(): void
     {
         $game = new Game();
-        $first = new Player($game, 'Alice');
+        $first = new Player($game, 'Alice', 'minoa');
         $first->census = 30;
-        $second = new Player($game, 'Bob');
+        $second = new Player($game, 'Bob', 'saba');
         $second->census = 20;
-        $third = new Player($game, 'Carol');
+        $third = new Player($game, 'Carol', 'assyria');
         $third->census = 10;
-        $fourth = new Player($game, 'Dave');
+        $fourth = new Player($game, 'Dave', 'egypt');
         $fourth->census = 5;
 
         $rule = $this->rule();
@@ -46,11 +46,11 @@ final class MovementOrderRuleTest extends TestCase
     public function movingFirstIsCautionedAndMovingLastIsGoodNews(): void
     {
         $game = new Game();
-        $first = new Player($game, 'Alice');
+        $first = new Player($game, 'Alice', 'minoa');
         $first->census = 30;
-        $middle = new Player($game, 'Bob');
+        $middle = new Player($game, 'Bob', 'saba');
         $middle->census = 20;
-        $last = new Player($game, 'Carol');
+        $last = new Player($game, 'Carol', 'assyria');
         $last->census = 10;
 
         $rule = $this->rule();

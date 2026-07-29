@@ -43,12 +43,8 @@ final class AstRegistry
 
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/ast.yaml')] private readonly string $astDataPath) {}
 
-    public function resolveEmpireGroup(ASTVersion $version, ?string $empireSlug): string
+    public function resolveEmpireGroup(ASTVersion $version, string $empireSlug): string
     {
-        if (null === $empireSlug) {
-            return 'standard';
-        }
-
         $groups = $this->loadAstData()['ast']['tracks'][$version->value] ?? [];
 
         foreach ($groups as $group => $groupData) {

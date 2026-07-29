@@ -35,8 +35,7 @@ final class AstTest extends WebTestCase
     public function rendersTrackLengthCellsPerPlayerRow(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
-        $player->empire = 'minoa';
+        new Player($game, 'Alice', 'minoa');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -49,8 +48,7 @@ final class AstTest extends WebTestCase
     public function playerAtPositionZeroGetsAMarkerTitledWithTheirNameAndEraName(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
-        $player->empire = 'minoa';
+        new Player($game, 'Alice', 'minoa');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -66,9 +64,8 @@ final class AstTest extends WebTestCase
     public function markerCarriesItsOffsetFromTheAnchorColumnAsACssCustomPropertyForTransformAnimation(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
+        $player = new Player($game, 'Alice', 'minoa');
         $player->astPosition = 7;
-        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -80,9 +77,8 @@ final class AstTest extends WebTestCase
     public function aPlayerStillInsideTheOpeningStretchIsFlaggedOnTheirRowAndOffsetBackwards(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
+        $player = new Player($game, 'Alice', 'minoa');
         $player->astPosition = 4;
-        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -98,9 +94,8 @@ final class AstTest extends WebTestCase
     public function theFiveOpeningColumnsAskingNoRequirementAreFlaggedInBothVersions(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
+        $player = new Player($game, 'Alice', 'minoa');
         $player->astPosition = 9;
-        $player->empire = 'minoa';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -122,18 +117,14 @@ final class AstTest extends WebTestCase
     public function theScoreColumnClosesEachRowAndTheThreeLeadersWearGoldSilverAndBronze(): void
     {
         $game = new Game();
-        $leader = new Player($game, 'Alice');
-        $leader->empire = 'minoa';
+        $leader = new Player($game, 'Alice', 'minoa');
         $leader->ownAdvances(['advanced_military']); // 6 points
         $leader->cities = 5;                         // 11 in total
-        $second = new Player($game, 'Bob');
-        $second->empire = 'saba';
+        $second = new Player($game, 'Bob', 'saba');
         $second->cities = 5;
-        $third = new Player($game, 'Carl');
-        $third->empire = 'assyria';
+        $third = new Player($game, 'Carl', 'assyria');
         $third->cities = 3;
-        $unscored = new Player($game, 'Dan');
-        $unscored->empire = 'maurya';
+        new Player($game, 'Dan', 'maurya');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
@@ -150,11 +141,9 @@ final class AstTest extends WebTestCase
     public function rowsAreOrderedByScoreWithTheLeaderOnTop(): void
     {
         $game = new Game();
-        $trailing = new Player($game, 'Alice'); // minoa opens the empire list, so file order would put it first
-        $trailing->empire = 'minoa';
+        $trailing = new Player($game, 'Alice', 'minoa'); // minoa opens the empire list, so file order would put it first
         $trailing->cities = 1;
-        $leading = new Player($game, 'Bob');
-        $leading->empire = 'egypt';
+        $leading = new Player($game, 'Bob', 'egypt');
         $leading->cities = 9;
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
@@ -173,12 +162,10 @@ final class AstTest extends WebTestCase
         // is what visually covers it when a marker sits at position 0, not
         // Twig conditionally omitting it.
         $game = new Game();
-        $atStart = new Player($game, 'Alice');
+        $atStart = new Player($game, 'Alice', 'minoa');
         $atStart->astPosition = 0;
-        $atStart->empire = 'minoa';
-        $elsewhere = new Player($game, 'Bob');
+        $elsewhere = new Player($game, 'Bob', 'saba');
         $elsewhere->astPosition = 3;
-        $elsewhere->empire = 'saba';
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -190,8 +177,7 @@ final class AstTest extends WebTestCase
     public function cellsMarkTheColumnMatchingTheCurrentTurnOncePerPlayerRowPlusTfoot(): void
     {
         $game = new Game();
-        $player = new Player($game, 'Alice');
-        $player->empire = 'minoa';
+        new Player($game, 'Alice', 'minoa');
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 

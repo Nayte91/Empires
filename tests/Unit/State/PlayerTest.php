@@ -16,7 +16,7 @@ final class PlayerTest extends TestCase
     #[Test]
     public function citiesAndCensusDefaultToZeroAndOne(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
 
         $this->assertSame(0, $player->cities);
         $this->assertSame(1, $player->census);
@@ -26,7 +26,7 @@ final class PlayerTest extends TestCase
     #[Test]
     public function revokeCreditsRemovesOnlyTheEntriesReasonedAccordingly(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->postCredit(new CreditEntry(1, 'craft', 10, CreditSource::Shop, 'advance:pottery'));
         $player->postCredit(new CreditEntry(1, 'art', 5, CreditSource::Shop, 'advance:pottery'));
         $player->postCredit(new CreditEntry(2, 'craft', 5, CreditSource::Shop, 'other-reason'));
@@ -42,7 +42,7 @@ final class PlayerTest extends TestCase
     #[Test]
     public function revokeCreditsReindexesTheRemainingEntriesAsASequentialList(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->postCredit(new CreditEntry(1, 'craft', 10, CreditSource::Shop, 'advance:pottery'));
         $player->postCredit(new CreditEntry(2, 'craft', 5, CreditSource::Shop, 'other-reason'));
         $player->postCredit(new CreditEntry(3, 'craft', 5, CreditSource::Shop, 'advance:pottery'));

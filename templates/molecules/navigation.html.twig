@@ -3,10 +3,11 @@
 
     <ul>
         {% for target in this.targets %}
+            {% set caption = target.empire ? target.empire|empire_adjective : target.caption %}
             <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                 <a href="{{ target.url }}">
                     {{ target.label }}
-                    {% if target.caption %}<small>{{ target.caption }}</small>{% endif %}
+                    <small>{{ caption }}</small>
                 </a>
                 <button type="button" title="QR code — {{ target.label }}" {{ stimulus_action('modal', 'open', null, {key: target.key}) }}>
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zM13 3h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zM13 13h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>

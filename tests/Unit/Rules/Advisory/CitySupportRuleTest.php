@@ -19,7 +19,7 @@ final class CitySupportRuleTest extends TestCase
     #[DataProvider('provideSufficientCensusYieldsNoAdvisoryCases')]
     public function sufficientCensusYieldsNoAdvisory(int $cities, int $census): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = $cities;
         $player->census = $census;
 
@@ -37,7 +37,7 @@ final class CitySupportRuleTest extends TestCase
     #[Test]
     public function insufficientCensusGetsCantSupportCitiesAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = 3;
         $player->census = 5;
 

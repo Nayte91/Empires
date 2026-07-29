@@ -34,7 +34,7 @@ final class GameCreationTest extends WebTestCase
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
         $game = new Game();
-        $player = new Player($game, 'Alice');
+        $player = new Player($game, 'Alice', 'minoa');
         $entityManager->persist($game);
         $entityManager->flush();
 

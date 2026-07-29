@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Presentation\Component;
 
 use App\Rules\CensusOrderCalculator;
-use App\Rules\Ruleset\EmpireRegistry;
 use App\State\Game;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -24,10 +23,7 @@ final class ScoreBoard
     #[LiveProp]
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(
-        private readonly EmpireRegistry $empireRegistry,
-        private readonly CensusOrderCalculator $censusOrderCalculator,
-    ) {}
+    public function __construct(private readonly CensusOrderCalculator $censusOrderCalculator) {}
 
     /**
      * The rows in play order: the table is read down the movement-phase turn order. The score
@@ -44,10 +40,5 @@ final class ScoreBoard
             ],
             $this->censusOrderCalculator->orderFor($this->game),
         );
-    }
-
-    public function empireAdjective(Player $player): ?string
-    {
-        return null === $player->empire ? null : $this->empireRegistry->findByName($player->empire)?->adjective;
     }
 }

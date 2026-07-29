@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Ruleset\EmpireRegistry;
 use App\State\Game;
 use App\State\Player;
 use Endroid\QrCode\Builder\Builder;
@@ -24,10 +23,7 @@ final class Navigation
     /** @var null|list<array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}> */
     private ?array $targetsCache = null;
 
-    public function __construct(
-        private readonly UrlGeneratorInterface $urlGenerator,
-        private readonly EmpireRegistry $empireRegistry,
-    ) {}
+    public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}
 
     /**
      * Seat order, not play order: a player looks for their own name, and a list that reshuffles
@@ -63,7 +59,13 @@ final class Navigation
         return $this->targetsCache = $targets;
     }
 
-    /** @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string} */
+    /**
+     * No caption: a player's subtitle is their empire's adjective, which the template reads off the
+     * slug through the `empire_adjective` filter. Only a target that has no empire — the operator
+     * console — carries a caption of its own.
+     *
+     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}
+     */
     private function playerTarget(Player $player): array
     {
         $url = $this->urlGenerator->generate(
@@ -75,7 +77,7 @@ final class Navigation
         return [
             'key' => $player->slug,
             'label' => $player->name,
-            'caption' => null === $player->empire ? null : $this->empireRegistry->findByName($player->empire)?->adjective,
+            'caption' => null,
             'empire' => $player->empire,
             'url' => $url,
             'qr' => $this->buildQr($url),

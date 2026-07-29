@@ -25,12 +25,11 @@ final class AstAdvancementRuleTest extends TestCase
 
     #[Test]
     #[DataProvider('provideAdvisoryFiresWhenCitiesFallShortOfNextEraCases')]
-    public function advisoryFiresWhenCitiesFallShortOfNextEra(ASTVersion $astVersion, ?string $empire, int $astPosition, int $cities, string $expectedMessage): void
+    public function advisoryFiresWhenCitiesFallShortOfNextEra(ASTVersion $astVersion, string $empire, int $astPosition, int $cities, string $expectedMessage): void
     {
         $game = new Game();
         $game->astVersion = $astVersion;
-        $player = new Player($game, 'Bob');
-        $player->empire = $empire;
+        $player = new Player($game, 'Bob', $empire);
         $player->astPosition = $astPosition;
         $player->cities = $cities;
 
@@ -40,31 +39,30 @@ final class AstAdvancementRuleTest extends TestCase
         $this->assertSame($expectedMessage, $advisory->message);
     }
 
-    /** @return iterable<string, array{ASTVersion, ?string, int, int, string}> */
+    /** @return iterable<string, array{ASTVersion, string, int, int, string}> */
     public static function provideAdvisoryFiresWhenCitiesFallShortOfNextEraCases(): iterable
     {
         yield 'standard basic empire falls short of the Middle Bronze Age' => [ASTVersion::BASIC, 'assyria', 7, 2, '3 cities are required for the Middle Bronze Age.'];
 
         yield 'expert extended stone age empire falls short of the Middle Bronze Age' => [ASTVersion::EXPERT, 'kushan', 7, 1, '3 cities are required for the Middle Bronze Age.'];
 
-        yield 'null empire falls back to the standard group and still fires' => [ASTVersion::BASIC, null, 7, 2, '3 cities are required for the Middle Bronze Age.'];
+        yield 'an empire outside every group falls back to the standard one and still fires' => [ASTVersion::BASIC, 'kushan', 7, 2, '3 cities are required for the Middle Bronze Age.'];
     }
 
     #[Test]
     #[DataProvider('provideNoAdvisoryCasesCases')]
-    public function noAdvisoryCases(ASTVersion $astVersion, ?string $empire, int $astPosition, int $cities): void
+    public function noAdvisoryCases(ASTVersion $astVersion, string $empire, int $astPosition, int $cities): void
     {
         $game = new Game();
         $game->astVersion = $astVersion;
-        $player = new Player($game, 'Bob');
-        $player->empire = $empire;
+        $player = new Player($game, 'Bob', $empire);
         $player->astPosition = $astPosition;
         $player->cities = $cities;
 
         $this->assertNotInstanceOf(Advisory::class, $this->rule->evaluate($player));
     }
 
-    /** @return iterable<string, array{ASTVersion, ?string, int, int}> */
+    /** @return iterable<string, array{ASTVersion, string, int, int}> */
     public static function provideNoAdvisoryCasesCases(): iterable
     {
         yield 'player already meets the next era requirement' => [ASTVersion::BASIC, 'assyria', 7, 3];

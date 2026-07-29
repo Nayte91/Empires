@@ -44,8 +44,7 @@ final readonly class CreateGameHandler
             $reason = 'scenario:'.$command->playerCount;
 
             foreach ($command->players as $playerData) {
-                $player = new Player($game, $playerData['name']);
-                $player->empire = $playerData['empire'];
+                $player = new Player($game, $playerData['name'], $playerData['empire']);
 
                 foreach ($startingCredits as $scope => $value) {
                     $player->postCredit(new CreditEntry(self::STARTING_CREDITS_TURN, $scope, $value, CreditSource::Scenario, $reason));

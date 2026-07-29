@@ -21,7 +21,7 @@ final class ScoreCalculatorTest extends TestCase
     #[DataProvider('provideScoreSumsAdvancePointsCitiesAndAstPositionCases')]
     public function scoreSumsAdvancePointsCitiesAndAstPosition(int $cities, int $astPosition, array $advancePoints, int $expectedScore): void
     {
-        $player = new Player(new Game(), 'Bob');
+        $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cities = $cities;
         $player->astPosition = $astPosition;
         $advances = [];
