@@ -26,13 +26,13 @@
         text-align: end;
     }
 
-    td:not([data-name], [data-empire]) { text-align: center }
+    td:not([data-empire]) { text-align: center }
     td[data-empire] { color: var(--player-color, dimgray) }
     tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
 
     @container (width < 60rem) {
-        tr > :first-child { display: none }
         th[data-empire] { visibility: hidden }
+        small[data-player] { display: none }
     }
 
     @container (min-width: 60rem) {
