@@ -1,0 +1,16 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - Chronicle{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/gameChronicle.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/navigation.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/evolution.css') }}">
+{% endblock %}
+
+{% block main %}
+    <twig:organisms:GameChronicle :game="game" />
+{% endblock %}

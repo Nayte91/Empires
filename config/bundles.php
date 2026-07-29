@@ -16,4 +16,5 @@ return [
     DAMA\DoctrineTestBundle\DAMADoctrineTestBundle::class => ['test' => true],
     Symfony\Bundle\MercureBundle\MercureBundle::class => ['all' => true],
     Userforged\ShopEngine\UserforgedShopEngineBundle::class => ['all' => true],
+    Symfony\UX\Chartjs\ChartjsBundle::class => ['all' => true],
 ];

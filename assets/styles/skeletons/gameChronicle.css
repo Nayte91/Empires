@@ -1,0 +1,22 @@
+.game-chronicle {
+    container-type: inline-size;
+    min-block-size: 100vh;
+    padding: 1rem;
+    display: grid;
+    /* Not the dashboard's `place-content: start center`: the chart is the only element here that
+       has no width of its own, and a max-content column lets its canvas push the page sideways. */
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    justify-items: center;
+    gap: 1rem;
+    background: #111;
+    color: white;
+
+    h2 {
+        text-align: center;
+
+        a { color: inherit }
+    }
+
+    caption { scroll-margin-block-start: 1rem }
+}

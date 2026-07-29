@@ -1,5 +1,5 @@
 {% set title = player.name ~ '\'s shop' %}
-{% set subtitle = 'Turn ' ~ player.game.currentTurn %}
+{% set subtitle = 'Turn ' ~ player.game.currentTurn ~ (player.game.finished ? ' — finished' : '') %}
 
 <main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['game-updated', 'order-updated']})) }}

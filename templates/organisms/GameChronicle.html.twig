@@ -1,0 +1,13 @@
+{% props game %}
+
+<main class="game-chronicle">
+    <twig:atoms:PageTitle :title="game.slug" />
+
+    <twig:Navigation :game="game" />
+
+    <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
+    <twig:Ast :game="game" />
+
+    <h2><a href="#evolution">Evolution</a></h2>
+    <twig:Evolution :game="game" />
+</main>
