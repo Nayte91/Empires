@@ -9,9 +9,26 @@ export default class extends Controller {
     }
 
     async connect() {
+        this.disconnecting = false;
         this.component = await getComponent(this.element);
+
+        if (this.disconnecting) {
+            return;
+        }
+
         this.eventSource = new EventSource('/.well-known/mercure?topic=' + encodeURIComponent(this.topicValue));
         this.eventSource.onmessage = (event) => this.onMessage(event);
+        this.eventSource.onopen = () => this.onOpen();
+    }
+
+    // The hub keeps no history, so pings sent while the connection was down are lost: a reconnection
+    // has to resync. The first open needs nothing — the page it belongs to was just rendered.
+    onOpen() {
+        if (this.wasOpen) {
+            this.component.render();
+        }
+
+        this.wasOpen = true;
     }
 
     onMessage(event) {
@@ -36,6 +53,7 @@ export default class extends Controller {
     }
 
     disconnect() {
-        this.eventSource.close();
+        this.disconnecting = true;
+        this.eventSource?.close();
     }
 }

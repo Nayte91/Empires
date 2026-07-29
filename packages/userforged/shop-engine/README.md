@@ -442,7 +442,7 @@ Le bus a maintenant un abonné réel : `App\Infrastructure\Mercure\ShopMercurePu
 
 - `OrderSubmitted` → `order-updated`
 - `OrderValidated` → `order-updated` puis `player-updated`
-- `OrderRejected` → `order-updated`
+- `OrderRejected` → **non mappé**, faute de chemin à rafraîchir : cet hôte a supprimé toute sa chaîne de rejet (ni bouton, ni action, ni dispatch de `RejectOrder`), donc l'event n'est jamais émis ici. La capacité reste shippée et testée dans la lib (`RejectOrderHandler`, transition `reject`) ; un hôte qui la câble devra ajouter son propre handler — c'est un mapping à écrire, pas un mapping existant.
 - `OrdersErased` → `player-updated` puis `order-updated`
 - `OrderSold` → volontairement non mappé : `SellDirect` valide en appelant `OrderValidator::validate()` en interne, qui a déjà publié `OrderValidated` pour la même mutation ; mapper `OrderSold` aussi publierait en double.
 
