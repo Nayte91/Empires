@@ -173,7 +173,7 @@ final class RosterTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
-        $this->assertStringContainsString('<caption id="roster">Turn 7</caption>', $rendered);
+        $this->assertSame('Turn 7', trim(new Crawler($rendered)->filter('caption')->text()));
     }
 
     #[Test]
