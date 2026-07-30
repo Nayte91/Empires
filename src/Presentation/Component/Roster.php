@@ -29,16 +29,20 @@ final class Roster
      * The rows in play order: the table is read down the movement-phase turn order. The score
      * itself lives on the A.S.T. board, where the track already says what a position is worth.
      *
-     * @return list<array{player: Player, military: bool}>
+     * @return list<array{player: Player, rank: int, military: bool}>
      */
     public function getPlayerRows(): array
     {
+        $players = $this->censusOrderCalculator->orderFor($this->game);
+
         return array_map(
-            fn (Player $player): array => [
+            fn (Player $player, int $index): array => [
                 'player' => $player,
+                'rank' => $index + 1,
                 'military' => $this->censusOrderCalculator->hasMilitary($player),
             ],
-            $this->censusOrderCalculator->orderFor($this->game),
+            $players,
+            array_keys($players),
         );
     }
 }

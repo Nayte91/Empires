@@ -39,6 +39,15 @@
         small { color: darkgray }
     }
 
+    [data-rank] {
+        color: darkgray;
+        font-variant-numeric: tabular-nums;
+    }
+
+    tbody th:has([data-military]) :is(b, small) {
+        color: var(--advance-civic);
+    }
+
     td {
         display: flex;
         justify-content: space-between;
