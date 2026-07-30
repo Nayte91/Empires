@@ -58,7 +58,7 @@ class Player
 
     public function __construct(
         #[ORM\ManyToOne(targetEntity: Game::class, inversedBy: 'players')]
-        #[ORM\JoinColumn(nullable: false)]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public readonly Game $game,
         string $name,
         #[ORM\Column(length: 30)]

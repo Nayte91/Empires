@@ -38,7 +38,7 @@ class Game
     public bool $finished { get => $this->finishedAt instanceof \DateTimeImmutable; }
 
     /** @var Collection<int, Player> */
-    #[ORM\OneToMany(targetEntity: Player::class, mappedBy: 'game', cascade: ['persist'])]
+    #[ORM\OneToMany(targetEntity: Player::class, mappedBy: 'game', cascade: ['persist', 'remove'])]
     public Collection $players;
 
     public function __construct(?string $slug = null)

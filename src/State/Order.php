@@ -44,7 +44,7 @@ class Order implements OrderInterface
 
     public function __construct(
         #[ORM\ManyToOne(targetEntity: Player::class)]
-        #[ORM\JoinColumn(nullable: false)]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public readonly Player $player,
         #[ORM\Column(type: Types::SMALLINT)]
         public readonly int $turn,
