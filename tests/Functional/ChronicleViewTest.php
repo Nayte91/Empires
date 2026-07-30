@@ -37,7 +37,7 @@ final class ChronicleViewTest extends WebTestCase
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
         $this->assertResponseIsSuccessful();
-        $this->assertGreaterThan(0, $crawler->filter('table caption#roster')->count());
+        $this->assertGreaterThan(0, $crawler->filter('table.roster caption')->count());
     }
 
     /** Canary for the finished half: same address, no redirect, and the chart in place of the console. */
@@ -62,7 +62,7 @@ final class ChronicleViewTest extends WebTestCase
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
-        $this->assertCount(0, $crawler->filter('caption#roster'));
+        $this->assertCount(0, $crawler->filter('table.roster'));
     }
 
     /** The console still answers, but every control on it refuses a finished game — so the way in goes. */
@@ -97,8 +97,8 @@ final class ChronicleViewTest extends WebTestCase
         $running = $this->createGame(finished: false);
         $finished = $this->createGame(finished: true);
 
-        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('caption#ast')->text();
-        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('caption#ast')->text();
+        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('table.ast caption')->text();
+        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('table.ast caption')->text();
 
         $this->assertStringEndsWith('— finished', trim($onChronicle));
         $this->assertStringNotContainsString('finished', $onDashboard);
