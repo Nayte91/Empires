@@ -19,7 +19,7 @@ final class PlayerController extends AbstractController
     {
         $player = $this->findPlayer($gameSlug, $playerSlug);
 
-        return $this->render('skeletons/playerBoard.html.twig', [
+        return $this->render('skeletons/Player/board.html.twig', [
             'player' => $player,
         ]);
     }
@@ -29,7 +29,7 @@ final class PlayerController extends AbstractController
     {
         $player = $this->findPlayer($gameSlug, $playerSlug);
 
-        return $this->render('skeletons/playerShop.html.twig', [
+        return $this->render('skeletons/Player/shop.html.twig', [
             'player' => $player,
         ]);
     }
