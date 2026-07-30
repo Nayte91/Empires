@@ -18,7 +18,7 @@ final class RosterTest extends WebTestCase
     use InteractsWithLiveComponents;
 
     #[Test]
-    public function rendersCitiesAndCensusColumnsWithoutPoints(): void
+    public function rendersCitiesAndPopulationColumnsWithoutPoints(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
@@ -27,7 +27,7 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
         $this->assertStringContainsString('Cities', $rendered);
-        $this->assertStringContainsString('Census', $rendered);
+        $this->assertStringContainsString('Population', $rendered);
         $this->assertStringContainsString('Treasury', $rendered);
         $this->assertStringNotContainsString('Points', $rendered);
     }
@@ -68,23 +68,31 @@ final class RosterTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $cells = new Crawler($rendered)->filter('tbody tr td');
 
-        // Treasury(0), Census(1), Cities(0), Cards(0), Advances(0) — the identity cell is not a plain <td>value</td>.
-        $this->assertMatchesRegularExpression('/<td>0<\/td>\s*<td>1<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<td>0<\/td>\s*<\/tr>/', $rendered);
+        $this->assertSame(
+            ['Treasury', 'Population', 'Cities', 'Advances'],
+            $cells->each(static fn (Crawler $cell): ?string => $cell->attr('data-label')),
+        );
+        $this->assertSame(['0', '1', '0', '0'], $cells->each(static fn (Crawler $cell): string => trim($cell->text())));
     }
 
+    /** Two stats the table deliberately leaves to the player's own board. */
     #[Test]
-    public function shipsAreNotDisplayedAtAll(): void
+    public function shipsAndCardsAreNotDisplayedAtAll(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $player->ships = 4;
+        $player->cards = 7;
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $cells = new Crawler($rendered)->filter('tbody tr td');
 
         $this->assertStringNotContainsString('Ships', $rendered);
-        $this->assertStringNotContainsString('<td>4</td>', $rendered);
+        $this->assertStringNotContainsString('Cards', $rendered);
+        $this->assertSame([], array_intersect(['4', '7'], $cells->each(static fn (Crawler $cell): string => trim($cell->text()))));
     }
 
     /** Reaching a view is Navigation's job: the table states scores and links to nothing. */
@@ -113,9 +121,11 @@ final class RosterTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
+        $cells = new Crawler($rendered)->filter('tbody tr td');
+
         $this->assertStringNotContainsString('VP', $rendered);
         $this->assertStringNotContainsString('data-medal', $rendered);
-        $this->assertStringNotContainsString('<td>11</td>', $rendered);
+        $this->assertNotContains('11', $cells->each(static fn (Crawler $cell): string => trim($cell->text())));
     }
 
     /**

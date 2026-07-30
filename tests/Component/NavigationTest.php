@@ -18,16 +18,21 @@ final class NavigationTest extends WebTestCase
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
 
-    /** It sits above the roster, so it must cost one line until someone asks for it. */
+    /**
+     * It used to be a disclosure, costing one line until someone asked for it. The phone gave it a
+     * screen of its own, where folding the list away would hide the only thing that screen is for —
+     * so it is a flat list of ways in, and the element says so.
+     */
     #[Test]
-    public function thePanelIsCollapsedUntilItIsOpened(): void
+    public function theSeatsAreAFlatListOfLinksRatherThanADisclosure(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
         $crawler = $this->render($game);
 
-        $this->assertCount(1, $crawler->filter('details'));
-        $this->assertNull($crawler->filter('details')->attr('open'));
+        $this->assertCount(0, $crawler->filter('details'));
+        $this->assertCount(1, $crawler->filter('nav > ul'));
+        $this->assertSame('nav', $crawler->filter('nav')->nodeName());
     }
 
     #[Test]

@@ -3,10 +3,6 @@
     max-inline-size: 60rem;
     overflow: hidden;
 
-    &:open::details-content { padding: 0 }
-
-    &:open > summary { border-block-end: none }
-
     ul {
         display: grid;
         margin: 0;
@@ -16,42 +12,57 @@
 
     li {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr 2.75rem;
         align-items: center;
-        border-block-start: 1px solid dimgray;
-        border-inline-start: 4px solid var(--player-color, var(--operator-accent));
+        gap: 0.6875rem;
+        min-block-size: 3.5rem;
+        padding-block: 0.5rem;
+        padding-inline-end: 1rem;
+        border-block-start: 1px solid rgb(255 255 255 / 0.12);
+        border-inline-start: 0.1875rem solid var(--player-color, var(--operator-accent));
     }
 
+        li:not([data-empire]) { background: rgb(70 130 180 / 0.1) }
+
     a {
-        display: flex;
-        align-items: baseline;
-        gap: 0.5rem;
-        padding: 1rem;
+        display: grid;
+        align-content: center;
+        min-inline-size: 0;
+        padding-inline-start: 0.75rem;
         color: inherit;
         text-decoration: none;
 
-        small { color: darkgray }
+        b {
+            overflow: hidden;
+            font-size: 0.875rem;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
-        &:hover { text-decoration: underline }
+        small {
+            margin-block-start: 0.125rem;
+            color: darkgray;
+            font-size: 0.6875rem;
+        }
     }
 
     li button {
         display: grid;
         place-items: center;
-        inline-size: 3rem;
-        align-self: stretch;
-        border: none;
-        border-inline-start: 1px solid dimgray;
+        inline-size: 2.75rem;
+        block-size: 2.75rem;
+        border: 1px solid rgb(255 255 255 / 0.24);
+        border-radius: 0.5rem;
         background: none;
         color: inherit;
         cursor: pointer;
 
-        svg {
-            inline-size: 1.5rem;
-            block-size: 1.5rem;
-        }
+        &:hover { background: rgb(255 255 255 / 0.12) }
 
-        &:hover { background: rgb(255 255 255 / 0.1) }
+        svg {
+            inline-size: 1.0625rem;
+            block-size: 1.0625rem;
+        }
     }
 
     dialog > div {
@@ -73,6 +84,52 @@
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }
 
-    @container (min-width: 40rem) { ul { grid-template-columns: repeat(2, 1fr) } }
+        @container (min-width: 40rem) {
+        border: 1px solid dimgray;
+        border-radius: var(--operator-radius);
+
+        ul { grid-template-columns: repeat(2, 1fr) }
+
+        li {
+            grid-template-columns: 1fr auto;
+            gap: 0;
+            min-block-size: auto;
+            padding: 0;
+            border-block-start: 1px solid dimgray;
+            border-inline-start: 4px solid var(--player-color, var(--operator-accent));
+        }
+
+        li:not([data-empire]) { background: none }
+
+        a {
+            display: flex;
+            align-items: baseline;
+            gap: 0.5rem;
+            padding: 1rem;
+
+            b { font-weight: inherit }
+
+            small { margin-block-start: 0 }
+
+            &:hover { text-decoration: underline }
+        }
+
+        li button {
+            inline-size: 3rem;
+            block-size: auto;
+            align-self: stretch;
+            border: none;
+            border-inline-start: 1px solid dimgray;
+            border-radius: 0;
+
+            &:hover { background: rgb(255 255 255 / 0.1) }
+
+            svg {
+                inline-size: 1.5rem;
+                block-size: 1.5rem;
+            }
+        }
+    }
+
     @container (min-width: 60rem) { ul { grid-template-columns: repeat(3, 1fr) } }
 }

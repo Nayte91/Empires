@@ -1,12 +1,31 @@
 .game-dashboard {
     container-type: inline-size;
-    min-block-size: 100vh;
-    padding: 1rem;
-    display: grid;
-    place-content: start center;
-    gap: 1rem;
+    display: flex;
+    flex-direction: column;
+    block-size: 100dvh;
+    overflow: hidden;
     background: #111;
     color: white;
+
+    > #page-title {
+        flex: none;
+        margin-block: 0.75rem;
+    }
+
+    > section {
+        flex: 1;
+        min-block-size: 0;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        padding-inline: 1rem;
+        padding-block-end: 1rem;
+    }
+
+    &:has(> menu [value="nav"]:checked) :is(#panel-roster, #panel-ast),
+    &:has(> menu [value="roster"]:checked) :is(#panel-nav, #panel-ast),
+    &:has(> menu [value="ast"]:checked) :is(#panel-nav, #panel-roster) {
+        display: none;
+    }
 
     h2 {
         text-align: center;
@@ -14,5 +33,70 @@
         a { color: inherit }
     }
 
+    > section > h2 { display: none }
+
     caption { scroll-margin-block-start: 1rem }
+
+    > menu {
+        flex: none;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        margin: 0;
+        padding: 0;
+        border-block-start: 1px solid rgb(255 255 255 / 0.18);
+        background: #111;
+        list-style: none;
+
+        li { display: contents }
+
+        label {
+            position: relative;
+            display: grid;
+            justify-items: center;
+            align-content: center;
+            gap: 0.3125rem;
+            min-block-size: 3.75rem;
+            color: #8a8a8a;
+            font-size: 0.625rem;
+            font-weight: 500;
+            cursor: pointer;
+
+            &:hover { background: rgb(255 255 255 / 0.06) }
+
+            svg {
+                inline-size: 1.25rem;
+                block-size: 1.25rem;
+            }
+        }
+
+        :checked + label {
+            color: #5eaadf;
+
+            &::before {
+                content: '';
+                position: absolute;
+                inset: 0 1.375rem auto;
+                block-size: 0.125rem;
+                background: currentColor;
+            }
+        }
+    }
+
+    @media (min-width: 60rem) {
+        display: grid;
+        place-content: start center;
+        gap: 1rem;
+        block-size: auto;
+        min-block-size: 100vh;
+        overflow: visible;
+        padding: 1rem;
+
+        > #page-title { margin-block: 1.5rem }
+
+        > section > h2 { display: revert }
+
+        &:has(> menu [value]:checked) :is(#panel-nav, #panel-roster, #panel-ast) { display: contents }
+
+        > menu { display: none }
+    }
 }

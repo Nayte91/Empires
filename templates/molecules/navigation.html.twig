@@ -1,12 +1,10 @@
-<details class="navigation panel dark" {{ attributes.defaults(stimulus_controller('modal')) }}>
-    <summary>Navigation</summary>
-
+<nav class="navigation" {{ attributes.defaults(stimulus_controller('modal')) }}>
     <ul>
         {% for target in this.targets %}
             {% set caption = target.empire ? target.empire|empire_adjective : target.caption %}
             <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                 <a href="{{ target.url }}">
-                    {{ target.label }}
+                    <b>{{ target.label }}</b>
                     <small>{{ caption }}</small>
                 </a>
                 <button type="button" title="QR code — {{ target.label }}" {{ stimulus_action('modal', 'open', null, {key: target.key}) }}>
@@ -27,4 +25,4 @@
         </div>
         <button type="button" {{ stimulus_action('modal', 'close') }}>Close</button>
     </dialog>
-</details>
+</nav>

@@ -1,12 +1,44 @@
 <main class="game-dashboard">
     <twig:atoms:PageTitle :title="game.slug" />
 
-    <twig:Navigation :game="game" />
+    <section id="panel-nav" aria-label="Navigation">
+        <twig:Navigation :game="game" />
+    </section>
 
-    <h2><a href="#roster">Roster</a></h2>
-    <twig:Roster :game="game" />
+    <section id="panel-roster" aria-label="Roster">
+        <h2><a href="#roster">Roster</a></h2>
+        <twig:Roster :game="game" />
+    </section>
 
-    <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
-    <twig:Ast :game="game" />
-    <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />
+    <section id="panel-ast" aria-label="Archaeological Succession Timeline">
+        <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
+        <twig:Ast :game="game" />
+        <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />
+    </section>
+
+    {# Commands, not links: the bar acts on this page rather than leading off it. Each radio is
+       checked by the label next to it, so the browser switches panels with no script at all. #}
+    <menu>
+        <li>
+            <input type="radio" name="tab" id="tab-roster" value="roster" checked hidden>
+            <label for="tab-roster">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 19v-6M10 19V7M15 19v-9M20 19V9"/></svg>
+                Roster
+            </label>
+        </li>
+        <li>
+            <input type="radio" name="tab" id="tab-ast" value="ast" hidden>
+            <label for="tab-ast">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 12h16"/><circle cx="9" cy="12" r="2.5"/><circle cx="16" cy="12" r="2.5"/></svg>
+                A.S.T.
+            </label>
+        </li>
+        <li>
+            <input type="radio" name="tab" id="tab-nav" value="nav" hidden>
+            <label for="tab-nav">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                Navigation
+            </label>
+        </li>
+    </menu>
 </main>
