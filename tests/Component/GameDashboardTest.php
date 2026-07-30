@@ -36,8 +36,8 @@ final class GameDashboardTest extends WebTestCase
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<details'), 'Navigation comes before the roster.');
-        $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<details'), 'Navigation comes after the title.');
+        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<nav'), 'Navigation comes before the roster.');
+        $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<nav'), 'Navigation comes after the title.');
         $this->assertSame(1, substr_count($html, '<dialog'), 'The dashboard carries exactly one dialog, Navigation’s.');
         $this->assertStringContainsString('/'.$game->slug.'/operator', $html);
     }
