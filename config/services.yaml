@@ -8,6 +8,22 @@ services:
     App\:
         resource: '../src/'
 
+    # SQLite ignores every foreign key constraint — ON DELETE CASCADE included — unless
+    # `PRAGMA foreign_keys=ON` is issued on each connection. Without this middleware the
+    # cascades declared in the schema are inert decoration, which is how the dev database
+    # accumulated player rows pointing at games that no longer exist.
+    #
+    # The priority is load-bearing, not cosmetic. DoctrineBundle wraps the highest priority
+    # first, so the highest priority is the *innermost* driver; DAMA registers its own
+    # middleware at 100 and opens a transaction right after connecting. Since the pragma is
+    # a documented no-op inside a transaction, anything at or below 100 wraps DAMA from the
+    # outside and silently fails to take effect under `when@test` — green in dev, inert in
+    # the suite. Sitting above 100 puts this connect() inside DAMA's, before its BEGIN.
+    Doctrine\DBAL\Driver\AbstractSQLiteDriver\Middleware\EnableForeignKeys:
+        autoconfigure: false
+        tags:
+            - { name: 'doctrine.middleware', priority: 200 }
+
     # userforged/shop-engine now registers its own services via its bundle,
     # scanning only packages/userforged/shop-engine/src/. That scan never sees
     # these App\ classes, so the automatic "singly implemented interface"
