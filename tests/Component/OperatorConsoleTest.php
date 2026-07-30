@@ -111,6 +111,28 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
+    public function theGeneralPanelOffersTheBatchEditorAlongsideTheTurnControls(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $this->assertCount(1, $rendered->crawler()->filter('details[data-tab-id="general"] button[data-live-action-param="openBatch"]'));
+    }
+
+    #[Test]
+    public function aFinishedGameOffersNoBatchEditor(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $game->finishedAt = new \DateTimeImmutable();
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
+
+        $this->assertCount(0, $rendered->crawler()->filter('details[data-tab-id="general"] button[data-live-action-param="openBatch"]'));
+    }
+
+    #[Test]
     public function aPlayerTabPanelContainsTheSixStatTriggerButtons(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);

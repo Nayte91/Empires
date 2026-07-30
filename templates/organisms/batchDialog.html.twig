@@ -1,0 +1,45 @@
+{% set astStat = constant('App\\Rules\\Action\\Stat::AstPosition') %}
+{% set editableStats = [constant('App\\Rules\\Action\\Stat::Census'), constant('App\\Rules\\Action\\Stat::Cities')] %}
+
+<dialog
+    open
+    closedby="any"
+    id="batch-{{ game.id }}"
+    class="modal batch-dialog"
+    data-controller="modal"
+    data-action="close->live#action"
+    data-live-action-param="closeBatch"
+>
+    <h2>Batch edit</h2>
+
+    <ul>
+        {% for player in game.players %}
+            <li data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
+                <span>{{ player.name }}</span>
+
+                {% set canBack = this.canStepAst(player, -1) %}
+                <button type="button" {{ live_action('stepAst', {playerId: player.id, delta: -1}) }}
+                        {{ not canBack ? 'disabled' }}
+                        {% if canBack %}data-loading="addAttribute(disabled)"{% endif %}>&lsaquo;</button>
+                <output id="batch-astPosition-{{ player.id }}">{{ astStat.format(player.astPosition) }}</output>
+                {% set canForward = this.canStepAst(player, 1) %}
+                <button type="button" {{ live_action('stepAst', {playerId: player.id, delta: 1}) }}
+                        {{ not canForward ? 'disabled' }}
+                        {% if canForward %}data-loading="addAttribute(disabled)"{% endif %}>&rsaquo;</button>
+
+                {% for stat in editableStats %}
+                    <label for="batch-{{ stat.value }}-{{ player.id }}">{{ stat.label }}</label>
+                    <input type="number" id="batch-{{ stat.value }}-{{ player.id }}"
+                           min="{{ this.floorFor(player, stat) }}" max="{{ this.ceilingFor(player, stat) }}" step="1"
+                           data-model="norender|values.{{ player.id }}.{{ stat.value }}"
+                           data-action="change->live#action"
+                           data-live-action-param="commit"
+                           data-live-player-id-param="{{ player.id }}"
+                           data-live-stat-param="{{ stat.value }}">
+                {% endfor %}
+            </li>
+        {% endfor %}
+    </ul>
+
+    <button type="button" {{ live_action('closeBatch') }}>OK</button>
+</dialog>

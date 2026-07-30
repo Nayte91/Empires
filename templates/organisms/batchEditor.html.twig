@@ -1,0 +1,9 @@
+<div {{ attributes }} class="batch-editor">
+    <button type="button" {{ live_action('openBatch') }} data-loading="addAttribute(disabled)">
+        Batch
+    </button>
+
+    {% if open %}
+        {% include 'organisms/batchDialog.html.twig' %}
+    {% endif %}
+</div>
