@@ -2,7 +2,7 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="roster"
 >
-    <caption>Turn {{ game.currentTurn }}</caption>
+    <caption>Turn {{ game.currentTurn }} — Census order</caption>
     <thead>
         <tr>
             <th scope="col"></th>
@@ -17,9 +17,10 @@
             {% set player = row.player %}
             <tr data-empire="{{ player.empire }}">
                 <th scope="row" data-empire>
+                    <span data-rank>{{ row.rank }}.</span>
                     <b>{{ player.empire|empire_adjective }}</b>
                     <small data-player>({{ player.name }})</small>
-                    {% if row.military %}<small title="Military">⚔</small>{% endif %}
+                    {% if row.military %}<small data-military title="Military">⚔</small>{% endif %}
                 </th>
                 <td data-label="Treasury">{{ player.treasury }}</td>
                 <td data-label="Population">{{ player.census }}</td>

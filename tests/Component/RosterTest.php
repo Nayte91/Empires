@@ -160,8 +160,39 @@ final class RosterTest extends WebTestCase
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
 
-        $this->assertSame('sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('th[data-empire]')->text())));
-        $this->assertSame('minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('th[data-empire]')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
+        $this->assertSame('1. sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('th[data-empire]')->text())));
+        $this->assertSame('2. minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('th[data-empire]')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
+    }
+
+    /**
+     * The order is the census order, and nothing on screen said so. The caption names it and each
+     * row carries its place in it — as `1.`, never `#1`, which on a board game reads as first place
+     * and would smuggle back the standings this table refuses to state.
+     */
+    #[Test]
+    public function eachRowIsNumberedByItsPlaceInTheCensusOrder(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+        $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
+        $carl = PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->persist($this->entityManager);
+        $alice->census = 2;
+        $bob->census = 9;
+        $carl->census = 20;
+        $this->entityManager->flush();
+
+        $crawler = new Crawler($this->createLiveComponent('Roster', ['game' => $game])->render()->toString());
+
+        $this->assertStringContainsString('Census order', $crawler->filter('caption')->text());
+        $this->assertSame(
+            ['1.', '2.', '3.'],
+            $crawler->filter('tbody tr [data-rank]')->each(static fn (Crawler $rank): string => trim($rank->text())),
+        );
+        $this->assertSame(
+            ['sabaean', 'minoan', 'assyrian'],
+            $crawler->filter('tbody tr th[data-empire] b')->each(static fn (Crawler $cell): string => trim($cell->text())),
+            'Highest census first, and the military owner last whatever their census.',
+        );
     }
 
     #[Test]
@@ -173,7 +204,7 @@ final class RosterTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
 
-        $this->assertSame('Turn 7', trim(new Crawler($rendered)->filter('caption')->text()));
+        $this->assertStringStartsWith('Turn 7', trim(new Crawler($rendered)->filter('caption')->text()));
     }
 
     #[Test]
