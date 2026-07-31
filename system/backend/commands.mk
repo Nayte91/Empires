@@ -13,3 +13,9 @@ back-deps-update: ## [Backend] composer update
 .PHONY: migrate
 migrate: ## [Backend] Run Doctrine migrations
 	$(CONSOLE) doctrine:migrations:migrate -n
+
+.PHONY: back-bootstrap
+back-bootstrap: ## [Backend] Generate secrets, run migrations
+	-$(PROD) exec -T -u 0 app php bin/console secrets:generate-keys
+	-$(PROD) exec -T -u 0 app php bin/console secrets:set APP_SECRET --random
+	$(CONSOLE) doctrine:migrations:migrate --no-interaction

@@ -1,5 +1,8 @@
 services:
   app:
+    labels:
+      traefik.enable: true
+      traefik.http.routers.empires.rule: Host(`empires.anagraph.org`)
     mem_limit: 512m
     build:
       target: frankenphp_prod
@@ -9,10 +12,6 @@ services:
     # by the Caddyfile's `mercure` block via {env.MERCURE_PUBLISHER_JWT_KEY} /
     # {env.MERCURE_SUBSCRIBER_JWT_KEY}.
     env_file: .env.local
-    # Placeholder: no public domain assigned yet, labels left inert until one exists.
-    # labels:
-    #   traefik.enable: true
-    #   traefik.http.routers.empires.rule: Host(`empires.example.org`)
     environment:
       SERVER_NAME: ":80"
       TRUSTED_PROXIES: REMOTE_ADDR

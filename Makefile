@@ -22,6 +22,7 @@ clean: ## [Deployment] Stop containers and clean caches & deps
 .PHONY: deploy
 deploy: ## [Deployment] Start containers
 	$(PROD) up --build --detach
+	$(MAKE) back-bootstrap
 
 .PHONY: deploy-migrate
 deploy-migrate: ## [Deployment] Run Doctrine migrations on prod (after make deploy)
