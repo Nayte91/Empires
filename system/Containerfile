@@ -71,6 +71,7 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY --link system/backend/php.prod.ini $PHP_INI_DIR/app.conf.d/20-app.prod.ini
 
 COPY --link composer.* symfony.* ./
+COPY --link packages packages/
 RUN --mount=type=cache,target=/root/.composer/cache \
     composer install --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
