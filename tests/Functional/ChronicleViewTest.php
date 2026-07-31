@@ -10,6 +10,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -102,6 +103,29 @@ final class ChronicleViewTest extends WebTestCase
 
         $this->assertStringEndsWith('— finished', trim($onChronicle));
         $this->assertStringNotContainsString('finished', $onDashboard);
+    }
+
+    /**
+     * The chronicle is the same phone screen as the dashboard, over its own three panels: the board,
+     * the chart that only exists here, and the way to each seat. It opens on the board, and switching
+     * asks nothing of the server — the same radio group, and no controller anywhere on the page.
+     */
+    #[Test]
+    public function theChronicleIsOneScreenOfThreeTabsSwitchedWithoutAnyScript(): void
+    {
+        $game = $this->createGame(finished: true);
+
+        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+
+        $this->assertNull($crawler->filter('main')->attr('data-controller'));
+        $this->assertSame(
+            ['ast', 'evolution', 'nav'],
+            $crawler->filter('menu input[type="radio"]')->each(static fn (Crawler $radio): ?string => $radio->attr('value')),
+        );
+        $this->assertSame('ast', $crawler->filter('menu input[checked]')->attr('value'));
+        $this->assertCount(1, $crawler->filter('#panel-ast table.ast'));
+        $this->assertCount(1, $crawler->filter('#panel-evolution canvas'));
+        $this->assertCount(1, $crawler->filter('#panel-nav nav'));
     }
 
     private function createGame(bool $finished): Game
