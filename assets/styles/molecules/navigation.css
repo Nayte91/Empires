@@ -14,15 +14,32 @@
         display: grid;
         grid-template-columns: 1fr 2.75rem;
         align-items: center;
-        gap: 0.6875rem;
         min-block-size: 3.5rem;
-        padding-block: 0.5rem;
-        padding-inline-end: 1rem;
+        padding: 0.5rem;
         border-block-start: 1px solid rgb(255 255 255 / 0.12);
-        border-inline-start: 0.1875rem solid var(--player-color, var(--operator-accent));
-    }
+        border-inline-start: 0.2rem solid var(--player-color, white);
 
-        li:not([data-empire]) { background: rgb(70 130 180 / 0.1) }
+        &:not([data-empire]) { background: rgb(70 130 180 / 0.1) }
+
+        button {
+            display: grid;
+            place-items: center;
+            inline-size: 3rem;
+            block-size: 3rem;
+            border: 1px solid rgb(255 255 255 / 0.24);
+            border-radius: 0.5rem;
+            background: none;
+            color: inherit;
+            cursor: pointer;
+
+            &:hover { background: rgb(255 255 255 / 0.12) }
+
+            svg {
+                inline-size: 1.5rem;
+                block-size: 1.5rem;
+            }
+        }
+    }
 
     a {
         display: grid;
@@ -46,25 +63,6 @@
         }
     }
 
-    li button {
-        display: grid;
-        place-items: center;
-        inline-size: 2.75rem;
-        block-size: 2.75rem;
-        border: 1px solid rgb(255 255 255 / 0.24);
-        border-radius: 0.5rem;
-        background: none;
-        color: inherit;
-        cursor: pointer;
-
-        &:hover { background: rgb(255 255 255 / 0.12) }
-
-        svg {
-            inline-size: 1.0625rem;
-            block-size: 1.0625rem;
-        }
-    }
-
     dialog > div {
         block-size: 70vh;
         overflow-y: auto;
@@ -84,22 +82,33 @@
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }
 
-        @container (min-width: 40rem) {
+    @container (min-width: 40rem) {
         border: 1px solid dimgray;
         border-radius: var(--operator-radius);
 
-        ul { grid-template-columns: repeat(2, 1fr) }
+        ul {
+            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+            gap: 1px;
 
-        li {
-            grid-template-columns: 1fr auto;
-            gap: 0;
-            min-block-size: auto;
-            padding: 0;
-            border-block-start: 1px solid dimgray;
-            border-inline-start: 4px solid var(--player-color, var(--operator-accent));
+            li {
+                grid-template-columns: 1fr auto;
+                min-block-size: auto;
+                padding: 0;
+                border-inline-start: 4px solid var(--player-color, var(--operator-accent));
+                box-shadow: 0 0 0 1px dimgray;
+
+                &:not([data-empire]) { background: none }
+
+                button {
+                    align-self: stretch;
+                    border: none;
+                    border-inline-start: 1px solid dimgray;
+                    border-radius: 0;
+
+                    &:hover { background: rgb(255 255 255 / 0.1) }
+                }
+            }
         }
-
-        li:not([data-empire]) { background: none }
 
         a {
             display: flex;
@@ -108,28 +117,8 @@
             padding: 1rem;
 
             b { font-weight: inherit }
-
             small { margin-block-start: 0 }
-
             &:hover { text-decoration: underline }
         }
-
-        li button {
-            inline-size: 3rem;
-            block-size: auto;
-            align-self: stretch;
-            border: none;
-            border-inline-start: 1px solid dimgray;
-            border-radius: 0;
-
-            &:hover { background: rgb(255 255 255 / 0.1) }
-
-            svg {
-                inline-size: 1.5rem;
-                block-size: 1.5rem;
-            }
-        }
     }
-
-    @container (min-width: 60rem) { ul { grid-template-columns: repeat(3, 1fr) } }
 }

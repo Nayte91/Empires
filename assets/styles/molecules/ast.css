@@ -60,17 +60,18 @@
         background-color: var(--player-color, dimgray);
     }
 
-    tbody td[data-anchor] { position: relative }
+    tbody td:has(.marker) { position: relative }
     tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
 
+    /* Centred in its own cell rather than offset from a shared anchor: the table places the column,
+       so the pawn cannot drift when the browser gives a column less width than it was asked for. */
     .marker {
         position: absolute;
         z-index: 1;
         inset-block-start: 50%;
         inset-inline-start: 50%;
         inline-size: 1.5rem;
-        transform: translate(calc(-50% + var(--ast-cell-size) * var(--marker-pos)), -50%);
-        transition: transform 0.4s linear;
+        translate: -50% -50%;
     }
 
     td[data-score] {
@@ -88,7 +89,6 @@
         font-size: 0.75rem;
 
         thead, tfoot, [data-opening] { display: none }
-        [data-in-opening] .marker { display: none }
         tr:has([data-opening][data-current-turn]) [data-anchor] { border-inline-start: var(--turn-edge) }
 
         tbody {

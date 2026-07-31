@@ -3,7 +3,7 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="ast"
 >
-    <caption>{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
+    <caption id="ast">{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
     <thead>
         <tr>
             <th scope="col"></th>
@@ -17,7 +17,7 @@
         {% for player in this.rankedPlayers %}
             {% set columnEras = this.columnErasFor(player) %}
             {% set medal = this.medalOf(player) %}
-            <tr data-empire="{{ player.empire }}"{{ player.astPosition < openingSpan ? ' data-in-opening' : '' }}>
+            <tr data-empire="{{ player.empire }}">
                 <th scope="row"><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></th>
                 {% for position in range(0, this.trackLength - 1) %}
                     <td
@@ -25,8 +25,8 @@
                         {{- position < openingSpan ? ' data-opening' : '' }}
                         {{- position == openingSpan ? ' data-anchor' : '' }}
                         {{- position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
-                        {%- if position == openingSpan -%}
-                            <twig:atoms:Marker :pos="player.astPosition - openingSpan" empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
+                        {%- if position == player.astPosition -%}
+                            <twig:atoms:Marker empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
                         {%- endif -%}
                         {%- if columnEras[position].key == 'start' -%}→{%- endif -%}
                     </td>

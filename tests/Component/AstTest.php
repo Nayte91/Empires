@@ -56,34 +56,42 @@ final class AstTest extends WebTestCase
     }
 
     /**
-     * The pawn is anchored on the first column the compact board keeps, not on the track's first
-     * column, so a single offset places it correctly whether or not the opening stretch is shown.
-     * Hence the offset is relative to that anchor and goes negative inside the opening stretch.
+     * The pawn sits in the cell of the position it stands on — not in a shared cell offset by a
+     * count of column widths, which drifted as soon as the browser gave a column less width than
+     * the stylesheet asked for. The table places the column; nothing has to agree on its size.
      */
     #[Test]
-    public function markerCarriesItsOffsetFromTheAnchorColumnAsACssCustomPropertyForTransformAnimation(): void
+    public function theMarkerSitsInTheCellOfThePositionItStandsOn(): void
     {
         $game = new Game();
         $player = new Player($game, 'Alice', 'minoa');
         $player->astPosition = 7;
 
-        $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
+        $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
+        $cells = $crawler->filter('tbody tr td');
 
-        $this->assertStringContainsString('--marker-pos: 2', $rendered); // position 7, anchored on column 5
-        $this->assertStringContainsString('title="Alice — Early Bronze Age"', $rendered);
+        $this->assertSame(
+            [7],
+            array_keys(array_filter(
+                $cells->each(static fn (Crawler $cell): bool => 1 === $cell->filter('.marker')->count()),
+            )),
+        );
+        $this->assertStringContainsString('Alice — Early Bronze Age', $cells->eq(7)->filter('.marker')->attr('title') ?? '');
     }
 
+    /** Inside the opening stretch the cell is one the compact board drops, and the pawn goes with it. */
     #[Test]
-    public function aPlayerStillInsideTheOpeningStretchIsFlaggedOnTheirRowAndOffsetBackwards(): void
+    public function aPlayerStillInsideTheOpeningStretchIsMarkedOnAnOpeningCell(): void
     {
         $game = new Game();
         $player = new Player($game, 'Alice', 'minoa');
         $player->astPosition = 4;
 
-        $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
+        $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
+        $cell = $crawler->filter('tbody tr td')->eq(4);
 
-        $this->assertStringContainsString('data-in-opening', $rendered);
-        $this->assertStringContainsString('--marker-pos: -1', $rendered);
+        $this->assertCount(1, $cell->filter('.marker'));
+        $this->assertNotNull($cell->attr('data-opening'));
     }
 
     /**
@@ -101,7 +109,6 @@ final class AstTest extends WebTestCase
 
         $this->assertSame(5, substr_count($rendered, 'data-opening'));
         $this->assertSame(1, substr_count($rendered, 'data-anchor'));
-        $this->assertStringNotContainsString('data-in-opening', $rendered);
 
         $game->astVersion = ASTVersion::EXPERT;
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
@@ -156,11 +163,6 @@ final class AstTest extends WebTestCase
     #[Test]
     public function startColumnAlwaysRendersTheArrowRegardlessOfPlayerPosition(): void
     {
-        // The marker is now a stable, always-rendered element in the start
-        // column (moved purely via CSS transform for the transition to work),
-        // so the arrow is always in the markup too — CSS (position + z-index)
-        // is what visually covers it when a marker sits at position 0, not
-        // Twig conditionally omitting it.
         $game = new Game();
         $atStart = new Player($game, 'Alice', 'minoa');
         $atStart->astPosition = 0;

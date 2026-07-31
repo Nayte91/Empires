@@ -2,7 +2,7 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
     class="roster"
 >
-    <caption>Turn {{ game.currentTurn }} — Census order</caption>
+    <caption id="roster">Turn {{ game.currentTurn }} — Census order</caption>
     <thead>
         <tr>
             <th scope="col"></th>
