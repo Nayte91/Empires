@@ -192,6 +192,10 @@
         gap: 1rem;
         margin-block: 1rem;
 
+        /* Without this the input falls back to its intrinsic size="20" width (192px), which alone
+           eats half the 362px available at 410px and wraps the Add button onto its own line. */
+        input[type='text'] { inline-size: 8rem }
+
         label {
             display: flex;
             flex-direction: column;
