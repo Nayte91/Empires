@@ -101,7 +101,7 @@ final class StatPickerTest extends WebTestCase
     }
 
     #[Test]
-    public function censusRenderStartsAtTileOne(): void
+    public function censusRenderStartsAtTileTwo(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
@@ -109,12 +109,15 @@ final class StatPickerTest extends WebTestCase
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'census',
-        ])->render()->toString();
+        ])->render();
 
-        // Verify no "0" value in radio inputs
-        $this->assertStringNotContainsString('value="0"', $rendered);
-        // Verify "1" is present
-        $this->assertStringContainsString('value="1"', $rendered);
+        $values = $rendered->crawler()->filter('input[type="radio"]')->each(
+            static fn ($node): string => (string) $node->attr('value'),
+        );
+
+        $this->assertSame('2', $values[0]);
+        $this->assertNotContains('0', $values);
+        $this->assertNotContains('1', $values);
     }
 
     #[Test]

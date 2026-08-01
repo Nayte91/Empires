@@ -23,10 +23,14 @@ final readonly class StatBoundsCalculator
         private AstRegistry $astRegistry,
     ) {}
 
+    /**
+     * Census floors at two, not one: a player down to a single population is out of the game, so
+     * offering that value in the picker serves nobody. Everything else starts at zero.
+     */
     public function floorFor(Player $player, Stat $stat): int
     {
         return match ($stat) {
-            Stat::Census => 1,
+            Stat::Census => 2,
             default => 0,
         };
     }

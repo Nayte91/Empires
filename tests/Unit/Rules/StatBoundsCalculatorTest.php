@@ -31,7 +31,7 @@ final class StatBoundsCalculatorTest extends TestCase
     {
         yield 'cities floor at zero' => [Stat::Cities, 0];
 
-        yield 'census floors at one, the only stat that does not start at zero' => [Stat::Census, 1];
+        yield 'census floors at two, the only stat that does not start at zero' => [Stat::Census, 2];
 
         yield 'treasury floors at zero' => [Stat::Treasury, 0];
 
@@ -73,6 +73,22 @@ final class StatBoundsCalculatorTest extends TestCase
 
         $this->assertSame(40, $calculator->ceilingFor($player, Stat::Census));
         $this->assertSame(35, $calculator->ceilingFor($player, Stat::Treasury));
+    }
+
+    /**
+     * The display grid offers what a stat could reach if its twin sat at its own floor, so the two
+     * floors and the two display ceilings can never drift apart: raising the census floor to two
+     * is what takes the treasury's top tile away, and nothing else has to be told about it.
+     */
+    #[Test]
+    public function eachDisplayCeilingAnswersToTheOppositeStatsFloor(): void
+    {
+        $player = PlayerBuilder::named('Bob')->build();
+
+        $calculator = $this->calculator();
+
+        $this->assertSame(55, $calculator->displayCeilingFor($player, Stat::Census));
+        $this->assertSame(53, $calculator->displayCeilingFor($player, Stat::Treasury));
     }
 
     /**

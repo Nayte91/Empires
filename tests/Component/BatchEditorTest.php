@@ -165,7 +165,7 @@ final class BatchEditorTest extends WebTestCase
     {
         yield 'cities span the whole table limit' => ['cities', '0', '9'];
 
-        yield 'population starts at one and stops at what the treasury leaves of the pool' => ['census', '1', '35'];
+        yield 'population starts at two and stops at what the treasury leaves of the pool' => ['census', '2', '35'];
     }
 
     /**
