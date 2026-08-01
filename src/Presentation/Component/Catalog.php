@@ -38,10 +38,16 @@ final class Catalog
             $advancesByKey[$advance->key] = $advance;
         }
 
-        $products = $this->productCatalog->productsFor(
-            $this->shopConnector->buyerFor($this->player),
-            $this->getCart()->keys(),
-        );
+        // A product sitting in the cart leaves the grid entirely rather than lingering disabled:
+        // the cart is already showing it, and a shelf that still displays what you have picked up
+        // makes the remaining choice harder to read.
+        $products = array_values(array_filter(
+            $this->productCatalog->productsFor(
+                $this->shopConnector->buyerFor($this->player),
+                $this->getCart()->keys(),
+            ),
+            static fn (Product $product): bool => !$product->inCart,
+        ));
 
         return array_map(
             static fn (Product $product): array => ['advance' => $advancesByKey[$product->key], 'product' => $product],

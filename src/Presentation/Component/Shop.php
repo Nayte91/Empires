@@ -53,6 +53,10 @@ final class Shop
     #[LiveListener('orderPlaced')]
     public function onOrderPlaced(): void {}
 
+    /** Re-renders Shop so the catalogue puts back what Cart::remove() or Cart::clear() released. */
+    #[LiveListener('cartChanged')]
+    public function onCartChanged(): void {}
+
     #[LiveAction]
     public function add(#[LiveArg] string $key): void
     {

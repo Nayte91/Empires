@@ -59,17 +59,17 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function addMarksTheProductInCartAndUpdatesTheCartTotal(): void
+    public function addTakesTheProductOutOfTheCatalogueAndUpdatesTheCartTotal(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         // A single call()+render() round trip: proves add() re-renders the nested
-        // Catalog (in-cart marker) and Cart (total) together, not just Shop itself.
+        // Catalog (the product leaves the grid) and Cart (total) together, not just Shop itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
-        $this->assertStringContainsString('id="product-pottery"', $rendered);
-        $this->assertStringContainsString('data-in-cart', $rendered);
+        $this->assertStringNotContainsString('id="product-pottery"', $rendered);
+        $this->assertStringContainsString('id="product-democracy"', $rendered);
         $this->assertStringContainsString('Total: 60', $rendered);
     }
 
@@ -161,7 +161,7 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $component->render()->toString();
 
         $this->assertStringContainsString('class="lines"', $rendered);
-        $this->assertStringContainsString('data-in-cart', $rendered);
+        $this->assertStringNotContainsString('id="product-pottery"', $rendered);
         $this->assertSame(2, substr_count($rendered, 'data-live-action-param="remove"'));
         $this->assertStringNotContainsString('Modify', $rendered);
         $this->assertNotNull($order->id);
@@ -245,7 +245,7 @@ final class ShopComponentTest extends WebTestCase
         $component->call('editPendingOrder');
         $editedRendered = $component->render()->toString();
         $this->assertStringContainsString('class="lines"', $editedRendered);
-        $this->assertStringContainsString('data-in-cart', $editedRendered);
+        $this->assertStringNotContainsString('id="product-pottery"', $editedRendered);
 
         $this->createCart($player, $client)->call('checkout');
 

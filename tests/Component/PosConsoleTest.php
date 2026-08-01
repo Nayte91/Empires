@@ -90,17 +90,17 @@ final class PosConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function addMarksTheProductInCartAndUpdatesTheTicketTotal(): void
+    public function addTakesTheProductOutOfTheCatalogueAndUpdatesTheTicketTotal(): void
     {
         [$game, , $bob] = $this->createGameWithAliceAndBob();
 
         $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
         // A single call()+render() round trip: proves add() re-renders the nested
-        // Catalog (in-cart marker) and Cart (total) together, not just PlayerOrders itself.
+        // Catalog (the tile leaves the grid) and Cart (total) together, not just PlayerOrders itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
-        $this->assertStringContainsString('id="product-pottery"', $rendered);
-        $this->assertStringContainsString('product-tile--in-cart', $rendered);
+        $this->assertStringNotContainsString('id="product-pottery"', $rendered);
+        $this->assertStringContainsString('id="product-democracy"', $rendered);
         $this->assertStringContainsString('Total: 60', $rendered);
     }
 

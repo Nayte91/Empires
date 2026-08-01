@@ -104,18 +104,30 @@ final class Cart
         }
     }
 
+    /**
+     * Every action below changes which keys the cart holds, and the catalogue is rendered by the
+     * host, not here — so the host has to be told, or an advance the cart released never reappears
+     * on the shelf. Adding needs no such signal: the add action already belongs to the host, and
+     * `allocate()` moves points within a line without touching the key list.
+     *
+     * The gift pair counts, which is easy to miss: `Cart::withGift()` appends a LineIntent for a
+     * newly chosen gift and drops the old one once nothing references it, so both directions move
+     * the key list exactly as remove() does.
+     */
     #[LiveAction]
     public function remove(#[LiveArg] string $key): void
     {
         $cart = $this->getCart();
         $cart->remove($key);
         $this->cartStorage->save($this->storageKey, $cart);
+        $this->emitUp('cartChanged');
     }
 
     #[LiveAction]
     public function clear(): void
     {
         $this->cartStorage->clear($this->storageKey);
+        $this->emitUp('cartChanged');
     }
 
     #[LiveAction]
@@ -124,6 +136,7 @@ final class Cart
         $cart = $this->getCart();
         $cart->withGift($for, $key);
         $this->cartStorage->save($this->storageKey, $cart);
+        $this->emitUp('cartChanged');
     }
 
     #[LiveAction]
@@ -132,6 +145,7 @@ final class Cart
         $cart = $this->getCart();
         $cart->withGift($for, null);
         $this->cartStorage->save($this->storageKey, $cart);
+        $this->emitUp('cartChanged');
     }
 
     #[LiveAction]

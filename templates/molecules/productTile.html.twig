@@ -1,14 +1,12 @@
 {# Product Tile Molecule Template — compact POS tile, text-only, speed-first #}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
-{% set isAddDisabled = row.product.inCart %}
 <button
     type="button"
     id="product-{{ row.advance.key }}"
     {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
-    {{ isAddDisabled ? 'disabled' }}
-    {% if not isAddDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-    class="product-tile{{ row.product.inCart ? ' product-tile--in-cart' }}"
+    data-loading="addAttribute(disabled)"
+    class="product-tile"
     data-advance-category="{{ cat1 }}"
     data-advance-category-2="{{ cat2 }}"
 >

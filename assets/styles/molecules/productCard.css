@@ -21,9 +21,10 @@
         pointer-events: none;
     }
 
-    &.product-card--owned, &.product-card--in-cart { opacity: 0.85 }
-    &.product-card--owned { border-color: var(--operator-success) }
-    &.product-card--in-cart { border-color: var(--operator-accent) }
+    &.product-card--owned {
+        opacity: 0.85;
+        border-color: var(--operator-success);
+    }
 
     header {
         aspect-ratio: 3 / 4;

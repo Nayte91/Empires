@@ -93,16 +93,30 @@ final class CatalogComponentTest extends KernelTestCase
     }
 
     #[Test]
-    public function productAlreadyInCartHasDisabledOverlayButtonAndInCartMarker(): void
+    public function aProductInTheCartLeavesTheCatalogueWhileTheRestStays(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, Cart::fromKeys(['pottery']));
 
-        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
-        $card = $this->extractProductCard($rendered, 'pottery');
+        $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
 
-        $this->assertStringContainsString('data-in-cart', $card);
-        $this->assertMatchesRegularExpression('/<button[^>]*\bdisabled\b/', $card);
+        $this->assertCount(0, $crawler->filter('#product-pottery'));
+        $this->assertCount(1, $crawler->filter('#product-democracy'));
+    }
+
+    /** Taking an advance out of the cart puts it back on the shelf — the grid is symmetric. */
+    #[Test]
+    public function aProductRemovedFromTheCartReturnsToTheCatalogue(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $storage = self::getContainer()->get(CartStorageInterface::class);
+        $storage->save((string) $player->id, Cart::fromKeys(['pottery']));
+
+        $this->assertCount(0, $this->renderCatalog($player, (string) $player->id)->crawler()->filter('#product-pottery'));
+
+        $storage->save((string) $player->id, Cart::fromKeys([]));
+
+        $this->assertCount(1, $this->renderCatalog($player, (string) $player->id)->crawler()->filter('#product-pottery'));
     }
 
     /**
@@ -168,12 +182,12 @@ final class CatalogComponentTest extends KernelTestCase
         $storage->save($posKey, Cart::fromKeys(['democracy']));
 
         $shopCrawler = $this->renderCatalog($player, $shopKey)->crawler();
-        $this->assertTrue($shopCrawler->filter('#product-pottery')->getNode(0)->hasAttribute('data-in-cart'));
-        $this->assertFalse($shopCrawler->filter('#product-democracy')->getNode(0)->hasAttribute('data-in-cart'));
+        $this->assertCount(0, $shopCrawler->filter('#product-pottery'));
+        $this->assertCount(1, $shopCrawler->filter('#product-democracy'));
 
         $posCrawler = $this->renderCatalog($player, $posKey, compact: true)->crawler();
-        $this->assertStringContainsString('product-tile--in-cart', (string) $posCrawler->filter('#product-democracy')->attr('class'));
-        $this->assertStringNotContainsString('product-tile--in-cart', (string) $posCrawler->filter('#product-pottery')->attr('class'));
+        $this->assertCount(0, $posCrawler->filter('#product-democracy'));
+        $this->assertCount(1, $posCrawler->filter('#product-pottery'));
     }
 
     #[Test]

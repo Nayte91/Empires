@@ -2,11 +2,10 @@
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
 <article
     id="product-{{ row.advance.key }}"
-    class="product-card{{ row.product.owned ? ' product-card--owned' }}{{ row.product.inCart ? ' product-card--in-cart' }}"
+    class="product-card{{ row.product.owned ? ' product-card--owned' }}"
     data-advance-category="{{ cat1 }}"
     data-advance-category-2="{{ cat2 }}"
     {{ row.product.owned ? 'data-owned' }}
-    {{ row.product.inCart ? 'data-in-cart' }}
 >
     {% if row.advance.fileName %}
         <header>
@@ -26,7 +25,7 @@
     </main>
 
     {% if not readonly|default(false) %}
-        {% set isAddDisabled = row.product.owned or row.product.inCart or locked %}
+        {% set isAddDisabled = row.product.owned or locked %}
         <button
             type="button"
             {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}

@@ -103,6 +103,10 @@ final class PlayerOrders
     #[LiveListener('orderPlaced')]
     public function onOrderPlaced(): void {}
 
+    /** Re-renders the POS catalogue so it puts back what Cart::remove() or Cart::clear() released. */
+    #[LiveListener('cartChanged')]
+    public function onCartChanged(): void {}
+
     /** The order (if any) for the turn currently open in the POS. */
     public function getPosOrder(): ?Order
     {
