@@ -33,7 +33,6 @@
                         >
                             Next turn »
                         </button>
-                        <twig:BatchEditor :game="game" />
                         <button
                             type="button"
                             {{ live_action('finishGame') }}
@@ -43,6 +42,23 @@
                         </button>
                     {% endif %}
                 </div>
+
+                {% if not game.finished %}
+                    <div class="operator-batch">
+                        {% for player in game.players %}
+                            <div data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
+                                <p><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></p>
+
+                                {# Same stat list, in the same order, as this player's own tab below:
+                                   one operator, one job, two places that must not drift apart. #}
+                                <twig:molecules:ControlBoard
+                                    :player="player"
+                                    :stats="['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards']"
+                                />
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             {% endblock %}
         {% endembed %}
 

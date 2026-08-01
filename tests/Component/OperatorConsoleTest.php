@@ -111,25 +111,35 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function theGeneralPanelOffersTheBatchEditorAlongsideTheTurnControls(): void
+    public function theGeneralPanelOffersAControlBoardRowForEachPlayerAlongsideTheTurnControls(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('rome')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        $this->assertCount(1, $rendered->crawler()->filter('details[data-tab-id="general"] button[data-live-action-param="openBatch"]'));
+        $generalPanel = $rendered->crawler()->filter('details[data-tab-id="general"]');
+
+        // Six stat pickers per player, the same six the player's own tab offers — including the
+        // A.S.T., whose picker carries the position tiles and the two step actions.
+        $this->assertCount(12, $generalPanel->filter('button[command="show-modal"]'));
     }
 
+    /** The regression guard for the finished-game behaviour: a finished game offers no editing at all. */
     #[Test]
-    public function aFinishedGameOffersNoBatchEditor(): void
+    public function aFinishedGameOffersNoControlBoardRow(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
         $game->finishedAt = new \DateTimeImmutable();
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
-        $this->assertCount(0, $rendered->crawler()->filter('details[data-tab-id="general"] button[data-live-action-param="openBatch"]'));
+        $generalPanel = $rendered->crawler()->filter('details[data-tab-id="general"]');
+
+        $this->assertCount(0, $generalPanel->filter('button[command="show-modal"]'));
     }
 
     #[Test]
