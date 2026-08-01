@@ -15,10 +15,15 @@ final readonly class HandLimitRule implements AdvisoryRule
 
     public function evaluate(Player $player): ?Advisory
     {
-        if ($this->handSizeCalculator->isOverLimit($player)) {
-            return new Advisory('You must discard a card!', AdvisoryLevel::Danger);
+        $excess = $this->handSizeCalculator->excessFor($player);
+
+        if (0 === $excess) {
+            return null;
         }
 
-        return null;
+        return new Advisory(
+            sprintf('You must discard %d %s!', $excess, 1 === $excess ? 'card' : 'cards'),
+            AdvisoryLevel::Danger,
+        );
     }
 }

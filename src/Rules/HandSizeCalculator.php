@@ -46,9 +46,15 @@ final readonly class HandSizeCalculator
             + ($this->advanceEffects->grants($player->advances, AdvanceEffect::ExtraHandCard) ? 1 : 0);
     }
 
+    /** How many cards the hand must shed to be legal, zero when it already is. */
+    public function excessFor(Player $player): int
+    {
+        return max(0, $player->cards - $this->limitFor($player));
+    }
+
     /** The one question consumers should ask. */
     public function isOverLimit(Player $player): bool
     {
-        return $player->cards > $this->limitFor($player);
+        return $this->excessFor($player) > 0;
     }
 }

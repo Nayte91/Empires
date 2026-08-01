@@ -31,7 +31,7 @@ final class HandLimitRuleTest extends TestCase
     }
 
     #[Test]
-    public function aHandOverTheLimitGetsTheMustDiscardAdvisory(): void
+    public function aHandOneCardOverTheLimitAsksForOneCardInTheSingular(): void
     {
         $player = new Player(new Game(), 'Bob', 'minoa');
         $player->cards = 9;
@@ -39,7 +39,24 @@ final class HandLimitRuleTest extends TestCase
         $advisory = new HandLimitRule($this->hand())->evaluate($player);
 
         $this->assertInstanceOf(Advisory::class, $advisory);
-        $this->assertSame('You must discard a card!', $advisory->message);
+        $this->assertSame('You must discard 1 card!', $advisory->message);
+    }
+
+    /**
+     * The bug this guards: the message used to be a constant, so a hand three cards over still read
+     * "discard a card" and a player following it stopped two cards early. Every test on this rule
+     * happened to sit at an excess of exactly one, the single value where that constant was right.
+     */
+    #[Test]
+    public function aHandSeveralCardsOverTheLimitAsksForThatManyCards(): void
+    {
+        $player = new Player(new Game(), 'Bob', 'minoa');
+        $player->cards = 11;
+
+        $advisory = new HandLimitRule($this->hand())->evaluate($player);
+
+        $this->assertInstanceOf(Advisory::class, $advisory);
+        $this->assertSame('You must discard 3 cards!', $advisory->message);
     }
 
     private function hand(): HandSizeCalculator

@@ -58,6 +58,28 @@ final class HandSizeCalculatorTest extends TestCase
     }
 
     #[Test]
+    #[DataProvider('provideExcessIsWhatTheHandHoldsBeyondItsLimitCases')]
+    public function excessIsWhatTheHandHoldsBeyondItsLimit(int $cards, int $expectedExcess): void
+    {
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(12)->build())->build();
+        $player->cards = $cards;
+
+        $this->assertSame($expectedExcess, $this->hand()->excessFor($player));
+    }
+
+    /** @return iterable<string, array{int, int}> */
+    public static function provideExcessIsWhatTheHandHoldsBeyondItsLimitCases(): iterable
+    {
+        yield 'a hand below the limit owes nothing' => [5, 0];
+
+        yield 'a hand exactly at the limit owes nothing, never a negative' => [9, 0];
+
+        yield 'one card over owes one' => [10, 1];
+
+        yield 'the reported case: eleven cards against a limit of nine owes two' => [11, 2];
+    }
+
+    #[Test]
     public function theExtraCardIsTheDifferenceBetweenBreakingTheLimitAndNot(): void
     {
         $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();

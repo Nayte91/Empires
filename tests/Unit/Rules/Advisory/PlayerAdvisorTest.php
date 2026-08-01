@@ -47,7 +47,7 @@ final class PlayerAdvisorTest extends TestCase
         $this->assertCount(3, $advisories);
         $this->assertSame("You can't support your cities!", $advisories[0]->message);
         $this->assertSame("You can't pay your taxes!", $advisories[1]->message);
-        $this->assertSame('You must discard a card!', $advisories[2]->message);
+        $this->assertSame('You must discard 1 card!', $advisories[2]->message);
     }
 
     #[Test]
@@ -62,7 +62,7 @@ final class PlayerAdvisorTest extends TestCase
         $advisories = $advisor->advisoriesFor($player);
 
         $this->assertCount(1, $advisories);
-        $this->assertSame('You must discard a card!', $advisories[0]->message);
+        $this->assertSame('You must discard 1 card!', $advisories[0]->message);
     }
 
     private function tax(): TaxCalculator
