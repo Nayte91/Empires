@@ -50,6 +50,50 @@ final class ScoreCalculatorTest extends TestCase
         yield 'three cities and the fifth A.S.T. position' => [3, 5, [], 28];
     }
 
+    /**
+     * The player board's heading quotes this term on its own, so it has to answer on its own.
+     *
+     * @param array<string, int> $advancePoints advance key => its victory-point value
+     */
+    #[Test]
+    #[DataProvider('provideAdvancePointsSumWhatTheOwnedAdvancesAreWorthCases')]
+    public function advancePointsSumWhatTheOwnedAdvancesAreWorth(array $advancePoints, int $expectedPoints): void
+    {
+        $advances = [];
+        foreach ($advancePoints as $key => $points) {
+            $advances[] = $this->makeAdvance($key, $points);
+        }
+
+        $this->assertSame($expectedPoints, new ScoreCalculator()->advancePointsFor($advances));
+    }
+
+    /** @return iterable<string, array{array<string, int>, int}> */
+    public static function provideAdvancePointsSumWhatTheOwnedAdvancesAreWorthCases(): iterable
+    {
+        yield 'owning nothing is worth nothing' => [[], 0];
+
+        yield 'a single advance is worth its own points' => [['pottery' => 1], 1];
+
+        yield 'several advances add up' => [['pottery' => 1, 'agriculture' => 3, 'writing' => 3], 7];
+
+        yield 'an advance carrying no point contributes nothing' => [['cloth_making' => 0], 0];
+    }
+
+    /**
+     * What the heading shows and what the score counts are the same arithmetic, not two copies of
+     * it: with no city and the track at its start, the whole score *is* the advance term.
+     */
+    #[Test]
+    public function theAdvanceTermIsExactlyWhatTheScoreCountsForAdvances(): void
+    {
+        $player = new Player(new Game(), 'Bob', 'minoa');
+        $advances = [$this->makeAdvance('pottery', 1), $this->makeAdvance('agriculture', 3)];
+
+        $calculator = new ScoreCalculator();
+
+        $this->assertSame($calculator->scoreFor($player, $advances), $calculator->advancePointsFor($advances));
+    }
+
     private function makeAdvance(string $key, int $points): Advance
     {
         return new Advance(

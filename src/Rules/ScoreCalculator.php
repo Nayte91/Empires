@@ -18,12 +18,23 @@ final class ScoreCalculator
     /** @param list<Advance> $ownedAdvances */
     public function scoreFor(Player $player, array $ownedAdvances): int
     {
-        $advancePoints = array_sum(array_map(
+        // House rule: 1 VP per city (deliberately not the ÷2 formula in sources/rules/07-victory-conditions/scoring-system.md).
+        return $this->advancePointsFor($ownedAdvances)
+            + $player->cities
+            + $player->astPosition * self::POINTS_PER_AST_POSITION;
+    }
+
+    /**
+     * The advances term on its own, so the player board can quote it without restating the sum.
+     * One definition, so what the heading shows can never drift from what the score counts.
+     *
+     * @param list<Advance> $ownedAdvances
+     */
+    public function advancePointsFor(array $ownedAdvances): int
+    {
+        return array_sum(array_map(
             static fn (Advance $advance): int => $advance->points,
             $ownedAdvances
         ));
-
-        // House rule: 1 VP per city (deliberately not the ÷2 formula in sources/rules/07-victory-conditions/scoring-system.md).
-        return $advancePoints + $player->cities + $player->astPosition * self::POINTS_PER_AST_POSITION;
     }
 }

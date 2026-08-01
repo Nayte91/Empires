@@ -6,6 +6,7 @@ namespace App\Presentation\Component;
 
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
+use App\Rules\ScoreCalculator;
 use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -20,12 +21,21 @@ final class PlayerBoard
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(private readonly AdvanceRegistry $advanceRegistry) {}
+    public function __construct(
+        private readonly AdvanceRegistry $advanceRegistry,
+        private readonly ScoreCalculator $scoreCalculator,
+    ) {}
 
     /** @return list<Advance> */
     public function getOwnedAdvances(): array
     {
         return array_values($this->advanceRegistry->getAdvancesByNames($this->player->advances));
+    }
+
+    /** What the owned advances alone are worth, for the Advances heading. */
+    public function getAdvancePoints(): int
+    {
+        return $this->scoreCalculator->advancePointsFor($this->getOwnedAdvances());
     }
 
     /**

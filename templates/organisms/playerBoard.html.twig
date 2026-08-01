@@ -16,7 +16,8 @@
     </div>
 
     <section aria-label="Owned advances">
-        <h2>Advances</h2>
+        {% set advancePoints = this.advancePoints %}
+        <h2>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</h2>
 
         <div class="advances-grid">
             {% for row in this.ownedRows %}

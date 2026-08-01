@@ -59,6 +59,45 @@ final class PlayerBoardTest extends WebTestCase
         $this->assertSame(['Cities 0', 'Ships 0', 'Population 1', 'Treasury 0', 'Cards 0'], $labels);
     }
 
+    /**
+     * The heading quotes the advances term of the score, so it can never drift from what the score
+     * itself counts. Zero is printed rather than hidden: a heading that keeps its shape is easier
+     * to read turn over turn, and a zero in a named source is itself information.
+     */
+    #[Test]
+    public function theAdvancesHeadingCarriesWhatThoseAdvancesAreWorth(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $player->ownAdvances(['pottery', 'agriculture']);
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->crawler();
+
+        $this->assertSame('Advances (4 Victory Points)', trim($rendered->filter('section[aria-label="Owned advances"] h2')->text()));
+    }
+
+    #[Test]
+    public function theAdvancesHeadingSaysOneVictoryPointInTheSingular(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $player->ownAdvances(['pottery']);
+        $this->entityManager->flush();
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->crawler();
+
+        $this->assertSame('Advances (1 Victory Point)', trim($rendered->filter('section[aria-label="Owned advances"] h2')->text()));
+    }
+
+    #[Test]
+    public function theAdvancesHeadingStillCountsZeroForAPlayerOwningNothing(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->crawler();
+
+        $this->assertSame('Advances (0 Victory Points)', trim($rendered->filter('section[aria-label="Owned advances"] h2')->text()));
+    }
+
     #[Test]
     public function ownedAdvancesAreRenderedWithoutAPurchaseButton(): void
     {
