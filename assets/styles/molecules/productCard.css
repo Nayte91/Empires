@@ -21,11 +21,6 @@
         pointer-events: none;
     }
 
-    &.product-card--owned {
-        opacity: 0.85;
-        border-color: var(--operator-success);
-    }
-
     header {
         aspect-ratio: 3 / 4;
 

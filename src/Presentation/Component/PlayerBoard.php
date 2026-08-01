@@ -11,7 +11,6 @@ use App\State\Player;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
-use Userforged\ShopEngine\Dto\Product;
 
 #[AsLiveComponent(template: 'organisms/playerBoard.html.twig')]
 final class PlayerBoard
@@ -36,26 +35,5 @@ final class PlayerBoard
     public function getAdvancePoints(): int
     {
         return $this->scoreCalculator->advancePointsFor($this->getOwnedAdvances());
-    }
-
-    /**
-     * Owned advances paired with a read-only {@see Product} DTO, for reuse of the productCard molecule.
-     *
-     * @return list<array{advance: Advance, product: Product}>
-     */
-    public function getOwnedRows(): array
-    {
-        return array_map(
-            static fn (Advance $advance): array => [
-                'advance' => $advance,
-                'product' => new Product(
-                    key: $advance->key,
-                    netCost: $advance->cost,
-                    owned: true,
-                    inCart: false,
-                ),
-            ],
-            $this->getOwnedAdvances(),
-        );
     }
 }

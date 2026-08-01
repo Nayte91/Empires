@@ -24,16 +24,14 @@
         </div>
     </main>
 
-    {% if not readonly|default(false) %}
-        {% set isAddDisabled = row.product.owned or locked %}
-        <button
-            type="button"
-            {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
-            {{ isAddDisabled ? 'disabled' }}
-            {% if not isAddDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-            class="product-card__add"
-        >
-            <span class="sr-only">Add {{ row.advance.name|capitalize }}</span>
-        </button>
-    {% endif %}
+    {% set isAddDisabled = row.product.owned or locked %}
+    <button
+        type="button"
+        {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
+        {{ isAddDisabled ? 'disabled' }}
+        {% if not isAddDisabled %}data-loading="addAttribute(disabled)"{% endif %}
+        class="product-card__add"
+    >
+        <span class="sr-only">Add {{ row.advance.name|capitalize }}</span>
+    </button>
 </article>

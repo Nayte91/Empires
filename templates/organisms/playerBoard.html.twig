@@ -20,8 +20,8 @@
         <h2>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</h2>
 
         <div class="advances-grid">
-            {% for row in this.ownedRows %}
-                {% include 'molecules/productCard.html.twig' with {row, readonly: true} only %}
+            {% for advance in this.ownedAdvances %}
+                <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
             {% else %}
                 <p>No advance owned yet.</p>
             {% endfor %}

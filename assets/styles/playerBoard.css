@@ -17,8 +17,14 @@
     .advances-grid {
         display: grid;
         align-content: start;
-        grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
         gap: var(--operator-gap);
+
+        img {
+            inline-size: 100%;
+            aspect-ratio: 5 / 7;
+            object-fit: cover;
+        }
 
         p {
             margin: 0;

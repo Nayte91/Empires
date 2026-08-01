@@ -108,8 +108,8 @@ final class PlayerBoardTest extends WebTestCase
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
 
         $this->assertStringContainsString('id="product-pottery"', $rendered);
-        $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringNotContainsString('<button', $this->extractProductCard($rendered, 'pottery'));
+        $this->assertStringContainsString('alt="pottery card"', $rendered);
+        $this->assertStringNotContainsString('<button', $this->extractOwnedAdvancesSection($rendered));
     }
 
     #[Test]
@@ -173,19 +173,16 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     /**
-     * Scopes assertions to a single product's <article>, as opposed to the
+     * Scopes assertions to the owned-advances section, as opposed to the
      * whole board (which renders other, unrelated <button> elements).
      */
-    private function extractProductCard(string $html, string $key): string
+    private function extractOwnedAdvancesSection(string $html): string
     {
-        $idPosition = strpos($html, 'id="product-'.$key.'"');
-        $this->assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
+        $start = strpos($html, '<section aria-label="Owned advances">');
+        $this->assertNotFalse($start, 'Owned advances section not found in rendered output.');
 
-        $start = strrpos(substr($html, 0, $idPosition), '<article');
-        $this->assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
-
-        $end = strpos($html, '</article>', $start);
-        $this->assertNotFalse($end, '</article> not found in rendered output.');
+        $end = strpos($html, '</section>', $start);
+        $this->assertNotFalse($end, 'Owned advances section not closed in rendered output.');
 
         return substr($html, $start, $end - $start);
     }
