@@ -3,7 +3,7 @@
 
     <div class="controls">
         {% for stat in stats %}
-            <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" />
+            <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" :scope="scope" />
         {% endfor %}
 
         {% if withShopLink %}<a href="{{ this.shopUrl }}" class="shop-link">Shop</a>{% endif %}

@@ -307,6 +307,26 @@ final class OperatorConsoleTest extends WebTestCase
         );
     }
 
+    /**
+     * The overview and the player tabs both render a picker for the same player and stat, and
+     * `commandfor` resolves by id. A duplicate opens whichever dialog comes first in the document —
+     * which the exclusive `<details name>` accordion has just hidden, so the modal opens at 0×0 and
+     * the button reads as dead. Uniqueness is the only thing that keeps them apart.
+     */
+    #[Test]
+    public function theConsoleRendersNoDuplicatedElementId(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('rome')->persist($this->entityManager);
+
+        $crawler = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->crawler();
+
+        $ids = $crawler->filter('[id]')->each(static fn (Crawler $node): string => (string) $node->attr('id'));
+
+        $this->assertSame([], array_values(array_unique(array_diff_assoc($ids, array_unique($ids)))));
+    }
+
     /** @return list<string> */
     private function statsOffered(Crawler $scope): array
     {

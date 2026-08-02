@@ -19,6 +19,9 @@ final class ControlBoard
     /** Off by default: a link to a player's own shop only makes sense on that player's own board. */
     public bool $withShopLink = false;
 
+    /** Passed through to each StatPicker to keep dialog ids apart when one page renders two boards for the same player. */
+    public string $scope = '';
+
     public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}
 
     public function getShopUrl(): string

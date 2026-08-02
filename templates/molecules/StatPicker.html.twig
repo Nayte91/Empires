@@ -1,8 +1,11 @@
+{# Scope goes last so the id keeps its `stat-picker-{stat}-{player}` prefix: readers and tests
+   locate the stat at a fixed position, and an unscoped picker's id is unchanged. #}
+{% set dialogId = 'stat-picker-' ~ stat.value ~ '-' ~ player.id ~ (this.scope ? '-' ~ this.scope : '') %}
 <div {{ attributes }} class="stat-picker">
-    <button type="button" commandfor="stat-picker-{{ stat.value }}-{{ player.id }}" command="show-modal">
+    <button type="button" commandfor="{{ dialogId }}" command="show-modal">
         {{ stat.label }} <span class="stat-picker__value">{{ stat.format(value) }}</span>
     </button>
-    <dialog id="stat-picker-{{ stat.value }}-{{ player.id }}" class="modal stat-picker__dialog"
+    <dialog id="{{ dialogId }}" class="modal stat-picker__dialog"
             data-action="close->live#action" data-live-action-param="save">
         <form method="dialog">
             <h2>{{ stat.label }} — {{ player.name }}</h2>
@@ -12,7 +15,10 @@
                     {% set ceiling = this.ceiling %}
                     {% for n in this.floor..this.displayCeiling %}
                         <label>
-                            <input type="radio" name="stat-{{ stat.value }}-{{ player.id }}" value="{{ n }}"
+                            {# Reuses dialogId rather than recomposing the same string. Not a fix:
+                               each picker owns its <form>, and a radio group never spans two, so
+                               the duplicated name was already harmless. #}
+                            <input type="radio" name="{{ dialogId }}" value="{{ n }}"
                                    data-model="norender|value" {{ value == n ? 'checked' }}
                                    {{ n > ceiling ? 'disabled' }}>
                             <span>{{ stat.format(n) }}</span>
