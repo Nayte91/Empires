@@ -49,11 +49,13 @@
                             <div data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
                                 <p><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></p>
 
-                                {# Same stat list, in the same order, as this player's own tab below:
-                                   one operator, one job, two places that must not drift apart. #}
+                                {# Deliberately shorter than this player's own tab below: this block is
+                                   the game-tracking overview — how far along is each empire — while
+                                   economy management stays one click away, in the player's own tab.
+                                   Do not "fix" the divergence back. #}
                                 <twig:molecules:ControlBoard
                                     :player="player"
-                                    :stats="['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards']"
+                                    :stats="['cities', 'astPosition', 'census']"
                                 />
                             </div>
                         {% endfor %}

@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 final class OperatorConsoleTest extends WebTestCase
@@ -121,9 +122,9 @@ final class OperatorConsoleTest extends WebTestCase
 
         $generalPanel = $rendered->crawler()->filter('details[data-tab-id="general"]');
 
-        // Six stat pickers per player, the same six the player's own tab offers — including the
-        // A.S.T., whose picker carries the position tiles and the two step actions.
-        $this->assertCount(12, $generalPanel->filter('button[command="show-modal"]'));
+        // Three stat pickers per player — the tracking stats only; which three is pinned by
+        // theGeneralOverviewOffersOnlyTheTrackingStatsWhileThePlayerTabKeepsThemAll.
+        $this->assertCount(6, $generalPanel->filter('button[command="show-modal"]'));
     }
 
     /** The regression guard for the finished-game behaviour: a finished game offers no editing at all. */
@@ -280,6 +281,38 @@ final class OperatorConsoleTest extends WebTestCase
         $stampAtTurnTwo = $console->ordersStampFor($this->reloadPlayer($player));
 
         $this->assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
+    }
+
+    /**
+     * The two lists are intentionally different, and nothing else guards them against silently
+     * converging back: the General tab tracks how far along each empire is, economy management
+     * belongs to the player's own tab.
+     */
+    #[Test]
+    public function theGeneralOverviewOffersOnlyTheTrackingStatsWhileThePlayerTabKeepsThemAll(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+
+        $crawler = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->crawler();
+
+        $this->assertSame(
+            ['cities', 'astPosition', 'census'],
+            $this->statsOffered($crawler->filter("[data-player-id=\"{$player->id}\"]")),
+        );
+
+        $this->assertSame(
+            ['cities', 'astPosition', 'census', 'treasury', 'ships', 'cards'],
+            $this->statsOffered($crawler->filter("details[data-tab-id=\"{$player->id}\"]")),
+        );
+    }
+
+    /** @return list<string> */
+    private function statsOffered(Crawler $scope): array
+    {
+        return $scope->filter('dialog[id^="stat-picker-"]')->each(
+            static fn (Crawler $picker): string => explode('-', (string) $picker->attr('id'))[2],
+        );
     }
 
     private function freshEntityManager(): EntityManagerInterface
