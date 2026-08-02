@@ -19,6 +19,11 @@
         <server name="KERNEL_CLASS" value="App\Kernel" force="true" />
         <server name="APP_SECRET" value="$ecretf0rt3st" force="true" />
         <server name="DATABASE_URL" value="sqlite:///%kernel.project_dir%/var/empires_test.db" force="true" />
+        <!-- Lets a functional test stand in for Traefik and assert the forwarded scheme is honoured.
+             Production's literal REMOTE_ADDR cannot be used here: Request::setTrustedProxies() swaps
+             that token for $_SERVER['REMOTE_ADDR'], which does not exist under CLI, and drops the
+             entry entirely. 127.0.0.1 is the address BrowserKit gives its simulated requests. -->
+        <server name="TRUSTED_PROXIES" value="127.0.0.1" force="true" />
     </php>
 
     <extensions>

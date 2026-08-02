@@ -2,6 +2,15 @@
 framework:
     secret: '%env(APP_SECRET)%'
 
+    # Traefik terminates TLS and speaks plain HTTP to the container, so the request's own scheme is
+    # always http. Without trusting the forwarded headers, every absolute URL — the QR codes above
+    # all — is generated as http://, pointing at a port the server does not even listen on.
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    # Deliberately narrower than Symfony's default: Traefik passes the original Host through
+    # unchanged and strips no prefix, so trusting x-forwarded-host/-prefix would buy nothing while
+    # letting any peer on the shared Docker network forge the host in generated absolute URLs.
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-proto', 'x-forwarded-port']
+
     # Note that the session will be started ONLY if you read or write from it.
     session: true
 
