@@ -18,7 +18,12 @@
 
     h3 { margin-block: 0 0.5rem }
 
-    button {
+    /* Excludes the catalogue tiles: they are buttons too, and this generic rule outweighs
+       .product-tile, flattening their category stripes to plain white.
+       :where() rather than :not() alone — :not() would add its argument's specificity, taking this
+       rule from (0,1,1) to (0,2,1), enough to start beating .cart .submit and paint the checkout
+       button white on white. :where() contributes zero, so the cascade is otherwise untouched. */
+    button:not(:where(.product-tile)) {
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
         padding: 0.5em 0.9em;

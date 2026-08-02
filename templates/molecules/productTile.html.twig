@@ -1,15 +1,25 @@
-{# Product Tile Molecule Template — compact POS tile, text-only, speed-first #}
+{# Product Tile Molecule Template — compact tile, text-only, speed-first #}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
+{% set isDisabled = locked|default(false) %}
 <button
     type="button"
     id="product-{{ row.advance.key }}"
     {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
-    data-loading="addAttribute(disabled)"
+    {{ isDisabled ? 'disabled' }}
+    {# The directive is wrapped in the inverted condition on purpose: the loading plugin strips
+       addAttribute directives on mount (symfony/ux#372), silently re-enabling a button the shop
+       lock had disabled. #}
+    {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
     class="product-tile"
     data-advance-category="{{ cat1 }}"
     data-advance-category-2="{{ cat2 }}"
 >
     <span class="name">{{ row.advance.name|capitalize }}</span>
-    <span class="price">{{ row.product.netCost }}</span>
+    <span class="prices">
+        {% if row.product.netCost < row.advance.cost %}
+            <s class="original">{{ row.advance.cost }}</s>
+        {% endif %}
+        <span class="price" data-price-net>{{ row.product.netCost }}</span>
+    </span>
 </button>

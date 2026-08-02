@@ -23,4 +23,19 @@
         color: black;
         font-variant-numeric: tabular-nums;
     }
+
+    .prices {
+        display: flex;
+        align-items: baseline;
+        gap: 0.375rem;
+    }
+
+    /* Only drawn when a discount applies, so the tile keeps showing what the advance would
+       otherwise cost — the shop's whole discount panel is meaningless without it. */
+    .original {
+        color: black;
+        font-size: 0.75rem;
+        opacity: 0.6;
+        font-variant-numeric: tabular-nums;
+    }
 }

@@ -47,13 +47,13 @@ final class CatalogComponentTest extends KernelTestCase
     }
 
     #[Test]
-    public function rendersAllFiftyOneAvailableAdvancesAsFullProductCards(): void
+    public function rendersAllFiftyOneAvailableAdvancesAsTiles(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
+        $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
 
-        $this->assertSame(51, substr_count($rendered, '<article'));
+        $this->assertCount(51, $crawler->filter('button[id^="product-"]'));
     }
 
     #[Test]
@@ -66,18 +66,6 @@ final class CatalogComponentTest extends KernelTestCase
         $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
 
         $this->assertStringNotContainsString('id="product-pottery"', $rendered);
-    }
-
-    #[Test]
-    public function theProductCardButtonIsAFullCardOverlayWithAnAccessibleAddLabel(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
-        $card = $this->extractProductCard($rendered, 'pottery');
-
-        $this->assertStringContainsString('<span class="sr-only">Add Pottery</span>', $card);
-        $this->assertStringNotContainsString('>Add<', $card);
     }
 
     #[Test]
@@ -132,16 +120,31 @@ final class CatalogComponentTest extends KernelTestCase
         $unlocked = $this->renderCatalog($player, (string) $player->id)->crawler();
         $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
 
-        $this->assertFalse($unlocked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
-        $this->assertTrue($locked->filter('#product-pottery button')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($unlocked->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($locked->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
     }
 
+    /**
+     * The lock and the loading plugin fight over the same attribute: an unconditional
+     * `data-loading="addAttribute(disabled)"` is stripped on mount (symfony/ux#372), which would
+     * silently re-enable the button the lock had just disabled. It must be absent when locked.
+     */
     #[Test]
-    public function compactProductsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
+    public function aLockedTileCarriesNoLoadingDirectiveThatWouldReEnableIt(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $crawler = $this->renderCatalog($player, $this->posKey($player), compact: true)->crawler();
+        $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
+
+        $this->assertNull($locked->filter('#product-pottery')->attr('data-loading'));
+    }
+
+    #[Test]
+    public function productsRenderAsButtonsWithNameAndNetCostAndBiCategoryAdvancesCarryTwoStripeColors(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $crawler = $this->renderCatalog($player, $this->posKey($player))->crawler();
 
         $pottery = $crawler->filter('#product-pottery');
         $this->assertSame('button', $pottery->nodeName());
@@ -158,16 +161,33 @@ final class CatalogComponentTest extends KernelTestCase
         $this->assertSame('art', $mysticism->attr('data-advance-category-2'));
     }
 
+    /**
+     * The tile shows only the net cost, so without the struck-through original the whole discount
+     * machinery — and the panel the shop devotes to it — becomes invisible at the point of choice.
+     */
     #[Test]
-    public function compactPropSwapsFullProductCardsForCompactProductTiles(): void
+    public function aDiscountedTileKeepsShowingThePriceTheAdvanceWouldOtherwiseCost(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        $this->entityManager->flush();
+
+        $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
+
+        $democracy = $crawler->filter('#product-democracy');
+        $this->assertSame('220', $democracy->filter('s')->text());
+        $this->assertSame('200', $democracy->filter('[data-price-net]')->text());
+    }
+
+    /** An advance at full price shows one number: a struck-through equal price would read as a discount. */
+    #[Test]
+    public function anUndiscountedTileShowsNoOriginalPrice(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $fullCard = $this->renderCatalog($player, (string) $player->id)->crawler();
-        $compactTile = $this->renderCatalog($player, $this->posKey($player), compact: true)->crawler();
+        $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
 
-        $this->assertSame('article', $fullCard->filter('#product-pottery')->nodeName());
-        $this->assertSame('button', $compactTile->filter('#product-pottery')->nodeName());
+        $this->assertCount(0, $crawler->filter('#product-pottery s'));
     }
 
     #[Test]
@@ -185,7 +205,7 @@ final class CatalogComponentTest extends KernelTestCase
         $this->assertCount(0, $shopCrawler->filter('#product-pottery'));
         $this->assertCount(1, $shopCrawler->filter('#product-democracy'));
 
-        $posCrawler = $this->renderCatalog($player, $posKey, compact: true)->crawler();
+        $posCrawler = $this->renderCatalog($player, $posKey)->crawler();
         $this->assertCount(0, $posCrawler->filter('#product-democracy'));
         $this->assertCount(1, $posCrawler->filter('#product-pottery'));
     }
@@ -210,12 +230,11 @@ final class CatalogComponentTest extends KernelTestCase
         $this->assertMatchesRegularExpression('/id="product-anatomy".*?data-price-net>260</s', $rendered);
     }
 
-    private function renderCatalog(Player $player, string $storageKey, bool $compact = false, bool $locked = false): RenderedComponent
+    private function renderCatalog(Player $player, string $storageKey, bool $locked = false): RenderedComponent
     {
         return $this->renderTwigComponent('organisms:Catalog', [
             'player' => $player,
             'storageKey' => $storageKey,
-            'compact' => $compact,
             'locked' => $locked,
         ]);
     }
@@ -225,21 +244,4 @@ final class CatalogComponentTest extends KernelTestCase
         return 'pos.'.$player->id->toRfc4122();
     }
 
-    /**
-     * Scopes assertions to a single product's <article>, as opposed to the
-     * whole grid (which renders every other product's markup too).
-     */
-    private function extractProductCard(string $html, string $key): string
-    {
-        $idPosition = strpos($html, 'id="product-'.$key.'"');
-        $this->assertNotFalse($idPosition, "id=\"product-{$key}\" not found in rendered output.");
-
-        $start = strrpos(substr($html, 0, $idPosition), '<article');
-        $this->assertNotFalse($start, "<article> for product '{$key}' not found in rendered output.");
-
-        $end = strpos($html, '</article>', $start);
-        $this->assertNotFalse($end, '</article> not found in rendered output.');
-
-        return substr($html, $start, $end - $start);
-    }
 }

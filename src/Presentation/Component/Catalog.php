@@ -20,7 +20,6 @@ final class Catalog
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
     public string $storageKey; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
     public bool $locked = false;
-    public bool $compact = false;
 
     public function __construct(
         private readonly AdvanceRegistry $advanceRegistry,
