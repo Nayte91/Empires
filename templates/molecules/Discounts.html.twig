@@ -9,16 +9,16 @@
             </tr>
         </thead>
         <tbody>
-            {% for category, amount in this.credits.facets %}
-                <tr data-advance-category="{{ category }}">
+            {% for category, credit in this.credits.facets %}
+                <tr data-advance-category="{{ category }}" data-discount-state="{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}">
                     <td>{{ category|capitalize }}</td>
-                    <td><b>{{ amount }}</b></td>
+                    <td><b>{{ credit.amount }}</b></td>
                 </tr>
             {% endfor %}
-            {% for name, amount in this.credits.named %}
-                <tr>
+            {% for name, credit in this.credits.named %}
+                <tr data-discount-state="{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}">
                     <td>{{ name|replace({'_': ' '})|capitalize }}</td>
-                    <td><b>{{ amount }}</b></td>
+                    <td><b>{{ credit.amount }}</b></td>
                 </tr>
             {% endfor %}
         </tbody>

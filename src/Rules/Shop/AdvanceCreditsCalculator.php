@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Rules\Shop;
 
+use App\Rules\Ruleset\Advance;
+
 /**
  * The display counterpart of AdvancePriceResolver: aggregates every credit a
  * buyer has earned for the Discounts molecule, rather than netting a single
@@ -16,7 +18,12 @@ namespace App\Rules\Shop;
  * Like the resolver, this reads entitlements opaquely by scope, regardless
  * of which of the three sources ShopConnector::buyerFor() composed them
  * from — a scope either matches a known facet or it doesn't; `source` never
- * enters the partition.
+ * enters the partition. That opacity is about provenance, not about the game:
+ * the catalogue and the owned keys are read to decide whether a credit can
+ * still be spent, which is a rule.
+ *
+ * "Empty" — never earned — is deliberately not reported: it is readable off a
+ * zero amount by the caller.
  *
  * This used to be Userforged\ShopEngine\Service\PriceCalculator::creditsFor();
  * it moved here for the same reason AdvancePriceResolver did: it is a Mega
@@ -27,24 +34,51 @@ final readonly class AdvanceCreditsCalculator
     /**
      * @param list<Entitlement> $entitlements
      * @param list<string>      $facets
+     * @param list<string>      $ownedKeys
+     * @param list<Advance>     $advances
      *
-     * @return array{facets: array<string, int>, named: array<string, int>}
+     * @return array{facets: array<string, array{amount: int, spent: bool}>, named: array<string, array{amount: int, spent: bool}>}
      */
-    public function creditsFor(array $entitlements, array $facets = []): array
+    public function creditsFor(array $entitlements, array $facets = [], array $ownedKeys = [], array $advances = []): array
     {
-        $facetCredits = array_fill_keys($facets, 0);
-        $named = [];
+        $facetAmounts = array_fill_keys($facets, 0);
+        $namedAmounts = [];
 
         foreach ($entitlements as $entitlement) {
             if (\in_array($entitlement->scope, $facets, true)) {
-                $facetCredits[$entitlement->scope] += $entitlement->value;
+                $facetAmounts[$entitlement->scope] += $entitlement->value;
 
                 continue;
             }
 
-            $named[$entitlement->scope] = ($named[$entitlement->scope] ?? 0) + $entitlement->value;
+            $namedAmounts[$entitlement->scope] = ($namedAmounts[$entitlement->scope] ?? 0) + $entitlement->value;
         }
 
-        return ['facets' => $facetCredits, 'named' => $named];
+        $facetCredits = [];
+        foreach ($facetAmounts as $facet => $amount) {
+            $facetCredits[$facet] = ['amount' => $amount, 'spent' => $this->isFacetSpent($facet, $ownedKeys, $advances)];
+        }
+
+        $namedCredits = [];
+        foreach ($namedAmounts as $scope => $amount) {
+            $namedCredits[$scope] = ['amount' => $amount, 'spent' => \in_array($scope, $ownedKeys, true)];
+        }
+
+        return ['facets' => $facetCredits, 'named' => $namedCredits];
+    }
+
+    /**
+     * @param list<string>  $ownedKeys
+     * @param list<Advance> $advances
+     */
+    private function isFacetSpent(string $facet, array $ownedKeys, array $advances): bool
+    {
+        $carriers = array_filter($advances, static fn (Advance $advance): bool => \in_array($facet, $advance->facets, true));
+
+        if ([] === $carriers) {
+            return false;
+        }
+
+        return array_all($carriers, static fn ($advance): bool => \in_array($advance->key, $ownedKeys, true));
     }
 }

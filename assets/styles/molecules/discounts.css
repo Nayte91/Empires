@@ -18,5 +18,7 @@
         tr:nth-child(even) { background: var(--operator-bg-subtle) }
         tr[data-advance-category] { color: var(--category-color) }
         tr:last-child td { border-block-end: none }
+        tr[data-discount-state="spent"], tr[data-discount-state="empty"] { opacity: 0.5 }
+        tr[data-discount-state="spent"] td { text-decoration: line-through }
     }
 }

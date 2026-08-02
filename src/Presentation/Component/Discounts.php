@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\AdvanceCreditsCalculator;
 use App\Rules\Shop\ShopConnector;
 use App\State\Player;
@@ -17,13 +18,19 @@ final class Discounts
     public function __construct(
         private readonly AdvanceCreditsCalculator $creditsCalculator,
         private readonly ShopConnector $shopConnector,
+        private readonly AdvanceRegistry $advanceRegistry,
     ) {}
 
-    /** @return array{facets: array<string, int>, named: array<string, int>} */
+    /** @return array{facets: array<string, array{amount: int, spent: bool}>, named: array<string, array{amount: int, spent: bool}>} */
     public function getCredits(): array
     {
         $buyer = $this->shopConnector->buyerFor($this->player);
 
-        return $this->creditsCalculator->creditsFor($buyer->entitlements, $this->shopConnector->facets());
+        return $this->creditsCalculator->creditsFor(
+            $buyer->entitlements,
+            $this->shopConnector->facets(),
+            $buyer->ownedKeys,
+            $this->advanceRegistry->getAdvances(),
+        );
     }
 }
