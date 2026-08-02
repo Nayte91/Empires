@@ -5,9 +5,9 @@
     display: grid;
     place-content: start center;
     gap: 1rem;
-    background: #111;
+    background: white;
 
-    #page-title { color: white }
+    #page-title { color: black }
 
     .operator-console__turn-controls {
         display: flex;
