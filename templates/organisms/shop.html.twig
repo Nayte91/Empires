@@ -14,7 +14,9 @@
     <twig:molecules:Discounts :player="player" :open="true" />
 
     <div class="shop__layout">
-        <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" />
+        {# Sorted by what this player actually pays: two thirds of the catalogue is discounted, so the
+           list-price order the shelf inherits contradicts the price printed on most of its tiles. #}
+        <twig:organisms:Catalog :player="player" :locked="this.isLockedForTurn" :storageKey="this.cartKey" sort="net_price" />
 
         <aside class="shop__cart">
             <twig:Cart

@@ -7,6 +7,9 @@ namespace App\Tests\Component;
 use App\State\Order;
 use App\State\Player;
 use App\Engine\Shop\AdvanceFulfillment;
+use App\Rules\Ruleset\Advance;
+use App\Rules\Ruleset\AdvanceRegistry;
+use Symfony\Component\DomCrawler\Crawler;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Userforged\ShopEngine\Cart;
@@ -71,9 +74,7 @@ final class CatalogComponentTest extends KernelTestCase
     #[Test]
     public function democracyIsDiscountedForAPlayerOwningAgriculture(): void
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
-        $this->entityManager->flush();
+        $player = $this->discountedPlayer();
 
         $rendered = $this->renderCatalog($player, (string) $player->id)->toString();
 
@@ -168,9 +169,7 @@ final class CatalogComponentTest extends KernelTestCase
     #[Test]
     public function aDiscountedTileKeepsShowingThePriceTheAdvanceWouldOtherwiseCost(): void
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
-        $this->entityManager->flush();
+        $player = $this->discountedPlayer();
 
         $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
 
@@ -188,6 +187,49 @@ final class CatalogComponentTest extends KernelTestCase
         $crawler = $this->renderCatalog($player, (string) $player->id)->crawler();
 
         $this->assertCount(0, $crawler->filter('#product-pottery s'));
+    }
+
+    /**
+     * The shelf inherits AdvanceRegistry's list-price order, which discounts then contradict: most
+     * of the catalogue shows a price that no longer matches its position.
+     */
+    #[Test]
+    public function theNetPriceSortOrdersTheCatalogueByWhatThePlayerActuallyPays(): void
+    {
+        $player = $this->discountedPlayer();
+
+        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, sort: 'net_price'));
+        $netCosts = $this->renderCatalog($player, (string) $player->id, sort: 'net_price')
+            ->crawler()->filter('[data-price-net]')->each(static fn (Crawler $node): int => (int) $node->text());
+
+        $ascending = $netCosts;
+        sort($ascending);
+
+        $this->assertSame($ascending, $netCosts);
+        $this->assertNotSame($this->productKeys($this->renderCatalog($player, (string) $player->id)), $keys);
+    }
+
+    /**
+     * The other half of the guard, and the one that matters: the POS console passes no sort, so the
+     * default must leave the order exactly as AdvanceRegistry handed it over. Asserting that list
+     * prices ascend would pass without any sort at all and prove nothing.
+     */
+    #[Test]
+    public function theDefaultSortLeavesTheCatalogueInTheOrderTheRegistryProvides(): void
+    {
+        $player = $this->discountedPlayer();
+
+        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id));
+
+        $registryOrder = array_values(array_filter(
+            array_map(
+                static fn (Advance $advance): string => $advance->key,
+                self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
+            ),
+            static fn (string $key): bool => \in_array($key, $keys, true),
+        ));
+
+        $this->assertSame($registryOrder, $keys);
     }
 
     #[Test]
@@ -230,13 +272,32 @@ final class CatalogComponentTest extends KernelTestCase
         $this->assertMatchesRegularExpression('/id="product-anatomy".*?data-price-net>260</s', $rendered);
     }
 
-    private function renderCatalog(Player $player, string $storageKey, bool $locked = false): RenderedComponent
+    private function renderCatalog(Player $player, string $storageKey, bool $locked = false, ?string $sort = null): RenderedComponent
     {
-        return $this->renderTwigComponent('organisms:Catalog', [
+        return $this->renderTwigComponent('organisms:Catalog', array_filter([
             'player' => $player,
             'storageKey' => $storageKey,
             'locked' => $locked,
-        ]);
+            'sort' => $sort,
+        ], static fn (mixed $value): bool => null !== $value));
+    }
+
+    /** Owning agriculture discounts a good part of the catalogue, which is what makes the two orders differ. */
+    private function discountedPlayer(): Player
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        $this->entityManager->flush();
+
+        return $player;
+    }
+
+    /** @return list<string> */
+    private function productKeys(RenderedComponent $rendered): array
+    {
+        return $rendered->crawler()->filter('[id^="product-"]')->each(
+            static fn (Crawler $node): string => substr((string) $node->attr('id'), \strlen('product-')),
+        );
     }
 
     private function posKey(Player $player): string
