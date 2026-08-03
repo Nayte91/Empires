@@ -35,6 +35,15 @@ final class Shop
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
+    /**
+     * Planning aid only — never persisted, never reaching Engine/ or the command bus, never
+     * affecting checkout. Null means no constraint, distinct from a budget of 0 (see
+     * {@see getRemainingBudget()}); LiveComponent itself coerces an emptied number input to null
+     * for a nullable int prop, so no extra handling is needed here.
+     */
+    #[LiveProp(writable: true)]
+    public ?int $budget = null;
+
     public ?string $error = null;
     private bool $currentOrderLoaded = false;
     private ?Order $currentOrder = null;
@@ -156,10 +165,29 @@ final class Shop
         return $this->cartStorage->load($this->getCartKey())->stamp();
     }
 
+    /**
+     * Null when no budget is set. Deliberately raw and possibly negative: Catalog uses it as-is
+     * to decide which cards disable (a negative remainder must still disable every card); only
+     * the figure shown in the template is clamped at zero.
+     */
+    public function getRemainingBudget(): ?int
+    {
+        return null === $this->budget ? null : $this->budget - $this->getCartTotal();
+    }
+
     /** Public for organisms/shop, which hands it to the nested Catalog and Cart as their storageKey. */
     public function getCartKey(): string
     {
         return CartKey::shop($this->player);
+    }
+
+    /** Mirrors Cart::getTotal()'s own computation — the two components run independently and can't share an instance, so this reuses the same trait methods rather than inventing a second way to total a cart. */
+    private function getCartTotal(): int
+    {
+        $cart = $this->cartStorage->load($this->getCartKey());
+        $lines = $this->lineQuoter->quotePreview($cart->items, $this->shopConnector->buyerFor($this->player));
+
+        return $this->sumNetCost($this->toRows($lines, $this->advanceRegistry));
     }
 
     private function getCurrentTurnOrder(): ?Order

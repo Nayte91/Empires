@@ -2,7 +2,8 @@
    display-pictures toggle is checked (CSS-only, see productTile.css) #}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
-{% set isDisabled = locked|default(false) %}
+{% set isOverBudget = remainingBudget is not null and row.product.netCost > remainingBudget %}
+{% set isDisabled = locked|default(false) or isOverBudget %}
 <button
     type="button"
     id="product-{{ row.advance.key }}"

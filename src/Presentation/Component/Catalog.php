@@ -28,9 +28,18 @@ final class Catalog
      */
     public CatalogSort $sort = CatalogSort::ListPrice;
 
+    /**
+     * Raw (possibly negative) remaining budget from the kiosk shop's planning-aid band; null
+     * means no constraint. Always null for the operator POS, which never sets it, so the band
+     * has no effect there.
+     */
+    public ?int $remainingBudget = null;
+
     // REFACTOR-WHEN: a third presentation flag lands here. Two (locked, sort) still read as
     // independent switches a caller sets by name; past that they are a view-model in denial, and
     // callers start passing combinations nobody has checked against each other.
+    // This ticket (#33) added remainingBudget as that third flag — shipped as-is per the
+    // project's convention; the refactor itself is left as a follow-up, not implemented here.
 
     public function __construct(
         private readonly AdvanceRegistry $advanceRegistry,

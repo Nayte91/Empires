@@ -18,6 +18,7 @@ use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionType;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -138,6 +139,87 @@ final class CatalogComponentTest extends KernelTestCase
         $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
 
         $this->assertNull($locked->filter('#product-pottery')->attr('data-loading'));
+    }
+
+    /**
+     * `remainingBudget` is the kiosk's planning band reaching the tile (App\Presentation\Component\Shop::
+     * getRemainingBudget), and the one term #33 adds to the same disabling expression `locked` feeds.
+     * Equality is affordable: a remainder of exactly the price still buys the card, so the boundary
+     * falls between 60 and 59 rather than around them.
+     */
+    #[Test]
+    #[DataProvider('provideATilesAvailabilityFollowsTheRemainingBudgetCases')]
+    public function aTilesAvailabilityFollowsTheRemainingBudget(?int $remainingBudget, bool $expectedDisabled): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $crawler = $this->renderCatalog($player, (string) $player->id, remainingBudget: $remainingBudget)->crawler();
+
+        $this->assertSame($expectedDisabled, $crawler->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /** Pottery costs 60 and this player owns nothing, so no discount stands between price and remainder. */
+    public static function provideATilesAvailabilityFollowsTheRemainingBudgetCases(): iterable
+    {
+        yield 'no budget at all constrains nothing' => [null, false];
+
+        yield 'a remainder equal to the price still affords it' => [60, false];
+
+        yield 'a remainder one short of the price disables it' => [59, true];
+
+        yield 'a remainder of zero disables it' => [0, true];
+
+        yield 'a remainder already gone negative disables it' => [-40, true];
+    }
+
+    /**
+     * The row above proves zero disables *one* tile; every advance in this game costs something, so
+     * zero must leave nothing at all buyable. Counting the shelf twice — once whole, once disabled —
+     * is what keeps the second count from passing on an empty selector.
+     */
+    #[Test]
+    public function aRemainderOfZeroDisablesEveryTileOnTheShelf(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $crawler = $this->renderCatalog($player, (string) $player->id, remainingBudget: 0)->crawler();
+
+        $this->assertCount(51, $crawler->filter('button[id^="product-"]'));
+        $this->assertCount(51, $crawler->filter('button[id^="product-"][disabled]'));
+    }
+
+    /**
+     * The tile shows, and the checkout charges, the discounted price — so a remainder that affords
+     * what is printed must not be refused on the strength of a list price the player never pays.
+     * Democracy lists at 220 and costs this player 200: comparing against the list price would
+     * disable it at a remainder of 200.
+     */
+    #[Test]
+    public function aTileIsWeighedAgainstItsDiscountedPriceRatherThanItsListPrice(): void
+    {
+        $player = $this->discountedPlayer();
+
+        $atTheNetCost = $this->renderCatalog($player, (string) $player->id, remainingBudget: 200)->crawler();
+        $oneShortOfIt = $this->renderCatalog($player, (string) $player->id, remainingBudget: 199)->crawler();
+
+        $this->assertSame('200', $atTheNetCost->filter('#product-democracy [data-price-net]')->text());
+        $this->assertFalse($atTheNetCost->filter('#product-democracy')->getNode(0)->hasAttribute('disabled'));
+        $this->assertTrue($oneShortOfIt->filter('#product-democracy')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /**
+     * Same trap as the turn lock one test above, down the other branch of the same expression: an
+     * unconditional `data-loading="addAttribute(disabled)"` is stripped on mount (symfony/ux#372),
+     * which would re-enable a tile the budget had just put out of reach.
+     */
+    #[Test]
+    public function anOverBudgetTileCarriesNoLoadingDirectiveThatWouldReEnableIt(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $overBudget = $this->renderCatalog($player, (string) $player->id, remainingBudget: 0)->crawler();
+
+        $this->assertNull($overBudget->filter('#product-pottery')->attr('data-loading'));
     }
 
     #[Test]
@@ -272,13 +354,19 @@ final class CatalogComponentTest extends KernelTestCase
         $this->assertMatchesRegularExpression('/id="product-anatomy".*?data-price-net>260</s', $rendered);
     }
 
-    private function renderCatalog(Player $player, string $storageKey, bool $locked = false, ?string $sort = null): RenderedComponent
+    /**
+     * Nulls are dropped rather than passed, so each argument left out inherits the component's own
+     * default — which for `remainingBudget` is itself null, the no-constraint case the POS relies on.
+     * A remainder of 0 survives the filter, since only null is dropped.
+     */
+    private function renderCatalog(Player $player, string $storageKey, bool $locked = false, ?string $sort = null, ?int $remainingBudget = null): RenderedComponent
     {
         return $this->renderTwigComponent('organisms:Catalog', array_filter([
             'player' => $player,
             'storageKey' => $storageKey,
             'locked' => $locked,
             'sort' => $sort,
+            'remainingBudget' => $remainingBudget,
         ], static fn (mixed $value): bool => null !== $value));
     }
 
