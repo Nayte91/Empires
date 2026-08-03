@@ -17,42 +17,33 @@
         margin: 0;
         padding: 0;
 
-        label {
-            position: relative;
+        /* The atoms/button.css reset gives every button its border, radius, background,
+           font-size and cursor; here we only override what a grid tile needs on top. */
+        button {
             min-block-size: 3rem;
+            inline-size: auto;
+            padding: 0;
             border: 1px solid gainsboro;
             border-radius: 0.375rem;
             display: flex;
             align-items: center;
             justify-content: center;
             background: white;
+            font-family: inherit;
             font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
             transition: border-color 0.15s, background-color 0.15s;
 
-            input {
-                position: absolute;
-                appearance: none;
-                margin: 0;
-                padding: 0;
-                opacity: 0;
-                cursor: pointer;
-            }
-
-            span { pointer-events: none }
-
             &:hover { border-color: var(--stat-picker-accent) }
 
             /* Beyond what the shared stock leaves: shown so the ceiling is visible, not clickable. */
-            &:has(:disabled) {
+            &:disabled {
                 opacity: 0.4;
                 cursor: not-allowed;
-
-                input { cursor: not-allowed }
             }
 
-            &:has(:checked) {
+            &[data-selected] {
                 border-color: var(--stat-picker-accent);
                 background: hsl(from var(--stat-picker-accent) h s calc(l + 40%));
                 color: var(--stat-picker-accent);
