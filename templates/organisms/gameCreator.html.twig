@@ -12,12 +12,16 @@
 
         <label>
             Players
-            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}">
+            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}" data-loading="addAttribute(disabled)">
         </label>
 
+        {# The `disabled` here is business-conditional (single-region scenario), so the loading directive must stay
+           behind the inverted condition — see the CLAUDE.md note on ux#372: an unconditional data-loading directive
+           on an element that also carries a conditional `disabled` gets stripped on mount, silently re-enabling it. #}
+        {% set isRegionDisabled = computed.regionChoices|length == 1 %}
         <label>
             Region
-            <select data-model="game.region" {{ computed.regionChoices|length == 1 ? 'disabled' }}>
+            <select data-model="game.region" {{ isRegionDisabled ? 'disabled' }} {% if not isRegionDisabled %}data-loading="addAttribute(disabled)"{% endif %}>
                 {% for choice in computed.regionChoices %}
                     <option value="{{ choice.value }}" {{ (game.region ?? '') == choice.value ? 'selected' }}>{{ choice.label }}</option>
                 {% endfor %}
@@ -26,7 +30,7 @@
 
         <label>
             A.S.T. version
-            <select data-model="game.astVersion">
+            <select data-model="game.astVersion" data-loading="addAttribute(disabled)">
                 <option value="basic" {{ game.astVersion == 'basic' ? 'selected' }}>Basic</option>
                 <option value="expert" {{ game.astVersion == 'expert' ? 'selected' }}>Expert</option>
             </select>
@@ -43,18 +47,22 @@
         <h2>Players</h2>
 
         <div class="game-creator__add-player">
+            {# Same ux#372 trap as the region select above: `disabled` here is business-conditional
+               (player limit reached), so data-loading must stay behind the inverted condition. #}
+            {% set isNewPlayerNameDisabled = computed.isPlayerLimitReached %}
             <label>
                 New player name
-                <input type="text" data-model="norender|newPlayerName" value="{{ newPlayerName }}" {{ computed.isPlayerLimitReached ? 'disabled' }}>
+                <input type="text" data-model="norender|newPlayerName" value="{{ newPlayerName }}" {{ isNewPlayerNameDisabled ? 'disabled' }} {% if not isNewPlayerNameDisabled %}data-loading="addAttribute(disabled)"{% endif %}>
             </label>
 
             {% if _errors.has('newPlayerName') %}
                 <p class="game-creator__field-error" data-error="newPlayerName" role="alert">{{ _errors.get('newPlayerName') }}</p>
             {% endif %}
 
+            {% set isNewPlayerEmpireDisabled = computed.isPlayerLimitReached %}
             <label>
                 Empire
-                <select data-model="newPlayerEmpire" {{ computed.isPlayerLimitReached ? 'disabled' }}>
+                <select data-model="newPlayerEmpire" {{ isNewPlayerEmpireDisabled ? 'disabled' }} {% if not isNewPlayerEmpireDisabled %}data-loading="addAttribute(disabled)"{% endif %}>
                     <option value="" {{ newPlayerEmpire == '' ? 'selected' }}>— no empire —</option>
                     {% for empire in computed.availableEmpires %}
                         <option value="{{ empire }}" {{ newPlayerEmpire == empire ? 'selected' }}>{{ empire|capitalize }}</option>
@@ -76,7 +84,7 @@
         </div>
 
         {% if computed.isPlayerLimitReached %}
-            <p class="game-creator__hint">Player limit reached ({{ game.players|length }}/{{ game.playerCount }}).</p>
+            <p class="game-creator__hint">Player limit reached ({{ players|length }}/{{ game.playerCount }}).</p>
         {% endif %}
 
         <table>
@@ -88,10 +96,21 @@
                 </tr>
             </thead>
             <tbody>
-                {% for player in game.players %}
+                {% for player in players %}
                     <tr{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
                         <td>{{ player.name }}</td>
-                        <td>{{ player.empire != '' ? player.empire : '—' }}</td>
+                        <td>
+                            {# The fix for issue #19: while a request is in flight, every select in the component is disabled,
+                               so a second row's assignment cannot start before the first round trip lands and re-renders
+                               everyone's option list. No business-conditional `disabled` on this element, so the directive
+                               is safe unconditional (contrast with the region/new-player controls above). #}
+                            <select data-model="players.{{ loop.index0 }}.empire" {{ live_action('setEmpire', {index: loop.index0}, {}, 'change') }} data-loading="addAttribute(disabled)">
+                                <option value="" {{ player.empire == '' ? 'selected' }}>— no empire —</option>
+                                {% for empire in this.getEmpireChoicesFor(loop.index0) %}
+                                    <option value="{{ empire }}" {{ player.empire == empire ? 'selected' }}>{{ empire|capitalize }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
                         <td>
                             {% if player.empire == '' %}
                                 <button
@@ -152,7 +171,7 @@
 
         <label>
             Game name
-            <input type="text" data-model="debounce(300)|game.slug" value="{{ game.slug }}">
+            <input type="text" data-model="debounce(300)|game.slug" value="{{ game.slug }}" data-loading="addAttribute(disabled)">
             {% if this.isSlugAvailable %}
                 <span class="game-creator__slug-status game-creator__slug-status--available" aria-label="Slug available">✓</span>
             {% else %}

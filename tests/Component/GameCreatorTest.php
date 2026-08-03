@@ -15,6 +15,7 @@ use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -233,7 +234,9 @@ final class GameCreatorTest extends WebTestCase
      * player count or region change that re-renders the select without it. The state is set
      * up directly here; only the server-side guard in addPlayer() keeps it out of the roster.
      * The assertion reads the action response, not a later render(): $error is not a LiveProp,
-     * so it does not survive into a subsequent request.
+     * so it does not survive into a subsequent request. The roster is read on the live $players
+     * prop, never on $game->players — the command is only filled at launch, so asserting on it
+     * here would pass against an empty array whatever the guard did.
      */
     #[Test]
     public function addingAPlayerWithAnEmpireOutsideTheCurrentScenarioIsRefused(): void
@@ -247,7 +250,7 @@ final class GameCreatorTest extends WebTestCase
         $actionResponse = $component->call('addPlayer')->response()->getContent();
 
         $this->assertStringContainsString('Empire &quot;celt&quot; is not available.', (string) $actionResponse);
-        $this->assertSame([], $component->component()->game->players);
+        $this->assertSame([], $component->component()->players);
     }
 
     #[Test]
@@ -616,6 +619,12 @@ final class GameCreatorTest extends WebTestCase
         $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
     }
 
+    /**
+     * The dash is no longer a text node: the empire cell is a select, and "no empire" is its empty
+     * option. The row is therefore read as "exactly one option is selected, it carries no value,
+     * and it is the placeholder" — a cell rendering nothing, or silently pre-picking an empire,
+     * fails all three.
+     */
     #[Test]
     public function addingAPlayerWithoutAnEmpireShowsADashAndNoError(): void
     {
@@ -623,10 +632,228 @@ final class GameCreatorTest extends WebTestCase
             ->set('newPlayerName', 'Alice')
             ->set('newPlayerEmpire', '')
         ;
-        $rendered = $component->call('addPlayer')->render()->toString();
+        $rendered = $component->call('addPlayer')->render();
 
-        $this->assertStringNotContainsString('data-error', $rendered);
-        $this->assertMatchesRegularExpression('/<td>Alice<\/td>\s*<td>—<\/td>/', $rendered);
+        $this->assertStringNotContainsString('data-error', $rendered->toString());
+
+        $row = $rendered->crawler()->filter('tbody tr');
+        $this->assertSame('Alice', trim($row->filter('td')->first()->text()));
+
+        $selected = $row->filter('select option[selected]');
+        $this->assertCount(1, $selected);
+        $this->assertSame('', $selected->attr('value'));
+        $this->assertSame('— no empire —', trim($selected->text()));
+    }
+
+    /**
+     * The sequence mirrors what the browser actually sends on a row select change: the model write
+     * onto that row's own path, then the setEmpire action. The write is what assigns — an
+     * identity-writable array prop accepts a nested path natively — so setEmpire only ever runs as a
+     * post-write guard, and a legitimate empire simply survives it.
+     */
+    #[Test]
+    public function assigningAnEmpireToARowThatHadNoneSelectsItInThatRowsSelect(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', '')
+        ;
+        $component->call('addPlayer');
+
+        $rendered = $component
+            ->set('players.0.empire', 'hatti')
+            ->call('setEmpire', ['index' => 0])
+            ->render()
+        ;
+
+        $this->assertSame('hatti', $component->component()->players[0]['empire']);
+        $this->assertSame('hatti', $this->rowSelectedEmpire($rendered->crawler(), 0));
+    }
+
+    #[Test]
+    public function assigningADifferentEmpireToARowThatAlreadyHadOneReplacesIt(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+        $component->call('addPlayer');
+
+        $rendered = $component
+            ->set('players.0.empire', 'rome')
+            ->call('setEmpire', ['index' => 0])
+            ->render()
+        ;
+
+        $this->assertSame('rome', $component->component()->players[0]['empire']);
+        $this->assertSame('rome', $this->rowSelectedEmpire($rendered->crawler(), 0));
+        $this->assertContains('hatti', $this->rowEmpireChoices($rendered->crawler(), 0));
+    }
+
+    #[Test]
+    public function selectingTheEmptyOptionUnassignsTheRowsEmpire(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+        $component->call('addPlayer');
+
+        $rendered = $component
+            ->set('players.0.empire', '')
+            ->call('setEmpire', ['index' => 0])
+            ->render()
+        ;
+
+        $this->assertSame('', $component->component()->players[0]['empire']);
+        $this->assertSame('', $this->rowSelectedEmpire($rendered->crawler(), 0));
+        $this->assertStringContainsString('1 player still needs an empire.', $rendered->toString());
+    }
+
+    /**
+     * The row's model path is client-writable and can carry an empire outside the scenario pool — a
+     * stale option from a render that preceded a player count or region change, or a crafted request.
+     * The candidate has already landed in the row by the time setEmpire() runs, so the guard reverts
+     * rather than blocks. The error naming "celt" is this test's positive control: only a candidate
+     * that actually reached the row can produce it, which is what makes the emptied row a reversal
+     * instead of a write that silently never happened. The assertion reads the action response, not a
+     * later render(): $error is not a LiveProp, so it does not survive into a subsequent request.
+     */
+    #[Test]
+    public function settingARowsEmpireToOneOutsideTheCurrentScenarioIsRefused(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 5)
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', '')
+        ;
+        $component->call('addPlayer');
+
+        $actionResponse = $component
+            ->set('players.0.empire', 'celt')
+            ->call('setEmpire', ['index' => 0])
+            ->response()
+            ->getContent()
+        ;
+
+        $this->assertStringContainsString('Empire &quot;celt&quot; is not available.', (string) $actionResponse);
+        $this->assertSame('', $component->component()->players[0]['empire']);
+    }
+
+    /**
+     * The duplicate-empire conformity issue exists to catch a state the UI should never produce;
+     * a crafted write onto another row's model path is the way one could be produced, so the guard
+     * is checked from that side too. As above, the error naming "hatti" proves the candidate reached
+     * row 1 before being reverted.
+     */
+    #[Test]
+    public function settingARowsEmpireToOneAlreadyHeldByAnotherRowIsRefused(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', '']] as [$name, $empire]) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', $empire);
+            $component->call('addPlayer');
+        }
+
+        $actionResponse = $component
+            ->set('players.1.empire', 'hatti')
+            ->call('setEmpire', ['index' => 1])
+            ->response()
+            ->getContent()
+        ;
+
+        $this->assertStringContainsString('Empire &quot;hatti&quot; is not available.', (string) $actionResponse);
+        $this->assertSame('', $component->component()->players[1]['empire']);
+        $this->assertSame('hatti', $component->component()->players[0]['empire']);
+    }
+
+    #[Test]
+    public function assigningAnEmpireDropsItFromTheOtherRowsChoicesWhileKeepingItOnItsOwn(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+        ;
+
+        foreach (['Alice', 'Bob'] as $name) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', '');
+            $component->call('addPlayer');
+        }
+
+        $crawler = $component
+            ->set('players.0.empire', 'hatti')
+            ->call('setEmpire', ['index' => 0])
+            ->render()
+            ->crawler()
+        ;
+
+        $this->assertContains('hatti', $this->rowEmpireChoices($crawler, 0));
+        $this->assertSame('hatti', $this->rowSelectedEmpire($crawler, 0));
+        $this->assertNotContains('hatti', $this->rowEmpireChoices($crawler, 1));
+        $this->assertContains('rome', $this->rowEmpireChoices($crawler, 1));
+    }
+
+    /**
+     * The defect this exists for: every row's select once shared a single staging prop. The client's
+     * SetValueOntoModelFieldsPlugin rewrites every [data-model] element from its prop's value on each
+     * render:finished, so one shared prop meant one shared <select> value — assigning row 1 blanked
+     * row 0 on screen while the server-rendered HTML stayed correct. Distinct per-row model paths are
+     * what make that impossible, and this pins them: on the shared-prop implementation all three
+     * selects read the same name and this goes red.
+     *
+     * What it does not prove: no component test runs that plugin, so this asserts the wiring is
+     * per-row, never that the browser ends up displaying each row correctly. Only a browser check
+     * covers the rendered outcome.
+     */
+    #[Test]
+    public function eachPlayerRowBindsItsEmpireSelectToItsOwnRow(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'rome'], ['Carol', '']] as [$name, $empire]) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', $empire);
+            $component->call('addPlayer');
+        }
+
+        $selects = $component->render()->crawler()->filter('tbody tr select');
+
+        $this->assertSame(
+            ['players.0.empire', 'players.1.empire', 'players.2.empire'],
+            $selects->each(static fn (Crawler $select): string => (string) $select->attr('data-model')),
+        );
+        $this->assertSame(
+            ['0', '1', '2'],
+            $selects->each(static fn (Crawler $select): string => (string) $select->attr('data-live-index-param')),
+        );
+    }
+
+    #[Test]
+    public function settingTheEmpireOfARowThatDoesNotExistChangesNothing(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+        $component->call('addPlayer');
+
+        $component->call('setEmpire', ['index' => 5]);
+
+        $this->assertSame([['name' => 'Alice', 'empire' => 'hatti']], $component->component()->players);
     }
 
     #[Test]
@@ -645,7 +872,7 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->call('assignRandomEmpire', ['index' => 1])->render()->toString();
 
         $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->empiresFor(9, 'west');
-        $players = $component->component()->game->players;
+        $players = $component->component()->players;
 
         $this->assertNotSame('', $players[1]['empire']);
         $this->assertContains($players[1]['empire'], $scenarioEmpires);
@@ -680,7 +907,7 @@ final class GameCreatorTest extends WebTestCase
 
         $component->call('assignRandomEmpire', ['index' => 8]);
 
-        $this->assertSame('minoa', $component->component()->game->players[8]['empire']);
+        $this->assertSame('minoa', $component->component()->players[8]['empire']);
     }
 
     #[Test]
@@ -701,7 +928,7 @@ final class GameCreatorTest extends WebTestCase
         $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->empiresFor(3, 'west');
         $assignedEmpires = array_map(
             static fn (array $player): string => $player['empire'],
-            $component->component()->game->players,
+            $component->component()->players,
         );
 
         $this->assertNotContains('', $assignedEmpires);
@@ -733,12 +960,14 @@ final class GameCreatorTest extends WebTestCase
         $game = new CreateGame();
         $game->playerCount = 9;
         $game->region = 'west';
-        $game->players = [
-            ['name' => 'Alice', 'empire' => 'hatti'],
-            ['name' => 'Bob', 'empire' => 'hatti'],
-        ];
 
-        $component = $this->createLiveComponent('GameCreator', ['game' => $game]);
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => 'Alice', 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hatti'],
+            ],
+        ]);
 
         $rendered = $component->render()->toString();
 
@@ -771,6 +1000,27 @@ final class GameCreatorTest extends WebTestCase
         $freshEntityManager = $this->freshEntityManager();
         $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
         $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * The empire a row's select currently shows. Asserting the count first is what keeps a row that
+     * rendered no select — or one that pre-selected several options — from reading as an empty
+     * empire, which is a legitimate value here.
+     */
+    private function rowSelectedEmpire(Crawler $crawler, int $index): string
+    {
+        $selected = $crawler->filter('tbody tr')->eq($index)->filter('select option[selected]');
+        $this->assertCount(1, $selected);
+
+        return (string) $selected->attr('value');
+    }
+
+    /** @return list<string> */
+    private function rowEmpireChoices(Crawler $crawler, int $index): array
+    {
+        return $crawler->filter('tbody tr')->eq($index)->filter('select option')->each(
+            static fn (Crawler $option): string => (string) $option->attr('value'),
+        );
     }
 
     private function freshEntityManager(): EntityManagerInterface

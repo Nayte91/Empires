@@ -22,6 +22,7 @@ use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\LiveComponent\ValidatableComponentTrait;
 
@@ -45,6 +46,10 @@ final class GameCreator
     #[LiveProp(writable: true)]
     public string $newPlayerEmpire = '';
 
+    /** @var list<array{name: string, empire: string}> */
+    #[LiveProp(writable: true)]
+    public array $players = [];
+
     public ?string $error = null;
 
     public function __construct(
@@ -62,6 +67,25 @@ final class GameCreator
         $this->game->slug = (string) Uuid::v7();
     }
 
+    /**
+     * `players.{i}.{key}` is identity-writable per row, so the hydrator accepts any index a
+     * request names. A path past the current roster (e.g. `players.5.empire` on a one-row
+     * list) makes LiveComponentHydrator::setWritablePaths() auto-vivify an empty
+     * `players[5]`, then fail to write `empire` into it — a failure it swallows internally,
+     * so the empty row survives into $this->players and crashes the template on render.
+     * No legitimate UI interaction can name a row past the one it was just given, so this
+     * is a fabricated request, not a user mistake: drop the row rather than report it, unlike
+     * setEmpire()'s guard, which reports because it clears a value a genuine race could produce.
+     */
+    #[PostHydrate]
+    public function dropMalformedPlayerRows(): void
+    {
+        $this->players = array_values(array_filter(
+            $this->players,
+            static fn (array $player): bool => \array_key_exists('name', $player) && \array_key_exists('empire', $player),
+        ));
+    }
+
     public function onSlugUpdated(): void
     {
         $this->game->slug = self::slugify($this->game->slug);
@@ -77,7 +101,7 @@ final class GameCreator
     {
         $slug = self::slugify($name);
 
-        return array_any($this->game->players, static fn (array $player): bool => self::slugify($player['name']) === $slug);
+        return array_any($this->players, static fn (array $player): bool => self::slugify($player['name']) === $slug);
     }
 
     public function onScenarioUpdated(): void
@@ -99,7 +123,7 @@ final class GameCreator
     public function addPlayer(): void
     {
         if ($this->isPlayerLimitReached()) {
-            $this->error = sprintf('Player limit reached (%d/%d).', \count($this->game->players), $this->game->playerCount);
+            $this->error = sprintf('Player limit reached (%d/%d).', \count($this->players), $this->game->playerCount);
 
             return;
         }
@@ -118,7 +142,7 @@ final class GameCreator
             return;
         }
 
-        $this->game->players[] = ['name' => ucfirst(trim($this->newPlayerName)), 'empire' => $empire];
+        $this->players[] = ['name' => ucfirst(trim($this->newPlayerName)), 'empire' => $empire];
         $this->newPlayerName = '';
         $this->newPlayerEmpire = '';
         $this->error = null;
@@ -131,14 +155,14 @@ final class GameCreator
     #[LiveAction]
     public function removePlayer(#[LiveArg] int $index): void
     {
-        unset($this->game->players[$index]);
-        $this->game->players = array_values($this->game->players);
+        unset($this->players[$index]);
+        $this->players = array_values($this->players);
     }
 
     #[LiveAction]
     public function assignRandomEmpire(#[LiveArg] int $index): void
     {
-        if (!isset($this->game->players[$index]) || '' !== $this->game->players[$index]['empire']) {
+        if (!isset($this->players[$index]) || '' !== $this->players[$index]['empire']) {
             return;
         }
 
@@ -148,7 +172,40 @@ final class GameCreator
             return;
         }
 
-        $this->game->players[$index]['empire'] = $remaining[random_int(0, \count($remaining) - 1)];
+        $this->players[$index]['empire'] = $remaining[random_int(0, \count($remaining) - 1)];
+    }
+
+    /**
+     * The row's own select writes straight into $players[$index]['empire'] via its
+     * data-model path, so by the time this runs the candidate is already stored —
+     * this is a post-write guard, not a gate before the assignment lands. It clears
+     * the row back to unassigned when the value is illegitimate: not part of the
+     * current scenario, or already held by another row (a crafted request, since
+     * the row's own option list never offers either).
+     */
+    #[LiveAction]
+    public function setEmpire(#[LiveArg] int $index): void
+    {
+        if (!isset($this->players[$index])) {
+            return;
+        }
+
+        $empire = $this->players[$index]['empire'];
+
+        if ('' === $empire) {
+            return;
+        }
+
+        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
+        $takenByOthers = array_column(
+            array_filter($this->players, static fn (array $player, int $i): bool => $i !== $index, ARRAY_FILTER_USE_BOTH),
+            'empire',
+        );
+
+        if (!\in_array($empire, $scenarioEmpires, true) || \in_array($empire, $takenByOthers, true)) {
+            $this->error = sprintf('Empire "%s" is not available.', $empire);
+            $this->players[$index]['empire'] = '';
+        }
     }
 
     #[LiveAction]
@@ -157,7 +214,7 @@ final class GameCreator
         $remaining = $this->getAvailableEmpires();
         shuffle($remaining);
 
-        foreach ($this->game->players as $index => $player) {
+        foreach ($this->players as $index => $player) {
             if ([] === $remaining) {
                 break;
             }
@@ -166,7 +223,7 @@ final class GameCreator
                 continue;
             }
 
-            $this->game->players[$index]['empire'] = array_shift($remaining);
+            $this->players[$index]['empire'] = array_shift($remaining);
         }
     }
 
@@ -184,6 +241,8 @@ final class GameCreator
 
             return null;
         }
+
+        $this->game->players = $this->players;
 
         try {
             $this->commandBus->dispatch($this->game);
@@ -206,7 +265,7 @@ final class GameCreator
 
     public function isPlayerLimitReached(): bool
     {
-        return \count($this->game->players) >= $this->game->playerCount;
+        return \count($this->players) >= $this->game->playerCount;
     }
 
     public function canLaunch(): bool
@@ -220,7 +279,7 @@ final class GameCreator
             return false;
         }
 
-        return array_any($this->game->players, static fn (array $player): bool => '' === $player['empire']);
+        return array_any($this->players, static fn (array $player): bool => '' === $player['empire']);
     }
 
     public function getMinPlayers(): int
@@ -249,8 +308,20 @@ final class GameCreator
     {
         return array_values(array_diff(
             $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region),
-            array_column($this->game->players, 'empire'),
+            array_column($this->players, 'empire'),
         ));
+    }
+
+    /** @return list<string> */
+    public function getEmpireChoicesFor(int $index): array
+    {
+        $current = $this->players[$index]['empire'] ?? '';
+
+        if ('' === $current) {
+            return $this->getAvailableEmpires();
+        }
+
+        return [...$this->getAvailableEmpires(), $current];
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -279,7 +350,7 @@ final class GameCreator
 
     private function getPlayerCountMismatchIssue(): ?string
     {
-        $count = \count($this->game->players);
+        $count = \count($this->players);
         $target = $this->game->playerCount;
 
         if ($count === $target) {
@@ -315,7 +386,7 @@ final class GameCreator
         $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
         $issues = [];
 
-        foreach ($this->game->players as $player) {
+        foreach ($this->players as $player) {
             if ('' !== $player['empire'] && !\in_array($player['empire'], $scenarioEmpires, true)) {
                 $issues[] = sprintf('%s\'s empire "%s" is not part of the current scenario.', $player['name'], $player['empire']);
             }
@@ -329,7 +400,7 @@ final class GameCreator
     {
         $namesByEmpire = [];
 
-        foreach ($this->game->players as $player) {
+        foreach ($this->players as $player) {
             if ('' !== $player['empire']) {
                 $namesByEmpire[$player['empire']][] = $player['name'];
             }
@@ -351,7 +422,7 @@ final class GameCreator
 
     private function getMissingEmpireIssue(): ?string
     {
-        $missing = \count(array_filter($this->game->players, static fn (array $player): bool => '' === $player['empire']));
+        $missing = \count(array_filter($this->players, static fn (array $player): bool => '' === $player['empire']));
 
         if (0 === $missing) {
             return null;
