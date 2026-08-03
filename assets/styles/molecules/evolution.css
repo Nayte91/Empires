@@ -1,6 +1,45 @@
 .evolution {
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
     inline-size: 100%;
     max-inline-size: 40rem;
-    block-size: 20rem;
+
+    > .plot {
+        position: relative;
+        aspect-ratio: 4 / 5;
+
+        canvas { display: block }
+    }
+
+    > #evolution-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+
+        button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: none;
+            padding: 0;
+            background: none;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+
+            &[data-hidden] { opacity: 0.4 }
+        }
+
+        .marker { inline-size: 1rem }
+    }
+}
+
+@media (min-width: 60rem) {
+    .evolution > .plot {
+        aspect-ratio: 3 / 2;
+    }
 }

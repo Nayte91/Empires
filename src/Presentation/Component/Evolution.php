@@ -54,8 +54,14 @@ final class Evolution
         ]);
 
         $chart->setOptions([
+            // The container's CSS now owns the plot's shape (see evolution.css); the canvas must
+            // fill whatever height that CSS reserves instead of deriving it from a fixed ratio.
+            'maintainAspectRatio' => false,
             'plugins' => [
                 'title' => ['display' => true, 'text' => 'Victory points over turns'],
+                // Rendered as HTML in evolution.html.twig instead — a legend drawn inside the canvas
+                // can only take height away from the plot, never grow with the content it needs.
+                'legend' => ['display' => false],
             ],
             'scales' => [
                 'x' => ['title' => ['display' => true, 'text' => 'Turn']],
