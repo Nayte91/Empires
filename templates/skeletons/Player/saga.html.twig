@@ -1,0 +1,17 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - {{ player.name }}'s saga{% endblock %}
+
+{% block body_attr %}data-empire="{{ player.empire }}"{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/playerSaga.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/purchaseValue.css') }}">
+{% endblock %}
+
+{% block main %}
+    {{ component('PlayerSaga', {player}) }}
+{% endblock %}

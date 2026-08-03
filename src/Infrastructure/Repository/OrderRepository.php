@@ -99,4 +99,24 @@ final class OrderRepository extends ServiceEntityRepository implements OrderRepo
             ->getResult()
         ;
     }
+
+    /**
+     * Every validated basket a player placed, in turn order — the raw material of the
+     * saga's purchase-value chart. Pending or rejected baskets are excluded: they were
+     * never delivered, so they never cost anything.
+     *
+     * @return list<Order>
+     */
+    public function findValidatedByPlayer(Player $player): array
+    {
+        return $this->createQueryBuilder('o')
+            ->andWhere('o.player = :player')
+            ->andWhere('o.status = :status')
+            ->setParameter('player', $player->id, 'uuid')
+            ->setParameter('status', OrderStatus::Validated->value)
+            ->addOrderBy('o.turn', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 }
