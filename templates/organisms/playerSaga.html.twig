@@ -1,0 +1,41 @@
+{% set title = player.name %}
+{% set subtitle = player.empire|capitalize %}
+
+<main class="player-saga">
+    <div class="heading">
+        <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
+    </div>
+
+    <section aria-label="Final standing">
+        <twig:Ast :game="player.game" />
+    </section>
+
+    <div class="panels">
+        <details class="counters panel" open>
+            <summary>Final counters</summary>
+            <dl>
+                {% for counter in this.counters %}
+                    <div data-stat="{{ counter.key }}">
+                        <dt>{{ counter.label }}</dt>
+                        <dd>{{ counter.value }}</dd>
+                    </div>
+                {% endfor %}
+            </dl>
+        </details>
+
+        <twig:PurchaseValue :player="player" />
+    </div>
+
+    <section aria-label="Owned advances">
+        {% set advancePoints = this.advancePoints %}
+        <h2>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</h2>
+
+        <div class="advances-grid">
+            {% for advance in this.ownedAdvances %}
+                <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
+            {% else %}
+                <p>No advance owned.</p>
+            {% endfor %}
+        </div>
+    </section>
+</main>

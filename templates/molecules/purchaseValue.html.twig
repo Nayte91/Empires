@@ -1,0 +1,10 @@
+<div id="purchase-value" class="purchase-value">
+    <div class="plot">
+        {{ render_chart(this.chart) }}
+    </div>
+
+    <p class="average"{{ this.average is null ? ' data-empty' : '' }}>
+        Average since turn {{ constant('App\\Rules\\PurchaseHistoryCalculator::AVERAGE_FROM_TURN') }}:
+        {{ this.average is null ? 'not enough turns played' : this.average|round(1) }}
+    </p>
+</div>

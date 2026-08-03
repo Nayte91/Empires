@@ -1,0 +1,57 @@
+.player-saga {
+    display: grid;
+    max-inline-size: 75rem;
+    margin-inline: auto;
+    gap: var(--operator-gap);
+    padding: clamp(1rem, 4vw, 1.5rem);
+
+    .heading {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    /* auto-fit rather than a breakpoint: the panels sit side by side while both fit their
+       minimum, and fall back to one per row on their own once they no longer do. */
+    .panels {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+        align-items: start;
+        gap: var(--operator-gap);
+    }
+
+    .counters dl {
+        display: grid;
+        gap: 0.25rem;
+        margin: 0;
+
+        > div {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        dt { color: var(--operator-text-muted) }
+
+        dd { margin: 0; font-weight: bold }
+    }
+
+    .advances-grid {
+        display: grid;
+        align-content: start;
+        grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
+        gap: var(--operator-gap);
+
+        img {
+            inline-size: 100%;
+            aspect-ratio: 5 / 7;
+            object-fit: cover;
+        }
+
+        p {
+            margin: 0;
+            color: var(--operator-text-muted);
+        }
+    }
+}
