@@ -13,6 +13,13 @@
 
     <twig:molecules:Discounts :player="player" :open="true" />
 
+    <p class="shop__pictures-toggle">
+        <label>
+            <input type="checkbox" id="display-pictures">
+            Show pictures
+        </label>
+    </p>
+
     <div class="shop__layout">
         {# Sorted by what this player actually pays: two thirds of the catalogue is discounted, so the
            list-price order the shelf inherits contradicts the price printed on most of its tiles. #}
