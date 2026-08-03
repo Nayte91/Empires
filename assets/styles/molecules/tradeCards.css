@@ -1,0 +1,14 @@
+.trade-cards {
+    overflow-x: auto;
+}
+
+.trade-cards table {
+    border-collapse: collapse;
+    white-space: nowrap;
+}
+
+.trade-cards th,
+.trade-cards td {
+    padding: 0.25rem 0.5rem;
+    text-align: start;
+}
