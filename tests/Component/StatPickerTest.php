@@ -86,8 +86,13 @@ final class StatPickerTest extends WebTestCase
         }
     }
 
+    /**
+     * OK is gone, so every button left inside the dialog commits the value it carries. Asserting the
+     * absence structurally rather than by label catches a confirmation step returning under any
+     * other name.
+     */
     #[Test]
-    public function renderContainsOkButton(): void
+    public function theDialogOffersNoConfirmationButtonBesideItsValueTiles(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
@@ -95,9 +100,33 @@ final class StatPickerTest extends WebTestCase
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'cities',
-        ])->render()->toString();
+        ])->render();
 
-        $this->assertStringContainsString('>OK<', $rendered);
+        $this->assertCount(0, $rendered->crawler()->filter('dialog button:not([data-value])'));
+    }
+
+    /**
+     * The tile is the whole gesture: it carries the value, and submitting closes the dialog, which
+     * is what fires save. Driving save from the tile's own data-value is what ties the markup the
+     * player taps to the number that gets stored.
+     */
+    #[Test]
+    public function tappingAValueTileRecordsThatValueInASingleGesture(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        $component = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'cities',
+        ]);
+        $tile = $component->render()->crawler()->filter('fieldset button[data-value="5"]');
+
+        $component->set('value', (int) $tile->attr('data-value'))->call('save');
+
+        $this->assertSame('submit', $tile->attr('type'));
+        $this->assertSame('live#update', $tile->attr('data-action'));
+        $this->assertSame('norender|value', $tile->attr('data-model'));
+        $this->assertSame(5, $this->reloadPlayer($player)->cities);
     }
 
     #[Test]
@@ -111,8 +140,8 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'census',
         ])->render();
 
-        $values = $rendered->crawler()->filter('input[type="radio"]')->each(
-            static fn ($node): string => (string) $node->attr('value'),
+        $values = $rendered->crawler()->filter('fieldset button[data-value]')->each(
+            static fn ($node): string => (string) $node->attr('data-value'),
         );
 
         $this->assertSame('2', $values[0]);
@@ -133,13 +162,13 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'census',
         ])->render();
 
-        $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
+        $selected = $rendered->crawler()->filter('fieldset button[data-selected]');
 
-        $this->assertSame('30', $checked->attr('value'));
+        $this->assertSame('30', $selected->attr('data-value'));
     }
 
     #[Test]
-    public function astPositionRenderShowsDisplayLabelWithStorageCheckedValue(): void
+    public function theAstPositionTileShowsTheDisplayLabelWhileCarryingTheStorageValue(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
@@ -152,10 +181,10 @@ final class StatPickerTest extends WebTestCase
             'value' => $player->astPosition,
         ])->render();
 
-        $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
-        $this->assertSame('4', $checked->attr('value'));
+        $selected = $rendered->crawler()->filter('fieldset button[data-selected]');
 
-        $this->assertStringContainsString('5', $rendered->crawler()->filter('button')->text());
+        $this->assertSame('4', $selected->attr('data-value'));
+        $this->assertSame('5', trim($selected->text()));
     }
 
     #[Test]
@@ -172,8 +201,9 @@ final class StatPickerTest extends WebTestCase
             'value' => 7,
         ])->render();
 
-        $checked = $rendered->crawler()->filter('input[type="radio"][checked]');
-        $this->assertSame('7', $checked->attr('value'));
+        $selected = $rendered->crawler()->filter('fieldset button[data-selected]');
+
+        $this->assertSame('7', $selected->attr('data-value'));
     }
 
     /**
@@ -252,8 +282,8 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'treasury',
         ])->render();
 
-        $this->assertCount(0, $rendered->crawler()->filter('input[value="35"][disabled]'));
-        $this->assertCount(1, $rendered->crawler()->filter('input[value="36"][disabled]'));
+        $this->assertCount(0, $rendered->crawler()->filter('fieldset button[data-value="35"][disabled]'));
+        $this->assertCount(1, $rendered->crawler()->filter('fieldset button[data-value="36"][disabled]'));
     }
 
     /**
@@ -289,7 +319,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'cities',
         ])->render();
 
-        $this->assertCount(0, $rendered->crawler()->filter('[data-value]'));
+        $this->assertCount(0, $rendered->crawler()->filter('menu [data-value]'));
     }
 
     #[Test]
@@ -303,7 +333,7 @@ final class StatPickerTest extends WebTestCase
             'stat' => 'ships',
         ])->render();
 
-        $actions = $rendered->crawler()->filter('[data-value]');
+        $actions = $rendered->crawler()->filter('menu [data-value]');
 
         $this->assertSame(['buildShip', 'maintainShips'], $actions->each(
             static fn ($node): string => (string) $node->attr('data-value'),
@@ -317,7 +347,7 @@ final class StatPickerTest extends WebTestCase
         return $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'treasury',
-        ])->render()->crawler()->filter('[data-value]')->each(
+        ])->render()->crawler()->filter('menu [data-value]')->each(
             static fn ($node): string => (string) $node->attr('data-value'),
         );
     }

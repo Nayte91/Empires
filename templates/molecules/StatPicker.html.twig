@@ -14,15 +14,11 @@
                 <fieldset>
                     {% set ceiling = this.ceiling %}
                     {% for n in this.floor..this.displayCeiling %}
-                        <label>
-                            {# Reuses dialogId rather than recomposing the same string. Not a fix:
-                               each picker owns its <form>, and a radio group never spans two, so
-                               the duplicated name was already harmless. #}
-                            <input type="radio" name="{{ dialogId }}" value="{{ n }}"
-                                   data-model="norender|value" {{ value == n ? 'checked' }}
-                                   {{ n > ceiling ? 'disabled' }}>
-                            <span>{{ stat.format(n) }}</span>
-                        </label>
+                        <button type="submit" data-action="live#update" data-model="norender|value"
+                                data-value="{{ n }}" {{ value == n ? 'data-selected' }}
+                                {{ n > ceiling ? 'disabled' }}>
+                            {{ stat.format(n) }}
+                        </button>
                     {% endfor %}
                 </fieldset>
 
@@ -41,8 +37,6 @@
                     </menu>
                 {% endif %}
             </section>
-
-            <button type="submit">OK</button>
         </form>
     </dialog>
 </div>
