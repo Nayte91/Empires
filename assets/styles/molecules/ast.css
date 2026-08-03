@@ -84,7 +84,11 @@
 
     tfoot { color: darkgray }
 
-    @container (width < 60rem) {
+    /* Viewport, not container, by exception: both skeletons switch to desktop at this same 60rem, and
+       that rule adds `padding: 1rem` — so crossing the breakpoint shrinks the container's own content
+       box back below it. A container query here stays compact until ~1007px (32px padding + 15px
+       scrollbar), i.e. it disagrees with the page it lives on for 47px. */
+    @media (width < 60rem) {
         --ast-cell-size: 1.5rem;
         font-size: 0.75rem;
 
