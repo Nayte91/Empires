@@ -5,6 +5,13 @@
     gap: var(--operator-gap);
     padding: clamp(1rem, 4vw, 1.5rem);
 
+    .heading {
+        display: flex;
+        align-items: start;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
     /* auto-fit rather than a breakpoint: the panels sit side by side while both fit their
        minimum, and fall back to one per row on their own once they no longer do. */
     .panels {
