@@ -4,7 +4,6 @@
     border-radius: var(--operator-radius);
     padding: 0.75rem 1rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 0.75rem;
     background: repeating-linear-gradient(-45deg, var(--category-color) 0 10px, var(--cat-2) 10px 20px);
@@ -19,6 +18,17 @@
         cursor: not-allowed;
     }
 
+    /* Hidden everywhere by default (shop tiles and the operator POS reuse this same template);
+       the shop's display-pictures checkbox is the only thing that reveals it, see shop.css. */
+    img {
+        display: none;
+        flex-shrink: 0;
+        inline-size: 2rem;
+        block-size: 2rem;
+        border-radius: var(--operator-radius);
+        object-fit: cover;
+    }
+
     .name, .price {
         color: black;
         font-variant-numeric: tabular-nums;
@@ -28,6 +38,7 @@
         display: flex;
         align-items: baseline;
         gap: 0.375rem;
+        margin-inline-start: auto;
     }
 
     /* Only drawn when a discount applies, so the tile keeps showing what the advance would
