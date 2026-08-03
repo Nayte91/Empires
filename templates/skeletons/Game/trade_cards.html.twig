@@ -1,0 +1,14 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - Trade cards{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/tradeCards.css') }}">
+{% endblock %}
+
+{% block main %}
+    <twig:atoms:PageTitle title="Trade card distribution" />
+    {% include 'molecules/TradeCards.html.twig' with {distribution} only %}
+{% endblock %}

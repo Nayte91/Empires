@@ -1,0 +1,35 @@
+{% if distribution.columns is empty %}
+    <p>No trade card distribution is defined for this player count.</p>
+{% else %}
+    <div class="trade-cards">
+        <table>
+            <caption>{{ distribution.columns|join(' / ') }}</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Stack</th>
+                    <th scope="col">Card</th>
+                    <th scope="col">Type</th>
+                    {% for column in distribution.columns %}
+                        <th scope="col">{{ column }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for stack in distribution.stacks %}
+                    {% for card in stack.cards %}
+                        <tr data-stack="{{ stack.number }}">
+                            {% if loop.first %}
+                                <th scope="rowgroup" rowspan="{{ stack.cards|length }}">{{ stack.number }}</th>
+                            {% endif %}
+                            <td>{{ card.name }}</td>
+                            <td>{{ card.type|replace({'_': ' '}) }}</td>
+                            {% for quantity in card.quantities %}
+                                <td>{{ quantity ?? '—' }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}

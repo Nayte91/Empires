@@ -1,0 +1,99 @@
+trade_cards:
+    brackets:
+        - east_3_8
+        - east_9
+        - west_3_8
+        - west_9
+        - combined_10_11
+        - combined_12_14_west
+        - combined_12_14_east
+        - combined_15_18_west
+        - combined_15_18_east
+    stacks:
+        1:
+            cards:
+                - { name: Ochre, type: commodity, game: west, quantities: { west_3_8: 9, west_9: 9, combined_10_11: 9, combined_12_14_west: 9, combined_15_18_west: 9 } }
+                - { name: Flax, type: commodity, game: east, quantities: { east_3_8: 9, east_9: 9, combined_12_14_east: 9, combined_15_18_east: 9 } }
+                - { name: Clay, type: commodity, game: west, quantities: { west_3_8: 9, west_9: 9, combined_10_11: 9, combined_12_14_west: 5, combined_12_14_east: 4, combined_15_18_west: 5, combined_15_18_east: 4 } }
+                - { name: Hides, type: commodity, game: east, quantities: { east_3_8: 9, east_9: 9, combined_12_14_west: 4, combined_12_14_east: 5, combined_15_18_west: 4, combined_15_18_east: 5 } }
+                - { name: Bone, type: commodity, game: shared, quantities: { east_9: 8, west_9: 8, combined_10_11: 8, combined_15_18_west: 4, combined_15_18_east: 4 } }
+        2:
+            cards:
+                - { name: Papyri, type: commodity, game: west, quantities: { west_3_8: 8, west_9: 8, combined_10_11: 8, combined_12_14_west: 8, combined_15_18_west: 8 } }
+                - { name: Stone, type: commodity, game: east, quantities: { east_3_8: 8, east_9: 8, combined_12_14_east: 8, combined_15_18_east: 8 } }
+                - { name: Iron, type: commodity, game: west, quantities: { west_3_8: 8, west_9: 8, combined_10_11: 8, combined_12_14_west: 4, combined_12_14_east: 4, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Furs, type: commodity, game: east, quantities: { east_3_8: 8, east_9: 8, combined_12_14_west: 4, combined_12_14_east: 4, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Wax, type: commodity, game: shared, quantities: { east_9: 8, west_9: 8, combined_10_11: 8, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Tempest, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Volcanic Eruption, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Treachery, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        3:
+            cards:
+                - { name: Fish, type: commodity, game: west, quantities: { west_3_8: 8, west_9: 8, combined_10_11: 8, combined_12_14_west: 8, combined_15_18_west: 8 } }
+                - { name: Timber, type: commodity, game: east, quantities: { east_3_8: 8, east_9: 8, combined_12_14_east: 8, combined_15_18_east: 8 } }
+                - { name: Fruit, type: commodity, game: west, quantities: { west_3_8: 9, west_9: 9, combined_10_11: 9, combined_12_14_west: 5, combined_12_14_east: 4, combined_15_18_west: 5, combined_15_18_east: 4 } }
+                - { name: Salt, type: commodity, game: east, quantities: { east_3_8: 9, east_9: 9, combined_12_14_west: 4, combined_12_14_east: 5, combined_15_18_west: 4, combined_15_18_east: 5 } }
+                - { name: Ceramics, type: commodity, game: shared, quantities: { east_9: 8, west_9: 8, combined_10_11: 8, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Squandered Wealth, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Famine, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Slave Revolt, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        4:
+            cards:
+                - { name: Wool, type: commodity, game: west, quantities: { west_3_8: 7, west_9: 7, combined_10_11: 7, combined_12_14_west: 7, combined_15_18_west: 7 } }
+                - { name: Cotton, type: commodity, game: east, quantities: { east_3_8: 7, east_9: 7, combined_12_14_east: 7, combined_15_18_east: 7 } }
+                - { name: Oil, type: commodity, game: west, quantities: { west_3_8: 8, west_9: 8, combined_10_11: 8, combined_12_14_west: 4, combined_12_14_east: 4, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Sugar, type: commodity, game: east, quantities: { east_3_8: 8, east_9: 8, combined_12_14_west: 4, combined_12_14_east: 4, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: Grain, type: commodity, game: shared, quantities: { east_9: 8, west_9: 8, combined_10_11: 8, combined_15_18_west: 4, combined_15_18_east: 4 } }
+                - { name: City Riots, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Flood, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Superstition, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        5:
+            cards:
+                - { name: Wine, type: commodity, game: west, quantities: { west_3_8: 6, west_9: 6, combined_10_11: 6, combined_12_14_west: 6, combined_15_18_west: 6 } }
+                - { name: Lacquer, type: commodity, game: east, quantities: { east_3_8: 6, east_9: 6, combined_12_14_east: 6, combined_15_18_east: 6 } }
+                - { name: Textiles, type: commodity, game: west, quantities: { west_3_8: 7, west_9: 7, combined_10_11: 7, combined_12_14_west: 4, combined_12_14_east: 3, combined_15_18_west: 4, combined_15_18_east: 3 } }
+                - { name: Livestock, type: commodity, game: east, quantities: { east_3_8: 7, east_9: 7, combined_12_14_west: 3, combined_12_14_east: 4, combined_15_18_west: 3, combined_15_18_east: 4 } }
+                - { name: Glass, type: commodity, game: shared, quantities: { east_9: 6, west_9: 6, combined_10_11: 6, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: City In Flames, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Civil War, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Barbarian Hordes, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        6:
+            cards:
+                - { name: Tin, type: commodity, game: west, quantities: { west_3_8: 5, west_9: 5, combined_10_11: 5, combined_12_14_west: 5, combined_15_18_west: 5 } }
+                - { name: Silver, type: commodity, game: east, quantities: { east_3_8: 5, east_9: 5, combined_12_14_east: 5, combined_15_18_east: 5 } }
+                - { name: Copper, type: commodity, game: west, quantities: { west_3_8: 6, west_9: 6, combined_10_11: 6, combined_12_14_west: 3, combined_12_14_east: 3, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Bronze, type: commodity, game: east, quantities: { east_3_8: 6, east_9: 6, combined_12_14_west: 3, combined_12_14_east: 3, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Lead, type: commodity, game: shared, quantities: { east_9: 6, west_9: 6, combined_10_11: 6, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Tribal Conflict, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Cyclone, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Epidemic, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        7:
+            cards:
+                - { name: Resin, type: commodity, game: west, quantities: { west_3_8: 5, west_9: 5, combined_10_11: 5, combined_12_14_west: 5, combined_15_18_west: 5 } }
+                - { name: Jade, type: commodity, game: east, quantities: { east_3_8: 5, east_9: 5, combined_12_14_east: 5, combined_15_18_east: 5 } }
+                - { name: Incense, type: commodity, game: west, quantities: { west_3_8: 6, west_9: 6, combined_10_11: 6, combined_12_14_west: 3, combined_12_14_east: 3, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Spice, type: commodity, game: east, quantities: { east_3_8: 6, east_9: 6, combined_12_14_west: 3, combined_12_14_east: 3, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Herbs, type: commodity, game: shared, quantities: { east_9: 6, west_9: 6, combined_10_11: 6, combined_15_18_west: 3, combined_15_18_east: 3 } }
+                - { name: Minor Uprising, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Tyranny, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Civil Disorder, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        8:
+            cards:
+                - { name: Marble, type: commodity, game: west, quantities: { west_3_8: 4, west_9: 4, combined_10_11: 4, combined_12_14_west: 4, combined_15_18_west: 4 } }
+                - { name: Dye, type: commodity, game: east, quantities: { east_3_8: 4, east_9: 4, combined_12_14_east: 4, combined_15_18_east: 4 } }
+                - { name: Gemstones, type: commodity, game: west, quantities: { west_3_8: 5, west_9: 5, combined_10_11: 5, combined_12_14_west: 3, combined_12_14_east: 2, combined_15_18_west: 3, combined_15_18_east: 2 } }
+                - { name: Tea, type: commodity, game: east, quantities: { east_3_8: 5, east_9: 5, combined_12_14_west: 2, combined_12_14_east: 3, combined_15_18_west: 2, combined_15_18_east: 3 } }
+                - { name: Obsidian, type: commodity, game: shared, quantities: { east_9: 4, west_9: 4, combined_10_11: 4, combined_15_18_west: 2, combined_15_18_east: 2 } }
+                - { name: Banditry, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Corruption, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Iconoclasm and Heresy, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+        9:
+            cards:
+                - { name: Ivory, type: commodity, game: west, quantities: { west_3_8: 4, west_9: 4, combined_10_11: 4, combined_12_14_west: 4, combined_15_18_west: 4 } }
+                - { name: Silk, type: commodity, game: east, quantities: { east_3_8: 4, east_9: 4, combined_12_14_east: 4, combined_15_18_east: 4 } }
+                - { name: Gold, type: commodity, game: west, quantities: { west_3_8: 5, west_9: 5, combined_10_11: 5, combined_12_14_west: 3, combined_12_14_east: 2, combined_15_18_west: 3, combined_15_18_east: 2 } }
+                - { name: Pearls, type: commodity, game: east, quantities: { east_3_8: 5, east_9: 5, combined_12_14_west: 2, combined_12_14_east: 3, combined_15_18_west: 2, combined_15_18_east: 3 } }
+                - { name: Amber, type: commodity, game: shared, quantities: { east_9: 4, west_9: 4, combined_10_11: 4, combined_15_18_west: 2, combined_15_18_east: 2 } }
+                - { name: Coastal Migration, type: minor_calamity, game: shared, quantities: { east_9: 1, west_9: 1, combined_10_11: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Regression, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
+                - { name: Piracy, type: major_calamity, game: shared, quantities: { east_3_8: 1, east_9: 1, west_3_8: 1, west_9: 1, combined_10_11: 1, combined_12_14_west: 1, combined_12_14_east: 1, combined_15_18_west: 1, combined_15_18_east: 1 } }
