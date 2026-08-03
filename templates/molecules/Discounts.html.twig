@@ -1,3 +1,5 @@
+{% macro discountState(credit) %}{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}{% endmacro -%}
+{% import _self as discounts -%}
 <details {{ attributes }} class="discounts panel">
     <summary>Discounts</summary>
 
@@ -10,13 +12,13 @@
         </thead>
         <tbody>
             {% for category, credit in this.credits.facets %}
-                <tr data-advance-category="{{ category }}" data-discount-state="{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}">
+                <tr data-advance-category="{{ category }}" data-discount-state="{{ discounts.discountState(credit) }}">
                     <td>{{ category|capitalize }}</td>
                     <td><b>{{ credit.amount }}</b></td>
                 </tr>
             {% endfor %}
             {% for name, credit in this.credits.named %}
-                <tr data-discount-state="{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}">
+                <tr data-discount-state="{{ discounts.discountState(credit) }}">
                     <td>{{ name|replace({'_': ' '})|capitalize }}</td>
                     <td><b>{{ credit.amount }}</b></td>
                 </tr>
