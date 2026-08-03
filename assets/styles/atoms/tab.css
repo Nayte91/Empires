@@ -1,6 +1,7 @@
 .tab {
     --tab-radius: 0.375rem;
     --tab-border: 1px solid gainsboro;
+    --tab-shadow: 0 2px 4px hsl(0 0% 0% / 0.2);
 
     > summary {
         order: 1;
@@ -13,14 +14,20 @@
         list-style: none;
         text-align: center;
         font-weight: 600;
+        /* The fill is an empire colour, so the label picks its own polarity from that fill's
+           lightness: white above the 0.85 OKLCH threshold, black below. Measured against the
+           palette, 0.85 sits in the empty band between Iberia (0.8975) and Minoa (0.7964), so
+           only the three near-white fills flip. `color: white` stays as the pre-relative-colour
+           fallback. */
         color: white;
+        color: oklch(from var(--player-color, dimgray) clamp(0, (0.85 - l) * 100, 1) 0 0);
         cursor: pointer;
         user-select: none;
 
         &::-webkit-details-marker { display: none }
     }
 
-    &:open > summary { box-shadow: 0 2px 4px hsl(0 0% 0% / 0.2) }
+    &:open > summary { box-shadow: var(--tab-shadow) }
 
     /* the panel spaces its own children, so they bring no vertical margin of their own */
     > h3 { margin-block: 0 }
@@ -36,8 +43,11 @@
     flex: 1 0 100%;
     border: var(--tab-border);
     border-radius: 0 var(--tab-radius) var(--tab-radius) var(--tab-radius);
+    box-shadow: var(--tab-shadow);
     display: grid;
     gap: 1rem;
     padding: 1.5rem;
-    background: white;
+    /* Tinted, not white: the panel's own children (`.panel`, `.orderCard`) are white, so the tint
+       is what separates the panel from the page *and* lets those cards read as raised on it. */
+    background: var(--operator-bg-subtle);
 }

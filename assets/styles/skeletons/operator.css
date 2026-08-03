@@ -7,8 +7,6 @@
     gap: 1rem;
     background: white;
 
-    #page-title { color: black }
-
     .operator-console__turn-controls {
         display: flex;
         align-items: center;
