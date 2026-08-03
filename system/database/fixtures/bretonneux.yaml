@@ -1,0 +1,1520 @@
+# Fixture — the 'bretonneux' game, in the final state it reached in production.
+#
+# Captured from prod on 2026-08-03, after the game was finished (turn 15, expert A.S.T.,
+# 14 players). It is the project's only sample of a real, fully played game: the scores
+# are real, the purchase history is real, and so is its incompleteness — the operator did
+# not record every purchase as it happened, which is why some turns hold no order at all.
+#
+# Identifiers are deliberately absent. Games and players are keyed by UUID in the schema;
+# a loader must mint fresh ones, so nothing here can collide with an existing row.
+#
+# `finished_at` is what makes this a finished game — drop it and the app serves the
+# dashboard instead of the chronicle, and the Evolution chart disappears with it.
+#
+# Faithful to the schema, with two deliberate departures:
+#   - the three JSON columns (player.advances, player.credit_ledger, orders.lines) are
+#     expanded into real YAML instead of embedded strings, so they can be read and edited;
+#   - order timestamps are absent. created_at and validated_at are stamped by the domain
+#     itself when an order is built and frozen, so a loader cannot honour a value from
+#     here without reaching around the entities. Nothing depends on them: chronology is
+#     carried by `turn`. They are omitted rather than written down and silently ignored.
+
+game:
+    slug: bretonneux
+    current_turn: 15
+    player_count: 14
+    ast_version: expert
+    # No region: from 12 players up a game draws on both the East and West sets at once.
+    region: ~
+    finished_at: '2026-08-02 18:51:37'
+
+players:
+    - name: Nayte
+      slug: nayte
+      empire: minoa
+      cities: 7
+      census: 16
+      treasury: 11
+      ships: 3
+      cards: 7
+      ast_position: 14
+      advances: [masonry, pottery, agriculture, cloth_making, astronavigation, monument, written_record,
+          mysticism, empiricism, engineering, metalworking, sculpture, wonder_of_the_world, architecture,
+          music, literacy, drama_and_poetry, rhetoric, urbanism, mythology, monarchy, diplomacy,
+          roadbuilding, medicine]
+      credit_ledger:
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 7, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 7, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 7, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 7, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 8, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 8, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 8, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 11, scope: calendar, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: wonder_of_the_world, value: 20, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: roadbuilding, value: 20, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 12, scope: art, value: 20, source: shop, reason: 'advance:wonder_of_the_world' }
+          - { turn: 12, scope: craft, value: 20, source: shop, reason: 'advance:wonder_of_the_world' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:architecture' }
+          - { turn: 13, scope: science, value: 5, source: shop, reason: 'advance:architecture' }
+          - { turn: 13, scope: mining, value: 20, source: shop, reason: 'advance:architecture' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 13, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 13, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 13, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 13, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 13, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 14, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: politics, value: 20, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 14, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 14, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 14, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 14, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 14, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 14, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 14, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 15, scope: art, value: 10, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 15, scope: provincial_empire, value: 20, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 15, scope: craft, value: 20, source: shop, reason: 'advance:roadbuilding' }
+          - { turn: 15, scope: science, value: 5, source: shop, reason: 'advance:roadbuilding' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:medicine' }
+          - { turn: 15, scope: science, value: 10, source: shop, reason: 'advance:medicine' }
+          - { turn: 15, scope: anatomy, value: 20, source: shop, reason: 'advance:medicine' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 120
+            lines:
+                - { key: masonry, netCost: 60 }
+                - { key: pottery, netCost: 60 }
+          - turn: 8
+            status: validated
+            total: 90
+            lines:
+                - { key: agriculture, netCost: 90 }
+          - turn: 10
+            status: validated
+            total: 240
+            lines:
+                - { key: cloth_making, netCost: 20 }
+                - { key: astronavigation, netCost: 70 }
+                - key: monument
+                  netCost: 150
+                  promotion: { type: option, source: monument, allocation: {"craft": 20} }
+          - turn: 11
+            status: validated
+            total: 255
+            lines:
+                - key: written_record
+                  netCost: 40
+                  promotion: { type: option, source: written_record, allocation: {"art": 10} }
+                - { key: mysticism, netCost: 35 }
+                - { key: empiricism, netCost: 40 }
+                - { key: engineering, netCost: 80 }
+                - { key: metalworking, netCost: 20 }
+                - { key: sculpture, netCost: 40 }
+          - turn: 12
+            status: validated
+            total: 175
+            lines:
+                - { key: wonder_of_the_world, netCost: 175 }
+          - turn: 13
+            status: validated
+            total: 140
+            lines:
+                - { key: architecture, netCost: 70 }
+                - { key: music, netCost: 20 }
+                - { key: literacy, netCost: 50 }
+          - turn: 14
+            status: validated
+            total: 115
+            lines:
+                - { key: drama_and_poetry, netCost: 0 }
+                - { key: rhetoric, netCost: 40 }
+                - { key: urbanism, netCost: 20 }
+                - { key: mythology, netCost: 25 }
+                - { key: monarchy, netCost: 30 }
+          - turn: 15
+            status: validated
+            total: 185
+            lines:
+                - { key: diplomacy, netCost: 35 }
+                - { key: roadbuilding, netCost: 80 }
+                - { key: medicine, netCost: 70 }
+
+    - name: Kangoo
+      slug: kangoo
+      empire: celt
+      cities: 6
+      census: 41
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 11
+      advances: [monarchy, pottery, agriculture, cloth_making, masonry, urbanism, written_record, metalworking,
+          military]
+      credit_ledger:
+          - { turn: 7, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 7, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 7, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 8, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 8, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 8, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 8, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 8, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 8, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 12, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 12, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 12, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 13, scope: civic, value: 10, source: shop, reason: 'advance:military' }
+          - { turn: 13, scope: craft, value: 5, source: shop, reason: 'advance:military' }
+          - { turn: 13, scope: advanced_military, value: 20, source: shop, reason: 'advance:military' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 60
+            lines:
+                - { key: monarchy, netCost: 60 }
+          - turn: 8
+            status: validated
+            total: 180
+            lines:
+                - { key: pottery, netCost: 60 }
+                - { key: agriculture, netCost: 120 }
+          - turn: 11
+            status: validated
+            total: 70
+            lines:
+                - { key: cloth_making, netCost: 30 }
+                - { key: masonry, netCost: 40 }
+          - turn: 12
+            status: validated
+            total: 140
+            lines:
+                - { key: urbanism, netCost: 40 }
+                - key: written_record
+                  netCost: 50
+                  promotion: { type: option, source: written_record, allocation: {"civic": 10} }
+                - { key: metalworking, netCost: 50 }
+          - turn: 13
+            status: validated
+            total: 120
+            lines:
+                - { key: military, netCost: 120 }
+
+    - name: Yann
+      slug: yann
+      empire: rome
+      cities: 5
+      census: 40
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 14
+      advances: [agriculture, urbanism, drama_and_poetry, sculpture, empiricism, music, cloth_making,
+          metalworking, medicine, mythology, literacy, written_record, pottery, mysticism, masonry,
+          architecture, mathematics, monarchy, rhetoric, engineering, monument, theology, deism,
+          astronavigation, theocracy, coinage, diplomacy]
+      credit_ledger:
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 7, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 7, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 7, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 7, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 7, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 10, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 10, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 10, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 10, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 10, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 10, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: anatomy, value: 20, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 12, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: art, value: 10, source: shop, reason: 'advance:architecture' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:architecture' }
+          - { turn: 12, scope: mining, value: 20, source: shop, reason: 'advance:architecture' }
+          - { turn: 12, scope: art, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 12, scope: civic, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 12, scope: religion, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 12, scope: science, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 13, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 13, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 13, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 13, scope: civic, value: 5, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 13, scope: politics, value: 20, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 13, scope: craft, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 13, scope: science, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 13, scope: roadbuilding, value: 20, source: shop, reason: 'advance:engineering' }
+          - { turn: 13, scope: craft, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 13, scope: religion, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 13, scope: wonder_of_the_world, value: 20, source: shop, reason: 'advance:monument' }
+          - { turn: 13, scope: religion, value: 20, source: shop, reason: 'advance:theology' }
+          - { turn: 13, scope: science, value: 5, source: shop, reason: 'advance:theology' }
+          - { turn: 14, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: science, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: calendar, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 14, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 14, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 14, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: provincial_empire, value: 20, source: shop, reason: 'advance:diplomacy' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 250
+            lines:
+                - { key: agriculture, netCost: 120 }
+                - { key: urbanism, netCost: 50 }
+                - { key: drama_and_poetry, netCost: 80 }
+          - turn: 8
+            status: validated
+            total: 35
+            lines:
+                - { key: cloth_making, netCost: 35 }
+          - turn: 9
+            status: validated
+            total: 160
+            lines:
+                - { key: sculpture, netCost: 40 }
+                - { key: empiricism, netCost: 50 }
+                - { key: music, netCost: 70 }
+          - turn: 10
+            status: validated
+            total: 220
+            lines:
+                - { key: metalworking, netCost: 65 }
+                - { key: medicine, netCost: 110 }
+                - { key: mythology, netCost: 45 }
+          - turn: 11
+            status: validated
+            total: 105
+            lines:
+                - { key: literacy, netCost: 55 }
+                - key: written_record
+                  netCost: 30
+                  promotion: { type: option, source: written_record, allocation: {"art": 10} }
+                - { key: pottery, netCost: 20 }
+          - turn: 12
+            status: validated
+            total: 225
+            lines:
+                - { key: mysticism, netCost: 0 }
+                - { key: masonry, netCost: 5 }
+                - { key: architecture, netCost: 60 }
+                - { key: mathematics, netCost: 160 }
+          - turn: 13
+            status: validated
+            total: 400
+            lines:
+                - { key: monarchy, netCost: 10 }
+                - { key: rhetoric, netCost: 15 }
+                - { key: engineering, netCost: 75 }
+                - key: monument
+                  netCost: 95
+                  promotion: { type: option, source: monument, allocation: {"science": 5, "art": 15} }
+                - { key: theology, netCost: 205 }
+          - turn: 14
+            status: validated
+            total: 20
+            lines:
+                - { key: deism, netCost: 0 }
+                - { key: astronavigation, netCost: 0 }
+                - { key: theocracy, netCost: 0 }
+                - { key: coinage, netCost: 0 }
+                - { key: diplomacy, netCost: 20 }
+
+    - name: Fabien
+      slug: fabien
+      empire: babylon
+      cities: 5
+      census: 22
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 13
+      advances: [pottery, sculpture, mysticism, masonry, cloth_making, monarchy, theocracy, literacy,
+          metalworking, agriculture, engineering, urbanism, empiricism, mythology, deism, music,
+          written_record, fundamentalism, medicine, mathematics]
+      credit_ledger:
+          - { turn: 7, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 7, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: roadbuilding, value: 20, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 15, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 15, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 15, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:fundamentalism' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:fundamentalism' }
+          - { turn: 15, scope: monotheism, value: 20, source: shop, reason: 'advance:fundamentalism' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:medicine' }
+          - { turn: 15, scope: science, value: 10, source: shop, reason: 'advance:medicine' }
+          - { turn: 15, scope: anatomy, value: 20, source: shop, reason: 'advance:medicine' }
+          - { turn: 15, scope: art, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: science, value: 20, source: shop, reason: 'advance:mathematics' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 60
+            lines:
+                - { key: pottery, netCost: 60 }
+          - turn: 9
+            status: validated
+            total: 805
+            lines:
+                - { key: sculpture, netCost: 45 }
+                - { key: mysticism, netCost: 45 }
+                - { key: masonry, netCost: 50 }
+                - { key: cloth_making, netCost: 40 }
+                - { key: monarchy, netCost: 60 }
+                - { key: theocracy, netCost: 80 }
+                - { key: literacy, netCost: 105 }
+                - { key: metalworking, netCost: 80 }
+                - { key: agriculture, netCost: 100 }
+                - { key: engineering, netCost: 150 }
+                - { key: urbanism, netCost: 50 }
+          - turn: 10
+            status: validated
+            total: 165
+            lines:
+                - { key: empiricism, netCost: 30 }
+                - { key: mythology, netCost: 40 }
+                - { key: deism, netCost: 50 }
+                - { key: music, netCost: 45 }
+          - turn: 11
+            status: validated
+            total: 10
+            lines:
+                - key: written_record
+                  netCost: 10
+                  promotion: { type: option, source: written_record, allocation: {"craft": 10} }
+          - turn: 12
+            status: validated
+            total: 350
+            lines:
+                - { key: fundamentalism, netCost: 90 }
+                - { key: medicine, netCost: 85 }
+                - { key: mathematics, netCost: 175 }
+
+    - name: SebG
+      slug: sebg
+      empire: carthage
+      cities: 7
+      census: 22
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 13
+      advances: [agriculture, medicine, metalworking, engineering, cloth_making, written_record, literacy,
+          empiricism, urbanism, masonry, pottery, astronavigation, monarchy, military, theocracy,
+          mysticism, naval_warfare, coinage, mythology, sculpture, democracy]
+      credit_ledger:
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: craft, value: 5, source: shop, reason: 'advance:medicine' }
+          - { turn: 7, scope: science, value: 10, source: shop, reason: 'advance:medicine' }
+          - { turn: 7, scope: anatomy, value: 20, source: shop, reason: 'advance:medicine' }
+          - { turn: 9, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 9, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 9, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: roadbuilding, value: 20, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 12, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 12, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 12, scope: science, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 12, scope: calendar, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 15, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:military' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:military' }
+          - { turn: 15, scope: advanced_military, value: 20, source: shop, reason: 'advance:military' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 15, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 15, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 15, scope: diaspora, value: 20, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 15, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 15, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 15, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 15, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:democracy' }
+          - { turn: 15, scope: civic, value: 20, source: shop, reason: 'advance:democracy' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 260
+            lines:
+                - { key: agriculture, netCost: 120 }
+                - { key: medicine, netCost: 140 }
+          - turn: 9
+            status: validated
+            total: 75
+            lines:
+                - { key: metalworking, netCost: 75 }
+          - turn: 10
+            status: validated
+            total: 160
+            lines:
+                - { key: engineering, netCost: 135 }
+                - { key: cloth_making, netCost: 25 }
+          - turn: 11
+            status: validated
+            total: 140
+            lines:
+                - key: written_record
+                  netCost: 35
+                  promotion: { type: option, source: written_record, allocation: {"civic": 10} }
+                - { key: literacy, netCost: 105 }
+          - turn: 12
+            status: validated
+            total: 110
+            lines:
+                - { key: empiricism, netCost: 25 }
+                - { key: urbanism, netCost: 20 }
+                - { key: masonry, netCost: 10 }
+                - { key: pottery, netCost: 10 }
+                - { key: astronavigation, netCost: 45 }
+          - turn: 13
+            status: validated
+            total: 165
+            lines:
+                - { key: monarchy, netCost: 15 }
+                - { key: military, netCost: 115 }
+                - { key: theocracy, netCost: 35 }
+          - turn: 14
+            status: validated
+            total: 130
+            lines:
+                - { key: mysticism, netCost: 25 }
+                - { key: naval_warfare, netCost: 80 }
+                - { key: coinage, netCost: 25 }
+          - turn: 15
+            status: validated
+            total: 165
+            lines:
+                - { key: mythology, netCost: 30 }
+                - { key: sculpture, netCost: 20 }
+                - { key: democracy, netCost: 115 }
+
+    - name: Will
+      slug: will
+      empire: persia
+      cities: 3
+      census: 40
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 13
+      advances: [mysticism, sculpture, urbanism, cloth_making, empiricism, drama_and_poetry, music, monarchy,
+          written_record, literacy]
+      credit_ledger:
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+      orders:
+          - turn: 9
+            status: validated
+            total: 650
+            lines:
+                - { key: mysticism, netCost: 50 }
+                - { key: sculpture, netCost: 50 }
+                - { key: urbanism, netCost: 50 }
+                - { key: cloth_making, netCost: 50 }
+                - { key: empiricism, netCost: 60 }
+                - { key: drama_and_poetry, netCost: 80 }
+                - { key: music, netCost: 80 }
+                - { key: monarchy, netCost: 60 }
+                - key: written_record
+                  netCost: 60
+                  promotion: { type: option, source: written_record, allocation: {"art": 10} }
+                - { key: literacy, netCost: 110 }
+
+    - name: SebR
+      slug: sebr
+      empire: nubia
+      cities: 5
+      census: 31
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 13
+      advances: [mysticism, drama_and_poetry, music, deism, masonry, metalworking, urbanism, monarchy, pottery,
+          empiricism, mythology, sculpture, written_record, literacy, agriculture, astronavigation,
+          mathematics]
+      credit_ledger:
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 11, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: science, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: calendar, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 14, scope: art, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 14, scope: civic, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 14, scope: craft, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 14, scope: religion, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 14, scope: science, value: 20, source: shop, reason: 'advance:mathematics' }
+      orders:
+          - turn: 9
+            status: validated
+            total: 1060
+            lines:
+                - { key: mysticism, netCost: 50 }
+                - { key: drama_and_poetry, netCost: 80 }
+                - { key: music, netCost: 80 }
+                - { key: deism, netCost: 70 }
+                - { key: masonry, netCost: 60 }
+                - { key: metalworking, netCost: 90 }
+                - { key: urbanism, netCost: 50 }
+                - { key: monarchy, netCost: 60 }
+                - { key: pottery, netCost: 60 }
+                - { key: empiricism, netCost: 60 }
+                - { key: mythology, netCost: 60 }
+                - { key: sculpture, netCost: 50 }
+                - key: written_record
+                  netCost: 60
+                  promotion: { type: option, source: written_record, allocation: {"craft": 10} }
+                - { key: literacy, netCost: 110 }
+                - { key: agriculture, netCost: 120 }
+          - turn: 14
+            status: validated
+            total: 215
+            lines:
+                - { key: astronavigation, netCost: 45 }
+                - { key: mathematics, netCost: 170 }
+
+    - name: JM
+      slug: jm
+      empire: hellas
+      cities: 8
+      census: 22
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 14
+      advances: [monarchy, coinage, empiricism, urbanism, architecture, mining, sculpture, written_record,
+          theocracy, cloth_making, mythology, astronavigation, mysticism, monotheism, diplomacy,
+          universal_doctrine, deism, masonry, pottery, drama_and_poetry, philosophy]
+      credit_ledger:
+          - { turn: 7, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 7, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 7, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 7, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 7, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 7, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:architecture' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:architecture' }
+          - { turn: 11, scope: mining, value: 20, source: shop, reason: 'advance:architecture' }
+          - { turn: 11, scope: craft, value: 20, source: shop, reason: 'advance:mining' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:mining' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 12, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 12, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 12, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 12, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 12, scope: science, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 12, scope: calendar, value: 10, source: shop, reason: 'advance:astronavigation' }
+          - { turn: 12, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 12, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:monotheism' }
+          - { turn: 14, scope: religion, value: 20, source: shop, reason: 'advance:monotheism' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: provincial_empire, value: 20, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: religion, value: 10, source: shop, reason: 'advance:universal_doctrine' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:universal_doctrine' }
+          - { turn: 14, scope: theology, value: 20, source: shop, reason: 'advance:universal_doctrine' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 15, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 15, scope: religion, value: 20, source: shop, reason: 'advance:philosophy' }
+          - { turn: 15, scope: science, value: 20, source: shop, reason: 'advance:philosophy' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 150
+            lines:
+                - { key: monarchy, netCost: 60 }
+                - { key: coinage, netCost: 90 }
+          - turn: 8
+            status: validated
+            total: 455
+            lines:
+                - { key: empiricism, netCost: 50 }
+                - { key: urbanism, netCost: 35 }
+                - { key: architecture, netCost: 140 }
+                - { key: mining, netCost: 230 }
+          - turn: 10
+            status: validated
+            total: 60
+            lines:
+                - { key: sculpture, netCost: 35 }
+                - key: written_record
+                  netCost: 25
+                  promotion: { type: option, source: written_record, allocation: {"science": 10} }
+          - turn: 12
+            status: validated
+            total: 170
+            lines:
+                - { key: theocracy, netCost: 40 }
+                - { key: cloth_making, netCost: 25 }
+                - { key: mythology, netCost: 50 }
+                - { key: astronavigation, netCost: 30 }
+                - { key: mysticism, netCost: 25 }
+          - turn: 13
+            status: validated
+            total: 430
+            lines:
+                - { key: monotheism, netCost: 205 }
+                - { key: diplomacy, netCost: 110 }
+                - { key: universal_doctrine, netCost: 115 }
+          - turn: 14
+            status: validated
+            total: 5
+            lines:
+                - { key: deism, netCost: 5 }
+          - turn: 15
+            status: validated
+            total: 215
+            lines:
+                - { key: masonry, netCost: 20 }
+                - { key: pottery, netCost: 20 }
+                - { key: drama_and_poetry, netCost: 30 }
+                - { key: philosophy, netCost: 145 }
+
+    - name: Claude
+      slug: claude
+      empire: hatti
+      cities: 5
+      census: 20
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 11
+      advances: [deism, coinage, metalworking]
+      credit_ledger:
+          - { turn: 8, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 8, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 8, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 8, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 8, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 8, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 8, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 8, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 8, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 160
+            lines:
+                - { key: deism, netCost: 70 }
+                - { key: coinage, netCost: 90 }
+          - turn: 8
+            status: validated
+            total: 85
+            lines:
+                - { key: metalworking, netCost: 85 }
+
+    - name: Renaud
+      slug: renaud
+      empire: egypt
+      cities: 6
+      census: 46
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 13
+      advances: [metalworking, urbanism, literacy, cloth_making, mysticism, theocracy, sculpture, monarchy,
+          military, naval_warfare, written_record, empiricism, provincial_empire, democracy,
+          advanced_military, law, mythology, masonry, pottery, deism]
+      credit_ledger:
+          - { turn: 8, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 8, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 8, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 8, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 8, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 8, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 8, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 8, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 8, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 8, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 8, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 8, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:military' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:military' }
+          - { turn: 11, scope: advanced_military, value: 20, source: shop, reason: 'advance:military' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 11, scope: diaspora, value: 20, source: shop, reason: 'advance:naval_warfare' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:provincial_empire' }
+          - { turn: 14, scope: civic, value: 20, source: shop, reason: 'advance:provincial_empire' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:democracy' }
+          - { turn: 15, scope: civic, value: 20, source: shop, reason: 'advance:democracy' }
+          - { turn: 15, scope: civic, value: 20, source: shop, reason: 'advance:advanced_military' }
+          - { turn: 15, scope: science, value: 5, source: shop, reason: 'advance:advanced_military' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: cultural_ascendancy, value: 20, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 15, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+      orders:
+          - turn: 6
+            status: validated
+            total: 140
+            lines:
+                - { key: metalworking, netCost: 90 }
+                - { key: urbanism, netCost: 50 }
+          - turn: 8
+            status: validated
+            total: 95
+            lines:
+                - { key: literacy, netCost: 95 }
+          - turn: 10
+            status: validated
+            total: 560
+            lines:
+                - { key: cloth_making, netCost: 35 }
+                - { key: mysticism, netCost: 40 }
+                - { key: theocracy, netCost: 55 }
+                - { key: sculpture, netCost: 40 }
+                - { key: monarchy, netCost: 35 }
+                - { key: military, netCost: 135 }
+                - { key: naval_warfare, netCost: 135 }
+                - key: written_record
+                  netCost: 35
+                  promotion: { type: option, source: written_record, allocation: {"civic": 10} }
+                - { key: empiricism, netCost: 50 }
+          - turn: 11
+            status: validated
+            total: 110
+            lines:
+                - { key: law, netCost: 0 }
+                - { key: mythology, netCost: 30 }
+                - { key: masonry, netCost: 20 }
+                - { key: pottery, netCost: 20 }
+                - { key: deism, netCost: 40 }
+          - turn: 13
+            status: validated
+            total: 175
+            lines:
+                - { key: provincial_empire, netCost: 175 }
+          - turn: 15
+            status: validated
+            total: 230
+            lines:
+                - { key: democracy, netCost: 115 }
+                - { key: advanced_military, netCost: 115 }
+
+    - name: JP
+      slug: jp
+      empire: assyria
+      cities: 6
+      census: 32
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 14
+      advances: [cloth_making, masonry, mysticism, monarchy, coinage, urbanism, sculpture, medicine, literacy,
+          metalworking, pottery, empiricism, agriculture, written_record]
+      credit_ledger:
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 11, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: anatomy, value: 20, source: shop, reason: 'advance:medicine' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+      orders:
+          - turn: 9
+            status: validated
+            total: 550
+            lines:
+                - { key: cloth_making, netCost: 50 }
+                - { key: masonry, netCost: 60 }
+                - { key: mysticism, netCost: 50 }
+                - { key: monarchy, netCost: 60 }
+                - { key: coinage, netCost: 90 }
+                - { key: urbanism, netCost: 50 }
+                - { key: sculpture, netCost: 50 }
+                - { key: medicine, netCost: 140 }
+          - turn: 10
+            status: validated
+            total: 335
+            lines:
+                - { key: literacy, netCost: 80 }
+                - { key: metalworking, netCost: 65 }
+                - { key: pottery, netCost: 35 }
+                - { key: empiricism, netCost: 30 }
+                - { key: agriculture, netCost: 95 }
+                - key: written_record
+                  netCost: 30
+                  promotion: { type: option, source: written_record, allocation: {"science": 10} }
+
+    - name: SebY
+      slug: seby
+      empire: parthia
+      cities: 7
+      census: 32
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 15
+      advances: [pottery, engineering, rhetoric, agriculture, metalworking, masonry, cloth_making, sculpture,
+          drama_and_poetry, mysticism, urbanism, written_record]
+      credit_ledger:
+          - { turn: 6, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 6, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 6, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: roadbuilding, value: 20, source: shop, reason: 'advance:engineering' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 11, scope: politics, value: 20, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 11, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+      orders:
+          - turn: 6
+            status: validated
+            total: 60
+            lines:
+                - { key: pottery, netCost: 60 }
+          - turn: 9
+            status: validated
+            total: 820
+            lines:
+                - { key: engineering, netCost: 150 }
+                - { key: rhetoric, netCost: 125 }
+                - { key: agriculture, netCost: 100 }
+                - { key: metalworking, netCost: 80 }
+                - { key: masonry, netCost: 50 }
+                - { key: cloth_making, netCost: 40 }
+                - { key: sculpture, netCost: 45 }
+                - { key: drama_and_poetry, netCost: 75 }
+                - { key: mysticism, netCost: 45 }
+                - { key: urbanism, netCost: 50 }
+                - key: written_record
+                  netCost: 60
+                  promotion: { type: option, source: written_record, allocation: {"civic": 10} }
+
+    - name: NicoF
+      slug: nicof
+      empire: saba
+      cities: 5
+      census: 25
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 10
+      advances: [monarchy, mythology, urbanism, written_record, empiricism, pottery]
+      credit_ledger:
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 11, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 15, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+      orders:
+          - turn: 9
+            status: validated
+            total: 290
+            lines:
+                - { key: monarchy, netCost: 60 }
+                - { key: mythology, netCost: 60 }
+                - { key: urbanism, netCost: 50 }
+                - key: written_record
+                  netCost: 60
+                  promotion: { type: option, source: written_record, allocation: {"civic": 10} }
+                - { key: empiricism, netCost: 60 }
+          - turn: 14
+            status: validated
+            total: 55
+            lines:
+                - { key: pottery, netCost: 55 }
+
+    - name: NicoT
+      slug: nicot
+      empire: iberia
+      cities: 7
+      census: 43
+      treasury: 0
+      ships: 0
+      cards: 0
+      ast_position: 14
+      advances: [agriculture, empiricism, cloth_making, coinage, sculpture, architecture, democracy, mysticism,
+          metalworking, monument, written_record, urbanism, wonder_of_the_world, drama_and_poetry,
+          monarchy, monotheism, masonry, pottery, music, mythology, diplomacy, literacy, rhetoric, deism,
+          cultural_ascendancy, theocracy, politics, mathematics, law, fundamentalism]
+      credit_ledger:
+          - { turn: 7, scope: craft, value: 10, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: science, value: 5, source: shop, reason: 'advance:agriculture' }
+          - { turn: 7, scope: democracy, value: 20, source: shop, reason: 'advance:agriculture' }
+          - { turn: 10, scope: art, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: civic, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: craft, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: religion, value: 5, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: science, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: medicine, value: 10, source: shop, reason: 'advance:empiricism' }
+          - { turn: 10, scope: art, value: 5, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 10, scope: craft, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 10, scope: naval_warfare, value: 10, source: shop, reason: 'advance:cloth_making' }
+          - { turn: 10, scope: civic, value: 5, source: shop, reason: 'advance:coinage' }
+          - { turn: 10, scope: science, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 10, scope: trade_routes, value: 10, source: shop, reason: 'advance:coinage' }
+          - { turn: 10, scope: art, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: civic, value: 5, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: architecture, value: 10, source: shop, reason: 'advance:sculpture' }
+          - { turn: 10, scope: art, value: 10, source: shop, reason: 'advance:architecture' }
+          - { turn: 10, scope: science, value: 5, source: shop, reason: 'advance:architecture' }
+          - { turn: 10, scope: mining, value: 20, source: shop, reason: 'advance:architecture' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:democracy' }
+          - { turn: 11, scope: civic, value: 20, source: shop, reason: 'advance:democracy' }
+          - { turn: 11, scope: art, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: religion, value: 5, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: monument, value: 10, source: shop, reason: 'advance:mysticism' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: military, value: 10, source: shop, reason: 'advance:metalworking' }
+          - { turn: 11, scope: craft, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: religion, value: 10, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: wonder_of_the_world, value: 20, source: shop, reason: 'advance:monument' }
+          - { turn: 11, scope: civic, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: cartography, value: 10, source: shop, reason: 'advance:written_record' }
+          - { turn: 11, scope: civic, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: science, value: 5, source: shop, reason: 'advance:urbanism' }
+          - { turn: 11, scope: diplomacy, value: 10, source: shop, reason: 'advance:urbanism' }
+          - { turn: 12, scope: art, value: 20, source: shop, reason: 'advance:wonder_of_the_world' }
+          - { turn: 12, scope: craft, value: 20, source: shop, reason: 'advance:wonder_of_the_world' }
+          - { turn: 12, scope: art, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 12, scope: rhetoric, value: 10, source: shop, reason: 'advance:drama_and_poetry' }
+          - { turn: 12, scope: religion, value: 5, source: shop, reason: 'advance:monarchy' }
+          - { turn: 12, scope: civic, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 12, scope: law, value: 10, source: shop, reason: 'advance:monarchy' }
+          - { turn: 12, scope: civic, value: 5, source: shop, reason: 'advance:monotheism' }
+          - { turn: 12, scope: religion, value: 20, source: shop, reason: 'advance:monotheism' }
+          - { turn: 13, scope: craft, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 13, scope: science, value: 5, source: shop, reason: 'advance:masonry' }
+          - { turn: 13, scope: engineering, value: 10, source: shop, reason: 'advance:masonry' }
+          - { turn: 13, scope: art, value: 5, source: shop, reason: 'advance:pottery' }
+          - { turn: 13, scope: craft, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 13, scope: agriculture, value: 10, source: shop, reason: 'advance:pottery' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: religion, value: 5, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: enlightenment, value: 10, source: shop, reason: 'advance:music' }
+          - { turn: 13, scope: art, value: 5, source: shop, reason: 'advance:mythology' }
+          - { turn: 13, scope: religion, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 13, scope: literacy, value: 10, source: shop, reason: 'advance:mythology' }
+          - { turn: 13, scope: art, value: 10, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 13, scope: civic, value: 5, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 13, scope: provincial_empire, value: 20, source: shop, reason: 'advance:diplomacy' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: civic, value: 10, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: craft, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: science, value: 5, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: mathematics, value: 20, source: shop, reason: 'advance:literacy' }
+          - { turn: 14, scope: art, value: 10, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: politics, value: 20, source: shop, reason: 'advance:rhetoric' }
+          - { turn: 14, scope: craft, value: 5, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: religion, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: fundamentalism, value: 10, source: shop, reason: 'advance:deism' }
+          - { turn: 14, scope: art, value: 20, source: shop, reason: 'advance:cultural_ascendancy' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:cultural_ascendancy' }
+          - { turn: 14, scope: religion, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 14, scope: civic, value: 5, source: shop, reason: 'advance:theocracy' }
+          - { turn: 14, scope: universal_doctrine, value: 10, source: shop, reason: 'advance:theocracy' }
+          - { turn: 15, scope: art, value: 20, source: shop, reason: 'advance:politics' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:politics' }
+          - { turn: 15, scope: art, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: craft, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: science, value: 20, source: shop, reason: 'advance:mathematics' }
+          - { turn: 15, scope: religion, value: 5, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: civic, value: 10, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: cultural_ascendancy, value: 20, source: shop, reason: 'advance:law' }
+          - { turn: 15, scope: art, value: 5, source: shop, reason: 'advance:fundamentalism' }
+          - { turn: 15, scope: religion, value: 10, source: shop, reason: 'advance:fundamentalism' }
+          - { turn: 15, scope: monotheism, value: 20, source: shop, reason: 'advance:fundamentalism' }
+      orders:
+          - turn: 7
+            status: validated
+            total: 120
+            lines:
+                - { key: agriculture, netCost: 120 }
+          - turn: 8
+            status: validated
+            total: 370
+            lines:
+                - { key: empiricism, netCost: 55 }
+                - { key: cloth_making, netCost: 40 }
+                - { key: coinage, netCost: 85 }
+                - { key: sculpture, netCost: 50 }
+                - { key: architecture, netCost: 140 }
+          - turn: 10
+            status: validated
+            total: 205
+            lines:
+                - { key: democracy, netCost: 185 }
+                - { key: mysticism, netCost: 20 }
+          - turn: 11
+            status: validated
+            total: 250
+            lines:
+                - { key: metalworking, netCost: 65 }
+                - key: monument
+                  netCost: 145
+                  promotion: { type: option, source: monument, allocation: {"art": 20} }
+                - key: written_record
+                  netCost: 25
+                  promotion: { type: option, source: written_record, allocation: {"art": 10} }
+                - { key: urbanism, netCost: 15 }
+          - turn: 12
+            status: validated
+            total: 435
+            lines:
+                - { key: wonder_of_the_world, netCost: 200 }
+                - { key: drama_and_poetry, netCost: 10 }
+                - { key: monarchy, netCost: 5 }
+                - { key: monotheism, netCost: 220 }
+          - turn: 13
+            status: validated
+            total: 60
+            lines:
+                - { key: masonry, netCost: 0 }
+                - { key: pottery, netCost: 0 }
+                - { key: music, netCost: 0 }
+                - { key: mythology, netCost: 10 }
+                - { key: diplomacy, netCost: 50 }
+          - turn: 14
+            status: validated
+            total: 160
+            lines:
+                - { key: literacy, netCost: 0 }
+                - { key: rhetoric, netCost: 0 }
+                - { key: deism, netCost: 5 }
+                - { key: cultural_ascendancy, netCost: 150 }
+                - { key: theocracy, netCost: 5 }
+          - turn: 15
+            status: validated
+            total: 195
+            lines:
+                - { key: politics, netCost: 40 }
+                - { key: mathematics, netCost: 60 }
+                - { key: law, netCost: 45 }
+                - { key: fundamentalism, netCost: 50 }

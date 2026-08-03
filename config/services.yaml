@@ -38,8 +38,30 @@ services:
     Userforged\ShopEngine\FacetProviderInterface: '@App\Rules\Shop\ShopConnector'
     Userforged\ShopEngine\PriceResolverInterface: '@App\Rules\Shop\AdvancePriceResolver'
 
+# The fixtures live under system/, beside the migrations they resemble, so the App\ scan above
+# never sees them. Registered per-environment rather than globally: they extend a class from
+# doctrine/doctrine-fixtures-bundle, a dev dependency absent from a production install, so a
+# global registration would fail to compile the container there.
+when@dev:
+    services:
+        # autowire/autoconfigure restated here: the _defaults above belong to the top-level
+        # services block and do not reach into a when@ section, so without these the class
+        # loads but never receives the doctrine.fixture.orm tag that makes it discoverable.
+        System\database\fixtures\:
+            resource: '../system/database/fixtures/'
+            autowire: true
+            autoconfigure: true
+
 when@test:
     services:
+        # autowire/autoconfigure restated here: the _defaults above belong to the top-level
+        # services block and do not reach into a when@ section, so without these the class
+        # loads but never receives the doctrine.fixture.orm tag that makes it discoverable.
+        System\database\fixtures\:
+            resource: '../system/database/fixtures/'
+            autowire: true
+            autoconfigure: true
+
         Symfony\Component\Mercure\HubInterface: '@App\Tests\Support\Mercure\RecordingHub'
         App\Tests\Support\Mercure\RecordingHub:
             public: true
