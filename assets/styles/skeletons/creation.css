@@ -1,4 +1,5 @@
 .game-creator {
+    --control-size: 1.75rem;
     display: grid;
     max-inline-size: 40rem;
     margin-inline: auto;
@@ -6,8 +7,19 @@
     padding: 1.5rem;
     font-size: 0.9375rem;
 
+    /* One height for every control. Left alone each widget resolves its own em padding against a
+       different UA font (input/select 13.33px, button 14px) and lands on 30/32/31px. box-sizing is
+       border-box, so a declared block-size is the rendered box: pin it, then drop padding-block —
+       once the box is fixed any vertical padding only eats the content and clips the glyph.
+       The launch button is the primary action and deliberately keeps its own scale. */
+    input, select, button:not(.game-creator__launch) {
+        block-size: var(--control-size);
+        padding-block: 0;
+        font-size: 0.875rem;
+    }
+
     input, select {
-        padding: 0.5em;
+        padding-inline: 0.5em;
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
 
@@ -25,6 +37,7 @@
     input[type='number'] { max-inline-size: 6rem }
 
     table {
+        --control-size: 1.5rem;
         inline-size: 100%;
         border-collapse: collapse;
         font-size: 0.875rem;
@@ -36,6 +49,26 @@
         }
 
         th { background: var(--operator-bg-subtle) }
+
+        /* Auto table layout: a cell asked for an impossible 1% shrinks to its own content, so Name
+           collapses onto its longest row and Actions onto its two icons, leaving every remaining
+           pixel to Empire — the only column whose control needs the room. */
+        :is(th, td):nth-child(1) {
+            inline-size: 1%;
+            white-space: nowrap;
+        }
+
+        :is(th, td):nth-child(3) {
+            inline-size: 1%;
+            white-space: nowrap;
+            text-align: end;
+        }
+
+        /* Measured, not guessed. The widest label is not an empire — "Carthage" wants 94px — but the
+           "— no empire —" placeholder, at 135px including the 36px of chrome (14 padding, 2 border,
+           20 of UA arrow). Sizing on the empire name instead would clip the one option every
+           unassigned row displays. */
+        select { inline-size: 8.5rem }
 
         tbody tr[data-empire] { background-color: color-mix(in oklab, var(--player-color) 50%, white) }
     }
@@ -154,8 +187,7 @@
     .game-creator__delete-player {
         display: inline-grid;
         place-items: center;
-        inline-size: 2rem;
-        block-size: 2rem;
+        inline-size: var(--control-size);
         border-color: transparent;
         padding: 0;
         background: transparent;
@@ -171,8 +203,7 @@
     .game-creator__random-player {
         display: inline-grid;
         place-items: center;
-        inline-size: 2rem;
-        block-size: 2rem;
+        inline-size: var(--control-size);
         border-color: transparent;
         padding: 0;
         background: transparent;
