@@ -254,6 +254,150 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame(OrderStatus::Pending, $reloadedOrder->status);
     }
 
+    /**
+     * The distinction #33 turns on, and the one nothing else in the suite can catch. An emptied
+     * number field hydrates the nullable prop back to null — no constraint at all — while a typed
+     * zero is a real budget that affords nothing. Collapsing the two would either let a blank field
+     * disable the whole shelf, or let a deliberate zero do nothing.
+     */
+    #[Test]
+    public function anEmptiedBudgetFieldIsNoConstraintWhereABudgetOfZeroIsOne(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $emptied = $this->createLiveComponent('Shop', ['player' => $player])->set('budget', '');
+        $zeroed = $this->createLiveComponent('Shop', ['player' => $player])->set('budget', 0);
+
+        $this->assertNull($emptied->component()->budget);
+        $this->assertSame('', $emptied->render()->crawler()->filter('output[for="shop-budget"]')->text());
+        $this->assertFalse($emptied->render()->crawler()->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
+
+        $this->assertSame(0, $zeroed->component()->budget);
+        $this->assertSame('Remaining: 0', $zeroed->render()->crawler()->filter('output[for="shop-budget"]')->text());
+        $this->assertTrue($zeroed->render()->crawler()->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /** The number a player projects against is the remainder, not the figure they typed — so nothing to project against prints nothing. */
+    #[Test]
+    public function theBandStaysBlankUntilABudgetIsEnteredAndThenShowsWhatIsLeft(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $withoutBudget = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $withBudget = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110])->render()->crawler();
+
+        $this->assertCount(1, $withoutBudget->filter('input#shop-budget'));
+        $this->assertSame('', $withoutBudget->filter('output[for="shop-budget"]')->text());
+        $this->assertSame('Remaining: 110', $withBudget->filter('output[for="shop-budget"]')->text());
+    }
+
+    /**
+     * The drawdown, which is the whole point of the band: pottery costs 60, so a budget of 110 that
+     * afforded empiricism (60) before the add no longer does after it, while the 50-cost tiles
+     * survive on the 50 that remain.
+     */
+    #[Test]
+    public function addingToTheCartDrawsTheRemainderDownAndDisablesWhatItNoLongerAffords(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110]);
+        $beforeTheAdd = $component->render()->crawler();
+        $afterTheAdd = $component->call('add', ['key' => 'pottery'])->render()->crawler();
+
+        $this->assertFalse($beforeTheAdd->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
+        $this->assertSame('Remaining: 50', $afterTheAdd->filter('output[for="shop-budget"]')->text());
+        $this->assertTrue($afterTheAdd->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($afterTheAdd->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /** The band is symmetric or it is a trap: what taking an advance out of the cart released has to come back. */
+    #[Test]
+    public function removingFromTheCartRestoresTheRemainderAndReEnablesTheTilesItHadDisabled(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
+
+        $withPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client)->render()->crawler();
+        $this->createCart($player, $client)->call('remove', ['key' => 'pottery']);
+        $withoutPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client)->render()->crawler();
+
+        $this->assertTrue($withPottery->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
+        $this->assertSame('Remaining: 110', $withoutPottery->filter('output[for="shop-budget"]')->text());
+        $this->assertFalse($withoutPottery->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /**
+     * A cart can already exceed a budget entered afterwards: 5 against a cart of 60 leaves −55. The
+     * figure shown is clamped, since a negative remainder reads as an error rather than as a plan,
+     * and the shelf refuses everything — pottery having left the grid for the cart, fifty tiles
+     * remain and all fifty are out of reach.
+     */
+    #[Test]
+    public function aRemainderGoneNegativeIsShownAsZeroWhileEveryTileStaysDisabled(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
+
+        $this->assertSame('Remaining: 0', $crawler->filter('output[for="shop-budget"]')->text());
+        $this->assertCount(50, $crawler->filter('button[id^="product-"]'));
+        $this->assertCount(50, $crawler->filter('button[id^="product-"][disabled]'));
+    }
+
+    /**
+     * The governing constraint of #33: the band is a planning aid, never a game rule. A player who
+     * set 5 and filled a 280 basket must still be able to submit it — so the checkout button stays
+     * live and the order lands whole, budget or no budget.
+     */
+    #[Test]
+    public function aBudgetFarSmallerThanTheOrderStillLetsThePlayerSubmitIt(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = self::getContainer()->get('test.client');
+        $this->cartFor($client, $player, Cart::fromKeys(['pottery', 'democracy']));
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
+        $this->assertSame('Remaining: 0', $crawler->filter('output[for="shop-budget"]')->text());
+        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
+
+        $this->createCart($player, $client)->call('checkout');
+
+        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(['pottery', 'democracy'], $order->keys());
+        $this->assertSame(OrderStatus::Pending, $order->status);
+    }
+
+    /**
+     * The band belongs to the player planning a purchase, not to the operator ringing one up — and
+     * `Catalog::$remainingBudget` stays null there, so the same shelf disables nothing. Both halves
+     * are asserted at once: an absent band proves little without a page that carries one.
+     */
+    #[Test]
+    public function theBudgetBandIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $kiosk = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5])->render()->crawler();
+        $pos = $this->createLiveComponent('PlayerOrders', [
+            'player' => $player,
+            'ordersStamp' => '',
+            'posOpen' => true,
+            'posTurn' => $player->game->currentTurn,
+        ])->render()->crawler();
+
+        $this->assertCount(1, $kiosk->filter('input#shop-budget'));
+        $this->assertCount(0, $pos->filter('input#shop-budget'));
+        $this->assertCount(0, $pos->filter('output[for="shop-budget"]'));
+
+        $this->assertTrue($kiosk->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+        $this->assertFalse($pos->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+    }
+
     #[Test]
     public function mercureRefreshFiltersToGameUpdatedAndOrderUpdated(): void
     {
