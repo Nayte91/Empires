@@ -7,6 +7,7 @@ namespace App\Tests\Component;
 use App\State\Order;
 use App\State\Player;
 use App\Engine\Shop\AdvanceFulfillment;
+use App\Presentation\Shop\CatalogView;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use Symfony\Component\DomCrawler\Crawler;
@@ -110,17 +111,18 @@ final class CatalogComponentTest extends KernelTestCase
     }
 
     /**
-     * `locked` is the host's turn-lock reaching the card (App\Presentation\Component\Shop::isLockedForTurn):
-     * a product that is neither owned nor in the cart must still refuse the add
-     * once the turn's order has been validated.
+     * `locked` is the host's turn-lock reaching the card (App\Presentation\Component\Shop::isLockedForTurn,
+     * now carried by CatalogView::kiosk()): a product that is neither owned nor in the cart must
+     * still refuse the add once the turn's order has been validated. Both renders are kiosk views,
+     * so the lock is the single field between them.
      */
     #[Test]
     public function lockedDisablesTheAddButtonOfAnOtherwiseAvailableProduct(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $unlocked = $this->renderCatalog($player, (string) $player->id)->crawler();
-        $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
+        $unlocked = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: null))->crawler();
+        $locked = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: true, remainingBudget: null))->crawler();
 
         $this->assertFalse($unlocked->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($locked->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
@@ -136,16 +138,16 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $locked = $this->renderCatalog($player, (string) $player->id, locked: true)->crawler();
+        $locked = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: true, remainingBudget: null))->crawler();
 
         $this->assertNull($locked->filter('#product-pottery')->attr('data-loading'));
     }
 
     /**
      * `remainingBudget` is the kiosk's planning band reaching the tile (App\Presentation\Component\Shop::
-     * getRemainingBudget), and the one term #33 adds to the same disabling expression `locked` feeds.
-     * Equality is affordable: a remainder of exactly the price still buys the card, so the boundary
-     * falls between 60 and 59 rather than around them.
+     * getRemainingBudget, now carried by CatalogView::kiosk()), and the one term #33 adds to the same
+     * disabling expression `locked` feeds. Equality is affordable: a remainder of exactly the price
+     * still buys the card, so the boundary falls between 60 and 59 rather than around them.
      */
     #[Test]
     #[DataProvider('provideATilesAvailabilityFollowsTheRemainingBudgetCases')]
@@ -153,7 +155,7 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $crawler = $this->renderCatalog($player, (string) $player->id, remainingBudget: $remainingBudget)->crawler();
+        $crawler = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: $remainingBudget))->crawler();
 
         $this->assertSame($expectedDisabled, $crawler->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
     }
@@ -182,7 +184,7 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $crawler = $this->renderCatalog($player, (string) $player->id, remainingBudget: 0)->crawler();
+        $crawler = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: 0))->crawler();
 
         $this->assertCount(51, $crawler->filter('button[id^="product-"]'));
         $this->assertCount(51, $crawler->filter('button[id^="product-"][disabled]'));
@@ -199,8 +201,8 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = $this->discountedPlayer();
 
-        $atTheNetCost = $this->renderCatalog($player, (string) $player->id, remainingBudget: 200)->crawler();
-        $oneShortOfIt = $this->renderCatalog($player, (string) $player->id, remainingBudget: 199)->crawler();
+        $atTheNetCost = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: 200))->crawler();
+        $oneShortOfIt = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: 199))->crawler();
 
         $this->assertSame('200', $atTheNetCost->filter('#product-democracy [data-price-net]')->text());
         $this->assertFalse($atTheNetCost->filter('#product-democracy')->getNode(0)->hasAttribute('disabled'));
@@ -217,7 +219,7 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $overBudget = $this->renderCatalog($player, (string) $player->id, remainingBudget: 0)->crawler();
+        $overBudget = $this->renderCatalog($player, (string) $player->id, CatalogView::kiosk(locked: false, remainingBudget: 0))->crawler();
 
         $this->assertNull($overBudget->filter('#product-pottery')->attr('data-loading'));
     }
@@ -273,35 +275,37 @@ final class CatalogComponentTest extends KernelTestCase
 
     /**
      * The shelf inherits AdvanceRegistry's list-price order, which discounts then contradict: most
-     * of the catalogue shows a price that no longer matches its position.
+     * of the catalogue shows a price that no longer matches its position. The kiosk view is the one
+     * that reorders it.
      */
     #[Test]
-    public function theNetPriceSortOrdersTheCatalogueByWhatThePlayerActuallyPays(): void
+    public function theKioskViewOrdersTheCatalogueByWhatThePlayerActuallyPays(): void
     {
         $player = $this->discountedPlayer();
+        $kiosk = CatalogView::kiosk(locked: false, remainingBudget: null);
 
-        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, sort: 'net_price'));
-        $netCosts = $this->renderCatalog($player, (string) $player->id, sort: 'net_price')
+        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, $kiosk));
+        $netCosts = $this->renderCatalog($player, (string) $player->id, $kiosk)
             ->crawler()->filter('[data-price-net]')->each(static fn (Crawler $node): int => (int) $node->text());
 
         $ascending = $netCosts;
         sort($ascending);
 
         $this->assertSame($ascending, $netCosts);
-        $this->assertNotSame($this->productKeys($this->renderCatalog($player, (string) $player->id)), $keys);
+        $this->assertNotSame($this->productKeys($this->renderCatalog($player, (string) $player->id, CatalogView::pos())), $keys);
     }
 
     /**
-     * The other half of the guard, and the one that matters: the POS console passes no sort, so the
-     * default must leave the order exactly as AdvanceRegistry handed it over. Asserting that list
-     * prices ascend would pass without any sort at all and prove nothing.
+     * The other half of the guard, and the one that matters: the POS view must leave the order
+     * exactly as AdvanceRegistry handed it over. Asserting that list prices ascend would pass
+     * without any sort at all and prove nothing.
      */
     #[Test]
-    public function theDefaultSortLeavesTheCatalogueInTheOrderTheRegistryProvides(): void
+    public function thePosViewLeavesTheCatalogueInTheOrderTheRegistryProvides(): void
     {
         $player = $this->discountedPlayer();
 
-        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id));
+        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, CatalogView::pos()));
 
         $registryOrder = array_values(array_filter(
             array_map(
@@ -355,19 +359,18 @@ final class CatalogComponentTest extends KernelTestCase
     }
 
     /**
-     * Nulls are dropped rather than passed, so each argument left out inherits the component's own
-     * default — which for `remainingBudget` is itself null, the no-constraint case the POS relies on.
-     * A remainder of 0 survives the filter, since only null is dropped.
+     * The component has no presentation default left to inherit — App\Presentation\Shop\CatalogView is
+     * required, and only its two named constructors can build one. CatalogView::pos() stands in for
+     * the tests that say nothing about presentation: unlocked, list-price order, no budget, which is
+     * the shelf as the registry hands it over.
      */
-    private function renderCatalog(Player $player, string $storageKey, bool $locked = false, ?string $sort = null, ?int $remainingBudget = null): RenderedComponent
+    private function renderCatalog(Player $player, string $storageKey, ?CatalogView $view = null): RenderedComponent
     {
-        return $this->renderTwigComponent('organisms:Catalog', array_filter([
+        return $this->renderTwigComponent('organisms:Catalog', [
             'player' => $player,
             'storageKey' => $storageKey,
-            'locked' => $locked,
-            'sort' => $sort,
-            'remainingBudget' => $remainingBudget,
-        ], static fn (mixed $value): bool => null !== $value));
+            'view' => $view ?? CatalogView::pos(),
+        ]);
     }
 
     /** Owning agriculture discounts a good part of the catalogue, which is what makes the two orders differ. */

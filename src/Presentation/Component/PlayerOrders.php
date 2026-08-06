@@ -7,6 +7,7 @@ namespace App\Presentation\Component;
 use App\Infrastructure\Repository\OrderRepository;
 use App\Infrastructure\Shop\CartKey;
 use App\Presentation\Shop\CartItemAdder;
+use App\Presentation\Shop\CatalogView;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
@@ -122,6 +123,11 @@ final class PlayerOrders
     public function getPosCartKey(): string
     {
         return CartKey::pos($this->player);
+    }
+
+    public function getCatalogView(): CatalogView
+    {
+        return CatalogView::pos();
     }
 
     /**

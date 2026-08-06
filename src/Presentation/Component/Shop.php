@@ -7,6 +7,7 @@ namespace App\Presentation\Component;
 use App\Infrastructure\Repository\OrderRepository;
 use App\Infrastructure\Shop\CartKey;
 use App\Presentation\Shop\CartItemAdder;
+use App\Presentation\Shop\CatalogView;
 use App\Presentation\Shop\ShopExceptionTranslator;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
@@ -173,6 +174,13 @@ final class Shop
     public function getRemainingBudget(): ?int
     {
         return null === $this->budget ? null : $this->budget - $this->getCartTotal();
+    }
+
+    /** Sorted by what this player actually pays: two thirds of the catalogue is discounted, so
+     * the list-price order the shelf inherits contradicts the price printed on most of its tiles. */
+    public function getCatalogView(): CatalogView
+    {
+        return CatalogView::kiosk($this->isLockedForTurn(), $this->getRemainingBudget());
     }
 
     /** Public for organisms/shop, which hands it to the nested Catalog and Cart as their storageKey. */
