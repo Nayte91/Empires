@@ -8,6 +8,7 @@ use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\GameRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Scenario\ScenarioRuleSummarizer;
+use App\State\Player;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -39,6 +40,7 @@ final class GameCreator
     #[LiveProp(writable: true)]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
+        new Assert\Length(max: Player::MAX_NAME_LENGTH, maxMessage: 'Name cannot be longer than {{ limit }} characters.'),
         new Assert\Expression('not this.hasPlayerNamed(value)', message: 'Name already taken.'),
     ])]
     public string $newPlayerName = '';
@@ -296,9 +298,13 @@ final class GameCreator
     public function getConformityIssues(): array
     {
         return array_values(array_filter([
+            $this->getPlayerCountOutOfRangeIssue(),
             $this->getPlayerCountMismatchIssue(),
             ...$this->getInvalidEmpireIssues(),
             ...$this->getDuplicateEmpireIssues(),
+            $this->getBlankNameIssue(),
+            ...$this->getDuplicateNameIssues(),
+            ...$this->getOverlongNameIssues(),
             $this->getMissingEmpireIssue(),
         ], static fn (?string $issue): bool => null !== $issue));
     }
@@ -312,16 +318,25 @@ final class GameCreator
         ));
     }
 
-    /** @return list<string> */
+    /**
+     * Every empire the scenario offers, in the registry's stable order, never removed —
+     * only flagged `taken` when another row already holds it. A fixed list is what makes
+     * the DOM diffing library's position-based `<option>` reconciliation harmless: nothing
+     * ever changes position, so there is nothing left for a race to mis-reconcile.
+     *
+     * @return list<array{empire: string, taken: bool}>
+     */
     public function getEmpireChoicesFor(int $index): array
     {
-        $current = $this->players[$index]['empire'] ?? '';
+        $takenByOthers = array_column(
+            array_filter($this->players, static fn (array $player, int $i): bool => $i !== $index, ARRAY_FILTER_USE_BOTH),
+            'empire',
+        );
 
-        if ('' === $current) {
-            return $this->getAvailableEmpires();
-        }
-
-        return [...$this->getAvailableEmpires(), $current];
+        return array_map(
+            static fn (string $empire): array => ['empire' => $empire, 'taken' => \in_array($empire, $takenByOthers, true)],
+            $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region),
+        );
     }
 
     /** @return list<array{value: string, label: string}> */
@@ -346,6 +361,29 @@ final class GameCreator
     public static function slugify(string $value): string
     {
         return strtolower((string) new AsciiSlugger()->slug($value));
+    }
+
+    /**
+     * The only check in this list that does not iterate $players: every other check walks the
+     * roster, so a roster with zero rows trips none of them — count([]) === 0 satisfies the
+     * mismatch check below vacuously. Placed first for that reason: a game whose player count
+     * cannot legally exist is a more fundamental problem than one whose roster is the wrong size.
+     */
+    private function getPlayerCountOutOfRangeIssue(): ?string
+    {
+        $count = $this->game->playerCount;
+        $min = $this->getMinPlayers();
+        $max = $this->getMaxPlayers();
+
+        if ($count < $min) {
+            return sprintf('Player count must be at least %d.', $min);
+        }
+
+        if ($count > $max) {
+            return sprintf('Player count must be at most %d.', $max);
+        }
+
+        return null;
     }
 
     private function getPlayerCountMismatchIssue(): ?string
@@ -415,6 +453,81 @@ final class GameCreator
 
             $last = array_pop($names);
             $issues[] = sprintf('%s share the empire "%s".', implode(', ', $names).' and '.$last, $empire);
+        }
+
+        return $issues;
+    }
+
+    /**
+     * addPlayer() already refuses a name another player holds, but it is no longer the only way a
+     * row reaches $players: the prop is identity-writable, so a crafted request can inject a
+     * well-formed row that never passed through it. Re-checked here, at the gate everything must
+     * cross. Compared on the slug, as everywhere else — two visually distinct names slugifying
+     * identically are a genuine collision, and the database says so too (uniq_player_game_slug).
+     *
+     * @return list<string>
+     */
+    private function getDuplicateNameIssues(): array
+    {
+        $namesBySlug = [];
+
+        foreach ($this->players as $player) {
+            $namesBySlug[self::slugify($player['name'])][] = $player['name'];
+        }
+
+        $issues = [];
+
+        foreach ($namesBySlug as $slug => $names) {
+            // Blank names are getBlankNameIssue()'s to report; left here they would collide with
+            // each other and render as `" and  share the name """`.
+            if ('' === $slug) {
+                continue;
+            }
+            if (\count($names) < 2) {
+                continue;
+            }
+            $last = array_pop($names);
+            $issues[] = sprintf('%s share the name "%s".', implode(', ', $names).' and '.$last, $slug);
+        }
+
+        return $issues;
+    }
+
+    /**
+     * The same bypass getDuplicateNameIssues() closes, one step earlier: addPlayer() refuses a
+     * blank name through Assert\NotBlank with the slugifier as normalizer, but an injected row
+     * never meets it. Judged on the slug, so a name made only of punctuation is blank too — and it
+     * would persist a player whose board URL cannot be built at all.
+     */
+    private function getBlankNameIssue(): ?string
+    {
+        $blank = \count(array_filter($this->players, static fn (array $player): bool => '' === self::slugify($player['name'])));
+
+        if (0 === $blank) {
+            return null;
+        }
+
+        return 1 === $blank
+            ? '1 player has no usable name.'
+            : sprintf('%d players have no usable name.', $blank);
+    }
+
+    /**
+     * The same bypass getBlankNameIssue() closes: addPlayer() refuses an overlong name through
+     * Assert\Length, but an injected row never meets it. Counted with mb_strlen(), not strlen() —
+     * the roster's own fixtures include accented names ("René"), and a byte count would misjudge
+     * every one of them.
+     *
+     * @return list<string>
+     */
+    private function getOverlongNameIssues(): array
+    {
+        $issues = [];
+
+        foreach ($this->players as $player) {
+            if (mb_strlen($player['name']) > Player::MAX_NAME_LENGTH) {
+                $issues[] = sprintf('%s\'s name is longer than %d characters.', $player['name'], Player::MAX_NAME_LENGTH);
+            }
         }
 
         return $issues;

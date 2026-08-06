@@ -15,6 +15,8 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\UniqueConstraint(name: 'uniq_player_game_slug', columns: ['game_id', 'slug'])]
 class Player
 {
+    public const int MAX_NAME_LENGTH = 30;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;
@@ -48,7 +50,7 @@ class Player
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $astPosition = 0;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: self::MAX_NAME_LENGTH)]
     public string $name {
         set {
             $this->name = $value;
