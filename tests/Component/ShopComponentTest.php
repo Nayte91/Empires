@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Engine\Shop\AdvanceFulfillment;
+use App\Rules\Ruleset\Advance;
+use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Order;
 use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
+use Symfony\Component\DomCrawler\Crawler;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
@@ -374,8 +378,8 @@ final class ShopComponentTest extends WebTestCase
 
     /**
      * The band belongs to the player planning a purchase, not to the operator ringing one up — and
-     * `Catalog::$remainingBudget` stays null there, so the same shelf disables nothing. Both halves
-     * are asserted at once: an absent band proves little without a page that carries one.
+     * CatalogView::pos() carries no remaining budget, so the same shelf disables nothing there. Both
+     * halves are asserted at once: an absent band proves little without a page that carries one.
      */
     #[Test]
     public function theBudgetBandIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
@@ -383,12 +387,7 @@ final class ShopComponentTest extends WebTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $kiosk = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5])->render()->crawler();
-        $pos = $this->createLiveComponent('PlayerOrders', [
-            'player' => $player,
-            'ordersStamp' => '',
-            'posOpen' => true,
-            'posTurn' => $player->game->currentTurn,
-        ])->render()->crawler();
+        $pos = $this->openPos($player);
 
         $this->assertCount(1, $kiosk->filter('input#shop-budget'));
         $this->assertCount(0, $pos->filter('input#shop-budget'));
@@ -396,6 +395,59 @@ final class ShopComponentTest extends WebTestCase
 
         $this->assertTrue($kiosk->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
         $this->assertFalse($pos->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+    }
+
+    /**
+     * The half of CatalogView the budget test above cannot see. Which order each shelf comes in used
+     * to be a literal `sort` attribute in each of the two templates; it is now the difference
+     * between kiosk() and pos(), and nothing below the hosts can tell which one a host asked for.
+     * Both halves again, and for the same reason: an ascending kiosk shelf proves nothing unless the
+     * operator's is shown to be in the other order. Alice owns agriculture, which discounts enough
+     * of the catalogue for the two orders to diverge at all.
+     */
+    #[Test]
+    public function theKioskShelfIsOrderedByWhatThePlayerPaysWhereTheOperatorsPosKeepsTheRegistryOrder(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        $this->entityManager->flush();
+
+        $kiosk = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $pos = $this->openPos($player);
+
+        $kioskNetCosts = $kiosk->filter('[data-price-net]')->each(static fn (Crawler $node): int => (int) $node->text());
+        $ascendingNetCosts = $kioskNetCosts;
+        sort($ascendingNetCosts);
+
+        $this->assertSame($ascendingNetCosts, $kioskNetCosts);
+        $this->assertNotSame($this->shelfKeys($kiosk), $this->shelfKeys($pos));
+        $this->assertSame($this->registryOrderOf($this->shelfKeys($pos)), $this->shelfKeys($pos));
+    }
+
+    /**
+     * The third field, on the same wire as the budget: the turn lock reaches the tile through
+     * kiosk() now rather than through the template's own `locked` attribute. Rendered either side of
+     * the validation for the same player, so the shut shelf is counted against one known to be open
+     * — and counted whole, since a disabled-tile count alone passes just as well on an empty grid.
+     */
+    #[Test]
+    public function validatingTheTurnsOrderShutsTheKioskShelfThatWasOpenBefore(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        $open = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+
+        $order = $this->createPendingOrder($player, 'pottery');
+        $order->freeze([new OrderLine('pottery', 60)], 60);
+        $order->setMarking(OrderStatus::Validated->value);
+        $this->entityManager->flush();
+
+        $shut = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+
+        $this->assertCount(51, $open->filter('button[id^="product-"]'));
+        $this->assertCount(0, $open->filter('button[id^="product-"][disabled]'));
+        $this->assertCount(51, $shut->filter('button[id^="product-"]'));
+        $this->assertCount(51, $shut->filter('button[id^="product-"][disabled]'));
     }
 
     #[Test]
@@ -590,6 +642,44 @@ final class ShopComponentTest extends WebTestCase
             'player' => $player,
             'storageKey' => (string) $player->id,
         ], $client);
+    }
+
+    /** The operator's POS dialog open on the current turn — the only state in which it renders a catalogue. */
+    private function openPos(Player $player): Crawler
+    {
+        return $this->createLiveComponent('PlayerOrders', [
+            'player' => $player,
+            'ordersStamp' => '',
+            'posOpen' => true,
+            'posTurn' => $player->game->currentTurn,
+        ])->render()->crawler();
+    }
+
+    /** @return list<string> */
+    private function shelfKeys(Crawler $crawler): array
+    {
+        return $crawler->filter('button[id^="product-"]')->each(
+            static fn (Crawler $node): string => substr((string) $node->attr('id'), \strlen('product-')),
+        );
+    }
+
+    /**
+     * The given keys back in the order AdvanceRegistry itself hands them over — which is the order a
+     * shelf nobody re-sorted must still be in.
+     *
+     * @param list<string> $keys
+     *
+     * @return list<string>
+     */
+    private function registryOrderOf(array $keys): array
+    {
+        return array_values(array_filter(
+            array_map(
+                static fn (Advance $advance): string => $advance->key,
+                self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
+            ),
+            static fn (string $key): bool => \in_array($key, $keys, true),
+        ));
     }
 
     private function freshOrderRepository(): OrderRepository
