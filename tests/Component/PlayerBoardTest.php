@@ -306,7 +306,33 @@ final class PlayerBoardTest extends WebTestCase
 
         yield 'a name that slugifies onto another players' => ['BOB', 'Name already taken.'];
 
-        yield 'a name longer than the column allows' => [str_repeat('a', 51), 'Name cannot be longer than 50 characters.'];
+        yield 'a name one character over the shared name limit' => [str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Name cannot be longer than 30 characters.'];
+    }
+
+    /**
+     * The rename door and the creation door share Player::MAX_NAME_LENGTH, so a name GameCreator
+     * accepts must land here too. Left at the column width, this door would let a player rename
+     * themselves to something their own game could never have created them with.
+     */
+    #[Test]
+    public function renamingToANameOfExactlyTheMaximumLengthIsAccepted(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $playerId = $player->id;
+
+        $component = $this->createLiveComponent('PlayerBoard', ['player' => $player])
+            ->set('newName', str_repeat('a', Player::MAX_NAME_LENGTH))
+        ;
+        $component->call('rename');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);
+
+        $this->assertInstanceOf(Player::class, $reloaded);
+        $this->assertSame('A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1), $reloaded->name);
     }
 
     /**

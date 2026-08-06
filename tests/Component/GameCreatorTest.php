@@ -14,6 +14,7 @@ use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,6 +25,14 @@ final class GameCreatorTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+
+    /**
+     * A row's empire select, option values in render order: the empty option, then the whole
+     * 9-player west pool in config/game/scenarios.yaml's own order. Spelled out rather than read
+     * back from ScenarioRegistry, so that an implementation reordering the pool — or appending an
+     * empire to it — fails here instead of agreeing with itself.
+     */
+    private const array WEST_NINE_EMPIRE_OPTIONS = ['', 'assyria', 'carthage', 'celt', 'egypt', 'hatti', 'hellas', 'iberia', 'minoa', 'rome'];
 
     #[Test]
     public function mountProposesAUuidAsTheDefaultGameSlug(): void
@@ -777,8 +786,15 @@ final class GameCreatorTest extends WebTestCase
         $this->assertSame('hatti', $component->component()->players[0]['empire']);
     }
 
+    /**
+     * An empire another row holds used to be removed from every other list; it is now offered
+     * everywhere and merely flagged. The taken set is asserted whole rather than by membership: on
+     * an implementation that dropped the flag entirely the set would be empty, and on one that
+     * flagged the whole pool it would be full — both read as "hatti is not taken here" under a
+     * single assertNotContains, and both must be red.
+     */
     #[Test]
-    public function assigningAnEmpireDropsItFromTheOtherRowsChoicesWhileKeepingItOnItsOwn(): void
+    public function assigningAnEmpireFlagsItAsTakenOnTheOtherRowsWhileLeavingItSelectableOnItsOwn(): void
     {
         $component = $this->createLiveComponent('GameCreator')
             ->set('game.playerCount', 9)
@@ -797,10 +813,70 @@ final class GameCreatorTest extends WebTestCase
             ->crawler()
         ;
 
-        $this->assertContains('hatti', $this->rowEmpireChoices($crawler, 0));
+        $this->assertContains('hatti', $this->rowEmpireChoices($crawler, 1));
+        $this->assertSame(['hatti'], $this->rowTakenEmpires($crawler, 1));
+        $this->assertSame([], $this->rowTakenEmpires($crawler, 0));
         $this->assertSame('hatti', $this->rowSelectedEmpire($crawler, 0));
-        $this->assertNotContains('hatti', $this->rowEmpireChoices($crawler, 1));
-        $this->assertContains('rome', $this->rowEmpireChoices($crawler, 1));
+    }
+
+    /**
+     * The guarantee the whole change exists for, and the one the previous implementation failed:
+     * assigning row 0 removed that empire from row 1's list and moved it to the end of row 0's own,
+     * so both sequences shifted under a render. The DOM diffing library reconciles <option> elements
+     * by position, which is how the request-in-flight race that got issue #19 rejected mis-paired
+     * them; a composition that never changes leaves nothing to mis-pair. Pinning the sequence
+     * against the expected pool first is the anti-vacuity control — a row rendering no options at
+     * all would satisfy before/after equality on its own.
+     */
+    #[Test]
+    public function assigningAnEmpireOnOneRowLeavesEveryRowsOptionSequenceUnchanged(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+        ;
+
+        foreach (['Alice', 'Bob'] as $name) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', '');
+            $component->call('addPlayer');
+        }
+
+        $beforeAssignment = $component->render()->crawler();
+        $ownRowSequence = $this->rowEmpireChoices($beforeAssignment, 0);
+        $otherRowSequence = $this->rowEmpireChoices($beforeAssignment, 1);
+
+        $afterAssignment = $component
+            ->set('players.0.empire', 'hatti')
+            ->call('setEmpire', ['index' => 0])
+            ->render()
+            ->crawler()
+        ;
+
+        $this->assertSame(self::WEST_NINE_EMPIRE_OPTIONS, $ownRowSequence);
+        $this->assertSame($ownRowSequence, $this->rowEmpireChoices($afterAssignment, 0));
+        $this->assertSame($otherRowSequence, $this->rowEmpireChoices($afterAssignment, 1));
+    }
+
+    /**
+     * The row's own empire used to be appended after the available ones, so picking it sent it to
+     * the bottom of that row's select while every other row kept it in place. It now sits in the
+     * pool's own order whoever holds it — the empty option still first, still the only way back to
+     * no empire.
+     */
+    #[Test]
+    public function aRowsOwnEmpireKeepsItsPlaceInTheScenarioOrderInsteadOfBeingAppendedLast(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 9)
+            ->set('game.region', 'west')
+            ->set('newPlayerName', 'Alice')
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+
+        $crawler = $component->call('addPlayer')->render()->crawler();
+
+        $this->assertSame(self::WEST_NINE_EMPIRE_OPTIONS, $this->rowEmpireChoices($crawler, 0));
+        $this->assertSame('hatti', $this->rowSelectedEmpire($crawler, 0));
     }
 
     /**
@@ -976,6 +1052,257 @@ final class GameCreatorTest extends WebTestCase
         $this->assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
     }
 
+    /**
+     * addPlayer() refuses a name the roster already holds, but it is no longer the only door into
+     * $players: the prop is identity-writable, so a well-formed row can be injected straight past
+     * it. The roster is mounted directly here for that reason — going through addPlayer() would
+     * test the door, not the gate behind it.
+     *
+     * Each pair is one no `===` on the raw names would catch: the rule compares slugs, because
+     * uniq_player_game_slug does. The roster is otherwise fully conform — count matches, three
+     * distinct in-scenario empires, an available slug — so the disabled button and the error band
+     * have exactly one cause left.
+     */
+    #[Test]
+    #[DataProvider('provideNamesFoldingToTheSameSlugAreReportedAsAConformityIssueCases')]
+    public function namesFoldingToTheSameSlugAreReportedAsAConformityIssue(string $first, string $second, string $sharedSlug): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'colliding-names-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $first, 'empire' => 'hatti'],
+                ['name' => $second, 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString(sprintf('%s and %s share the name &quot;%s&quot;.', $first, $second, $sharedSlug), $rendered);
+    }
+
+    public static function provideNamesFoldingToTheSameSlugAreReportedAsAConformityIssueCases(): iterable
+    {
+        yield 'case alone separates them' => ['Bob', 'BOB', 'bob'];
+
+        yield 'a space where the other has a hyphen' => ['Jean-Luc', 'Jean Luc', 'jean-luc'];
+
+        yield 'an accent the slugger folds away' => ['René', 'Rene', 'rene'];
+    }
+
+    /**
+     * The positive control for the two around it: same roster shape, same count, same empires, two
+     * names that merely resemble each other. An implementation reporting every roster as colliding
+     * satisfies both neighbours and fails here.
+     */
+    #[Test]
+    public function namesFoldingToDistinctSlugsAreNotReportedAsAConformityIssue(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'distinct-names-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => 'Bob', 'empire' => 'hatti'],
+                ['name' => 'Bobby', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="ok"', $rendered);
+    }
+
+    /**
+     * The gate the hole actually threatened. canLaunch() only drives a `disabled` attribute, which
+     * the crafted request that produced this roster never reads; launch() is what it reaches, and
+     * what would otherwise have handed the bus two players whose slugs collide. Asserted on the
+     * persisted counts rather than on the message, so an implementation reporting the issue while
+     * still creating the game is red.
+     */
+    #[Test]
+    public function launchIsRefusedServerSideWhenTwoNamesFoldToTheSameSlugAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $game = new CreateGame();
+        $game->slug = 'colliding-names-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => 'Bob', 'empire' => 'hatti'],
+                ['name' => 'BOB', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->call('launch')->render();
+
+        $this->assertStringContainsString('Bob and BOB share the name &quot;bob&quot;.', $rendered->toString());
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * The rule is judged on the slug, never on the raw string, because that is what the board URL is
+     * built from: a name a naive `'' === $name` waves through still persists a player with an empty
+     * slug. Each row is a name that looks filled in the input and reaches the slugger as nothing.
+     */
+    #[Test]
+    #[DataProvider('provideANameThatSlugifiesToNothingIsReportedAsAConformityIssueCases')]
+    public function aNameThatSlugifiesToNothingIsReportedAsAConformityIssue(string $unusableName): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'unusable-name-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $unusableName, 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString('1 player has no usable name.', $rendered);
+    }
+
+    public static function provideANameThatSlugifiesToNothingIsReportedAsAConformityIssueCases(): iterable
+    {
+        yield 'nothing at all' => [''];
+
+        yield 'whitespace only' => ['   '];
+
+        yield 'punctuation only' => ['!!!'];
+
+        yield 'a row of hyphens' => ['---'];
+    }
+
+    /**
+     * Two blank rows were already refused before getBlankNameIssue() existed, but only by accident:
+     * they shared the '' slug bucket, so the duplicate-name rule reported them as sharing the name
+     * "" — an operator-visible nonsense sentence. Its absence is half the fix, so it is asserted
+     * here rather than left to the reader to infer from the new message.
+     */
+    #[Test]
+    public function twoBlankNamesAreReportedAsUnusableRatherThanAsASharedName(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'two-blank-names-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => '', 'empire' => 'hatti'],
+                ['name' => '  ', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('2 players have no usable name.', $rendered);
+        $this->assertStringNotContainsString('share the name', $rendered);
+    }
+
+    /**
+     * The gate the hole actually threatened, and the exact reproduction that opened it: one injected
+     * blank row used to pass getConformityIssues(), canLaunch() and launch() alike, persisting a
+     * Player with an empty name and an empty slug — a board URL that cannot be built. The crafted
+     * request that produces this roster never renders a button and never reads a `disabled`
+     * attribute, so the persisted counts are what is asserted, not the button state.
+     */
+    #[Test]
+    public function launchIsRefusedServerSideWhenAPlayerNameIsBlankAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $game = new CreateGame();
+        $game->slug = 'blank-name-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => '', 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->call('launch')->render();
+
+        $this->assertStringContainsString('1 player has no usable name.', $rendered->toString());
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * The positive control for the three above, and the one they cannot supply: they all inject the
+     * roster past addPlayer(), so an implementation refusing every injected roster would satisfy
+     * each of them. Same door, names that slugify, and the game is created.
+     */
+    #[Test]
+    public function launchSucceedsWhenEveryInjectedNameSlugifies(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'usable-names-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => 'Alice', 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $component->call('launch');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertStringEndsWith('/usable-names-launch', (string) $response->headers->get('Location'));
+
+        $freshEntityManager = $this->freshEntityManager();
+        $createdGame = $freshEntityManager->getRepository(Game::class)->findOneBy(['slug' => 'usable-names-launch']);
+
+        $this->assertInstanceOf(Game::class, $createdGame);
+        $this->assertCount(3, $freshEntityManager->getRepository(Player::class)->findBy(['game' => $createdGame->id]));
+    }
+
     #[Test]
     public function launchIsRefusedServerSideWhenAPlayerHasNoEmpireEvenIfThePlayerCountMatches(): void
     {
@@ -1003,6 +1330,384 @@ final class GameCreatorTest extends WebTestCase
     }
 
     /**
+     * playerCount is client-writable, and every other conformity rule is satisfied vacuously by a
+     * roster that matches it — getPlayerCountMismatchIssue() included, since count([]) === 0 is a
+     * match. Only a rule reading config/game/game_data.yaml's own min_players/max_players catches a
+     * count whose sole guard was the form's min=/max= attributes. The tail of the list is spelled
+     * out and the total counted, which pins the new issue to the head of getConformityIssues()
+     * without depending on how it is worded.
+     *
+     * @param list<string> $expectedRemainingIssues
+     */
+    #[Test]
+    #[DataProvider('provideAPlayerCountOutsideTheAllowedRangeIsReportedAsAConformityIssueCases')]
+    public function aPlayerCountOutsideTheAllowedRangeIsReportedAsAConformityIssue(int $playerCount, array $expectedRemainingIssues): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'out-of-range-count';
+        $game->playerCount = $playerCount;
+        $game->region = 'west';
+
+        $issues = $this->createLiveComponent('GameCreator', ['game' => $game, 'players' => []])
+            ->component()
+            ->getConformityIssues()
+        ;
+
+        $this->assertCount(\count($expectedRemainingIssues) + 1, $issues);
+        $this->assertSame($expectedRemainingIssues, \array_slice($issues, 1));
+    }
+
+    public static function provideAPlayerCountOutsideTheAllowedRangeIsReportedAsAConformityIssueCases(): iterable
+    {
+        yield 'no players at all, matched by a count of zero' => [0, []];
+
+        yield 'one below the minimum' => [2, ['Add 2 more players.']];
+
+        yield 'one above the maximum' => [19, ['Add 19 more players.']];
+    }
+
+    /**
+     * The positive control the three rows above cannot supply on their own: a rule refusing every
+     * count would satisfy each of them. The minimum and the maximum are precisely the counts an
+     * operator is allowed to pick, so the only issue an empty roster still owes is the mismatch.
+     */
+    #[Test]
+    #[DataProvider('provideAPlayerCountAtTheEdgeOfTheAllowedRangeRaisesNoCountIssueCases')]
+    public function aPlayerCountAtTheEdgeOfTheAllowedRangeRaisesNoCountIssue(int $playerCount): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'edge-of-range-count';
+        $game->playerCount = $playerCount;
+        $game->region = 'west';
+
+        $issues = $this->createLiveComponent('GameCreator', ['game' => $game, 'players' => []])
+            ->component()
+            ->getConformityIssues()
+        ;
+
+        $this->assertSame([sprintf('Add %d more players.', $playerCount)], $issues);
+    }
+
+    public static function provideAPlayerCountAtTheEdgeOfTheAllowedRangeRaisesNoCountIssueCases(): iterable
+    {
+        yield 'the minimum' => [3];
+
+        yield 'the maximum' => [18];
+    }
+
+    /**
+     * The gate the hole actually threatened, and the exact reproduction that opened it: a crafted
+     * request setting playerCount to zero used to clear canLaunch() and persist a Game with no
+     * players at all. Only the persisted counts are asserted here — that request never renders a
+     * form and never reads a `disabled` attribute, and the reported issue is pinned above.
+     */
+    #[Test]
+    public function launchIsRefusedServerSideWhenThePlayerCountIsZeroAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $game = new CreateGame();
+        $game->slug = 'empty-roster-launch';
+        $game->playerCount = 0;
+        $game->region = 'west';
+
+        $this->createLiveComponent('GameCreator', ['game' => $game, 'players' => []])->call('launch');
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * The launch-level positive control for the range rule, taken at the top edge rather than in the
+     * comfortable middle: eighteen is the largest roster config/game/scenarios.yaml describes, and a
+     * bound compared with the wrong operator would refuse exactly this game and nothing else.
+     */
+    #[Test]
+    public function launchSucceedsWithAFullEighteenPlayerRoster(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'eighteen-player-launch';
+        $game->playerCount = 18;
+        $game->region = null;
+        $players = array_map(
+            static fn (string $empire): array => ['name' => ucfirst($empire).' player', 'empire' => $empire],
+            self::getContainer()->get(ScenarioRegistry::class)->empiresFor(18, null),
+        );
+
+        $component = $this->createLiveComponent('GameCreator', ['game' => $game, 'players' => $players]);
+        $component->call('launch');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+
+        $freshEntityManager = $this->freshEntityManager();
+        $createdGame = $freshEntityManager->getRepository(Game::class)->findOneBy(['slug' => 'eighteen-player-launch']);
+
+        $this->assertInstanceOf(Game::class, $createdGame);
+        $this->assertCount(18, $freshEntityManager->getRepository(Player::class)->findBy(['game' => $createdGame->id]));
+    }
+
+    /**
+     * Player::$name is a 50-wide column, so a name between the rule and the column persists in
+     * silence — the wall a user hits by typing is the only thing that ever bounded it, and there is
+     * no wall at all on the crafted door. The accented row is thirty characters and sixty bytes:
+     * a byte-wise measure would refuse a name the rule allows.
+     */
+    #[Test]
+    #[DataProvider('provideANameAtTheLengthLimitIsAcceptedByAddPlayerCases')]
+    public function aNameAtTheLengthLimitIsAcceptedByAddPlayer(string $name, string $expectedStoredName): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('newPlayerName', $name)
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+
+        $rendered = $component->call('addPlayer')->render();
+
+        $this->assertCount(0, $rendered->crawler()->filter('[data-error="newPlayerName"]'));
+        $this->assertSame([['name' => $expectedStoredName, 'empire' => 'hatti']], $component->component()->players);
+    }
+
+    public static function provideANameAtTheLengthLimitIsAcceptedByAddPlayerCases(): iterable
+    {
+        yield 'thirty ascii characters' => [str_repeat('a', Player::MAX_NAME_LENGTH), 'A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1)];
+
+        yield 'thirty accented characters, sixty bytes' => [str_repeat('é', Player::MAX_NAME_LENGTH), str_repeat('é', Player::MAX_NAME_LENGTH)];
+    }
+
+    #[Test]
+    public function aNameOneCharacterOverTheLengthLimitIsRefusedByAddPlayer(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('newPlayerName', str_repeat('a', Player::MAX_NAME_LENGTH + 1))
+            ->set('newPlayerEmpire', 'hatti')
+        ;
+
+        $rendered = $component->call('addPlayer')->render();
+
+        $this->assertStringContainsString('Name cannot be longer than 30 characters.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertSame([], $component->component()->players);
+    }
+
+    /**
+     * Length sits between NotBlank and the uniqueness Expression inside the Sequentially, so a name
+     * that is both too long and already on the roster reports the thing the operator can act on.
+     * Reported as a collision it would send them to shorten a different row, or to hunt for a
+     * duplicate they can see is the same string they just typed.
+     */
+    #[Test]
+    public function anOverlongNameAlreadyOnTheRosterReportsItsLengthRatherThanTheCollision(): void
+    {
+        $overlongName = str_repeat('a', Player::MAX_NAME_LENGTH + 1);
+
+        $component = $this->createLiveComponent('GameCreator', ['players' => [['name' => $overlongName, 'empire' => 'hatti']]])
+            ->set('newPlayerName', $overlongName)
+            ->set('newPlayerEmpire', 'hellas')
+        ;
+
+        $rendered = $component->call('addPlayer')->render();
+
+        $errorText = $rendered->crawler()->filter('[data-error="newPlayerName"]')->text();
+        $this->assertStringContainsString('Name cannot be longer than 30 characters.', $errorText);
+        $this->assertStringNotContainsString('Name already taken.', $errorText);
+    }
+
+    /**
+     * The crafted-row counterpart to the door above: $players is identity-writable, so a row that
+     * was never typed into the add field reaches the roster unmeasured. Everything else about this
+     * roster conforms — three usable names, three distinct scenario empires, a matching count — so
+     * the single issue reported can only be the length one, whatever its wording turns out to be.
+     */
+    #[Test]
+    public function anInjectedNameOverTheLengthLimitIsReportedAsAConformityIssue(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'overlong-injected-name';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertCount(1, $component->component()->getConformityIssues());
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+    }
+
+    #[Test]
+    public function launchIsRefusedServerSideWhenAnInjectedNameIsOverlongAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $game = new CreateGame();
+        $game->slug = 'overlong-name-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ])->call('launch');
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * The positive control for the crafted door, and the row that pins the measure to characters:
+     * thirty 'é' are sixty bytes, so a byte-wise count would refuse a roster the rule allows —
+     * and nothing else in the suite would notice, since every other name here is ascii.
+     */
+    #[Test]
+    #[DataProvider('provideARosterWhoseLongestNameSitsOnTheLengthLimitLaunchesCases')]
+    public function aRosterWhoseLongestNameSitsOnTheLengthLimitLaunches(string $name): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'limit-length-name-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $name, 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+        $component->call('launch');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+
+        $freshEntityManager = $this->freshEntityManager();
+        $createdGame = $freshEntityManager->getRepository(Game::class)->findOneBy(['slug' => 'limit-length-name-launch']);
+
+        $this->assertInstanceOf(Game::class, $createdGame);
+        $this->assertCount(3, $freshEntityManager->getRepository(Player::class)->findBy(['game' => $createdGame->id]));
+    }
+
+    public static function provideARosterWhoseLongestNameSitsOnTheLengthLimitLaunchesCases(): iterable
+    {
+        yield 'thirty ascii characters' => [str_repeat('a', Player::MAX_NAME_LENGTH)];
+
+        yield 'thirty accented characters, sixty bytes' => [str_repeat('é', Player::MAX_NAME_LENGTH)];
+    }
+
+    /**
+     * The game name had no bound at all: AvailableGameSlug reports blank, reserved and taken, and a
+     * hundred-character name cleared all three. Nothing downstream caught it either — onSlugUpdated()
+     * slugifies what is typed but never shortens it, and SQLite stores past a declared width in
+     * silence, so the name persisted whole and became the game's URL. The roster is made conform
+     * first so the disabled button has exactly one cause left, and the field error is asserted
+     * alongside it: an operator handed a dead button and no sentence cannot know what to shorten.
+     */
+    #[Test]
+    public function aGameNameOneCharacterOverTheLengthLimitShowsAFieldErrorAndDisablesLaunch(): void
+    {
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 3)
+            ->set('game.region', 'west')
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', $empire);
+            $component->call('addPlayer');
+        }
+
+        $rendered = $component->set('game.slug', str_repeat('a', Game::MAX_SLUG_LENGTH + 1))->render();
+
+        $this->assertSame('Game name cannot be longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered->toString()));
+    }
+
+    /**
+     * The positive control for the two around it, taken at the limit rather than in the comfortable
+     * middle: a bound compared with the wrong operator refuses exactly this name and nothing else,
+     * and would do it to a game an operator is entitled to create. The persisted length is read back
+     * rather than the presence of the row, since the whole point of the rule is that the column
+     * silently accepts more than it declares — a name that arrived truncated would still be found.
+     */
+    #[Test]
+    public function aGameNameExactlyAtTheLengthLimitIsAcceptedAndLaunches(): void
+    {
+        $slug = str_repeat('a', Game::MAX_SLUG_LENGTH);
+
+        $component = $this->createLiveComponent('GameCreator')
+            ->set('game.playerCount', 3)
+            ->set('game.region', 'west')
+        ;
+
+        foreach ([['Alice', 'hatti'], ['Bob', 'hellas'], ['Carol', 'minoa']] as [$name, $empire]) {
+            $component->set('newPlayerName', $name)->set('newPlayerEmpire', $empire);
+            $component->call('addPlayer');
+        }
+
+        $component->set('game.slug', $slug);
+        $component->call('launch');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+        $this->assertStringEndsWith('/'.$slug, (string) $response->headers->get('Location'));
+
+        $createdGame = $this->freshEntityManager()->getRepository(Game::class)->findOneBy(['slug' => $slug]);
+
+        $this->assertInstanceOf(Game::class, $createdGame);
+        $this->assertSame(Game::MAX_SLUG_LENGTH, mb_strlen($createdGame->slug));
+    }
+
+    /**
+     * The gate the hole actually threatened. The input above is debounced and validated as it is
+     * typed, but game.slug is a writable path: a request that never rendered a form hands launch()
+     * whatever it likes, and launch() is the only thing between it and a persisted game. Asserted on
+     * the persisted counts rather than on the button, which that request never reads.
+     */
+    #[Test]
+    public function launchIsRefusedServerSideWhenAnInjectedGameNameIsOverlongAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $game = new CreateGame();
+        $game->slug = str_repeat('a', Game::MAX_SLUG_LENGTH + 1);
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => 'Alice', 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->call('launch')->render();
+
+        $this->assertSame('Game name cannot be longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
      * The empire a row's select currently shows. Asserting the count first is what keeps a row that
      * rendered no select — or one that pre-selected several options — from reading as an empty
      * empire, which is a legitimate value here.
@@ -1015,10 +1720,29 @@ final class GameCreatorTest extends WebTestCase
         return (string) $selected->attr('value');
     }
 
-    /** @return list<string> */
+    /**
+     * The values a row's select offers, in render order and empty option included. A sequence, not a
+     * set: order is the property under test wherever this is compared, since it is what the DOM
+     * diffing library reconciles positionally.
+     *
+     * @return list<string>
+     */
     private function rowEmpireChoices(Crawler $crawler, int $index): array
     {
         return $crawler->filter('tbody tr')->eq($index)->filter('select option')->each(
+            static fn (Crawler $option): string => (string) $option->attr('value'),
+        );
+    }
+
+    /**
+     * The subset of those values the row renders as unpickable. A client-side courtesy only — what
+     * the server actually refuses is pinned separately, on setEmpire().
+     *
+     * @return list<string>
+     */
+    private function rowTakenEmpires(Crawler $crawler, int $index): array
+    {
+        return $crawler->filter('tbody tr')->eq($index)->filter('select option[disabled]')->each(
             static fn (Crawler $option): string => (string) $option->attr('value'),
         );
     }

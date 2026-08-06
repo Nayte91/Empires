@@ -33,7 +33,7 @@ final class PlayerBoard
     #[LiveProp(writable: true)]
     #[Assert\Sequentially([
         new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
-        new Assert\Length(max: 50, maxMessage: 'Name cannot be longer than {{ limit }} characters.'),
+        new Assert\Length(max: Player::MAX_NAME_LENGTH, maxMessage: 'Name cannot be longer than {{ limit }} characters.'),
         new Assert\Expression('not this.isNameTaken(value)', message: 'Name already taken.'),
     ])]
     public string $newName = ''; // @phpstan-ignore property.uninitialized (hydrated in mount())

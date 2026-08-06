@@ -106,8 +106,8 @@
                                is safe unconditional (contrast with the region/new-player controls above). #}
                             <select data-model="players.{{ loop.index0 }}.empire" {{ live_action('setEmpire', {index: loop.index0}, {}, 'change') }} data-loading="addAttribute(disabled)">
                                 <option value="" {{ player.empire == '' ? 'selected' }}>— no empire —</option>
-                                {% for empire in this.getEmpireChoicesFor(loop.index0) %}
-                                    <option value="{{ empire }}" {{ player.empire == empire ? 'selected' }}>{{ empire|capitalize }}</option>
+                                {% for choice in this.getEmpireChoicesFor(loop.index0) %}
+                                    <option value="{{ choice.empire }}" {{ choice.taken ? 'disabled' }} {{ player.empire == choice.empire ? 'selected' }}>{{ choice.empire|capitalize }}</option>
                                 {% endfor %}
                             </select>
                         </td>

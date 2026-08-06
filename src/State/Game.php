@@ -14,16 +14,19 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity]
 class Game
 {
+    public const int MAX_SLUG_LENGTH = 64;
+    public const int MAX_REGION_LENGTH = 16;
+
     #[ORM\Id, ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;
 
-    #[ORM\Column(length: 64, unique: true)]
+    #[ORM\Column(length: self::MAX_SLUG_LENGTH, unique: true)]
     public readonly string $slug;
 
     #[ORM\Column(type: Types::SMALLINT)]
     public int $currentTurn = 1;
 
-    #[ORM\Column(length: 16, nullable: true)]
+    #[ORM\Column(length: self::MAX_REGION_LENGTH, nullable: true)]
     public ?string $region = 'west';
 
     #[ORM\Column(enumType: ASTVersion::class)]
