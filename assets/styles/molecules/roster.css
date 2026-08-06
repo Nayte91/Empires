@@ -110,7 +110,14 @@
         small[data-player] { display: none }
     }
 
-    @container (min-width: 60rem) {
+    /* Viewport, not container, by exception — the same trap ast.css documents: the dashboard switches
+       to desktop at this same 60rem and that rule adds `padding: 1rem`, so crossing the breakpoint
+       shrinks the container's own content box back below it. As a container query this stayed on the
+       tablet variant until ~1007px, i.e. it disagreed with the page it lives on for 47px — sideways
+       column headers and no player names on a page already laid out as a grid.
+       The 40rem query above is left alone: no skeleton declares a media query there, so nothing
+       contradicts it. */
+    @media (min-width: 60rem) {
         inline-size: auto;
         font-size: 1.25rem;
 
