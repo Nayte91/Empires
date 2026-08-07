@@ -15,23 +15,20 @@
         margin: 0;
         padding: 0;
 
-        /* atoms/button.css already gives every button its border, radius, background, font-size and cursor.
-           The five redeclared below duplicate it with hardcoded literals rather than the tokens — worth
-           culling, but that is a rendering change and not this pass's. */
+        /* What a grid tile needs on top of the button atom and the modal layer: both read as defaults
+           but are overrides. `stretch` undoes modal.css's `justify-self: start`, without which the tile
+           shrink-wraps its digit to 9px inside a 48px track and loses the touch target; `padding-block`
+           zeroes only the vertical half, since min-block-size and the flex centring own the height. */
         button {
             min-block-size: 3rem;
             inline-size: auto;
-            padding: 0;
-            border: 1px solid gainsboro;
-            border-radius: 0.375rem;
+            justify-self: stretch;
+            padding-block: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: white;
             font-family: inherit;
-            font-size: 0.875rem;
             font-weight: 500;
-            cursor: pointer;
             transition: border-color 0.15s, background-color 0.15s;
 
             &:hover { border-color: var(--stat-picker-accent) }
