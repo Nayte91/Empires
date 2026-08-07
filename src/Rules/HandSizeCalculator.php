@@ -52,7 +52,6 @@ final readonly class HandSizeCalculator
         return max(0, $player->cards - $this->limitFor($player));
     }
 
-    /** The one question consumers should ask. */
     public function isOverLimit(Player $player): bool
     {
         return $this->excessFor($player) > 0;

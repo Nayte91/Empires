@@ -149,13 +149,11 @@ final class Shop
         return $this->getCurrentTurnOrder()?->status->value;
     }
 
-    /** Cart is shown when there is no order for this turn, or while editing one (non-empty cart). */
     public function isCartVisible(): bool
     {
         return !$this->getCurrentTurnOrder() instanceof Order || !$this->isCartEmpty();
     }
 
-    /** Order block is shown whenever an order exists and it isn't currently being edited in the cart. */
     public function isOrderVisible(): bool
     {
         return $this->getCurrentTurnOrder() instanceof Order && !$this->isCartVisible();

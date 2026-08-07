@@ -27,7 +27,6 @@ final readonly class TaxCalculator
         private AdvanceEffectRegistry $advanceEffects,
     ) {}
 
-    /** The cheapest rate the player may elect to pay. */
     public function lowestRate(Player $player): int
     {
         return self::STANDARD_RATE - ($this->grants($player, AdvanceEffect::TaxRateChoice) ? 1 : 0);
@@ -45,11 +44,7 @@ final readonly class TaxCalculator
             + ($this->grants($player, AdvanceEffect::TaxRateRaise) ? 1 : 0);
     }
 
-    /**
-     * Every rate the player may choose between, cheapest first.
-     *
-     * @return list<int>
-     */
+    /** @return list<int> */
     public function rates(Player $player): array
     {
         return range($this->lowestRate($player), $this->highestRate($player));
@@ -60,7 +55,6 @@ final readonly class TaxCalculator
         return $rate * $player->cities;
     }
 
-    /** Tokens still on the table, available to settle the bill. */
     public function availableStock(Player $player): int
     {
         return $this->stockCalculator->available($player);
@@ -81,10 +75,6 @@ final readonly class TaxCalculator
         return $this->grants($player, AdvanceEffect::TaxRevoltImmunity);
     }
 
-    /**
-     * Whether the shortage would actually cost the player cities. The one question consumers
-     * should ask: a shortage alone does not answer it, immunity settles it first.
-     */
     public function citiesRevolt(Player $player): bool
     {
         return !$this->isImmune($player) && $this->stockToRecover($player) > 0;

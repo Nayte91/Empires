@@ -13,13 +13,9 @@ use Symfony\Component\Uid\Uuid;
 use Userforged\ShopEngine\FulfillmentInterface;
 
 /**
- * The Game→Shop seam for FulfillmentInterface: in Empires, "delivering" an
- * order means adding the purchased slugs to the player's owned advances, and
- * posting each advance's printed credits to the player's append-only credit
- * ledger (Player::postCredit()) — one entry per credits-block entry, at the
- * player's current turn, reasoned by the advance's key. Resolves the buyer id
- * to a Player via PlayerRepository — the library never touches
- * App\State\Player itself.
+ * The Game→Shop seam for FulfillmentInterface: delivering means owning the advances and
+ * posting their printed credits to the append-only ledger. The library never touches
+ * App\State\Player.
  *
  * revoke() removes every ledger entry reasoned by the advance's key
  * (Player::revokeCredits()) instead of posting a negative counterpart:

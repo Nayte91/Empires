@@ -11,10 +11,8 @@ use Userforged\ShopEngine\BuyerInterface;
 use Userforged\ShopEngine\BuyerProviderInterface;
 
 /**
- * The Game→Shop seam for BuyerProviderInterface: resolves a buyer id to a
- * Player via PlayerRepository, then delegates to ShopConnector::buyerFor()
- * for the actual snapshot. The library never touches App\State\Player
- * itself. Mirrors AdvanceFulfillment's find() ?? throw.
+ * The Game→Shop seam for BuyerProviderInterface — resolves the id, then delegates to
+ * ShopConnector::buyerFor().
  */
 final readonly class PlayerBuyerProvider implements BuyerProviderInterface
 {

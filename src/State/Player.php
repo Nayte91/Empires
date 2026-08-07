@@ -63,8 +63,6 @@ class Player
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public readonly Game $game,
         string $name,
-        // 30 matches MAX_NAME_LENGTH by coincidence only — an empire identifier has nothing to do
-        // with a player's name bound. Do not collapse this into the same constant.
         #[ORM\Column(length: 30)]
         public string $empire,
     ) {
@@ -116,8 +114,7 @@ class Player
      * slugify to 119 of pinyin), so a name honouring the one limit players are told about can still
      * produce a longer slug, cut back to that same limit. A collision this causes is the collision
      * two names slugifying alike already produce, which this game treats as genuine, not an
-     * accident. The $name hook above calls this same method, so no divergence is possible between
-     * what gets persisted and what gets checked.
+     * accident.
      */
     public static function slugify(string $name): string
     {

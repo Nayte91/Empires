@@ -15,19 +15,8 @@ use App\Rules\Ruleset\Advance;
  * Mega Civilization's credit rules, but answer different questions — do not
  * fold one into the other.
  *
- * Like the resolver, this reads entitlements opaquely by scope, regardless
- * of which of the three sources ShopConnector::buyerFor() composed them
- * from — a scope either matches a known facet or it doesn't; `source` never
- * enters the partition. That opacity is about provenance, not about the game:
- * the catalogue and the owned keys are read to decide whether a credit can
- * still be spent, which is a rule.
- *
  * "Empty" — never earned — is deliberately not reported: it is readable off a
  * zero amount by the caller.
- *
- * This used to be Userforged\ShopEngine\Service\PriceCalculator::creditsFor();
- * it moved here for the same reason AdvancePriceResolver did: it is a Mega
- * Civilization rule, not a shop-pattern one.
  */
 final readonly class AdvanceCreditsCalculator
 {

@@ -47,7 +47,6 @@ final class Cart
     #[LiveProp]
     public string $storageKey; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    /** Button label — "Submit my order" for the player shop, "Confirm purchase" for the operator POS. */
     #[LiveProp(updateFromParent: true)]
     public string $checkoutLabel = 'Submit my order';
 

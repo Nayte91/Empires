@@ -24,13 +24,8 @@ use Userforged\ShopEngine\Exception\ShopExceptionReason;
  * one-liner like `trans('error.'.$reason->value, ...)` would translate
  * correctly at runtime but every key would misreport as unused.
  *
- * Also the single home for unwrapping a dispatched command's
- * HandlerFailedException: App\Presentation\Component\Cart and App\Presentation\Component\PlayerOrders
- * used to each inline the same unwrap loop. And the single home for
- * pre-check guards that never throw at all — CartItemAdder refuses an
- * already-owned advance, and App\Presentation\Component\Shop a locked turn, before ever
- * dispatching a command; both call messageForReason() directly so that copy
- * stays in this one catalogue instead of drifting into a hardcoded duplicate.
+ * Also the single home for unwrapping HandlerFailedException and for pre-check guards' copy
+ * (messageForReason), so player-facing wording never drifts into hardcoded duplicates.
  */
 final readonly class ShopExceptionTranslator
 {

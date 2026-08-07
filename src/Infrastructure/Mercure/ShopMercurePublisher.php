@@ -28,10 +28,6 @@ use Userforged\ShopEngine\Event\OrderValidated;
  * `OrderValidated` for the same mutation. Mapping `OrderSold` too would
  * double-publish.
  *
- * Each handler resolves `playerId` to a `Player` via `PlayerRepository`, then
- * publishes to `'empires/game/'.$player->game->id` — matching the topic the
- * lib used to write directly before this seam existed.
- *
  * Registered on `bus: 'shop.event.bus'` only, never `#[AsEventListener]`:
  * `ShopEventPublisher` dispatches every event on both a PSR-14 dispatcher and
  * this Messenger bus, so subscribing on both channels here would publish

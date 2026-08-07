@@ -100,10 +100,7 @@
                     <tr{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
                         <td>{{ player.name }}</td>
                         <td>
-                            {# The fix for issue #19: while a request is in flight, every select in the component is disabled,
-                               so a second row's assignment cannot start before the first round trip lands and re-renders
-                               everyone's option list. No business-conditional `disabled` on this element, so the directive
-                               is safe unconditional (contrast with the region/new-player controls above). #}
+                            {# Issue #19: disabling every select while a request is in flight stops a second row's assignment from starting before the re-render updates everyone's option list. No business-conditional 'disabled' here, so the unconditional directive is safe (contrast the controls above). #}
                             <select data-model="players.{{ loop.index0 }}.empire" {{ live_action('setEmpire', {index: loop.index0}, {}, 'change') }} data-loading="addAttribute(disabled)">
                                 <option value="" {{ player.empire == '' ? 'selected' }}>— no empire —</option>
                                 {% for choice in this.getEmpireChoicesFor(loop.index0) %}

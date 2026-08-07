@@ -1,7 +1,4 @@
-{# Gift picker molecule — shown under a cart/ticket line whose advance grants a
-   promotion.gift. Component-agnostic: chooseAction/revokeAction let Shop (cart)
-   and PlayerOrders (POS ticket) each drive their own live actions.
-   Expected context: row, chooseAction, revokeAction, candidates, chosenGift. #}
+{# Expected context: row, chooseAction, revokeAction, candidates, chosenGift. #}
 {% if chosenGift %}
     <p class="gift-picker chosen">
         Free gift: {{ chosenGift.name|capitalize }}

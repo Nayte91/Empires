@@ -23,12 +23,6 @@ use Symfony\Component\Uid\Uuid;
  * Exclusive producer of `game-updated` only: {@see ShopMercurePublisher} emits `player-updated` too.
  * `CreateGameHandler` is the one handler that dispatches nothing — a game nobody has open yet has
  * no client to refresh, so the home only shows a fresh game on reload.
- *
- * PlayerUpdated resolves to a Player via PlayerRepository purely to reach the owning game's id;
- * GameUpdated already carries the game id directly.
- *
- * Mirrors {@see ShopMercurePublisher} in shape: one handler method per event, one private
- * publish() building the topic and payload.
  */
 final readonly class GameMercurePublisher
 {

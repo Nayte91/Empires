@@ -12,8 +12,6 @@
         gap: 1rem;
     }
 
-    /* auto-fit rather than a breakpoint: the panels sit side by side while both fit their
-       minimum, and fall back to one per row on their own once they no longer do. */
     .panels {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));

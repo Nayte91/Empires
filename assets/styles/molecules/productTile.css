@@ -41,8 +41,6 @@
         margin-inline-start: auto;
     }
 
-    /* Only drawn when a discount applies, so the tile keeps showing what the advance would
-       otherwise cost — the shop's whole discount panel is meaningless without it. */
     .original {
         color: black;
         font-size: 0.75rem;

@@ -20,16 +20,12 @@
         block-size: auto;
     }
 
-    /* The standard anatomy — heading, body, exit, evenly spaced, whether the dialog carries the
-       three parts itself or hands them to a form that fills it. Neither end needs a wrapper:
-       alone at the top, the h2 is already the header, and a lone exit button is already the
-       footer. How a body arranges its own contents stays the component's business. */
+    /* Mirrors the dialog's own grid, so heading/body/exit space identically whether the dialog holds them or a form does. */
     > form {
         display: grid;
         gap: 1rem;
     }
 
-    /* The gap owns the spacing; nothing inside brings its own vertical margin. */
     p { margin: 0 }
 }
 

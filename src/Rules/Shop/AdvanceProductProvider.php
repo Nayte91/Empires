@@ -30,9 +30,7 @@ final readonly class AdvanceProductProvider implements ProductProviderInterface
      */
     public function productsByKeys(array $keys): array
     {
-        // getAdvancesByNames() returns a non-reindexed array (array_filter
-        // preserves the original keys), so array_values is required here to
-        // hand back a genuine list — callers no longer need to do it themselves.
+        // getAdvancesByNames() filter-preserves keys; array_values makes it a genuine list.
         return array_values($this->advanceRegistry->getAdvancesByNames($keys));
     }
 }

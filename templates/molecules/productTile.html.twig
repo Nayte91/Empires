@@ -1,5 +1,4 @@
-{# Product Tile Molecule Template — compact tile, speed-first; picture hidden unless the shop's
-   display-pictures toggle is checked (CSS-only, see productTile.css) #}
+{# The picture is always rendered but hidden unless the shop's display-pictures toggle is checked — CSS-only, see productTile.css. #}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
 {% set isOverBudget = remainingBudget is not null and row.product.netCost > remainingBudget %}

@@ -30,10 +30,7 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * The Game→Shop seam for the generic "facet" concept: the shop's Option
-     * promotion splits a budget across opaque "facets" — in Empires, those
-     * are the advance categories. packages/userforged/shop-engine/ never
-     * learns what a facet stands for.
+     * In Empires, the Option promotion's opaque facets are the advance categories.
      *
      * @return list<string>
      */
@@ -43,12 +40,8 @@ final readonly class ShopConnector implements FacetProviderInterface
     }
 
     /**
-     * The Game→Shop seam for BuyerInterface: composes the two sources of an
-     * Entitlement (the player's append-only credit ledger — owned advances'
-     * printed credits and the scenario's starting credits, both posted by
-     * App\Engine\Shop\AdvanceFulfillment and App\Engine\Handler\
-     * CreateGameHandler — plus elective allocations from validated orders)
-     * into a PlayerBuyer snapshot.
+     * Composes the buyer's entitlements from the credit ledger (replayed chronologically — see
+     * ledgerEntitlements()) plus elective allocations from validated orders.
      *
      * The ledger is replayed chronologically into one Entitlement per scope,
      * carrying that scope's final balance — see ledgerEntitlements() for the

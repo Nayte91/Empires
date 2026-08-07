@@ -50,9 +50,7 @@
 
         th { background: var(--operator-bg-subtle) }
 
-        /* Auto table layout: a cell asked for an impossible 1% shrinks to its own content, so Name
-           collapses onto its longest row and Actions onto its two icons, leaving every remaining
-           pixel to Empire — the only column whose control needs the room. */
+        /* The impossible 1% shrinks each cell to its content; every remaining pixel goes to Empire, the only column whose control needs the room. */
         :is(th, td):nth-child(1) {
             inline-size: 1%;
             white-space: nowrap;
