@@ -17,7 +17,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class CreateGame
 {
     #[AvailableGameSlug]
-    #[Assert\Length(max: Game::MAX_SLUG_LENGTH, maxMessage: 'Game name cannot be longer than {{ limit }} characters.')]
+    #[Assert\Length(max: Game::MAX_SLUG_LENGTH, maxMessage: 'The address this name builds is longer than {{ limit }} characters.')]
     public string $slug = '';
 
     public int $playerCount = 9;

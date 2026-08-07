@@ -21,7 +21,7 @@ class Player
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     public private(set) Uuid $id;
 
-    #[ORM\Column(length: 64)]
+    #[ORM\Column(length: self::MAX_NAME_LENGTH)]
     public private(set) string $slug; // @phpstan-ignore property.uninitialized (always assigned by the $name hook, itself always set in the constructor)
 
     /** @var list<string> */
@@ -54,7 +54,7 @@ class Player
     public string $name {
         set {
             $this->name = $value;
-            $this->slug = $this->slugify($value);
+            $this->slug = self::slugify($value);
         }
     }
 
@@ -63,6 +63,8 @@ class Player
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public readonly Game $game,
         string $name,
+        // 30 matches MAX_NAME_LENGTH by coincidence only — an empire identifier has nothing to do
+        // with a player's name bound. Do not collapse this into the same constant.
         #[ORM\Column(length: 30)]
         public string $empire,
     ) {
@@ -106,8 +108,19 @@ class Player
         ));
     }
 
-    private function slugify(string $name): string
+    /**
+     * The single derivation of a player's slug, truncation included — callable without an instance
+     * because a validator normalizer (GameCreator, PlayerBoard) has no Player to hand. Truncating
+     * here, not just at persistence, is what makes those callers' duplicate/blank checks agree with
+     * what actually gets stored: transliteration expands rather than shortens (30 characters of CJK
+     * slugify to 119 of pinyin), so a name honouring the one limit players are told about can still
+     * produce a longer slug, cut back to that same limit. A collision this causes is the collision
+     * two names slugifying alike already produce, which this game treats as genuine, not an
+     * accident. The $name hook above calls this same method, so no divergence is possible between
+     * what gets persisted and what gets checked.
+     */
+    public static function slugify(string $name): string
     {
-        return strtolower((string) new AsciiSlugger()->slug($name));
+        return mb_substr(strtolower((string) new AsciiSlugger()->slug($name)), 0, self::MAX_NAME_LENGTH);
     }
 }

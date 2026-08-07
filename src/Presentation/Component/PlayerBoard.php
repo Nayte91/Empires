@@ -13,7 +13,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -32,7 +31,7 @@ final class PlayerBoard
 
     #[LiveProp(writable: true)]
     #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
+        new Assert\NotBlank(message: 'Player name is required.', normalizer: [Player::class, 'slugify']),
         new Assert\Length(max: Player::MAX_NAME_LENGTH, maxMessage: 'Name cannot be longer than {{ limit }} characters.'),
         new Assert\Expression('not this.isNameTaken(value)', message: 'Name already taken.'),
     ])]
@@ -57,7 +56,7 @@ final class PlayerBoard
      */
     public function isNameTaken(string $name): bool
     {
-        $slug = self::slugify($name);
+        $slug = Player::slugify($name);
 
         return $this->player->game->players->exists(
             fn (int $key, Player $other): bool => $other !== $this->player && $other->slug === $slug,
@@ -83,11 +82,6 @@ final class PlayerBoard
             'gameSlug' => $this->player->game->slug,
             'playerSlug' => $this->player->slug,
         ]));
-    }
-
-    public static function slugify(string $value): string
-    {
-        return strtolower((string) new AsciiSlugger()->slug($value));
     }
 
     /** @return list<Advance> */

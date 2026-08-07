@@ -34,6 +34,13 @@ final class GameCreatorTest extends WebTestCase
      */
     private const array WEST_NINE_EMPIRE_OPTIONS = ['', 'assyria', 'carthage', 'celt', 'egypt', 'hatti', 'hellas', 'iberia', 'minoa', 'rome'];
 
+    /**
+     * The slug both thirty-character CJK names below are stored under. Spelled out rather than read
+     * back from Player::slugify(), for the same reason as the empire pool above: an implementation
+     * that changes where the cut falls must fail here instead of agreeing with itself.
+     */
+    private const string TRUNCATED_HAN_SLUG = 'han-han-han-han-han-han-han-ha';
+
     #[Test]
     public function mountProposesAUuidAsTheDefaultGameSlug(): void
     {
@@ -262,16 +269,35 @@ final class GameCreatorTest extends WebTestCase
         $this->assertSame([], $component->component()->players);
     }
 
+    /**
+     * Blankness is judged on the slug, because Assert\NotBlank normalizes through Player::slugify()
+     * — the same method the rename door normalizes through, so both doors refuse the same names.
+     * Only the first row would still be refused by a NotBlank carrying no normalizer at all; the
+     * three below look filled in the input and reach the slugger as nothing, so they are what pin
+     * the normalizer as wired. The positive control is the successful add in the test that follows.
+     */
     #[Test]
-    public function addingAPlayerWithABlankNameShowsAFieldError(): void
+    #[DataProvider('provideAddingAPlayerWithABlankNameShowsAFieldErrorCases')]
+    public function addingAPlayerWithABlankNameShowsAFieldError(string $unusableName): void
     {
         $rendered = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', '')
+            ->set('newPlayerName', $unusableName)
             ->call('addPlayer')
             ->render()
         ;
 
         $this->assertStringContainsString('Player name is required.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+    }
+
+    public static function provideAddingAPlayerWithABlankNameShowsAFieldErrorCases(): iterable
+    {
+        yield 'nothing at all' => [''];
+
+        yield 'whitespace only' => ['   '];
+
+        yield 'punctuation only' => ['!!!'];
+
+        yield 'a row of hyphens' => ['---'];
     }
 
     /**
@@ -1162,6 +1188,161 @@ final class GameCreatorTest extends WebTestCase
     }
 
     /**
+     * The collision the friendly gate used to be blind to, and the reason the slugifier is now a
+     * single method. Every pair above collides on its full slug, so any comparison catches them.
+     * This one does not: both names slugify to 119 characters of pinyin that diverge at the
+     * thirty-third, and only agree again once cut back to the thirty the column holds. A gate
+     * comparing untruncated slugs waves them through, and the collision then surfaces at flush as
+     * uniq_player_game_slug — a raw database error where the operator should read this sentence.
+     */
+    #[Test]
+    public function namesCollidingOnlyOnceTheirSlugsAreTruncatedAreReportedAsAConformityIssue(): void
+    {
+        $thirtyHan = str_repeat('漢', 30);
+        $eightHanThenGuo = str_repeat('漢', 8).str_repeat('国', 22);
+
+        $game = new CreateGame();
+        $game->slug = 'truncated-collision-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $thirtyHan, 'empire' => 'hatti'],
+                ['name' => $eightHanThenGuo, 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertStringContainsString(
+            sprintf('%s and %s share the name &quot;%s&quot;.', $thirtyHan, $eightHanThenGuo, self::TRUNCATED_HAN_SLUG),
+            $rendered,
+        );
+    }
+
+    /**
+     * The positive control the test above cannot supply on its own: an implementation that truncated
+     * to nothing, or reported every transliterated roster as colliding, would satisfy it. These two
+     * names differ from their first character, so their slugs part company well inside the limit and
+     * the roster is conform — truncation costs a legitimate pair nothing.
+     */
+    #[Test]
+    public function namesWhoseSlugsStillDifferOnceTruncatedAreNotReportedAsAConformityIssue(): void
+    {
+        $game = new CreateGame();
+        $game->slug = 'truncated-distinct-game';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => str_repeat('漢', 30), 'empire' => 'hatti'],
+                ['name' => str_repeat('国', 30), 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->render()->toString();
+
+        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
+        $this->assertStringContainsString('data-conformity="ok"', $rendered);
+    }
+
+    /**
+     * The gate the hole actually threatened, and the exact reproduction that opened it. launch() is
+     * what a crafted request reaches, and what would otherwise have handed the bus two players whose
+     * stored slugs are equal. Its catch block is no safety net here: it reads any
+     * UniqueConstraintViolationException as the *game* slug being taken, so the pre-fix failure
+     * blamed a slug that was free. Both halves are asserted — the roster's real fault named, that
+     * misreading absent, and nothing persisted.
+     */
+    #[Test]
+    public function launchIsRefusedServerSideWhenTwoNamesCollideOnlyOnceTruncatedAndNothingIsCreated(): void
+    {
+        $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
+        $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
+
+        $thirtyHan = str_repeat('漢', 30);
+        $eightHanThenGuo = str_repeat('漢', 8).str_repeat('国', 22);
+
+        $game = new CreateGame();
+        $game->slug = 'truncated-collision-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $thirtyHan, 'empire' => 'hatti'],
+                ['name' => $eightHanThenGuo, 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $rendered = $component->call('launch')->render()->toString();
+
+        $this->assertStringContainsString(
+            sprintf('%s and %s share the name &quot;%s&quot;.', $thirtyHan, $eightHanThenGuo, self::TRUNCATED_HAN_SLUG),
+            $rendered,
+        );
+        $this->assertStringNotContainsString('Slug &quot;truncated-collision-launch&quot; is not available.', $rendered);
+
+        $freshEntityManager = $this->freshEntityManager();
+        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($playersBefore, $freshEntityManager->getRepository(Player::class)->count([]));
+    }
+
+    /**
+     * What makes every collision test above sound, stated on its own so that its failure is legible:
+     * the slug the creator's gate compares is the slug the column ends up holding. The gate calls
+     * Player::slugify(); the entity assigns from the same method; so this asserts the persisted
+     * value against that method for a name where the two could still disagree — one whose slug is
+     * only equal to it *after* truncation.
+     *
+     * This is the test that pins truncation inside slugify() rather than in the name hook. Move it
+     * to the hook and the entity keeps storing thirty characters while the gate starts comparing
+     * 119, which is the original bug rebuilt one level down: red here, and red on the collisions
+     * above, whereas a gate that merely re-derived the slug correctly by hand would pass both.
+     */
+    #[Test]
+    public function theSlugTheCreatorsGateComparesIsTheSlugTheColumnStores(): void
+    {
+        $thirtyHan = str_repeat('漢', 30);
+
+        $game = new CreateGame();
+        $game->slug = 'one-slugifier-launch';
+        $game->playerCount = 3;
+        $game->region = 'west';
+
+        $component = $this->createLiveComponent('GameCreator', [
+            'game' => $game,
+            'players' => [
+                ['name' => $thirtyHan, 'empire' => 'hatti'],
+                ['name' => 'Bob', 'empire' => 'hellas'],
+                ['name' => 'Carol', 'empire' => 'minoa'],
+            ],
+        ]);
+
+        $component->call('launch');
+
+        $this->assertSame(Response::HTTP_FOUND, $component->response()->getStatusCode(), (string) $component->response()->getContent());
+
+        $freshEntityManager = $this->freshEntityManager();
+        $stored = $freshEntityManager->getRepository(Player::class)->findOneBy(['name' => $thirtyHan]);
+
+        $this->assertInstanceOf(Player::class, $stored);
+        $this->assertSame(Player::slugify($thirtyHan), $stored->slug);
+        $this->assertSame(self::TRUNCATED_HAN_SLUG, $stored->slug);
+        $this->assertSame(Player::MAX_NAME_LENGTH, mb_strlen($stored->slug));
+    }
+
+    /**
      * The rule is judged on the slug, never on the raw string, because that is what the board URL is
      * built from: a name a naive `'' === $name` waves through still persists a player with an empty
      * slug. Each row is a name that looks filled in the input and reaches the slugger as nothing.
@@ -1633,7 +1814,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->set('game.slug', str_repeat('a', Game::MAX_SLUG_LENGTH + 1))->render();
 
-        $this->assertSame('Game name cannot be longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
+        $this->assertSame('The address this name builds is longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
         $this->assertTrue($this->isLaunchButtonDisabled($rendered->toString()));
     }
 
@@ -1700,7 +1881,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('launch')->render();
 
-        $this->assertSame('Game name cannot be longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
+        $this->assertSame('The address this name builds is longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
 
         $freshEntityManager = $this->freshEntityManager();
         $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));

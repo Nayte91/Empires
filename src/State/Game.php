@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
@@ -71,5 +72,19 @@ class Game
     public function removePlayer(Player $player): void
     {
         $this->players->removeElement($player);
+    }
+
+    /**
+     * Looks like Player::slugify() and deliberately is not: that one derives a slug from a name
+     * the player never typed against, so it truncates to stay honest with a limit they weren't
+     * told about. A game's slug is the field the operator typed — there is nothing to derive it
+     * from — so it must come back untouched, length included, for Assert\Length(max:
+     * Game::MAX_SLUG_LENGTH) on CreateGame::$slug to see the real value and refuse it. Truncating
+     * here would silently store a shortened slug and validate the name that was cut away, not the
+     * one the operator entered — the exact bug this method was added to undo.
+     */
+    public static function slugify(string $slug): string
+    {
+        return strtolower((string) new AsciiSlugger()->slug($slug));
     }
 }

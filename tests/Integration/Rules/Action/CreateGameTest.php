@@ -49,7 +49,7 @@ final class CreateGameTest extends WebTestCase
 
         $messages = $this->violationMessagesFor($createGame, 'slug');
 
-        $this->assertSame(['Game name cannot be longer than 64 characters.'], $messages);
+        $this->assertSame(['The address this name builds is longer than 64 characters.'], $messages);
     }
 
     public static function provideAGameNameOverTheLengthLimitReportsItsLengthAsItsOnlyProblemCases(): iterable
