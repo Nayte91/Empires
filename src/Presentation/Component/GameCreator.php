@@ -8,6 +8,7 @@ use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\GameRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Scenario\ScenarioRuleSummarizer;
+use App\State\Game;
 use App\State\Player;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -15,7 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -39,7 +39,7 @@ final class GameCreator
 
     #[LiveProp(writable: true)]
     #[Assert\Sequentially([
-        new Assert\NotBlank(message: 'Player name is required.', normalizer: [self::class, 'slugify']),
+        new Assert\NotBlank(message: 'Player name is required.', normalizer: [Player::class, 'slugify']),
         new Assert\Length(max: Player::MAX_NAME_LENGTH, maxMessage: 'Name cannot be longer than {{ limit }} characters.'),
         new Assert\Expression('not this.hasPlayerNamed(value)', message: 'Name already taken.'),
     ])]
@@ -90,7 +90,7 @@ final class GameCreator
 
     public function onSlugUpdated(): void
     {
-        $this->game->slug = self::slugify($this->game->slug);
+        $this->game->slug = Game::slugify($this->game->slug);
         $this->validateField('game.slug', false);
     }
 
@@ -101,9 +101,9 @@ final class GameCreator
 
     public function hasPlayerNamed(string $name): bool
     {
-        $slug = self::slugify($name);
+        $slug = Player::slugify($name);
 
-        return array_any($this->players, static fn (array $player): bool => self::slugify($player['name']) === $slug);
+        return array_any($this->players, static fn (array $player): bool => Player::slugify($player['name']) === $slug);
     }
 
     public function onScenarioUpdated(): void
@@ -358,11 +358,6 @@ final class GameCreator
         return $this->scenarioRuleSummarizer->summarize($this->game);
     }
 
-    public static function slugify(string $value): string
-    {
-        return strtolower((string) new AsciiSlugger()->slug($value));
-    }
-
     /**
      * The only check in this list that does not iterate $players: every other check walks the
      * roster, so a roster with zero rows trips none of them — count([]) === 0 satisfies the
@@ -472,7 +467,7 @@ final class GameCreator
         $namesBySlug = [];
 
         foreach ($this->players as $player) {
-            $namesBySlug[self::slugify($player['name'])][] = $player['name'];
+            $namesBySlug[Player::slugify($player['name'])][] = $player['name'];
         }
 
         $issues = [];
@@ -501,7 +496,7 @@ final class GameCreator
      */
     private function getBlankNameIssue(): ?string
     {
-        $blank = \count(array_filter($this->players, static fn (array $player): bool => '' === self::slugify($player['name'])));
+        $blank = \count(array_filter($this->players, static fn (array $player): bool => '' === Player::slugify($player['name'])));
 
         if (0 === $blank) {
             return null;

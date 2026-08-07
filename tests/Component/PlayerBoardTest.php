@@ -336,6 +336,66 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     /**
+     * The rename door shares its slugifier with the creation door, so it must refuse the collision
+     * that door refuses. This pair only collides once truncated: both names slugify to 119
+     * characters that diverge at the thirty-third and agree again only when cut back to the thirty
+     * the column holds. Comparing untruncated slugs clears them — and rename(), unlike launch(),
+     * catches nothing, so the flush surfaced uniq_player_game_slug as a raw error page.
+     */
+    #[Test]
+    public function renamingOntoANameThatOnlyCollidesOnceTruncatedIsRefused(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        PlayerBuilder::named(str_repeat('漢', 30))->in($game)->persist($this->entityManager);
+        $playerId = $alice->id;
+
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $alice])
+            ->set('newName', str_repeat('漢', 8).str_repeat('国', 22))
+            ->call('rename')
+            ->render()
+        ;
+
+        $this->assertSame('Name already taken.', trim($rendered->crawler()->filter('[data-error="newName"]')->text()));
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);
+
+        $this->assertInstanceOf(Player::class, $reloaded);
+        $this->assertSame('Alice', $reloaded->name);
+        $this->assertSame('alice', $reloaded->slug);
+    }
+
+    /**
+     * The positive control for the refusal above: a transliterating name is not in itself a
+     * collision. This one parts company with the roster's other CJK name at its first character, so
+     * the truncated slugs still differ and the rename lands — an implementation refusing every name
+     * that overflows the slug limit satisfies the test above and fails here.
+     */
+    #[Test]
+    public function renamingToANameWhoseSlugStillDiffersOnceTruncatedIsAccepted(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        PlayerBuilder::named(str_repeat('漢', 30))->in($game)->persist($this->entityManager);
+        $playerId = $alice->id;
+
+        $component = $this->createLiveComponent('PlayerBoard', ['player' => $alice])
+            ->set('newName', str_repeat('国', 30))
+        ;
+        $component->call('rename');
+
+        $response = $component->response();
+        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
+
+        $this->entityManager->clear();
+        $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);
+
+        $this->assertInstanceOf(Player::class, $reloaded);
+        $this->assertSame('guo-guo-guo-guo-guo-guo-guo-gu', $reloaded->slug);
+    }
+
+    /**
      * <form method="dialog"> closes the dialog on every submit, refusal included, so a message
      * rendered inside it would be a silent failure: the player would see the dialog vanish and
      * their name unchanged, with nothing saying why.
