@@ -16,12 +16,6 @@ use Userforged\ShopEngine\ProductInterface;
  * not a generic shop-pattern one, which is why it moved here from the
  * library's own Userforged\ShopEngine\Service\CreditPriceResolver.
  *
- * The rule reads the buyer's entitlements opaquely by scope — it neither
- * knows nor cares whether a given Entitlement came from an owned advance, an
- * elective allocation, or the scenario's starting credits (see
- * ShopConnector::buyerFor()). All three enter the same per-scope sum before
- * the max/sum rule below applies.
- *
  * The instanceof guard below is a deliberate host-side coupling, not an
  * oversight: BuyerInterface dropped entitlements from its contract along
  * with this rule, but PlayerBuyer — the only BuyerInterface implementation

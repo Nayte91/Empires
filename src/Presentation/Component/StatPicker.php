@@ -68,13 +68,12 @@ final class StatPicker
         ));
     }
 
-    /** The lowest value the grid may offer. */
     public function getFloor(): int
     {
         return $this->statBoundsCalculator->floorFor($this->player, $this->stat);
     }
 
-    /** The highest value the grid may offer — a stock holder is bounded by what its twin left. */
+    /** A stock holder is bounded by what its twin left. */
     public function getCeiling(): int
     {
         return $this->statBoundsCalculator->ceilingFor($this->player, $this->stat);

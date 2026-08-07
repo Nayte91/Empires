@@ -28,7 +28,6 @@ final readonly class CitySupportCalculator
         return max(0, $player->census - $this->required($player));
     }
 
-    /** The one question consumers should ask. */
     public function citiesAreUnsupported(Player $player): bool
     {
         return $player->census < $this->required($player);

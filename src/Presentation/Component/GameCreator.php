@@ -70,14 +70,10 @@ final class GameCreator
     }
 
     /**
-     * `players.{i}.{key}` is identity-writable per row, so the hydrator accepts any index a
-     * request names. A path past the current roster (e.g. `players.5.empire` on a one-row
-     * list) makes LiveComponentHydrator::setWritablePaths() auto-vivify an empty
-     * `players[5]`, then fail to write `empire` into it — a failure it swallows internally,
-     * so the empty row survives into $this->players and crashes the template on render.
-     * No legitimate UI interaction can name a row past the one it was just given, so this
-     * is a fabricated request, not a user mistake: drop the row rather than report it, unlike
-     * setEmpire()'s guard, which reports because it clears a value a genuine race could produce.
+     * A path past the current roster makes LiveComponentHydrator auto-vivify an empty row and
+     * swallow the failed write, so the malformed row survives into $this->players and crashes
+     * the render. Only a fabricated request can produce one, so it is dropped silently — unlike
+     * setEmpire()'s guard, which reports.
      */
     #[PostHydrate]
     public function dropMalformedPlayerRows(): void
@@ -178,12 +174,10 @@ final class GameCreator
     }
 
     /**
-     * The row's own select writes straight into $players[$index]['empire'] via its
-     * data-model path, so by the time this runs the candidate is already stored —
-     * this is a post-write guard, not a gate before the assignment lands. It clears
-     * the row back to unassigned when the value is illegitimate: not part of the
-     * current scenario, or already held by another row (a crafted request, since
-     * the row's own option list never offers either).
+     * Post-write guard, not a gate: the row's select writes into $players[$index]['empire']
+     * through its data-model path before this runs. Clears the row when the stored value is not
+     * in the scenario or is already held by another row — the server does not trust a value it
+     * did not offer, whatever route produced it.
      */
     #[LiveAction]
     public function setEmpire(#[LiveArg] int $index): void
@@ -359,10 +353,8 @@ final class GameCreator
     }
 
     /**
-     * The only check in this list that does not iterate $players: every other check walks the
-     * roster, so a roster with zero rows trips none of them — count([]) === 0 satisfies the
-     * mismatch check below vacuously. Placed first for that reason: a game whose player count
-     * cannot legally exist is a more fundamental problem than one whose roster is the wrong size.
+     * The only check that does not iterate $players: a playerCount of 0 with an empty roster
+     * passes every roster-walking check below vacuously, so this one must stand on its own.
      */
     private function getPlayerCountOutOfRangeIssue(): ?string
     {
@@ -489,10 +481,8 @@ final class GameCreator
     }
 
     /**
-     * The same bypass getDuplicateNameIssues() closes, one step earlier: addPlayer() refuses a
-     * blank name through Assert\NotBlank with the slugifier as normalizer, but an injected row
-     * never meets it. Judged on the slug, so a name made only of punctuation is blank too — and it
-     * would persist a player whose board URL cannot be built at all.
+     * Same injected-row bypass as getDuplicateNameIssues(). Judged on the slug: a punctuation-only
+     * name is blank too, and would persist a player whose board URL cannot be built.
      */
     private function getBlankNameIssue(): ?string
     {
@@ -508,10 +498,8 @@ final class GameCreator
     }
 
     /**
-     * The same bypass getBlankNameIssue() closes: addPlayer() refuses an overlong name through
-     * Assert\Length, but an injected row never meets it. Counted with mb_strlen(), not strlen() —
-     * the roster's own fixtures include accented names ("René"), and a byte count would misjudge
-     * every one of them.
+     * Same injected-row bypass. mb_strlen, not strlen: accented names ("René") would be
+     * misjudged by a byte count.
      *
      * @return list<string>
      */

@@ -1,13 +1,11 @@
 .stat-picker__dialog {
     --stat-picker-accent: var(--operator-accent, steelblue);
 
-    /* The body: the value tiles, then the actions when the stat has any. */
     section {
         display: grid;
         gap: 1rem;
     }
 
-    /* The value tiles. The fieldset carries no legend: the modal header names the picker. */
     fieldset {
         --grid-min-tile-size: 3rem;
         border: none;
@@ -17,8 +15,9 @@
         margin: 0;
         padding: 0;
 
-        /* The atoms/button.css reset gives every button its border, radius, background,
-           font-size and cursor; here we only override what a grid tile needs on top. */
+        /* atoms/button.css already gives every button its border, radius, background, font-size and cursor.
+           The five redeclared below duplicate it with hardcoded literals rather than the tokens — worth
+           culling, but that is a rendering change and not this pass's. */
         button {
             min-block-size: 3rem;
             inline-size: auto;
@@ -37,7 +36,6 @@
 
             &:hover { border-color: var(--stat-picker-accent) }
 
-            /* Beyond what the shared stock leaves: shown so the ceiling is visible, not clickable. */
             &:disabled {
                 opacity: 0.4;
                 cursor: not-allowed;
@@ -52,7 +50,6 @@
         }
     }
 
-    /* The action row, when the stat has actions. */
     menu {
         display: flex;
         flex-wrap: wrap;

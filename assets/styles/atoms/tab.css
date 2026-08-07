@@ -29,7 +29,6 @@
 
     &:open > summary { box-shadow: var(--tab-shadow) }
 
-    /* the panel spaces its own children, so they bring no vertical margin of their own */
     > h3 { margin-block: 0 }
 }
 
@@ -47,7 +46,7 @@
     display: grid;
     gap: 1rem;
     padding: 1.5rem;
-    /* Tinted, not white: the panel's own children (`.panel`, `.orderCard`) are white, so the tint
+    /* Tinted, not white: the panel's own children (`.panel`, `.order-card`) are white, so the tint
        is what separates the panel from the page *and* lets those cards read as raised on it. */
     background: var(--operator-bg-subtle);
 }

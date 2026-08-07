@@ -1,9 +1,4 @@
-{# Allocation picker molecule — shown under a cart/ticket line whose advance grants a
-   promotion.option (a fixed pool of credits the player must split across the 5
-   facets, by steps of 5, before the order can be submitted/checked out).
-   Component-agnostic: allocateAction lets Shop (cart) and PlayerOrders (POS ticket)
-   each drive their own live action. Expected context: row, allocateAction, remaining,
-   allocation (every facet, 0-defaulted). #}
+{# Shown under a cart line whose advance grants a promotion.option: a fixed credit pool the player must fully allocate across the facets (by promotion.option.step increments) before checkout is allowed. Expected context: row, allocateAction, remaining, allocation (every facet, 0-defaulted). #}
 <div class="allocation-picker">
     <p class="remaining">Remaining: {{ remaining }}</p>
     <ul class="rows">

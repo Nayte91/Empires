@@ -108,7 +108,6 @@ final class PlayerOrders
     #[LiveListener('cartChanged')]
     public function onCartChanged(): void {}
 
-    /** The order (if any) for the turn currently open in the POS. */
     public function getPosOrder(): ?Order
     {
         return $this->orderRepository->findOneByPlayerAndWindow($this->player, $this->posTurn);
@@ -162,12 +161,7 @@ final class PlayerOrders
         return $cards;
     }
 
-    /**
-     * Totals are frozen on the order once validated, otherwise recalculated
-     * against the buyer's currently owned advances.
-     *
-     * @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int}
-     */
+    /** @return array{turn: int, status: string, slugs: list<string>, total: int, vp: int} */
     private function summarizeTurn(int $turn, ?Order $order, BuyerInterface $buyer): array
     {
         $slugs = $order?->keys() ?? [];
