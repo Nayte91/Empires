@@ -6,8 +6,9 @@
 
 {% block stylesheets %}
     {{ parent() }}
+
     <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/playerSaga.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/player/saga.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
     <link rel="stylesheet" href="{{ asset('styles/molecules/purchaseValue.css') }}">
 {% endblock %}

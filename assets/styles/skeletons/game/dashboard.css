@@ -7,35 +7,27 @@
     background: #111;
     color: white;
 
-    > #page-title {
-        flex: none;
-        margin-block: 0.75rem;
-    }
-
-    > section {
+    section {
         flex: 1;
         min-block-size: 0;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         padding-inline: 1rem;
         padding-block-end: 1rem;
+
+        h2 { display: none }
     }
 
     &:has(> .tab-bar [value="nav"]:checked) :is(#panel-roster, #panel-ast),
     &:has(> .tab-bar [value="roster"]:checked) :is(#panel-nav, #panel-ast),
-    &:has(> .tab-bar [value="ast"]:checked) :is(#panel-nav, #panel-roster) {
-        display: none;
-    }
+    &:has(> .tab-bar [value="ast"]:checked) :is(#panel-nav, #panel-roster) { display: none }
+    caption { scroll-margin-block-start: 1rem }
 
     h2 {
         text-align: center;
 
         a { color: inherit }
     }
-
-    > section > h2 { display: none }
-
-    caption { scroll-margin-block-start: 1rem }
 
     @media (min-width: 60rem) {
         display: grid;
@@ -47,35 +39,17 @@
         padding: 1rem;
 
         > #page-title { margin-block: 1.5rem }
-
         > section > h2 { display: revert }
-
         &:has(> .tab-bar [value]:checked) :is(#panel-nav, #panel-roster, #panel-ast) { display: contents }
-
         > .tab-bar { display: none }
     }
 
-    /* Roster and A.S.T. side by side. The A.S.T. is 978px wide by construction —
-       a 10rem row header plus 17 columns of --ast-cell-size — and it never compresses,
-       so this breakpoint is a function of --ast-cell-size: change the cell, redo the sum.
-       Tracks are content-sized, never 1fr 1fr: an even split hands the A.S.T. 865px here
-       and still only 929px at 1920, and it overflows both. */
     @media (min-width: 112rem) {
         grid-template-columns: max-content max-content;
 
-        /* The sections only inset their own content when a section *is* the screen;
-           side by side, the dashboard padding and the grid gap already do it — and the
-           extra 64px is more than a 112rem viewport has left to give. */
-        > section { padding: 0 }
-
         > :is(#page-title, #panel-nav) { grid-column: 1 / -1 }
-
         > #panel-nav > * { margin-inline: auto }
-
-        /* Bounds the roster track: a long player name must not push the A.S.T. off screen. */
         > #panel-roster { max-inline-size: 46rem }
-
-        /* Same selector shape as the `display: contents` rule above, so source order settles it. */
         &:has(> .tab-bar [value]:checked) :is(#panel-nav, #panel-roster, #panel-ast) { display: block }
     }
 }

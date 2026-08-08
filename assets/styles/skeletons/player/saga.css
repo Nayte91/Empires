@@ -31,7 +31,6 @@
         }
 
         dt { color: var(--operator-text-muted) }
-
         dd { margin: 0; font-weight: bold }
     }
 

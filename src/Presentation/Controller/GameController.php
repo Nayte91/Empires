@@ -18,7 +18,7 @@ final class GameController extends AbstractController
     #[Route('/create', name: 'app_game_create', methods: ['GET'], priority: 10)]
     public function create(): Response
     {
-        return $this->render('skeletons/Game/create.html.twig');
+        return $this->render('skeletons/Game/creation.html.twig');
     }
 
     #[Route('/{slug}', name: 'app_game_dashboard', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
