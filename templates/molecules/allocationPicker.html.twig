@@ -12,7 +12,7 @@
                     {{ live_action(allocateAction, {for: row.advance.key, facet: facet, delta: -row.advance.promotion.option.step}) }}
                     {{ isMinusDisabled ? 'disabled' }}
                     {% if not isMinusDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                    class="step"
+                    class="step touch-button"
                     title="Remove {{ row.advance.promotion.option.step }} from {{ facet }}"
                 >
                     −
@@ -23,7 +23,7 @@
                     {{ live_action(allocateAction, {for: row.advance.key, facet: facet, delta: row.advance.promotion.option.step}) }}
                     {{ isPlusDisabled ? 'disabled' }}
                     {% if not isPlusDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                    class="step"
+                    class="step touch-button"
                     title="Add {{ row.advance.promotion.option.step }} to {{ facet }}"
                 >
                     +

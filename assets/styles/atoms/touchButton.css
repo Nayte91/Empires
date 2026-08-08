@@ -1,0 +1,12 @@
+/* The floor for anything a finger has to hit: 2.75rem/44px on both axes, the lowest of the
+   published guidelines (Apple 44pt, Google 48dp). Adopters may sit above it — the stat picker's
+   grid tiles are 3rem — never below.
+   Only the two dimensions and the centring they force: border, radius, padding, background,
+   cursor and the hover/disabled states already come from the button atom. `align-content` rather
+   than a display switch, so the box centres its label whatever the adopter's own display is —
+   a flex product tile and an inline-block confirm both keep their layout. */
+.touch-button {
+    min-block-size: 2.75rem;
+    min-inline-size: 2.75rem;
+    align-content: center;
+}
