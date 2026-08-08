@@ -18,7 +18,7 @@
                             type="button"
                             {{ live_action('remove', {key: row.advance.key}) }}
                             data-loading="addAttribute(disabled)"
-                            class="remove"
+                            class="remove touch-button"
                         >
                             ×
                         </button>
@@ -60,7 +60,7 @@
                     {{ live_action('checkout') }}
                     {{ isDisabled ? 'disabled' }}
                     {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                    class="submit"
+                    class="submit touch-button"
                 >
                     {{ checkoutLabel }}
                 </button>
@@ -69,6 +69,7 @@
                     {% set isClearDisabled = this.isEmpty %}
                     <button
                         type="button"
+                        class="touch-button"
                         {{ live_action('clear') }}
                         {{ isClearDisabled ? 'disabled' }}
                         {% if not isClearDisabled %}data-loading="addAttribute(disabled)"{% endif %}

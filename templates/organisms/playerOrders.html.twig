@@ -12,7 +12,7 @@
                 :vp="card.vp"
             >
                 {% if card.status == 'validated' %}
-                    <button type="button" commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}" command="show-modal">
+                    <button type="button" class="touch-button" commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}" command="show-modal">
                         Empty
                     </button>
 
@@ -29,9 +29,9 @@
                                 </p>
                             {% endif %}
                             <menu>
-                                <li><button type="submit">Cancel</button></li>
+                                <li><button type="submit" class="touch-button">Cancel</button></li>
                                 <li>
-                                    <button type="submit" {{ live_action('eraseOrder', {turn: card.turn}) }}>
+                                    <button type="submit" class="touch-button" {{ live_action('eraseOrder', {turn: card.turn}) }}>
                                         Confirm
                                     </button>
                                 </li>
@@ -41,6 +41,7 @@
                 {% else %}
                     <button
                         type="button"
+                        class="touch-button"
                         {{ live_action('openPos', {turn: card.turn}) }}
                         data-loading="addAttribute(disabled)"
                     >

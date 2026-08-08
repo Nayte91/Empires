@@ -8,7 +8,7 @@
     <div class="heading">
         <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
 
-        <button type="button" commandfor="rename-player-{{ player.id }}" command="show-modal">
+        <button type="button" class="touch-button" commandfor="rename-player-{{ player.id }}" command="show-modal">
             Rename
         </button>
     </div>
@@ -27,8 +27,8 @@
             </label>
 
             <menu>
-                <li><button type="submit">Cancel</button></li>
-                <li><button type="submit" {{ live_action('rename') }}>Confirm</button></li>
+                <li><button type="submit" class="touch-button">Cancel</button></li>
+                <li><button type="submit" class="touch-button" {{ live_action('rename') }}>Confirm</button></li>
             </menu>
         </form>
     </dialog>

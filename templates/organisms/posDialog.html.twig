@@ -34,7 +34,7 @@
     {% if isValidated %}
         <p role="status">Order validated.</p>
 
-        <button type="button" {{ live_action('closePos') }} data-loading="addAttribute(disabled)">
+        <button type="button" class="touch-button" {{ live_action('closePos') }} data-loading="addAttribute(disabled)">
             Close
         </button>
     {% else %}
