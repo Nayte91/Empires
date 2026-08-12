@@ -26,8 +26,6 @@
                         {% if row.advance.promotion and row.advance.promotion.gift is not empty %}
                             {% include 'molecules/giftPicker.html.twig' with {
                                 row: row,
-                                chooseAction: 'chooseGift',
-                                revokeAction: 'revokeGift',
                                 candidates: this.getGiftCandidates(row.advance.key),
                                 chosenGift: this.getChosenGiftFor(row.advance.key),
                             } only %}
@@ -36,7 +34,6 @@
                         {% if row.advance.promotion and row.advance.promotion.option is not null %}
                             {% include 'molecules/allocationPicker.html.twig' with {
                                 row: row,
-                                allocateAction: 'allocate',
                                 remaining: this.getAllocationRemaining(row.advance.key),
                                 allocation: this.getAllocationFor(row.advance.key),
                             } only %}
