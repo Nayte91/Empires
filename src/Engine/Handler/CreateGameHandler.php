@@ -6,20 +6,15 @@ namespace App\Engine\Handler;
 
 use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\ScenarioRegistry;
+use App\State\ASTVersion;
 use App\State\CreditEntry;
 use App\State\CreditSource;
 use App\State\Game;
 use App\State\Player;
+use App\State\Region;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * Where a game is calibrated: empires and starting hands are assigned to
- * each player here, so the scenario's starting credits are posted to the
- * same place, on the append-only credit ledger (Player::postCredit()), at
- * turn 0. Storing rather than deriving from config/game/scenarios.yaml
- * freezes what a game actually started with, immune to later catalog edits.
- */
 #[AsMessageHandler]
 final readonly class CreateGameHandler
 {
@@ -33,14 +28,16 @@ final readonly class CreateGameHandler
     public function __invoke(CreateGame $command): void
     {
         $this->entityManager->wrapInTransaction(function () use ($command): void {
+            $region = null === $command->region ? null : Region::from($command->region);
+
             $game = new Game($command->slug);
             $game->playerCount = $command->playerCount;
-            $game->region = $command->region;
-            $game->setAstVersionValue($command->astVersion);
+            $game->region = $region;
+            $game->astVersion = ASTVersion::from($command->astVersion);
 
             $this->entityManager->persist($game);
 
-            $startingCredits = $this->scenarioRegistry->startingCreditsFor($command->playerCount);
+            $startingCredits = $this->scenarioRegistry->find($command->playerCount, $region)->startingCredits ?? [];
             $reason = 'scenario:'.$command->playerCount;
 
             foreach ($command->players as $playerData) {

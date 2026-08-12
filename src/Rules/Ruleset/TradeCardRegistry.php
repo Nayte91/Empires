@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules\Ruleset;
 
+use App\State\Region;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
@@ -14,9 +15,9 @@ final class TradeCardRegistry
 
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/trade_cards.yaml')] private readonly string $tradeCardsPath) {}
 
-    public function distributionFor(int $playerCount, ?string $region): TradeCardTable
+    public function distributionFor(?Scenario $scenario): TradeCardTable
     {
-        $columns = $this->resolveColumns($playerCount, $region);
+        $columns = $scenario instanceof Scenario ? $this->resolveColumns($scenario) : [];
 
         if ([] === $columns) {
             return new TradeCardTable(columns: [], stacks: []);
@@ -39,8 +40,10 @@ final class TradeCardRegistry
     }
 
     /** @return list<array{label: string, bracketKey: string}> */
-    private function resolveColumns(int $playerCount, ?string $region): array
+    private function resolveColumns(Scenario $scenario): array
     {
+        $playerCount = $scenario->playerCount;
+
         if ($playerCount >= 12 && $playerCount <= 14) {
             return [
                 ['label' => 'West block', 'bracketKey' => 'combined_12_14_west'],
@@ -55,23 +58,20 @@ final class TradeCardRegistry
             ];
         }
 
-        // Upper-bounded on purpose: an unbounded ">= 10" swallows every count above 18 into this
-        // bracket, disagreeing with ScenarioRegistry, which has no scenario past 18.
         if ($playerCount >= 10 && $playerCount <= 11) {
             return [['label' => '10-11 players', 'bracketKey' => 'combined_10_11']];
         }
 
-        if (null === $region) {
+        $block = $scenario->soleBlock();
+
+        if (!$block instanceof Region) {
             return [];
         }
 
         $suffix = 9 === $playerCount ? '9' : '3_8';
         $label = 9 === $playerCount ? '9 players' : '3-8 players';
-        $bracketKey = "{$region}_{$suffix}";
+        $bracketKey = "{$block->value}_{$suffix}";
 
-        // The only bracket key built from caller input rather than a literal: an unknown region
-        // synthesises a key no card carries. Treat that the way a query with no answer should
-        // read — an empty table — never a table of empty stacks.
         if (!\in_array($bracketKey, $this->declaredBrackets(), true)) {
             return [];
         }
@@ -146,10 +146,6 @@ final class TradeCardRegistry
         return $this->tradeCards;
     }
 
-    // A typo'd key in a card's quantities map (`wost_9` for `west_9`) would otherwise just read as
-    // an absent card in that pool — silently, forever. Unlike a caller asking for a bracket that
-    // doesn't exist, this is a mistake in data the game depends on, so it fails loudly: same
-    // precedent as ScenarioRegistry::getScenarios() throwing on a malformed ruleset file.
     /** @param array<string, mixed> $tradeCards */
     private function assertEveryCardBracketIsDeclared(array $tradeCards): void
     {

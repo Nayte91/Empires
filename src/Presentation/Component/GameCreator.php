@@ -6,10 +6,12 @@ namespace App\Presentation\Component;
 
 use App\Rules\Action\CreateGame;
 use App\Rules\Ruleset\GameRegistry;
+use App\Rules\Ruleset\Scenario;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Scenario\ScenarioRuleSummarizer;
 use App\State\Game;
 use App\State\Player;
+use App\State\Region;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -98,16 +100,18 @@ final class GameCreator
 
     public function onScenarioUpdated(): void
     {
-        $regions = $this->scenarioRegistry->regionsFor($this->game->playerCount);
+        $scenarios = $this->scenarioRegistry->forPlayerCount($this->game->playerCount);
 
-        if ([] === $regions) {
+        if ([] === $scenarios) {
             $this->game->region = null;
 
             return;
         }
 
-        if (null === $this->game->region || !\in_array($this->game->region, $regions, true)) {
-            $this->game->region = $this->getRegionChoices()[0]['value'];
+        $blocks = array_map(static fn (Scenario $scenario): ?Region => $scenario->soleBlock(), $scenarios);
+
+        if (!\in_array($this->selectedRegion(), $blocks, true)) {
+            $this->game->region = $blocks[0]?->value;
         }
     }
 
@@ -180,7 +184,7 @@ final class GameCreator
             return;
         }
 
-        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
+        $scenarioEmpires = $this->scenarioEmpires();
         $takenByOthers = array_column(
             array_filter($this->players, static fn (array $player, int $i): bool => $i !== $index, ARRAY_FILTER_USE_BOTH),
             'empire',
@@ -299,7 +303,7 @@ final class GameCreator
     public function getAvailableEmpires(): array
     {
         return array_values(array_diff(
-            $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region),
+            $this->scenarioEmpires(),
             array_column($this->players, 'empire'),
         ));
     }
@@ -314,20 +318,24 @@ final class GameCreator
 
         return array_map(
             static fn (string $empire): array => ['empire' => $empire, 'taken' => \in_array($empire, $takenByOthers, true)],
-            $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region),
+            $this->scenarioEmpires(),
         );
     }
 
-    /** @return list<array{value: string, label: string}> */
+    /**
+     * A scenario on both boxes names no single region, so it carries the empty value the model
+     * reads back as null.
+     *
+     * @return list<array{value: string, label: string}>
+     */
     public function getRegionChoices(): array
     {
-        if ([] === $this->scenarioRegistry->regionsFor($this->game->playerCount)) {
-            return [['value' => '', 'label' => 'East + West']];
-        }
-
         return array_map(
-            static fn (string $region): array => ['value' => $region, 'label' => ucfirst($region)],
-            ['west', 'east'],
+            static fn (Scenario $scenario): array => [
+                'value' => $scenario->soleBlock()->value ?? '',
+                'label' => implode(' + ', array_map(static fn (Region $block): string => ucfirst($block->value), $scenario->blocks)),
+            ],
+            $this->scenarioRegistry->forPlayerCount($this->game->playerCount),
         );
     }
 
@@ -335,6 +343,23 @@ final class GameCreator
     public function getScenarioSummary(): array
     {
         return $this->scenarioRuleSummarizer->summarize($this->game);
+    }
+
+    /**
+     * The one place the client's string becomes a region. It stays a string on CreateGame because a
+     * writable LiveComponent path may only carry a scalar (LiveComponentHydrator), so a crafted
+     * value arrives here intact: tryFrom() turns it into no region at all, which addresses no
+     * scenario, which leaves every player outside it and the launch refused.
+     */
+    private function selectedRegion(): ?Region
+    {
+        return null === $this->game->region ? null : Region::tryFrom($this->game->region);
+    }
+
+    /** @return list<string> */
+    private function scenarioEmpires(): array
+    {
+        return $this->scenarioRegistry->find($this->game->playerCount, $this->selectedRegion())->empires ?? [];
     }
 
     private function getPlayerCountOutOfRangeIssue(): ?string
@@ -389,7 +414,7 @@ final class GameCreator
     /** @return list<string> */
     private function getInvalidEmpireIssues(): array
     {
-        $scenarioEmpires = $this->scenarioRegistry->empiresFor($this->game->playerCount, $this->game->region);
+        $scenarioEmpires = $this->scenarioEmpires();
         $issues = [];
 
         foreach ($this->players as $player) {

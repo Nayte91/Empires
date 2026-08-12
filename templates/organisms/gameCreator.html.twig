@@ -15,10 +15,7 @@
             <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}" data-loading="addAttribute(disabled)">
         </label>
 
-        {# The `disabled` here is business-conditional (single-region scenario), so the loading directive must stay
-           behind the inverted condition — see the CLAUDE.md note on ux#372: an unconditional data-loading directive
-           on an element that also carries a conditional `disabled` gets stripped on mount, silently re-enabling it. #}
-        {% set isRegionDisabled = computed.regionChoices|length == 1 %}
+        {% set isRegionDisabled = computed.regionChoices|length <= 1 %}
         <label>
             Region
             <select data-model="game.region" {{ isRegionDisabled ? 'disabled' }} {% if not isRegionDisabled %}data-loading="addAttribute(disabled)"{% endif %}>
@@ -47,8 +44,6 @@
         <h2>Players</h2>
 
         <div class="game-creator__add-player">
-            {# Same ux#372 trap as the region select above: `disabled` here is business-conditional
-               (player limit reached), so data-loading must stay behind the inverted condition. #}
             {% set isNewPlayerNameDisabled = computed.isPlayerLimitReached %}
             <label>
                 New player name
@@ -100,7 +95,6 @@
                     <tr{% if player.empire %} data-empire="{{ player.empire }}"{% endif %}>
                         <td>{{ player.name }}</td>
                         <td>
-                            {# Issue #19: disabling every select while a request is in flight stops a second row's assignment from starting before the re-render updates everyone's option list. No business-conditional 'disabled' here, so the unconditional directive is safe (contrast the controls above). #}
                             <select data-model="players.{{ loop.index0 }}.empire" {{ live_action('setEmpire', {index: loop.index0}, {}, 'change') }} data-loading="addAttribute(disabled)">
                                 <option value="" {{ player.empire == '' ? 'selected' }}>— no empire —</option>
                                 {% for choice in this.getEmpireChoicesFor(loop.index0) %}

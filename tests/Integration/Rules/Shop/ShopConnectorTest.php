@@ -222,18 +222,12 @@ final class ShopConnectorTest extends WebTestCase
 
     private function createPlayer(int $playerCount = 9): Player
     {
-        // build() rather than persist(): the ledger below has to be posted before the flush,
-        // so this fixture owns its own write.
         $player = PlayerBuilder::named('Alice')
             ->in(GameBuilder::create()->withPlayerCount($playerCount)->build())
             ->build()
         ;
 
-        // Mirrors CreateGameHandler's own write (never dispatched here — this class has
-        // no bus dependency of its own) so the ledger carries what a real game creation
-        // would have posted; a no-op for the default 9-player count, which has no
-        // scenario credits.
-        foreach ($this->scenarioRegistry->startingCreditsFor($playerCount) as $scope => $value) {
+        foreach ($this->scenarioRegistry->find($playerCount, $player->game->region)->startingCredits ?? [] as $scope => $value) {
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:'.$playerCount));
         }
 

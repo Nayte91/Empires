@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\State\Game;
+use App\State\Region;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -32,7 +33,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function theTradeCardsPageServesTheOneColumnOfTheGameBeingPlayed(): void
     {
-        $crawler = $this->goToTradeCards($this->createGame(playerCount: 9, region: 'west'));
+        $crawler = $this->goToTradeCards($this->createGame(playerCount: 9, region: Region::West));
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('table'));
@@ -69,7 +70,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function everyStackIsOneRowGroupWhoseHeaderSpansExactlyItsOwnRows(): void
     {
-        $crawler = $this->goToTradeCards($this->createGame(playerCount: 9, region: 'west'));
+        $crawler = $this->goToTradeCards($this->createGame(playerCount: 9, region: Region::West));
 
         $headers = $crawler->filter('tbody th[scope="rowgroup"]');
         $rowsPerStack = array_count_values($crawler->filter('tbody tr[data-stack]')->each(static fn (Crawler $row): string => (string) $row->attr('data-stack')));
@@ -98,7 +99,7 @@ final class TradeCardsViewTest extends WebTestCase
         return $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/trade-cards');
     }
 
-    private function createGame(int $playerCount, ?string $region): Game
+    private function createGame(int $playerCount, ?Region $region): Game
     {
         $game = new Game();
         $game->playerCount = $playerCount;

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
+use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\Ruleset\TradeCardRegistry;
 use App\State\Game;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
@@ -13,7 +14,10 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class GameController extends AbstractController
 {
-    public function __construct(private readonly TradeCardRegistry $tradeCardRegistry) {}
+    public function __construct(
+        private readonly TradeCardRegistry $tradeCardRegistry,
+        private readonly ScenarioRegistry $scenarioRegistry,
+    ) {}
 
     #[Route('/create', name: 'app_game_create', methods: ['GET'], priority: 10)]
     public function create(): Response
@@ -42,7 +46,9 @@ final class GameController extends AbstractController
     {
         return $this->render('skeletons/Game/trade_cards.html.twig', [
             'game' => $game,
-            'distribution' => $this->tradeCardRegistry->distributionFor($game->playerCount, $game->region),
+            'distribution' => $this->tradeCardRegistry->distributionFor(
+                $this->scenarioRegistry->find($game->playerCount, $game->region),
+            ),
         ]);
     }
 

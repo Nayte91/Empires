@@ -9,6 +9,7 @@ use App\Rules\Ruleset\ScenarioRegistry;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\State\CreditEntry;
 use App\State\CreditSource;
+use App\State\Region;
 use App\Infrastructure\Repository\PlayerRepository;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
@@ -16,16 +17,6 @@ use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-/**
- * Independent double-check of the credit ledger: it recomputes the balance a
- * player should have — the scenario's starting credits plus the credits
- * blocks of the advances they currently own — without ever reading the
- * ledger itself, then compares that to what the ledger actually holds. A
- * missing grant()/revoke() counterpart (e.g. a future erasure path that
- * forgets to call revoke()) would desynchronize player->advances from the
- * ledger and show up here as a mismatch, even though neither
- * AdvanceFulfillmentTest nor CreateGameHandlerTest would notice on their own.
- */
 final class CreditLedgerReconciliationTest extends WebTestCase
 {
     use GameFixtureTrait;
@@ -49,7 +40,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withPlayerCount(3)->build())->persist($this->entityManager);
 
-        foreach ($this->scenarioRegistry->startingCreditsFor(3) as $scope => $value) {
+        foreach ($this->scenarioRegistry->find(3, $player->game->region)->startingCredits ?? [] as $scope => $value) {
             $player->postCredit(new CreditEntry(0, $scope, $value, CreditSource::Scenario, 'scenario:3'));
         }
 
@@ -67,7 +58,7 @@ final class CreditLedgerReconciliationTest extends WebTestCase
      */
     private function expectedBalances(int $playerCount, array $ownedAdvanceKeys): array
     {
-        $expected = $this->scenarioRegistry->startingCreditsFor($playerCount);
+        $expected = $this->scenarioRegistry->find($playerCount, Region::West)->startingCredits ?? [];
 
         foreach ($this->advanceRegistry->getAdvancesByNames($ownedAdvanceKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {

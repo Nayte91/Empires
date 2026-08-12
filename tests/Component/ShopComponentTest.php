@@ -44,7 +44,6 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        // Agriculture provides credits for craft and science categories
         $this->assertStringContainsString('data-advance-category="craft"', $rendered);
         $this->assertStringContainsString('data-advance-category="science"', $rendered);
     }
@@ -55,8 +54,6 @@ final class ShopComponentTest extends WebTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        // A single call()+render() round trip: proves add() re-renders the nested
-        // Catalog (the product leaves the grid) and Cart (total) together, not just Shop itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
         $this->assertStringNotContainsString('id="product-pottery"', $rendered);
@@ -592,7 +589,7 @@ final class ShopComponentTest extends WebTestCase
                 static fn(Advance $advance): string => $advance->key,
                 self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
             )
-                |> (fn($x) => array_filter($x, static fn(string $key): bool => \in_array($key, $keys, true),))
+                |> (fn($x): array => array_filter($x, static fn(string $key): bool => \in_array($key, $keys, true),))
                 |> array_values(...);
     }
 

@@ -29,7 +29,6 @@ final class EmpireRegistry
     public function __construct(
         #[Autowire('%kernel.project_dir%/config/game/empires.yaml')]
         private readonly string $empiresConfigPath,
-        private readonly ScenarioRegistry $scenarioRegistry,
     ) {}
 
     /** @return array<string, Empire> */
@@ -76,17 +75,6 @@ final class EmpireRegistry
     public function positionOf(string $name): int
     {
         return $this->findByName($name)->position ?? PHP_INT_MAX;
-    }
-
-    /** @return list<Empire> */
-    public function findByPlayerCountAndRegion(int $playerCount, ?string $region): array
-    {
-        $slugs = $this->scenarioRegistry->empiresFor($playerCount, $region);
-
-        return array_values(array_filter(
-            array_map($this->findByName(...), $slugs),
-            static fn (?Empire $empire): bool => $empire instanceof Empire,
-        ));
     }
 
     /**
