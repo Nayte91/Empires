@@ -5,15 +5,12 @@ declare(strict_types=1);
 namespace App\Rules\Action;
 
 use App\Rules\Action\Validator\AvailableGameSlug;
+use App\Rules\Action\Validator\KnownScenario;
 use App\State\Game;
+use App\State\Region;
 use Symfony\Component\Validator\Constraints as Assert;
 
-/**
- * Lengths come from the entity, which is the single authority on how wide a field may be.
- * Asserting them here is what actually enforces them: SQLite ignores a declared VARCHAR
- * width and stores any length, so the column bounds nothing on its own — in tests or in
- * production, both of which run SQLite.
- */
+#[KnownScenario]
 final class CreateGame
 {
     #[AvailableGameSlug]
@@ -22,7 +19,7 @@ final class CreateGame
 
     public int $playerCount = 9;
 
-    #[Assert\Length(max: Game::MAX_REGION_LENGTH, maxMessage: 'Region cannot be longer than {{ limit }} characters.')]
+    #[Assert\Choice(callback: [Region::class, 'values'], message: 'This region is not one this game offers.')]
     public ?string $region = 'west';
 
     #[Assert\Choice(choices: ['basic', 'expert'])]

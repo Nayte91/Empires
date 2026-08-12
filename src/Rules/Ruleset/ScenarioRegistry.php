@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules\Ruleset;
 
+use App\State\Region;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Yaml\Yaml;
 
@@ -16,18 +17,36 @@ final class ScenarioRegistry
 
     public function __construct(#[Autowire('%kernel.project_dir%/config/game/scenarios.yaml')] private readonly string $scenariosPath) {}
 
-    /** @return list<string> */
-    public function empiresFor(int $playerCount, ?string $region): array
+    public function find(int $playerCount, ?Region $region): ?Scenario
     {
-        if ($playerCount >= 10) {
-            return $this->normalizeToFlatList($this->getScenarios()[$playerCount] ?? null);
+        $key = $region instanceof Region ? $playerCount.'_'.$region->value : $playerCount;
+        $empires = $this->normalizeToFlatList($this->getScenarios()[$key] ?? null);
+
+        if ([] === $empires) {
+            return null;
         }
 
-        if (null === $region) {
-            return [];
+        return new Scenario(
+            playerCount: $playerCount,
+            blocks: $region instanceof Region ? [$region] : Region::cases(),
+            empires: $empires,
+            startingCredits: $this->startingCreditsFor($playerCount),
+        );
+    }
+
+    /** @return list<Scenario> */
+    public function forPlayerCount(int $playerCount): array
+    {
+        $combined = $this->find($playerCount, null);
+
+        if ($combined instanceof Scenario) {
+            return [$combined];
         }
 
-        return $this->normalizeToFlatList($this->getScenarios()[$playerCount.'_'.$region] ?? null);
+        return array_values(array_filter(array_map(
+            fn (Region $region): ?Scenario => $this->find($playerCount, $region),
+            Region::cases(),
+        )));
     }
 
     /** @return list<int> */
@@ -48,23 +67,8 @@ final class ScenarioRegistry
         return array_values($counts);
     }
 
-    /** @return list<string> */
-    public function regionsFor(int $playerCount): array
-    {
-        $scenarios = $this->getScenarios();
-        $regions = [];
-
-        foreach (['east', 'west'] as $region) {
-            if (isset($scenarios[$playerCount.'_'.$region])) {
-                $regions[] = $region;
-            }
-        }
-
-        return $regions;
-    }
-
     /** @return array<string, int> */
-    public function startingCreditsFor(int $playerCount): array
+    private function startingCreditsFor(int $playerCount): array
     {
         $credits = $this->getScenarios()[$playerCount][self::CREDITS_KEY] ?? null;
 

@@ -7,8 +7,10 @@ namespace App\Tests\Integration\Engine\Handler;
 use App\State\Player;
 use App\Rules\Action\CreateGame;
 use App\Engine\Handler\CreateGameHandler;
+use App\State\ASTVersion;
 use App\State\CreditEntry;
 use App\State\CreditSource;
+use App\State\Region;
 use App\Infrastructure\Repository\PlayerRepository;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -26,13 +28,6 @@ final class CreateGameHandlerTest extends WebTestCase
         $this->playerRepository = self::getContainer()->get(PlayerRepository::class);
     }
 
-    /**
-     * config/game/scenarios.yaml's 3.credits key is the same one
-     * ShopConnector::buyerFor() used to derive from directly — it is now
-     * frozen onto every player's ledger at creation time instead, immune to
-     * a later edit of the scenario file re-pricing a game already in
-     * progress.
-     */
     #[Test]
     public function creatingAThreePlayerGamePostsTheScenariosStartingCreditsAtTurnZeroForEveryPlayer(): void
     {
@@ -56,11 +51,6 @@ final class CreateGameHandlerTest extends WebTestCase
         );
     }
 
-    /**
-     * Game::$playerCount defaults to 9, which config/game/scenarios.yaml
-     * has no credits key for — the ledger must stay empty rather than posting
-     * zero-value entries.
-     */
     #[Test]
     public function creatingANinePlayerGamePostsNoStartingCreditsToTheLedger(): void
     {
@@ -79,6 +69,25 @@ final class CreateGameHandlerTest extends WebTestCase
         $alice = $this->findPlayer('ledger-nine-players', 'alice');
 
         $this->assertSame([], $alice->creditLedger);
+    }
+
+    #[Test]
+    public function theCommandsScalarsBecomeEnumsOnTheCreatedGame(): void
+    {
+        $command = $this->createGameCommand('enum-conversion', 3, [
+            ['name' => 'Alice', 'empire' => 'hatti'],
+            ['name' => 'Bob', 'empire' => 'hellas'],
+            ['name' => 'Carol', 'empire' => 'minoa'],
+        ]);
+        $command->region = 'east';
+        $command->astVersion = 'expert';
+
+        ($this->handler)($command);
+
+        $game = $this->findPlayer('enum-conversion', 'alice')->game;
+
+        $this->assertSame(Region::East, $game->region);
+        $this->assertSame(ASTVersion::EXPERT, $game->astVersion);
     }
 
     /** @param list<array{name: string, empire: string}> $players */

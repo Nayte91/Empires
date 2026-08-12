@@ -9,6 +9,7 @@ use App\State\Game;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -63,28 +64,32 @@ final class CreateGameTest extends WebTestCase
         yield 'exactly the limit' => [Game::MAX_SLUG_LENGTH];
     }
 
+    /**
+     * A writable LiveComponent path may only carry a scalar, so the region travels as a raw string
+     * up to here and the enum never sees a crafted value. This is where one dies instead.
+     */
     #[Test]
-    #[DataProvider('provideARegionOverTheLengthLimitIsRefusedCases')]
-    public function aRegionOverTheLengthLimitIsRefused(int $length): void
+    #[DataProvider('provideARegionNoScenarioOffersIsRefusedCases')]
+    public function aRegionNoScenarioOffersIsRefused(string $region): void
     {
         $createGame = new CreateGame();
-        $createGame->region = str_repeat('r', $length);
+        $createGame->region = $region;
 
         $codes = $this->violationCodesFor($createGame, 'region');
 
-        $this->assertSame([Length::TOO_LONG_ERROR], $codes);
+        $this->assertSame([Choice::NO_SUCH_CHOICE_ERROR], $codes);
     }
 
-    public static function provideARegionOverTheLengthLimitIsRefusedCases(): iterable
+    public static function provideARegionNoScenarioOffersIsRefusedCases(): iterable
     {
-        yield 'one character over the limit' => [Game::MAX_REGION_LENGTH + 1];
+        yield 'a word that names no region' => ['banane'];
 
-        yield 'far over the limit' => [300];
+        yield 'the empty string, which is not the way to say "no region"' => [''];
     }
 
     #[Test]
-    #[DataProvider('provideARegionUpToTheLengthLimitRaisesNoViolationCases')]
-    public function aRegionUpToTheLengthLimitRaisesNoViolation(?string $region): void
+    #[DataProvider('provideEveryRegionAScenarioOffersRaisesNoViolationCases')]
+    public function everyRegionAScenarioOffersRaisesNoViolation(?string $region): void
     {
         $createGame = new CreateGame();
         $createGame->region = $region;
@@ -94,13 +99,72 @@ final class CreateGameTest extends WebTestCase
         $this->assertSame([], $codes);
     }
 
-    public static function provideARegionUpToTheLengthLimitRaisesNoViolationCases(): iterable
+    public static function provideEveryRegionAScenarioOffersRaisesNoViolationCases(): iterable
     {
-        yield 'the region the form sends' => ['west'];
+        yield 'the region the form sends by default' => ['west'];
 
-        yield 'exactly the limit' => [str_repeat('r', Game::MAX_REGION_LENGTH)];
+        yield 'the other one' => ['east'];
 
         yield 'no region, as every game of ten players or more' => [null];
+    }
+
+    #[Test]
+    #[DataProvider('provideACommandThatNamesNoScenarioIsRefusedCases')]
+    public function aCommandThatNamesNoScenarioIsRefused(int $playerCount, ?string $region): void
+    {
+        $messages = $this->violationMessagesFor($this->command($playerCount, $region), 'region');
+
+        $this->assertSame(["No scenario is played by {$playerCount} players in this region."], $messages);
+    }
+
+    public static function provideACommandThatNamesNoScenarioIsRefusedCases(): iterable
+    {
+        yield 'one box above nine players, where the game needs both' => [12, 'east'];
+
+        yield 'both boxes below ten players, where the game is played on one' => [6, null];
+
+        yield 'a player count no scenario covers' => [19, 'west'];
+    }
+
+    #[Test]
+    #[DataProvider('provideACommandThatNamesARealScenarioRaisesNoViolationCases')]
+    public function aCommandThatNamesARealScenarioRaisesNoViolation(int $playerCount, ?string $region): void
+    {
+        $this->assertSame([], $this->violationMessagesFor($this->command($playerCount, $region), 'region'));
+    }
+
+    public static function provideACommandThatNamesARealScenarioRaisesNoViolationCases(): iterable
+    {
+        yield 'the smallest game there is' => [3, 'east'];
+
+        yield 'the largest split by box' => [9, 'west'];
+
+        yield 'the first that needs both boxes' => [10, null];
+
+        yield 'the largest game there is' => [18, null];
+    }
+
+    private function command(int $playerCount, ?string $region): CreateGame
+    {
+        $createGame = new CreateGame();
+        $createGame->playerCount = $playerCount;
+        $createGame->region = $region;
+
+        return $createGame;
+    }
+
+    /** @return list<string> */
+    private function violationMessagesFor(CreateGame $createGame, string $property): array
+    {
+        $messages = [];
+
+        foreach ($this->validator->validate($createGame) as $violation) {
+            if ($property === $violation->getPropertyPath()) {
+                $messages[] = (string) $violation->getMessage();
+            }
+        }
+
+        return $messages;
     }
 
     /** @return list<?string> */
