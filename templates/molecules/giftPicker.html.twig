@@ -1,10 +1,9 @@
-{# Expected context: row, chooseAction, revokeAction, candidates, chosenGift. #}
 {% if chosenGift %}
     <p class="gift-picker chosen">
         Free gift: {{ chosenGift.name|capitalize }}
         <button
             type="button"
-            {{ live_action(revokeAction, {for: row.advance.key}) }}
+            {{ live_action('revokeGift', {for: row.advance.key}) }}
             data-loading="addAttribute(disabled)"
             class="revoke touch-button"
         >
@@ -23,7 +22,7 @@
                 <li>
                     <button
                         type="button"
-                        {{ live_action(chooseAction, {for: row.advance.key, key: candidate.key}) }}
+                        {{ live_action('chooseGift', {for: row.advance.key, key: candidate.key}) }}
                         data-loading="addAttribute(disabled)"
                         class="candidate touch-button"
                     >
