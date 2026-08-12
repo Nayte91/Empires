@@ -13,11 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
-/**
- * A finished game keeps its one address and changes what it answers there. The point of pinning it
- * from the outside is that nothing about the URL says so: only the state of the game does, and the
- * swap happens inside the controller, where a redirect would have been the obvious wrong answer.
- */
 final class ChronicleViewTest extends WebTestCase
 {
     private KernelBrowser $client; // @phpstan-ignore property.uninitialized (initialized in setUp)
@@ -93,23 +88,18 @@ final class ChronicleViewTest extends WebTestCase
     }
 
     #[Test]
-    public function theBoardsCaptionSaysSoOnlyOnceTheGameIsFinished(): void
+    public function theBoardsCaptionCarriesTheFinishedMarkOnlyOnceTheGameIsFinished(): void
     {
         $running = $this->createGame(finished: false);
         $finished = $this->createGame(finished: true);
 
-        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('caption#ast')->text();
-        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('caption#ast')->text();
+        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('caption#ast[data-finished]')->count();
+        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('caption#ast[data-finished]')->count();
 
-        $this->assertStringEndsWith('— finished', trim($onChronicle));
-        $this->assertStringNotContainsString('finished', $onDashboard);
+        $this->assertSame(1, $onChronicle);
+        $this->assertSame(0, $onDashboard);
     }
 
-    /**
-     * The chronicle is the same phone screen as the dashboard, over its own three panels: the board,
-     * the chart that only exists here, and the way to each seat. It opens on the board, and switching
-     * asks nothing of the server — the same radio group, and no controller anywhere on the page.
-     */
     #[Test]
     public function theChronicleIsOneScreenOfThreeTabsSwitchedWithoutAnyScript(): void
     {

@@ -26,16 +26,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
-/**
- * End-to-end acceptance test for the cashier-kiosk pattern: a player builds a
- * cart in their Shop kiosk, submits it, an operator validates it from the
- * console, and the kiosk reflects the resulting lock/ownership state.
- *
- * Cart preconditions are written straight into the session-backed
- * CartStorageInterface port, sharing $client with the Shop/PlayerOrders
- * component under test — see CartComponentTest for Cart's own behavior
- * coverage, ShopComponentTest/PosConsoleTest for the add() LiveAction.
- */
 final class KioskOperatorFlowTest extends WebTestCase
 {
     use GameFixtureTrait;
@@ -55,10 +45,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $reloadedOrder = $this->reloadOrder($order);
 
         $this->assertSame(OrderStatus::Validated, $reloadedOrder->status);
-        // assertEquals, not assertSame — php_unit_strict (phpcs) rewrites this to assertSame,
-        // but its own doc flags that as risky "when testing object equality": $reloadedOrder->lines
-        // holds the actual OrderLine instances frozen by OrderValidator, never identical (===)
-        // to these fresh ones. Keep assertEquals here even if a phpcs re-run tries to flip it.
         $this->assertEquals([
             new OrderLine('democracy', 200),
             new OrderLine('pottery', 50),
@@ -71,10 +57,9 @@ final class KioskOperatorFlowTest extends WebTestCase
             'ordersStamp' => '',
         ])->render()->toString();
 
-        // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
         $this->assertStringContainsString('Total: 250', $rendered);
         $this->assertStringContainsString('VP: 7', $rendered);
-        $this->assertStringContainsString('validated', $rendered);
+        $this->assertStringContainsString('data-status="validated"', $rendered);
     }
 
     #[Test]
@@ -88,7 +73,7 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->assertTrue($this->getShopComponent($aliceShop)->isLockedForTurn());
 
         $aliceRendered = $aliceShop->render()->toString();
-        $this->assertStringContainsString('Order validated for this turn.', $aliceRendered);
+        $this->assertStringContainsString('data-status="validated"', $aliceRendered);
         $this->assertStringNotContainsString('id="product-democracy"', $aliceRendered);
         $this->assertStringContainsString('Democracy', $aliceRendered);
 
@@ -112,9 +97,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);
         $this->assertFalse($this->getShopComponent($aliceShop)->isLockedForTurn());
 
-        // 'law' costs 150 and grants no direct discount to Alice, but its sole
-        // category (civic) receives a 20-point credit from the democracy she
-        // now owns: 150 - 20 = 130.
         $rendered = $aliceShop->render()->toString();
         $this->assertMatchesRegularExpression('/id="product-law".*?data-price-net>130</s', $rendered);
     }
@@ -126,15 +108,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
 
         $this->cartFor($client, $alice, Cart::fromKeys(['pottery']));
-
-        // createLiveComponent() defaults both kiosks to the same 'test.client'
-        // service, i.e. the same session. Isolation is proven by
-        // SessionCartStorage keying cart storage per player UUID (see
-        // App\Infrastructure\Shop\SessionCartStorage::sessionKey()), read here through
-        // Shop's own isCartEmpty() (the "Submit my order" gate) rather than
-        // through the nested Cart component's rendering, which does not
-        // reflect session state when embedded (see ShopComponentTest's
-        // editPendingOrder tests).
         $bobCrawler = $this->createLiveComponent('Shop', ['player' => $bob], $client)->render()->crawler();
 
         $this->assertTrue($bobCrawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
@@ -147,8 +120,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
-        // Granted through the real fulfillment service rather than withAdvances(): this file
-        // needs the credit ledger the grant posts, not just the advance key.
         self::getContainer()->get(AdvanceFulfillment::class)->grant($alice->id, ['agriculture']);
         $this->entityManager->flush();
 
@@ -175,7 +146,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->createPosCart($order->player, $order->turn, $client)->call('checkout');
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — Shop only hosts it. */
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -184,7 +154,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         ], $client);
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — PlayerOrders only hosts it. */
     private function createPosCart(Player $player, int $turn, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -204,14 +173,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         $this->validateOrder($order);
     }
 
-    /**
-     * Writes straight into the session-backed CartStorageInterface port (Cart has
-     * no add() action of its own any more) and points $client's cookie jar at
-     * that session, so the Shop component under test — driven by the same
-     * $client — reads the same cart back. 'test.client' is registered
-     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
-     * so $client must be the exact instance later passed to createLiveComponent().
-     */
     private function cartFor(KernelBrowser $client, Player $player, Cart $cart): void
     {
         $session = self::getContainer()->get('session.factory')->createSession();

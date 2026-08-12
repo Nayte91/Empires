@@ -14,7 +14,7 @@
 
 ### Frontend
 - **Twig** + **UX Twig/Live Components**
-- **Stimulus** (`assets/controllers/`: `mercure-refresh`, `modal`)
+- **Stimulus** (`assets/controllers/`: `mercure-refresh`, `modal`, `evolution`)
 - **Asset Mapper** (no build step)
 
 ### Infrastructure
@@ -47,7 +47,7 @@ Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|php
 
 ```
 src/
-├── State/           # the material state, passive: GameSession, Player, Order (Doctrine),
+├── State/           # the material state, passive: Game, Player, Order (Doctrine),
 │                    #   plus the shape of any persisted column (CreditEntry, CreditSource, ASTVersion)
 ├── Rules/           # what is true / permitted / follows — never persists
 │   ├── Ruleset/     #   the rules-as-data readers: *Registry + their read models
@@ -101,10 +101,10 @@ Yaml readers follow one pattern: `#[Autowire('%kernel.project_dir%/config/game/x
 ```
 templates/
 ├── layout.html.twig  # root layout (all skeletons extend it; wires the ThemeColors atom)
-├── atoms/            # themeColors (yaml → CSS custom properties, single color route)
-├── molecules/        # ast, AstRequirements, Modal, Discounts, productCard, ...
-├── organisms/        # gameDashboard, playerBoard, operatorConsole, shop, gameCreator
-└── skeletons/        # full pages (one per route)
+├── atoms/            # themeColors (yaml → CSS custom properties, single color route), PageTitle, Marker, tab
+├── molecules/        # ast, AstRequirements, Discounts, productTile, StatPicker, TradeCards, ...
+├── organisms/        # gameDashboard, playerBoard, operatorConsole, shop, gameCreator, playerSaga
+└── skeletons/        # full pages, split Game/ and Player/ — `assets/styles/skeletons/` mirrors it
 ```
 **Colors**: empire/advance colors are emitted once by the `ThemeColors` atom as `--empire-<slug>` / `--advance-<category>` CSS vars. Never resolve colors in PHP; use `var(--empire-{{ slug }}, dimgray)` in templates.
 
@@ -116,13 +116,13 @@ templates/
 
 ## 🎮 Business Domain
 
-- **GameSession**: session (slug, currentTurn 1–20, region, `astType` basic/expert, players)
+- **Game**: session (slug, currentTurn 1–20, region, `astVersion` basic/expert, players)
 - **Player**: empire slug, advances (json), cities (0–9), census, treasury, `astPosition` (0–15)
 - **AST**: 16-position track across 6 eras (Stone → Late Iron); era boundaries/requirements in `ast.yaml`; read-only board on the game dashboard
 - **Shop/Orders**: player cart → pending order → operator validation (POS console)
 - **Mercure**: components subscribe to topic `empires/game/{id}` (`mercure-refresh` Stimulus controller); publish on state changes
 
-Routes (no `/game` prefix — verify with `debug:router` before assuming): `/create`, `/{slug}` (dashboard), `/{slug}/ast`, `/{slug}/census`, `/{slug}/operator`, `/{gameSlug}/player/{playerSlug}` (board), `/{gameSlug}/player/{playerSlug}/shop`.
+Routes — the whole list, no `/game` prefix: `/`, `/create`, `/{slug}` (dashboard, or the chronicle once the game is finished), `/{slug}/operator`, `/{slug}/trade-cards`, `/{gameSlug}/player/{playerSlug}` (board, or the saga once the game is finished), `/{gameSlug}/player/{playerSlug}/shop`. Nothing links to `/{slug}/trade-cards` — deliberately, for now.
 
 ## 🧪 Testing
 
@@ -133,7 +133,7 @@ docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # sin
 ```
 
 ```
-tests/                                   # 431 tests — the application; tier first, layer second
+tests/                                   # 760 tests — the application; tier first, layer second
 ├── Unit/          # pure TestCase, no kernel   ─┐ below this first level, the tree mirrors src/:
 ├── Integration/   # container + DB, no rendering ┤   Unit/State/, Unit/Rules/Advisory/,
 ├── Component/     # Twig / Live component render ┘   Integration/Engine/Handler/, …
@@ -144,7 +144,7 @@ tests/                                   # 431 tests — the application; tier f
 packages/userforged/shop-engine/tests/   # 121 tests — the engine, pure TestCase, no kernel
 ```
 
-**431 + 121 = 552.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
+**760 + 121 = 881.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
 
 **The tier is the first thing you read, the layer the second.** The tier is decided by dependency, not by subject: an engine test that needs a kernel is not testing the engine, it is testing the wiring — so it lives in the app's `Integration/`, never in the package. Below the tier, the path mirrors `src/` — with two deliberate exceptions, `Functional/` and `Integration/ShopFlow/`: an end-to-end or flow test crosses every layer, so it inhabits none.
 

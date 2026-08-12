@@ -30,19 +30,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
-/**
- * Cart line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered by
- * CartComponentTest; the catalog lives in App\Presentation\Component\Catalog,
- * covered by CatalogComponentTest. This file keeps what Shop owns: its
- * own add() LiveAction (including the nested Catalog+Cart re-render it
- * drives), order submission, pending/validated/rejected order views, and the
- * Mercure/route wiring.
- *
- * The guard sequence add() runs — already-owned refusal, then de-duplication — now lives in
- * App\Presentation\Shop\CartItemAdder, shared with App\Presentation\Component\PlayerOrders, so it is covered once and
- * here. What stays per host is what each host wraps around it: Shop's turn lock below, and the
- * POS dialog that renders PlayerOrders' refusal, in PosConsoleTest.
- */
 final class ShopComponentTest extends WebTestCase
 {
     use GameFixtureTrait;
@@ -87,9 +74,11 @@ final class ShopComponentTest extends WebTestCase
         $this->entityManager->flush();
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $rendered = $component->call('add', ['key' => 'democracy'])->render()->toString();
+        $crawler = $component->call('add', ['key' => 'democracy'])->render()->crawler();
 
-        $this->assertStringContainsString('An order has already been validated for this turn.', $rendered);
+        $this->assertCount(1, $crawler->filter('[role="alert"]'));
+        $this->assertCount(1, $crawler->filter('.shop__order[data-status="validated"]'));
+        $this->assertCount(0, $crawler->filter('.lines'));
     }
 
     #[Test]
@@ -100,10 +89,10 @@ final class ShopComponentTest extends WebTestCase
         $this->entityManager->flush();
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $rendered = $component->call('add', ['key' => 'agriculture'])->render()->toString();
+        $crawler = $component->call('add', ['key' => 'agriculture'])->render()->crawler();
 
-        $this->assertStringContainsString('already owned', $rendered);
-        $this->assertStringContainsString('Cart is empty.', $rendered);
+        $this->assertCount(1, $crawler->filter('[role="alert"]'));
+        $this->assertCount(1, $crawler->filter('li[data-empty]'));
     }
 
     #[Test]
@@ -134,9 +123,9 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
         $this->assertStringNotContainsString('class="lines"', $rendered);
-        $this->assertStringContainsString('Order pending for this turn.', $rendered);
+        $this->assertStringContainsString('data-status="pending"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringContainsString('Modify', $rendered);
+        $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
     }
 
     #[Test]
@@ -148,9 +137,9 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
         $this->assertStringNotContainsString('class="lines"', $rendered);
-        $this->assertStringContainsString('Order pending for this turn.', $rendered);
+        $this->assertStringContainsString('data-status="pending"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringContainsString('Modify', $rendered);
+        $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
     }
 
     #[Test]
@@ -167,7 +156,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertStringContainsString('class="lines"', $rendered);
         $this->assertStringNotContainsString('id="product-pottery"', $rendered);
         $this->assertSame(2, substr_count($rendered, 'data-live-action-param="remove"'));
-        $this->assertStringNotContainsString('Modify', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
         $this->assertNotNull($order->id);
     }
 
@@ -185,19 +174,11 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $component->render()->toString();
         $this->assertStringNotContainsString('class="lines"', $rendered);
-        $this->assertStringNotContainsString('Modify', $rendered);
-        $this->assertStringContainsString('Order validated for this turn.', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
+        $this->assertStringContainsString('data-status="validated"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
     }
 
-    /**
-     * Regression pin: an operator can validate a POS sale for a turn while the
-     * player's own shop cart (a different storage key) still holds unrelated
-     * items — e.g. added before the operator closed the sale directly. The
-     * cart block stays visible (isCartVisible: order exists but cart is not
-     * empty), so it must render with checkout disabled rather than let the
-     * player click into a server-side "already validated" error.
-     */
     #[Test]
     public function aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled(): void
     {
@@ -228,7 +209,7 @@ final class ShopComponentTest extends WebTestCase
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
         $this->assertStringContainsString('999', $rendered);
-        $this->assertStringNotContainsString('Modify', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
         $this->assertStringNotContainsString('class="lines"', $rendered);
     }
 
@@ -244,7 +225,7 @@ final class ShopComponentTest extends WebTestCase
         $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $rendered = $component->render()->toString();
 
-        $this->assertStringContainsString('revise and resubmit', $rendered);
+        $this->assertStringContainsString('data-status="rejected"', $rendered);
 
         $component->call('editPendingOrder');
         $editedRendered = $component->render()->toString();
@@ -258,12 +239,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame(OrderStatus::Pending, $reloadedOrder->status);
     }
 
-    /**
-     * The distinction #33 turns on, and the one nothing else in the suite can catch. An emptied
-     * number field hydrates the nullable prop back to null — no constraint at all — while a typed
-     * zero is a real budget that affords nothing. Collapsing the two would either let a blank field
-     * disable the whole shelf, or let a deliberate zero do nothing.
-     */
     #[Test]
     public function anEmptiedBudgetFieldIsNoConstraintWhereABudgetOfZeroIsOne(): void
     {
@@ -281,7 +256,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertTrue($zeroed->render()->crawler()->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
     }
 
-    /** The number a player projects against is the remainder, not the figure they typed — so nothing to project against prints nothing. */
     #[Test]
     public function theBandStaysBlankUntilABudgetIsEnteredAndThenShowsWhatIsLeft(): void
     {
@@ -295,11 +269,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame('Remaining: 110', $withBudget->filter('output[for="shop-budget"]')->text());
     }
 
-    /**
-     * The drawdown, which is the whole point of the band: pottery costs 60, so a budget of 110 that
-     * afforded empiricism (60) before the add no longer does after it, while the 50-cost tiles
-     * survive on the 50 that remain.
-     */
     #[Test]
     public function addingToTheCartDrawsTheRemainderDownAndDisablesWhatItNoLongerAffords(): void
     {
@@ -315,7 +284,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertFalse($afterTheAdd->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
     }
 
-    /** The band is symmetric or it is a trap: what taking an advance out of the cart released has to come back. */
     #[Test]
     public function removingFromTheCartRestoresTheRemainderAndReEnablesTheTilesItHadDisabled(): void
     {
@@ -332,12 +300,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertFalse($withoutPottery->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
     }
 
-    /**
-     * A cart can already exceed a budget entered afterwards: 5 against a cart of 60 leaves −55. The
-     * figure shown is clamped, since a negative remainder reads as an error rather than as a plan,
-     * and the shelf refuses everything — pottery having left the grid for the cart, fifty tiles
-     * remain and all fifty are out of reach.
-     */
     #[Test]
     public function aRemainderGoneNegativeIsShownAsZeroWhileEveryTileStaysDisabled(): void
     {
@@ -352,11 +314,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertCount(50, $crawler->filter('button[id^="product-"][disabled]'));
     }
 
-    /**
-     * The governing constraint of #33: the band is a planning aid, never a game rule. A player who
-     * set 5 and filled a 280 basket must still be able to submit it — so the checkout button stays
-     * live and the order lands whole, budget or no budget.
-     */
     #[Test]
     public function aBudgetFarSmallerThanTheOrderStillLetsThePlayerSubmitIt(): void
     {
@@ -376,11 +333,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame(OrderStatus::Pending, $order->status);
     }
 
-    /**
-     * The band belongs to the player planning a purchase, not to the operator ringing one up — and
-     * CatalogView::pos() carries no remaining budget, so the same shelf disables nothing there. Both
-     * halves are asserted at once: an absent band proves little without a page that carries one.
-     */
     #[Test]
     public function theBudgetBandIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
     {
@@ -397,14 +349,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertFalse($pos->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
     }
 
-    /**
-     * The half of CatalogView the budget test above cannot see. Which order each shelf comes in used
-     * to be a literal `sort` attribute in each of the two templates; it is now the difference
-     * between kiosk() and pos(), and nothing below the hosts can tell which one a host asked for.
-     * Both halves again, and for the same reason: an ascending kiosk shelf proves nothing unless the
-     * operator's is shown to be in the other order. Alice owns agriculture, which discounts enough
-     * of the catalogue for the two orders to diverge at all.
-     */
     #[Test]
     public function theKioskShelfIsOrderedByWhatThePlayerPaysWhereTheOperatorsPosKeepsTheRegistryOrder(): void
     {
@@ -424,12 +368,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame($this->registryOrderOf($this->shelfKeys($pos)), $this->shelfKeys($pos));
     }
 
-    /**
-     * The third field, on the same wire as the budget: the turn lock reaches the tile through
-     * kiosk() now rather than through the template's own `locked` attribute. Rendered either side of
-     * the validation for the same player, so the shut shelf is counted against one known to be open
-     * — and counted whole, since a disabled-tile count alone passes just as well on an empty grid.
-     */
     #[Test]
     public function validatingTheTurnsOrderShutsTheKioskShelfThatWasOpenBefore(): void
     {
@@ -467,11 +405,6 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        // setUp() already booted the kernel for the live-component tests above,
-        // so createClient() (which forbids a pre-booted kernel) is not an option:
-        // fetch the test client from the container and register it manually for
-        // the assertResponse*/assertSelector* helpers, exactly what createClient()
-        // does under the hood.
         $client = self::getClient(self::getContainer()->get('test.client'));
         $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug.'/shop');
 
@@ -572,9 +505,6 @@ final class ShopComponentTest extends WebTestCase
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        // Craft is 20: monument's own recipe already credits craft+10 to its owner
-        // (config/game/advances.yaml), on top of which the +10 Option allocation
-        // merges in; science carries no such recipe credit, so its 10 is the bonus alone.
         $this->assertMatchesRegularExpression('/Craft<\/td>\s*<td><b>20<\/b><\/td>/', $rendered);
         $this->assertMatchesRegularExpression('/Science<\/td>\s*<td><b>10<\/b><\/td>/', $rendered);
     }
@@ -597,8 +527,6 @@ final class ShopComponentTest extends WebTestCase
         $crawler = $freshComponent->render()->crawler();
 
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
-        // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
-        // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker .value')->each(static fn ($node) => $node->text()));
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
@@ -613,14 +541,6 @@ final class ShopComponentTest extends WebTestCase
         return $order;
     }
 
-    /**
-     * Writes straight into the session-backed CartStorageInterface port (Cart has
-     * no add() action of its own any more) and points $client's cookie jar at
-     * that session, so the Shop component under test — driven by the same
-     * $client — reads the same cart back. 'test.client' is registered
-     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
-     * so $client must be the exact instance later passed to createLiveComponent().
-     */
     private function cartFor(KernelBrowser $client, Player $player, Cart $cart): void
     {
         $session = self::getContainer()->get('session.factory')->createSession();
@@ -635,7 +555,6 @@ final class ShopComponentTest extends WebTestCase
         $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
     }
 
-    /** Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout) — Shop only hosts it. */
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -644,7 +563,6 @@ final class ShopComponentTest extends WebTestCase
         ], $client);
     }
 
-    /** The operator's POS dialog open on the current turn — the only state in which it renders a catalogue. */
     private function openPos(Player $player): Crawler
     {
         return $this->createLiveComponent('PlayerOrders', [
@@ -664,22 +582,18 @@ final class ShopComponentTest extends WebTestCase
     }
 
     /**
-     * The given keys back in the order AdvanceRegistry itself hands them over — which is the order a
-     * shelf nobody re-sorted must still be in.
-     *
      * @param list<string> $keys
      *
      * @return list<string>
      */
     private function registryOrderOf(array $keys): array
     {
-        return array_values(array_filter(
-            array_map(
-                static fn (Advance $advance): string => $advance->key,
+        return array_map(
+                static fn(Advance $advance): string => $advance->key,
                 self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
-            ),
-            static fn (string $key): bool => \in_array($key, $keys, true),
-        ));
+            )
+                |> (fn($x) => array_filter($x, static fn(string $key): bool => \in_array($key, $keys, true),))
+                |> array_values(...);
     }
 
     private function freshOrderRepository(): OrderRepository
@@ -697,8 +611,6 @@ final class ShopComponentTest extends WebTestCase
 
     private function getShopComponent(object $component): object
     {
-        // InteractsWithLiveComponents' TestLiveComponent exposes the underlying
-        // component instance via getComponent() to inspect non-rendered state.
         return $component->component();
     }
 }

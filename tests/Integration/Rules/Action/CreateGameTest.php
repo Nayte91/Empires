@@ -9,19 +9,9 @@ use App\State\Game;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-/**
- * The command is where the entity's declared widths become a rule anyone can act on, and the only
- * place that rule exists: every environment runs SQLite, which stores whatever it is handed
- * whatever the column says, so a value past the bound persists in silence rather than failing.
- *
- * $region is pinned here rather than on GameCreator because the component cannot show the
- * difference: the region select offers two four-letter values and onScenarioUpdated() rewrites
- * anything else back to one of them, so a sixteen- and a seventeen-character region are equally
- * unreachable through the UI and, once injected, are both drowned by the empire-scenario issues
- * they also cause. This is the level at which the two lengths still differ.
- */
 final class CreateGameTest extends WebTestCase
 {
     private ValidatorInterface $validator; // @phpstan-ignore property.uninitialized (initialized in setUp)
@@ -33,13 +23,6 @@ final class CreateGameTest extends WebTestCase
         $this->validator = self::getContainer()->get(ValidatorInterface::class);
     }
 
-    /**
-     * Asserted on the whole violation list, not on the presence of the length message: $slug carries
-     * AvailableGameSlug alongside the new Length, and the two are independent top-level constraints
-     * rather than a Sequentially, so both run on every value. An over-long name is not blank, not
-     * reserved and — no over-long game being creatable any more — not taken either, so the operator
-     * must be handed the one problem they can act on and nothing else.
-     */
     #[Test]
     #[DataProvider('provideAGameNameOverTheLengthLimitReportsItsLengthAsItsOnlyProblemCases')]
     public function aGameNameOverTheLengthLimitReportsItsLengthAsItsOnlyProblem(int $length): void
@@ -47,9 +30,9 @@ final class CreateGameTest extends WebTestCase
         $createGame = new CreateGame();
         $createGame->slug = str_repeat('a', $length);
 
-        $messages = $this->violationMessagesFor($createGame, 'slug');
+        $codes = $this->violationCodesFor($createGame, 'slug');
 
-        $this->assertSame(['The address this name builds is longer than 64 characters.'], $messages);
+        $this->assertSame([Length::TOO_LONG_ERROR], $codes);
     }
 
     public static function provideAGameNameOverTheLengthLimitReportsItsLengthAsItsOnlyProblemCases(): iterable
@@ -59,10 +42,6 @@ final class CreateGameTest extends WebTestCase
         yield 'far over the limit, the length SQLite was measured storing' => [300];
     }
 
-    /**
-     * The positive control for the row above, taken at the limit rather than in the comfortable
-     * middle: a bound compared with the wrong operator refuses exactly this name and nothing else.
-     */
     #[Test]
     #[DataProvider('provideAGameNameUpToTheLengthLimitRaisesNoViolationCases')]
     public function aGameNameUpToTheLengthLimitRaisesNoViolation(int $length): void
@@ -70,9 +49,9 @@ final class CreateGameTest extends WebTestCase
         $createGame = new CreateGame();
         $createGame->slug = str_repeat('a', $length);
 
-        $messages = $this->violationMessagesFor($createGame, 'slug');
+        $codes = $this->violationCodesFor($createGame, 'slug');
 
-        $this->assertSame([], $messages);
+        $this->assertSame([], $codes);
     }
 
     public static function provideAGameNameUpToTheLengthLimitRaisesNoViolationCases(): iterable
@@ -91,9 +70,9 @@ final class CreateGameTest extends WebTestCase
         $createGame = new CreateGame();
         $createGame->region = str_repeat('r', $length);
 
-        $messages = $this->violationMessagesFor($createGame, 'region');
+        $codes = $this->violationCodesFor($createGame, 'region');
 
-        $this->assertSame(['Region cannot be longer than 16 characters.'], $messages);
+        $this->assertSame([Length::TOO_LONG_ERROR], $codes);
     }
 
     public static function provideARegionOverTheLengthLimitIsRefusedCases(): iterable
@@ -103,11 +82,6 @@ final class CreateGameTest extends WebTestCase
         yield 'far over the limit' => [300];
     }
 
-    /**
-     * "west" is the control that matters — the value the form actually sends, which a bound applied
-     * to the wrong property or with the wrong operator would refuse. null is here because a game of
-     * ten players or more has no region at all, and Length must let that through untouched.
-     */
     #[Test]
     #[DataProvider('provideARegionUpToTheLengthLimitRaisesNoViolationCases')]
     public function aRegionUpToTheLengthLimitRaisesNoViolation(?string $region): void
@@ -115,9 +89,9 @@ final class CreateGameTest extends WebTestCase
         $createGame = new CreateGame();
         $createGame->region = $region;
 
-        $messages = $this->violationMessagesFor($createGame, 'region');
+        $codes = $this->violationCodesFor($createGame, 'region');
 
-        $this->assertSame([], $messages);
+        $this->assertSame([], $codes);
     }
 
     public static function provideARegionUpToTheLengthLimitRaisesNoViolationCases(): iterable
@@ -129,15 +103,15 @@ final class CreateGameTest extends WebTestCase
         yield 'no region, as every game of ten players or more' => [null];
     }
 
-    /** @return list<string> */
-    private function violationMessagesFor(CreateGame $createGame, string $property): array
+    /** @return list<?string> */
+    private function violationCodesFor(CreateGame $createGame, string $property): array
     {
-        $messages = [];
+        $codes = [];
 
         foreach ($this->validator->validateProperty($createGame, $property) as $violation) {
-            $messages[] = (string) $violation->getMessage();
+            $codes[] = $violation->getCode();
         }
 
-        return $messages;
+        return $codes;
     }
 }
