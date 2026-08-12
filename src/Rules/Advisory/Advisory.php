@@ -4,19 +4,15 @@ declare(strict_types=1);
 
 namespace App\Rules\Advisory;
 
-/**
- * One thing worth telling the player. The level carries no default on purpose: how loudly a
- * message lands is an editorial call its author has to make, not something to inherit by accident.
- */
 final readonly class Advisory
 {
     public function __construct(
+        // REFACTOR-WHEN: an advisory must render in a second language, or a consumer needs to
+        // branch on which advisory fired. The payload is a finished sentence, so tests and
+        // consumers can only discriminate by wording; crossing the threshold means modelling
+        // advisories as code + parameters — an i18n concern this layer deliberately avoids today.
         public string $message,
         public AdvisoryLevel $level,
-        /**
-         * The advance that explains this line, when one does. Its key, never its symbol: the view
-         * decides that Military wears crossed swords.
-         */
         public ?string $advance = null,
     ) {}
 }

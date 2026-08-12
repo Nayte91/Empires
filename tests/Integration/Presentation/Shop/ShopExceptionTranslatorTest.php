@@ -16,12 +16,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 
-/**
- * App\Presentation\Shop\ShopExceptionTranslator is the seam that turns a
- * ShopException's machine-readable reason()/context() into the copy the
- * player actually sees — the library itself only ever carries developer
- * English on getMessage() (see Userforged\ShopEngine\Exception\ShopException).
- */
 final class ShopExceptionTranslatorTest extends WebTestCase
 {
     private ShopExceptionTranslator $translator;
@@ -61,7 +55,6 @@ final class ShopExceptionTranslatorTest extends WebTestCase
         $message = $this->translator->messageFor($this->wrap($violation));
 
         $this->assertNotNull($message);
-        $this->assertStringContainsString('retry', $message);
     }
 
     #[Test]

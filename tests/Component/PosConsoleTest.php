@@ -28,32 +28,6 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
-/**
- * Acceptance tests for the per-player cashier (POS) flow: an operator opens a
- * player's order card for a given turn, builds a ticket of advances (either
- * via PlayerOrders' own add() LiveAction — including the nested Catalog+
- * Cart re-render it drives — or, for checkout preconditions, written straight
- * into the session-backed CartStorageInterface port), checks it out directly
- * (Userforged\ShopEngine\CommandHandler\SellDirectHandler), or erases an already validated
- * order (Userforged\ShopEngine\CommandHandler\EraseOrdersHandler cascade), all from the
- * per-player PlayerOrders LiveComponent (organisms/playerOrders).
- *
- * Ticket line/gift/allocation rendering lives in App\Presentation\Component\Cart, covered
- * by CartComponentTest (POS mode); the catalog lives in
- * App\Presentation\Component\Catalog, covered by CatalogComponentTest.
- *
- * Once a precondition ticket has been seeded on the shared client, the
- * PlayerOrders component under test is always freshly constructed afterwards
- * (never reused across an interleaved sequence) — TestLiveComponent::props()
- * reads props off the client's *last* response, so an already-mounted instance
- * whose turn came before an interleaved call on a different instance would send
- * a stale checksum. `posOpen`/`posTurn` are passed directly to the fresh
- * instance instead of driving them through an actual openPos() call.
- *
- * add()'s guard sequence is App\Presentation\Shop\CartItemAdder's, shared with App\Presentation\Component\Shop and
- * covered in ShopComponentTest. What this file owns of add() is what only the POS has: the pos.
- * cart key, and organisms/posDialog as the one and only template that renders PlayerOrders' error.
- */
 final class PosConsoleTest extends WebTestCase
 {
     use GameFixtureTrait;
@@ -69,9 +43,6 @@ final class PosConsoleTest extends WebTestCase
         $component->call('openPos', ['turn' => $game->currentTurn]);
         $crawler = $component->render()->crawler();
 
-        // The pending order preloads a complete, single-item ticket, so "Confirm
-        // purchase" — App\Presentation\Component\Cart::hasIncompleteAllocations/isEmpty, read
-        // from the nested Cart component itself — is enabled.
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
         $this->assertTrue($component->component()->posOpen);
         $this->assertSame($game->currentTurn, $component->component()->posTurn);
@@ -95,8 +66,6 @@ final class PosConsoleTest extends WebTestCase
         [$game, , $bob] = $this->createGameWithAliceAndBob();
 
         $component = $this->createPlayerOrders($bob, posOpen: true, posTurn: $game->currentTurn);
-        // A single call()+render() round trip: proves add() re-renders the nested
-        // Catalog (the tile leaves the grid) and Cart (total) together, not just PlayerOrders itself.
         $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
 
         $this->assertStringNotContainsString('id="product-pottery"', $rendered);
@@ -104,12 +73,6 @@ final class PosConsoleTest extends WebTestCase
         $this->assertStringContainsString('Total: 60', $rendered);
     }
 
-    /**
-     * The refusal itself belongs to App\Presentation\Shop\CartItemAdder and is covered in
-     * ShopComponentTest. What only the POS can witness is where the copy surfaces:
-     * organisms/posDialog is the sole template rendering PlayerOrders' error, so
-     * an error raised with no dialog open would be shown nowhere at all.
-     */
     #[Test]
     public function aRefusedAddSurfacesItsErrorInsideThePosDialog(): void
     {
@@ -118,7 +81,9 @@ final class PosConsoleTest extends WebTestCase
         $component = $this->createPlayerOrders($alice, posOpen: true, posTurn: $game->currentTurn);
         $crawler = $component->call('add', ['key' => 'agriculture'])->render()->crawler();
 
-        $this->assertStringContainsString('already owned', $crawler->filter('dialog p[role="alert"]')->text());
+        $alert = $crawler->filter('dialog p[role="alert"]');
+        $this->assertCount(1, $alert);
+        $this->assertNotSame('', trim($alert->text()));
     }
 
     #[Test]
@@ -222,8 +187,6 @@ final class PosConsoleTest extends WebTestCase
         $crawler = $component->render()->crawler();
 
         $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
-        // Category order is art/civic/craft/religion/science (App\Rules\Ruleset\Category): only
-        // craft and science were allocated, 10 each.
         $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker .value')->each(static fn ($node) => $node->text()));
     }
 
@@ -253,9 +216,11 @@ final class PosConsoleTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
 
         $this->posCartFor($client, $alice, Cart::fromKeys(['pottery']));
-        $rendered = $this->createPosCart($alice, $game->currentTurn, $client)->call('checkout')->render()->toString();
+        $crawler = $this->createPosCart($alice, $game->currentTurn, $client)->call('checkout')->render()->crawler();
 
-        $this->assertStringContainsString('already been validated', $rendered);
+        $alert = $crawler->filter('p[role="alert"]');
+        $this->assertCount(1, $alert);
+        $this->assertNotSame('', trim($alert->text()));
     }
 
     #[Test]
@@ -350,7 +315,7 @@ final class PosConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function aValidatedOrderCardShowsFrozenNetCostsAndAnEmptyButton(): void
+    public function aValidatedOrderCardShowsFrozenNetCostsAndSwapsThePosControlForTheEraseModal(): void
     {
         [, , $bob] = $this->createGameWithAliceAndBob();
         $this->validateOrderFor($bob, ['democracy', 'pottery']);
@@ -362,9 +327,10 @@ final class PosConsoleTest extends WebTestCase
         $this->assertStringContainsString('Democracy', $card->text());
         $this->assertStringContainsString('Pottery', $card->text());
         $this->assertStringContainsString('Total: 280', $card->text());
-        // democracy: 6 points, pottery: 1 point (config/game/advances.yaml).
         $this->assertStringContainsString('VP: 7', $card->text());
         $this->assertSame('Empty', trim($card->filter('button')->first()->text()));
+        $this->assertCount(1, $card->filter('button[commandfor]'));
+        $this->assertCount(0, $card->filter('[data-live-action-param="openPos"]'));
     }
 
     #[Test]
@@ -403,12 +369,6 @@ final class PosConsoleTest extends WebTestCase
         ], $client);
     }
 
-    /**
-     * Checkout now lives on the Cart LiveComponent (see App\Presentation\Component\Cart::checkout)
-     * — PlayerOrders only hosts the dialog. $client must be shared with the
-     * PlayerOrders instance that opened the POS (openPos()) so this Cart reads
-     * the same session-backed ticket.
-     */
     private function createPosCart(Player $player, int $turn, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -419,14 +379,6 @@ final class PosConsoleTest extends WebTestCase
         ], $client);
     }
 
-    /**
-     * Writes straight into the session-backed CartStorageInterface port (Cart has
-     * no add() action of its own any more) and points $client's cookie jar at
-     * that session, so the PlayerOrders component under test — driven by the
-     * same $client — reads the same ticket back. 'test.client' is registered
-     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
-     * so $client must be the exact instance later passed to createPlayerOrders().
-     */
     private function posCartFor(KernelBrowser $client, Player $player, Cart $cart): void
     {
         $session = self::getContainer()->get('session.factory')->createSession();

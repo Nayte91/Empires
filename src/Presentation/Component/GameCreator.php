@@ -69,12 +69,6 @@ final class GameCreator
         $this->game->slug = (string) Uuid::v7();
     }
 
-    /**
-     * A path past the current roster makes LiveComponentHydrator auto-vivify an empty row and
-     * swallow the failed write, so the malformed row survives into $this->players and crashes
-     * the render. Only a fabricated request can produce one, so it is dropped silently — unlike
-     * setEmpire()'s guard, which reports.
-     */
     #[PostHydrate]
     public function dropMalformedPlayerRows(): void
     {
@@ -173,12 +167,6 @@ final class GameCreator
         $this->players[$index]['empire'] = $remaining[random_int(0, \count($remaining) - 1)];
     }
 
-    /**
-     * Post-write guard, not a gate: the row's select writes into $players[$index]['empire']
-     * through its data-model path before this runs. Clears the row when the stored value is not
-     * in the scenario or is already held by another row — the server does not trust a value it
-     * did not offer, whatever route produced it.
-     */
     #[LiveAction]
     public function setEmpire(#[LiveArg] int $index): void
     {
@@ -291,6 +279,10 @@ final class GameCreator
     /** @return list<string> */
     public function getConformityIssues(): array
     {
+        // REFACTOR-WHEN: a conformity issue needs per-type styling or ordering in the template.
+        // Each builder below assembles its issue with sprintf into a finished string, so the
+        // template and the component tests can only discriminate issues by wording; crossing
+        // the threshold means returning code + parameters per issue instead.
         return array_values(array_filter([
             $this->getPlayerCountOutOfRangeIssue(),
             $this->getPlayerCountMismatchIssue(),
@@ -312,14 +304,7 @@ final class GameCreator
         ));
     }
 
-    /**
-     * Every empire the scenario offers, in the registry's stable order, never removed —
-     * only flagged `taken` when another row already holds it. A fixed list is what makes
-     * the DOM diffing library's position-based `<option>` reconciliation harmless: nothing
-     * ever changes position, so there is nothing left for a race to mis-reconcile.
-     *
-     * @return list<array{empire: string, taken: bool}>
-     */
+    /** @return list<array{empire: string, taken: bool}> */
     public function getEmpireChoicesFor(int $index): array
     {
         $takenByOthers = array_column(
@@ -352,10 +337,6 @@ final class GameCreator
         return $this->scenarioRuleSummarizer->summarize($this->game);
     }
 
-    /**
-     * The only check that does not iterate $players: a playerCount of 0 with an empty roster
-     * passes every roster-walking check below vacuously, so this one must stand on its own.
-     */
     private function getPlayerCountOutOfRangeIssue(): ?string
     {
         $count = $this->game->playerCount;
@@ -445,15 +426,7 @@ final class GameCreator
         return $issues;
     }
 
-    /**
-     * addPlayer() already refuses a name another player holds, but it is no longer the only way a
-     * row reaches $players: the prop is identity-writable, so a crafted request can inject a
-     * well-formed row that never passed through it. Re-checked here, at the gate everything must
-     * cross. Compared on the slug, as everywhere else — two visually distinct names slugifying
-     * identically are a genuine collision, and the database says so too (uniq_player_game_slug).
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function getDuplicateNameIssues(): array
     {
         $namesBySlug = [];
@@ -465,8 +438,6 @@ final class GameCreator
         $issues = [];
 
         foreach ($namesBySlug as $slug => $names) {
-            // Blank names are getBlankNameIssue()'s to report; left here they would collide with
-            // each other and render as `" and  share the name """`.
             if ('' === $slug) {
                 continue;
             }
@@ -480,10 +451,6 @@ final class GameCreator
         return $issues;
     }
 
-    /**
-     * Same injected-row bypass as getDuplicateNameIssues(). Judged on the slug: a punctuation-only
-     * name is blank too, and would persist a player whose board URL cannot be built.
-     */
     private function getBlankNameIssue(): ?string
     {
         $blank = \count(array_filter($this->players, static fn (array $player): bool => '' === Player::slugify($player['name'])));
@@ -497,12 +464,7 @@ final class GameCreator
             : sprintf('%d players have no usable name.', $blank);
     }
 
-    /**
-     * Same injected-row bypass. mb_strlen, not strlen: accented names ("René") would be
-     * misjudged by a byte count.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     private function getOverlongNameIssues(): array
     {
         $issues = [];
