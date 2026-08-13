@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\AstAdvancementRule;
+use App\Presentation\Advisory\AstAdvancementRule;
 use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
-use App\Rules\Advisory\Advisory;
+use App\Presentation\Advisory\Advisory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;

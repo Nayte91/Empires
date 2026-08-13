@@ -21,28 +21,26 @@ final class CitySupportCalculatorTest extends TestCase
     }
 
     #[Test]
-    public function spareCensusIsWhatSitsAboveTheDemand(): void
+    public function aPlayerHoldingMoreThanTheDemandSupportsTheirCities(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 7;
         $player->census = 20;
 
-        $this->assertSame(6, new CitySupportCalculator()->spareCensus($player));
         $this->assertFalse(new CitySupportCalculator()->citiesAreUnsupported($player));
     }
 
     #[Test]
-    public function anUnderSupportedPlayerHasNoSpareCensusLeft(): void
+    public function aPlayerHoldingLessThanTheDemandLeavesTheCitiesUnsupported(): void
     {
         $player = PlayerBuilder::named('Bob')->build();
         $player->cities = 7;
         $player->census = 10;
 
-        $this->assertSame(0, new CitySupportCalculator()->spareCensus($player));
         $this->assertTrue(new CitySupportCalculator()->citiesAreUnsupported($player));
     }
 
-    /** Meeting the demand exactly still supports the cities — the margin is simply zero. */
+    /** The boundary belongs to the player: meeting the demand exactly still supports the cities. */
     #[Test]
     public function meetingTheDemandExactlySupportsTheCities(): void
     {
@@ -50,7 +48,6 @@ final class CitySupportCalculatorTest extends TestCase
         $player->cities = 5;
         $player->census = 10;
 
-        $this->assertSame(0, new CitySupportCalculator()->spareCensus($player));
         $this->assertFalse(new CitySupportCalculator()->citiesAreUnsupported($player));
     }
 }

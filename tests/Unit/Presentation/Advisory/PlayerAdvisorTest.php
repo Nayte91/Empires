@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\CitySupportRule;
-use App\Rules\Advisory\HandLimitRule;
-use App\Rules\Advisory\TaxPaymentRule;
+use App\Presentation\Advisory\CitySupportRule;
+use App\Presentation\Advisory\HandLimitRule;
+use App\Presentation\Advisory\TaxPaymentRule;
 use App\Rules\CitySupportCalculator;
 use App\Rules\HandSizeCalculator;
-use App\Rules\Advisory\PlayerAdvisor;
+use App\Presentation\Advisory\PlayerAdvisor;
 use App\Rules\StockCalculator;
 use App\Rules\TaxCalculator;
 use App\Tests\Support\GameConfig;

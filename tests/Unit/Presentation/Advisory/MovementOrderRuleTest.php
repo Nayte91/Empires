@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\MovementOrderRule;
-use App\Rules\Advisory\AdvisoryLevel;
+use App\Presentation\Advisory\MovementOrderRule;
+use App\Presentation\Advisory\AdvisoryLevel;
 use App\Rules\Ruleset\EmpireRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Rules\CensusOrderCalculator;

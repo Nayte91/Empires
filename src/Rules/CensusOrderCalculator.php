@@ -10,10 +10,6 @@ use App\Rules\Ruleset\EmpireRegistry;
 use App\State\Game;
 use App\State\Player;
 
-/**
- * Computes the movement-phase play order: highest census first, Military-advance
- * owners last, ties broken by empire position on the A.S.T. ranking track.
- */
 final readonly class CensusOrderCalculator
 {
     public function __construct(
@@ -30,7 +26,6 @@ final readonly class CensusOrderCalculator
         return $players;
     }
 
-    /** Where a single player sits in that order, counting from 1. */
     public function rankOf(Player $player): int
     {
         $rank = array_search($player, $this->orderFor($player->game), true);
@@ -43,10 +38,6 @@ final readonly class CensusOrderCalculator
         return null !== $this->militaryAdvanceOf($player);
     }
 
-    /**
-     * The advance that sends its owner to the back of the order, when they own one — its key, so a
-     * consumer can say which advance explains the rank without naming it itself.
-     */
     public function militaryAdvanceOf(Player $player): ?string
     {
         return $this->advanceEffects->owned($player->advances, AdvanceEffect::MovesLast)[0] ?? null;

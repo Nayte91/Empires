@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\TaxPaymentRule;
-use App\Rules\Advisory\Advisory;
+use App\Presentation\Advisory\TaxPaymentRule;
+use App\Presentation\Advisory\Advisory;
 use App\Rules\StockCalculator;
 use App\Rules\TaxCalculator;
 use App\Tests\Support\GameConfig;
@@ -24,7 +24,7 @@ final class TaxPaymentRuleTest extends TestCase
         $player->census = 1;
         $player->treasury = 0;
 
-        $this->assertNotInstanceOf(\App\Rules\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
+        $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
     }
 
     #[Test]
@@ -49,7 +49,7 @@ final class TaxPaymentRuleTest extends TestCase
         $player->census = 6;
         $player->treasury = 43;
 
-        $this->assertNotInstanceOf(\App\Rules\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
+        $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
     }
 
     /** Democracy is outright immunity, so the warning must go even on a genuine shortfall. */

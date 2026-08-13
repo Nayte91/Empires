@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Rules\Advisory\Advisory;
-use App\Rules\Advisory\PlayerAdvisor;
+use App\Presentation\Advisory\Advisory;
+use App\Presentation\Advisory\PlayerAdvisor;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 

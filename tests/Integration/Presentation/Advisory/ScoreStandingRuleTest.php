@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Integration\Rules\Advisory;
+namespace App\Tests\Integration\Presentation\Advisory;
 
-use App\Rules\Advisory\ScoreStandingRule;
-use App\Rules\Advisory\AdvisoryLevel;
+use App\Presentation\Advisory\ScoreStandingRule;
+use App\Presentation\Advisory\AdvisoryLevel;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;

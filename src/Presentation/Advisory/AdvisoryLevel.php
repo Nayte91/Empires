@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Rules\Advisory;
+namespace App\Presentation\Advisory;
 
 /**
  * How an advisory should land, from routine to urgent. This is meaning, not presentation: the view
