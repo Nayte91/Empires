@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Rules\Advisory;
+namespace App\Presentation\Advisory;
 
 use App\Rules\CitySupportCalculator;
 use App\State\Player;
@@ -11,6 +11,9 @@ use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 /**
  * The quantitative twin of {@see CitySupportRule}: the same threshold read as a margin rather than
  * as an alarm. Both ask the same authority, so they cannot disagree.
+ *
+ * The subtraction is this rule's own on purpose. A margin is advice, not a rule — the game never
+ * asks how much slack a player holds, only whether the demand is met.
  */
 #[AsTaggedItem(priority: -20)]
 final readonly class CitySupportMarginRule implements AdvisoryRule
@@ -23,7 +26,8 @@ final readonly class CitySupportMarginRule implements AdvisoryRule
             return null;
         }
 
-        $spare = $this->citySupportCalculator->spareCensus($player);
+        // No clamp: the guard above has already established that the demand is met.
+        $spare = $player->census - $this->citySupportCalculator->required($player);
 
         if (0 === $spare) {
             return new Advisory('You cannot afford to lose any population', AdvisoryLevel::Caution);

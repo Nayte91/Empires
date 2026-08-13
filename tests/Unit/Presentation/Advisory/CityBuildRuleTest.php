@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\Rules\Advisory\CityBuildRule;
-use App\Rules\Advisory\AdvisoryLevel;
+use App\Presentation\Advisory\CityBuildRule;
+use App\Presentation\Advisory\AdvisoryLevel;
 use App\Rules\CityBuildCalculator;
 use App\Rules\CitySupportCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;

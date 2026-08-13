@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\HandLimitRule;
-use App\Rules\Advisory\Advisory;
+use App\Presentation\Advisory\HandLimitRule;
+use App\Presentation\Advisory\Advisory;
 use App\Rules\HandSizeCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;

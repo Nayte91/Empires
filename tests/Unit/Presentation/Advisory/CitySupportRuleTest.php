@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
 use App\State\Game;
 use App\State\Player;
-use App\Rules\Advisory\CitySupportRule;
+use App\Presentation\Advisory\CitySupportRule;
 use App\Rules\CitySupportCalculator;
-use App\Rules\Advisory\Advisory;
+use App\Presentation\Advisory\Advisory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -23,7 +23,7 @@ final class CitySupportRuleTest extends TestCase
         $player->cities = $cities;
         $player->census = $census;
 
-        $this->assertNotInstanceOf(\App\Rules\Advisory\Advisory::class, new CitySupportRule(new CitySupportCalculator())->evaluate($player));
+        $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new CitySupportRule(new CitySupportCalculator())->evaluate($player));
     }
 
     /** @return iterable<string, array{int, int}> */

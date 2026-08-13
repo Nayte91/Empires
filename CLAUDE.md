@@ -52,11 +52,11 @@ src/
 ├── Rules/           # what is true / permitted / follows — never persists
 │   ├── Ruleset/     #   the rules-as-data readers: *Registry + their read models
 │   ├── Action/      #   which actions exist and when they are legal: Stat, StatAction, CreateGame
-│   ├── Advisory/    #   the advisory (non-blocking) rules + PlayerAdvisor
 │   ├── Scenario/    #   what a prospective game will look like
 │   └── *Calculator  #   Stock, Tax, HandSize, CitySupport, Score, Standings, CityBuild, CensusOrder
 ├── Engine/          # owns the only write path: Handler/ + Shop/ (fulfilment)
-├── Presentation/    # Component/, Controller/, Twig/, Shop/ (user-facing messages)
+├── Presentation/    # Component/, Controller/, Twig/, Shop/ (user-facing messages),
+│   └── Advisory/    #   the advisory (non-blocking) rules + PlayerAdvisor
 ├── Infrastructure/  # Repository/, Doctrine/, Mercure/, Shop/ (session + buyer lookup)
 └── Kernel.php
 
@@ -65,6 +65,8 @@ packages/userforged/shop-engine/   # the ordering engine, extracted as a Compose
 ```
 
 **Governing rule — `Rules` answers, `Rules` never persists.** That is what lets one rule set serve both modes: a rule that throws only serves an engine; a rule that returns a verdict serves both. Reading a repository from `Rules` is fine (`ShopConnector` does); writing is not.
+
+**`Advisory/` sits under `Presentation/`, not `Rules/`.** An advisory is a courtesy the board extends to its players — "you are 6 population over your city count" — and the rules of the game are indifferent to it: delete the folder and nothing about the game changes, only a panel empties. Two consequences worth knowing before moving anything back. Each rule ends in a finished English sentence, so it is copy, and copy belongs where copy is written (`Presentation/Shop/ShopExceptionTranslator` is the same seam, one step further along: the engine raises a machine-readable reason and only `Presentation/` phrases it). And an advisory computes a derived fact before it phrases it — a would-be `Agent/` wants that half, so if one ever lands, the arithmetic moves back down to a `Rules/` calculator and the advisory keeps only the wording. See the `REFACTOR-WHEN` in `Advisory.php` for the threshold that forces the split.
 
 **Dependency direction**, enforced by three greps — run them after any move:
 ```
@@ -135,7 +137,7 @@ docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # sin
 ```
 tests/                                   # 760 tests — the application; tier first, layer second
 ├── Unit/          # pure TestCase, no kernel   ─┐ below this first level, the tree mirrors src/:
-├── Integration/   # container + DB, no rendering ┤   Unit/State/, Unit/Rules/Advisory/,
+├── Integration/   # container + DB, no rendering ┤   Unit/State/, Unit/Presentation/Advisory/,
 ├── Component/     # Twig / Live component render ┘   Integration/Engine/Handler/, …
 ├── Functional/    # HTTP client + routes only     — crosses every layer, so it mirrors none
 ├── Support/       # hand-written doubles + the GameBuilder/PlayerBuilder object mother

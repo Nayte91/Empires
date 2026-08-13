@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace App\Tests\Unit\Rules\Advisory;
+namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\Rules\Advisory\CitySupportMarginRule;
-use App\Rules\Advisory\AdvisoryLevel;
-use App\Rules\Advisory\Advisory;
+use App\Presentation\Advisory\CitySupportMarginRule;
+use App\Presentation\Advisory\AdvisoryLevel;
+use App\Presentation\Advisory\Advisory;
 use App\Rules\CitySupportCalculator;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
@@ -50,7 +50,7 @@ final class CitySupportMarginRuleTest extends TestCase
         $player->cities = 5;
         $player->census = 4;
 
-        $this->assertNotInstanceOf(\App\Rules\Advisory\Advisory::class, $this->rule()->evaluate($player));
+        $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, $this->rule()->evaluate($player));
     }
 
     private function rule(): CitySupportMarginRule

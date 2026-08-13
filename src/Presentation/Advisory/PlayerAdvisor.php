@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Rules\Advisory;
+namespace App\Presentation\Advisory;
 
 use App\State\Player;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;

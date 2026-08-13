@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Rules\Advisory;
+namespace App\Presentation\Advisory;
 
 use App\Rules\CityBuildCalculator;
 use App\State\Player;
