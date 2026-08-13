@@ -9,41 +9,51 @@
     color: #1a1a1a;
     background: white;
 
-    & h2 {
-        margin: 0;
-        font-size: 1.25rem;
-    }
+    h2 { margin: 0 }
 
-    & svg {
+    svg {
         justify-self: center;
         max-inline-size: 100%;
         block-size: auto;
     }
 
-    /* Mirrors the dialog's own grid, so heading/body/exit space identically whether the dialog holds them or a form does. */
+    > button { justify-self: start }
+
     > form {
         display: grid;
         gap: 1rem;
     }
 
     p { margin: 0 }
-}
 
-/* A button the dialog holds directly (a POS close, a QR close) is a grid item of the dialog and
-   would otherwise stretch across it. Direct children only: the descendant `button` this replaces
-   also reached the stat picker's grid tiles and collapsed them to nine pixels. */
-.modal[open] > button { justify-self: start }
+    label {
+        display: grid;
+        gap: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    input {
+        block-size: 2.75rem;
+        padding-inline: 0.75em;
+        border: 1px solid var(--operator-border);
+        border-radius: var(--operator-radius);
+        font-size: 1rem;
+
+        &:focus-visible {
+            outline: 2px solid var(--operator-accent);
+            outline-offset: 2px;
+        }
+    }
+
+    > menu, > form > menu {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: end;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+}
 
 .modal::backdrop { background: hsl(0 0% 0% / 0.5) }
-
-.sr-only {
-    position: absolute;
-    inline-size: 1px;
-    block-size: 1px;
-    margin: -1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-}
