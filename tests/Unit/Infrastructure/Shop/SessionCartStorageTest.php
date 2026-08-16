@@ -47,12 +47,11 @@ final class SessionCartStorageTest extends TestCase
     {
         $playerId = Uuid::v4();
 
-        $requestStack = new RequestStack();
         $request = new Request();
         $session = new Session(new MockArraySessionStorage());
         $session->set('empires.shop.cart.'.$playerId->toRfc4122(), ['pottery', 'agriculture']);
         $request->setSession($session);
-        $requestStack->push($request);
+        $requestStack = new RequestStack([$request]);
         $legacyStorage = new SessionCartStorage($requestStack);
 
         $restored = $legacyStorage->load($playerId->toRfc4122());
@@ -96,10 +95,9 @@ final class SessionCartStorageTest extends TestCase
 
     private function makeStorage(): SessionCartStorage
     {
-        $requestStack = new RequestStack();
         $request = new Request();
         $request->setSession(new Session(new MockArraySessionStorage()));
-        $requestStack->push($request);
+        $requestStack = new RequestStack([$request]);
 
         return new SessionCartStorage($requestStack);
     }
