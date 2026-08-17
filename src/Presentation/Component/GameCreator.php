@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
+use App\Presentation\CreationSummarizer;
 use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\GameRegistry;
 use App\Rules\Ruleset\Scenario;
 use App\Rules\Ruleset\ScenarioRegistry;
-use App\Rules\Scenario\ScenarioRuleSummarizer;
 use App\State\Game;
 use App\State\Player;
 use App\State\Region;
@@ -58,11 +57,10 @@ final class GameCreator
 
     public function __construct(
         private readonly ScenarioRegistry $scenarioRegistry,
-        private readonly GameRegistry $gameRegistry,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly MessageBusInterface $commandBus,
         private readonly ValidatorInterface $validator,
-        private readonly ScenarioRuleSummarizer $scenarioRuleSummarizer,
+        private readonly CreationSummarizer $creationSummarizer,
     ) {}
 
     public function mount(): void
@@ -270,14 +268,21 @@ final class GameCreator
         return array_any($this->players, static fn (array $player): bool => '' === $player['empire']);
     }
 
+    /**
+     * The playable counts are a set — whichever the ruleset happens to describe — but a number
+     * input can only carry a range, so the widget gets its ends. A hole in the middle, if the
+     * ruleset ever had one, is caught by KnownScenario at launch and by nothing here.
+     */
     public function getMinPlayers(): int
     {
-        return $this->getLimits()['min_players'] ?? 1;
+        return $this->playableCounts()[0] ?? 1;
     }
 
     public function getMaxPlayers(): int
     {
-        return $this->getLimits()['max_players'] ?? PHP_INT_MAX;
+        $counts = $this->playableCounts();
+
+        return [] === $counts ? PHP_INT_MAX : $counts[\count($counts) - 1];
     }
 
     /** @return list<string> */
@@ -342,7 +347,7 @@ final class GameCreator
     /** @return list<string> */
     public function getScenarioSummary(): array
     {
-        return $this->scenarioRuleSummarizer->summarize($this->game);
+        return $this->creationSummarizer->summarize($this->game);
     }
 
     /**
@@ -388,13 +393,11 @@ final class GameCreator
             return null;
         }
 
-        $limits = $this->getLimits();
-
         if ($count < $target) {
             $missing = $target - $count;
             $message = sprintf('Add %d more %s', $missing, 1 === $missing ? 'player' : 'players');
 
-            if (isset($limits['min_players']) && $count >= $limits['min_players']) {
+            if ($count >= $this->getMinPlayers()) {
                 return $message.sprintf(', or lower the player count to %d.', $count);
             }
 
@@ -404,7 +407,7 @@ final class GameCreator
         $extra = $count - $target;
         $message = sprintf('Remove %d %s', $extra, 1 === $extra ? 'player' : 'players');
 
-        if (isset($limits['max_players']) && $count <= $limits['max_players']) {
+        if ($count <= $this->getMaxPlayers()) {
             return $message.sprintf(', or raise the player count to %d.', $count);
         }
 
@@ -516,18 +519,9 @@ final class GameCreator
             : sprintf('%d players still need an empire.', $missing);
     }
 
-    /**
-     * @return array{
-     *     max_cities?: int,
-     *     max_population?: int,
-     *     max_ships?: int,
-     *     modes?: list<string>,
-     *     min_players?: int,
-     *     max_players?: int,
-     * }
-     */
-    private function getLimits(): array
+    /** @return list<int> */
+    private function playableCounts(): array
     {
-        return $this->gameRegistry->getLimits();
+        return $this->scenarioRegistry->playerCounts();
     }
 }

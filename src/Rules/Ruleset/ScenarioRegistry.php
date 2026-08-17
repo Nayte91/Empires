@@ -121,11 +121,13 @@ final class ScenarioRegistry
             return $key;
         }
 
-        if (1 === preg_match('/^(\d+)_(?:east|west)$/', $key, $matches)) {
-            return (int) $matches[1];
+        [$count, $suffix] = array_pad(explode('_', $key, 2), 2, null);
+
+        if (!ctype_digit($count) || !Region::tryFrom((string) $suffix) instanceof Region) {
+            return null;
         }
 
-        return null;
+        return (int) $count;
     }
 
     /** @return array<int|string, mixed> */

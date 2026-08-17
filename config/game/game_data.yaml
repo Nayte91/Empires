@@ -20,8 +20,6 @@ limits:
     max_cards: 20
     max_turns: 20
     modes: ["basic", "expert"]
-    min_players: 3
-    max_players: 18
     # How many cards a hand may hold, before any advance of the player's own raises it. Read as
     # brackets, cheapest first: the last one the player count reaches wins.
     hand_size_brackets:
