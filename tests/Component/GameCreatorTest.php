@@ -9,7 +9,6 @@ use App\State\Player;
 use App\State\Region;
 use App\State\ASTVersion;
 use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\GameRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\GameFixtureTrait;
@@ -52,14 +51,18 @@ final class GameCreatorTest extends WebTestCase
         $this->assertStringContainsString('value="'.$component->component()->game->slug.'"', $rendered->toString());
     }
 
+    /**
+     * The bound is declared once, by the scenarios the ruleset describes — the input carries their
+     * ends because a number field cannot carry a set.
+     */
     #[Test]
-    public function playerCountInputBoundsComeFromGameDataLimits(): void
+    public function playerCountInputBoundsComeFromTheScenariosThemselves(): void
     {
-        $limits = self::getContainer()->get(GameRegistry::class)->getLimits();
+        $counts = self::getContainer()->get(ScenarioRegistry::class)->playerCounts();
 
         $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
 
-        $this->assertStringContainsString(sprintf('min="%d" max="%d"', $limits['min_players'], $limits['max_players']), $rendered);
+        $this->assertStringContainsString(sprintf('min="%d" max="%d"', $counts[0], $counts[\count($counts) - 1]), $rendered);
     }
 
     #[Test]

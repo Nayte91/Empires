@@ -20,8 +20,6 @@ final readonly class GameRegistry
      *     max_cards?: int,
      *     max_turns?: int,
      *     modes?: list<string>,
-     *     min_players?: int,
-     *     max_players?: int,
      *     hand_size_brackets?: list<array{from_players: int, cards: int}>,
      * }
      */
@@ -60,8 +58,6 @@ final readonly class GameRegistry
      *         max_cards?: int,
      *         max_turns?: int,
      *         modes?: list<string>,
-     *         min_players?: int,
-     *         max_players?: int,
      *         hand_size_brackets?: list<array{from_players: int, cards: int}>,
      *     },
      * }
