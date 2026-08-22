@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "aee8860b42fde9729a32e58e006c5f90",
+    "content-hash": "82ec479fb86dcf530615a31304f58724",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -7921,7 +7921,7 @@
         },
         {
             "name": "userforged/shop-engine",
-            "version": "dev-feat/batch-tickets",
+            "version": "dev-feat/layer-contracts",
             "dist": {
                 "type": "path",
                 "url": "packages/userforged/shop-engine",
