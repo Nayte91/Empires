@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Engine\Event\PlayerUpdated;
-use App\Infrastructure\Repository\PlayerRepository;
 use App\Rules\Action\SetStat;
 use App\Rules\StatBoundsCalculator;
+use App\State\Repository\PlayerRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -24,14 +24,14 @@ final readonly class SetStatHandler
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PlayerRepository $playerRepository,
+        private PlayerRepositoryInterface $playerRepository,
         private StatBoundsCalculator $statBoundsCalculator,
         private MessageBusInterface $eventBus,
     ) {}
 
     public function __invoke(SetStat $command): void
     {
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $player = $this->playerRepository->findById($command->playerId) ?? throw new \RuntimeException('Player not found.');
 
         if ($command->stat->read($player) === $command->value) {
             return;

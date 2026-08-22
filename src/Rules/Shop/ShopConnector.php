@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Rules\Shop;
 
-use App\Infrastructure\Repository\OrderRepository;
 use App\Rules\Ruleset\Category;
 use App\State\CreditEntry;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
+use App\State\Repository\OrderRepositoryInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\FacetProviderInterface;
 use Userforged\ShopEngine\OrderStatus;
@@ -22,7 +22,7 @@ use Userforged\ShopEngine\Promotion\OptionCredits;
  */
 final readonly class ShopConnector implements FacetProviderInterface
 {
-    public function __construct(private OrderRepository $orderRepository) {}
+    public function __construct(private OrderRepositoryInterface $orderRepository) {}
 
     public function currentWindow(Game $game): int
     {

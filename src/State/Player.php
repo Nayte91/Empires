@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\State;
 
-use App\Infrastructure\Doctrine\CreditLedgerType;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -29,7 +28,7 @@ class Player
     public private(set) array $advances = [];
 
     /** @var list<CreditEntry> */
-    #[ORM\Column(type: CreditLedgerType::NAME, options: ['default' => '[]'])]
+    #[ORM\Column(type: 'credit_ledger', options: ['default' => '[]'])]
     public private(set) array $creditLedger = [];
 
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]

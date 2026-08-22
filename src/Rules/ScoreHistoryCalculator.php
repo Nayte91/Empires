@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Infrastructure\Repository\OrderRepository;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Game;
+use App\State\Repository\OrderRepositoryInterface;
 
 /**
  * What each empire was worth, turn by turn, read back off the shop's own record.
@@ -24,7 +24,7 @@ use App\State\Game;
 final readonly class ScoreHistoryCalculator
 {
     public function __construct(
-        private OrderRepository $orderRepository,
+        private OrderRepositoryInterface $orderRepository,
         private AdvanceRegistry $advanceRegistry,
         private AstProgressionCalculator $astProgressionCalculator,
         private StandingsCalculator $standingsCalculator,

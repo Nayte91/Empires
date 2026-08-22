@@ -45,4 +45,17 @@ final class LayerDependencies
             ->shouldNotDependOn()
             ->classes(Selector::inNamespace('App\Presentation'));
     }
+
+    public function testOnlyInfrastructureNamesInfrastructure(): Rule
+    {
+        return PHPat::rule()
+            ->classes(
+                Selector::inNamespace('App\Presentation'),
+                Selector::inNamespace('App\Engine'),
+                Selector::inNamespace('App\Rules'),
+                Selector::inNamespace('App\State'),
+            )
+            ->shouldNotDependOn()
+            ->classes(Selector::inNamespace('App\Infrastructure'));
+    }
 }

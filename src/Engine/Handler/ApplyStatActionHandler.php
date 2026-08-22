@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Engine\Event\PlayerUpdated;
-use App\Infrastructure\Repository\PlayerRepository;
 use App\Rules\Action\ApplyStatAction;
 use App\Rules\HandSizeCalculator;
 use App\Rules\StatBoundsCalculator;
 use App\Rules\TaxCalculator;
+use App\State\Repository\PlayerRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -27,7 +27,7 @@ final readonly class ApplyStatActionHandler
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PlayerRepository $playerRepository,
+        private PlayerRepositoryInterface $playerRepository,
         private HandSizeCalculator $handSizeCalculator,
         private StatBoundsCalculator $statBoundsCalculator,
         private TaxCalculator $taxCalculator,
@@ -36,7 +36,7 @@ final readonly class ApplyStatActionHandler
 
     public function __invoke(ApplyStatAction $command): void
     {
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $player = $this->playerRepository->findById($command->playerId) ?? throw new \RuntimeException('Player not found.');
         $action = $command->action;
 
         if (!$action->isOffered($player, $this->taxCalculator)) {

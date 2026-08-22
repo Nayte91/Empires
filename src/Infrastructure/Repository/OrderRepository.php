@@ -7,15 +7,16 @@ namespace App\Infrastructure\Repository;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
+use App\State\Repository\OrderRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Uid\Uuid;
 use Userforged\ShopEngine\OrderInterface;
-use Userforged\ShopEngine\OrderRepositoryInterface;
+use Userforged\ShopEngine\OrderRepositoryInterface as ShopOrderRepositoryInterface;
 use Userforged\ShopEngine\OrderStatus;
 
 /** @extends ServiceEntityRepository<Order> */
-final class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface
+final class OrderRepository extends ServiceEntityRepository implements OrderRepositoryInterface, ShopOrderRepositoryInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
