@@ -1,45 +1,85 @@
-# CLAUDE.md - Empires Project
+# 🎯 About the project
 
-## 🎯 About the Project
+**Empires** is a **companion app for live tabletop sessions** of the Civilization board game, built in PHP. It assists a real game played on a physical board.
 
-**Empires** is a web-based strategy game adapting the Mega Empires / Mega Civilization board game, built with Symfony 8.1. It implements game session management, per-player boards, a shop/POS order lifecycle, and the Archaeological Succession Table (AST).
+The direct inspiration for this project's companion-then-host strategy is "CIV on rol-play.com". Study materials live in ./sources/civ.rol-play.com/.
 
-## 🛠 Tech Stack
+## Civilization, the board game
 
-### Backend
+Empires implements the rules lineage of Francis Tresham's **Civilization** (1980) — NOT Sid Meier's Civilization. The distinction is the rules lineage, not the medium: some video games share Tresham's core rules and belong to this family, while the "Sid Meier's Civilization" board game adaptations follow Meier's design and do not.
+
+Same core rules (Tresham lineage):
+- [Civilization](https://en.wikipedia.org/wiki/Civilization_(1980_board_game)) (1980)
+- [Incunabula](https://en.wikipedia.org/wiki/Incunabula_(video_game)) (1984, video game)
+- [Avalon Hill's Advanced Civilization](https://en.wikipedia.org/wiki/Advanced_Civilization) (1991) — and its [1996 PC port](https://en.wikipedia.org/wiki/Avalon_Hill%27s_Advanced_Civilization)
+- [Mega Civilization](https://boardgamegeek.com/boardgame/184424/mega-civilization) (2015)
+- [CIV on rol-play.com](https://civ.rol-play.com) (2015)
+- [Western Empires](https://boardgamegeek.com/boardgame/267304/western-empires) (2019) / [Eastern Empires](https://boardgamegeek.com/boardgame/338980/eastern-empires) (2021)
+- Mega Empires — [The West](https://mega-empires.com/introduction-mega-empires-the-west/) / [The East](https://mega-empires.com/introduction-mega-empires-the-east/) (2024)
+- Mega Empires — [The Far East - North](https://mega-empires.com/introduction-mega-empires-the-far-east-north/) / [South](https://mega-empires.com/introduction-mega-empires-the-far-east-south/) / [The Silk Road](https://mega-empires.com/introduction-mega-empires-the-silk-road/) (2027)
+
+NOT this family (Meier lineage, despite the name): every Sid Meier's Civilization video game, and their board game adaptations (Eagle Games 2002, FFG 2010, A New Dawn 2017).
+
+**Mega Empires (2024) is the canonical ruleset for this project — when editions diverge, it wins.**
+Detailed rules live in ./sources/rules/.
+
+## Purpose
+
+Empires assists the players driving a Civilization game: it relieves the table of its paper bookkeeping, and shows everyone a live, trustworthy picture of the game. That is the short-term goal — a game companion: purchases, calculations, strategy aids. The long-term goal reaches further: add a game engine, so the app can **host and play** a full game through these same screens. The project grows toward that goal screen by screen.
+
+The operating context drives the design: a real game seats 3 to 18 players around a table for 10 to 20 hours, phone in hand.
+
+### Present
+
+Today the app owns the *bookkeeping* of the game, and the physical board owns everything else — map, movement, conflict, calamities. It implements game session management, per-player boards, a shop kiosk/POS order lifecycle (the operator plays the bank/cashier), and the stateboards (AST, census, city count).
+
+A game is created on the server and rendered through different screens:
+- for a **player**, who plays a specific empire (board, shop, saga),
+- for **everyone**, to follow the leaderboard / operational state (dashboard, chronicle),
+- for the **operator** — the canonical name for the game master, everywhere in code and doc — who keeps the game state up to date: turn progression, population & cities per player, order validation.
+
+There are no accounts and no authentication — access is by slug URL, and trust is the table's trust. This is a deliberate product choice for now.
+
+### Future
+
+Two directions, in no committed order:
+- the missing screens — first among them a representation of the game's geographic board;
+- the game engine: the app becomes a host, a full game created and played through the same screens, no physical board required. Every screen built today for the companion is a screen the engine will drive tomorrow. The 🏗 Project Architecture chapter documents the design choices made toward this goal — including why the operator is, today, the human engine.
+
+# 🛠 Tech Stack
+
+## Backend
 - **PHP** 8.5
 - **Symfony** 8.1.* (Framework Bundle, Twig, Validator)
-- **Doctrine** (ORM; migrations in `system/database/migrations/`, `System\` namespace)
 - **Mercure** (real-time UI refresh, hub embedded in Caddy)
 
-### Frontend
+## Frontend
 - **Twig** + **UX Twig/Live Components**
 - **Stimulus** (`assets/controllers/`: `mercure-refresh`, `modal`, `evolution`)
 - **Asset Mapper** (no build step)
 
-### Infrastructure
-- **Docker Compose**, single service: `app` (FrankenPHP — Caddy + PHP embedded), port **8020**
-- Compose files: `compose.yml` + `compose.dev.yml` / `compose.prod.yml`
+## Infrastructure
+- **Docker Compose**, single service: `app` (FrankenPHP — Caddy + PHP embedded), port **8020** (Compose files: `compose.yml` + `compose.dev.yml` / `compose.prod.yml`)
+- `system/` holds the project's infra: `Containerfile`, webserver config, database migrations
 
-## 🐳 Docker Commands
+# ⚙️ Commands & Environment
 
 ```bash
+make dev / make down / make clean       # environment lifecycle (http://localhost:8020)
+make quality                            # full pipeline: rector, phpcs, phpstan, phpunit — run before committing
+make rector|phpcs|phpstan|phpunit       # individual tools
+make deploy / make deploy-migrate       # production
+
 docker compose exec app php bin/console [command]   # Symfony Console
 docker compose exec app composer [command]          # Composer
 ```
 
-## 📋 Makefile & Quality Pipeline
+Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|phpcs|rector` — pass paths after `--` to scope. Which tool covers which directory, and why: see 🧪 Testing.
 
-```bash
-make dev / make down / make clean       # environment lifecycle
-make quality                            # full pipeline: rector, phpcs, phpstan, phpunit
-make rector|phpcs|phpstan|phpunit       # individual tools
-make deploy / make deploy-migrate       # production
-```
+- `.env`: defaults (committed) · `.env.local`: local overrides (NOT committed)
+- New APP_SECRET: `docker compose exec app php -r "echo bin2hex(random_bytes(26)), PHP_EOL;"`
 
-Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|phpcs|rector` — pass paths after `--` to scope. Bare defaults come from each tool's own config: `phpstan`/`phpcs` are `src/`-only, `rector` covers `src/` **and** `tests/` (see 🧪 Testing for why).
-
-## 🏗 Project Architecture
+# 🏗 Project Architecture
 
 `src/` is sorted by **application layer**, not by framework artefact. The goal it serves: Empires must be able to run *either* as free data entry (today) *or* driven by a game engine — the way a chess program lets you move pieces freely or play a real game.
 
@@ -49,6 +89,7 @@ Composer equivalents (configs in `config/tools/`): `composer phpunit|phpstan|php
 src/
 ├── State/           # the material state, passive: Game, Player, Order (Doctrine),
 │                    #   plus the shape of any persisted column (CreditEntry, CreditSource, ASTVersion)
+│   └── Repository/  #   the repository contracts — implemented by Infrastructure/, consumed by everyone
 ├── Rules/           # what is true / permitted / follows — never persists
 │   ├── Ruleset/     #   the rules-as-data readers: *Registry + their read models
 │   ├── Action/      #   which actions exist and when they are legal: Stat, StatAction, CreateGame
@@ -68,16 +109,13 @@ packages/userforged/shop-engine/   # the ordering engine, extracted as a Compose
 
 **`Advisory/` sits under `Presentation/`, not `Rules/`.** An advisory is a courtesy the board extends to its players — "you are 6 population over your city count" — and the rules of the game are indifferent to it: delete the folder and nothing about the game changes, only a panel empties. Two consequences worth knowing before moving anything back. Each rule ends in a finished English sentence, so it is copy, and copy belongs where copy is written (`Presentation/Shop/ShopExceptionTranslator` is the same seam, one step further along: the engine raises a machine-readable reason and only `Presentation/` phrases it). And an advisory computes a derived fact before it phrases it — a would-be `Agent/` wants that half, so if one ever lands, the arithmetic moves back down to a `Rules/` calculator and the advisory keeps only the wording. See the `REFACTOR-WHEN` in `Advisory.php` for the threshold that forces the split.
 
-**Dependency direction**, enforced by three greps — run them after any move:
+**Dependency direction**, enforced by phpat (`tests/Architecture/LayerDependencies.php`) — a violation is a `make phpstan` error, nothing to run by hand:
 ```
 Presentation ─┐
-              ├──> Engine ──> Rules ──> State          Infrastructure: nobody names it,
-Agent (future) ┘                └──> Ruleset (yaml)     everyone receives it by interface
-
-grep -rn '^use App\Engine\|^use App\Presentation'          src/Rules/ src/State/   → 0
-grep -rn 'EntityManagerInterface\|->flush()\|->persist('   src/Rules/ src/State/   → 0
-grep -rn '^use App\Presentation'                           src/Engine/             → 0
+              ├──> Engine ──> Rules ──> State
+Agent (future) ┘                └──> Ruleset (yaml)
 ```
+`Infrastructure/` sits outside the arrows: **nobody names it** — the fourth phpat rule enforces that. Repositories are consumed through the `State/Repository/*Interface` contracts, wired by Symfony's singly-implemented-interface auto-aliasing (both sides live in the same `App\` scan, so there is no `services.yaml` entry to maintain — only the cross-package shop-engine ports need explicit aliases there).
 
 `Engine/` is not speculative: four of a game engine's six organs already exist (`legal`, `next`, `score`, half of `terminal`). What is missing is the clock and the action log — the clock currently being the operator. There is deliberately **no `Agent/`**: unlike `Engine/`, it would have nothing to hold.
 
@@ -85,9 +123,9 @@ grep -rn '^use App\Presentation'                           src/Engine/          
 
 **Two standards, on purpose**: **the library applies best practices; the application applies what is proportionate.** `userforged/shop-engine` is written for a reader who is not us — every port documented, no host class named, no shortcut that a second consumer would inherit. The app is written for this game: an assumed `instanceof` on a type we construct ourselves, a JSON column where an entity would be over-engineering, a display aggregate that duplicates six lines rather than share a helper it would be tempting to merge. Neither standard is sloppiness — applying the library's rigour to the app wastes effort on a reader who will never exist, and applying the app's pragmatism to the library ships that shortcut to everyone.
 
-**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. Its 15 adapters are **split by layer, not grouped** — each keeps a `Shop/` path segment, so `find src -path '*/Shop/*'` still finds the twelve that kept it (`CreditEntry`/`CreditSource` went to `State/`, `ShopMercurePublisher` to `Infrastructure/Mercure/`). The split is what makes `config/services.yaml`'s seven port→adapter bindings readable: you can see at a glance that exactly one port writes (`FulfillmentInterface` → `Engine/`) and all the others answer questions (`Rules/`) or reach outside (`Infrastructure/`). **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
+**The shop is no longer a bounded context of `src/`** — it is `userforged/shop-engine`, a path-repository package with its own namespace (`Userforged\ShopEngine\`), bundle, tooling and tests. Its adapters are **split by layer, not grouped** — each keeps a `Shop/` path segment, so `find src -path '*/Shop/*'` finds them all, minus the renamed few (`CreditEntry`/`CreditSource` went to `State/`, `ShopMercurePublisher` to `Infrastructure/Mercure/`). The split is what makes `config/services.yaml`'s port→adapter bindings readable: you can see at a glance that exactly one port writes (`FulfillmentInterface` → `Engine/`) and all the others answer questions (`Rules/`) or reach outside (`Infrastructure/`). **The package must never name an `App\` class**; two greps guard that — see its `CLAUDE.md`.
 
-### Config-driven game data
+## Config-driven game data
 ```
 config/game/
 ├── advances.yaml    # advances + categories (colors)  → AdvanceRegistry
@@ -99,7 +137,7 @@ config/game/
 ```
 Yaml readers follow one pattern: `#[Autowire('%kernel.project_dir%/config/game/x.yaml')]` + lazy instance-property cache.
 
-### Templates — Atomic Design
+## Templates — Atomic Design
 ```
 templates/
 ├── layout.html.twig  # root layout (all skeletons extend it; wires the ThemeColors atom)
@@ -116,7 +154,15 @@ templates/
 <button {{ isDisabled ? 'disabled' }} {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}>
 ```
 
-## 🎮 Business Domain
+## Adding features
+1. Entities / config yaml → migration (`doctrine:migrations:diff`, lands in `system/database/migrations/`, namespace `System\`)
+2. Repository / bounded-context Dto following the yaml-reader pattern
+3. Component + template (atomic design tier)
+4. Tests (mirror the existing per-directory conventions)
+
+Project TODO backlog: `TODO.md` at repo root.
+
+# 🎮 Business Domain
 
 - **Game**: session (slug, currentTurn 1–20, region, `astVersion` basic/expert, players)
 - **Player**: empire slug, advances (json), cities (0–9), census, treasury, `astPosition` (0–15)
@@ -126,7 +172,7 @@ templates/
 
 Routes — the whole list, no `/game` prefix: `/`, `/create`, `/{slug}` (dashboard, or the chronicle once the game is finished), `/{slug}/operator`, `/{slug}/trade-cards`, `/{gameSlug}/player/{playerSlug}` (board, or the saga once the game is finished), `/{gameSlug}/player/{playerSlug}/shop`. Nothing links to `/{slug}/trade-cards` — deliberately, for now.
 
-## 🧪 Testing
+# 🧪 Testing
 
 ```bash
 make quality                                        # the app pipeline (rector, phpcs, phpstan, phpunit)
@@ -135,7 +181,7 @@ docker compose exec app composer phpunit -- tests/Functional/AstTest.php   # sin
 ```
 
 ```
-tests/                                   # 760 tests — the application; tier first, layer second
+tests/                                   # the application suite; tier first, layer second
 ├── Unit/          # pure TestCase, no kernel   ─┐ below this first level, the tree mirrors src/:
 ├── Integration/   # container + DB, no rendering ┤   Unit/State/, Unit/Presentation/Advisory/,
 ├── Component/     # Twig / Live component render ┘   Integration/Engine/Handler/, …
@@ -143,46 +189,37 @@ tests/                                   # 760 tests — the application; tier f
 ├── Support/       # hand-written doubles + the GameBuilder/PlayerBuilder object mother
 └── bootstrap.php  # drops+recreates the SQLite schema once per run; DAMA (config/tools/phpunit.xml + bundles.php) rolls back each test
 
-packages/userforged/shop-engine/tests/   # 121 tests — the engine, pure TestCase, no kernel
+packages/userforged/shop-engine/tests/   # the engine suite, pure TestCase, no kernel
 ```
 
-**760 + 121 = 881.** The two suites are separate and have separate gates: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
+**Two suites, two gates**: `make quality` runs the app only, `make lib-quality` the package. Run the package's pipeline only when the diff touches `packages/`.
 
 **The tier is the first thing you read, the layer the second.** The tier is decided by dependency, not by subject: an engine test that needs a kernel is not testing the engine, it is testing the wiring — so it lives in the app's `Integration/`, never in the package. Below the tier, the path mirrors `src/` — with two deliberate exceptions, `Functional/` and `Integration/ShopFlow/`: an end-to-end or flow test crosses every layer, so it inhabits none.
 
 **Never run two phpunit invocations at once.** `bootstrap.php` drops and recreates the schema against a single shared SQLite file on every run, so concurrent suites destroy each other — the failure surfaces as an irreproducible flake. Delegations that touch `tests/` must be sequential.
 
-### Which tool runs on `tests/` — and why the split is not negotiable
+## Which tool runs on `tests/` — and why the split is not negotiable
 
 | Tool | `src/` | `tests/` | Why |
 |---|:---:|:---:|---|
-| **rector** | ✅ | ✅ | Owns the test style. Aligned with `Userforged/Ephemere`. |
-| **php-cs-fixer** | ✅ | ❌ | `php_unit_strict` (`@PhpCsFixer:risky`) rewrites `assertEquals`→`assertSame`. On arrays of freshly-constructed readonly VOs that is **wrong** — `assertSame` demands instance identity and can never pass. This is why `assertEquals` is correct in `DirectSaleTest`/`OrderFlowTest` when comparing `OrderLine` graphs. |
-| **phpstan** | ✅ | ❌ | It flags the very form rector enforces: 25 × `staticMethod.dynamicCall` ("Dynamic call to static method `Assert::assertSame()`") on a single test file. **Rector and phpstan can never agree on test files** — that is the whole reason phpstan is scoped out. |
+| **rector** | ✅ | ✅ | Owns the test style. |
+| **php-cs-fixer** | ✅ | ❌ | Its risky PHPUnit set rewrites `assertEquals`→`assertSame`. On arrays of freshly-constructed readonly VOs that is **wrong** — `assertSame` demands instance identity and can never pass. This is why `assertEquals` is correct in `DirectSaleTest`/`OrderFlowTest` when comparing `OrderLine` graphs. |
+| **phpstan** | ✅ | ❌ | It flags the very form rector enforces: `staticMethod.dynamicCall` ("Dynamic call to static method `Assert::assertSame()`") on every assertion. **Rector and phpstan can never agree on test files** — that is the whole reason phpstan is scoped out. |
 
-`make quality` implements exactly this split: `rector -- src/ tests/`, then `phpcs -- src/`, `phpstan -- src/`, then the full suite. Nothing else to run by hand.
+`make quality` implements exactly this split — nothing else to run by hand. Never pass `PARAMS=tests/` to it, and never "settle" a test convention by running the pipeline over `tests/`: two of its three stages contradict each other there. To scope a run, call the tool directly (`composer rector -- tests/Unit/`). **Rector is the only authority on test style.**
 
-Never pass `PARAMS=tests/` to `make quality` — that would drag phpcs and phpstan into `tests/`, which is the one thing this split exists to prevent. To scope a run, call the tool directly (`composer rector -- tests/Unit/`).
+## Assertion form — everything is `$this->`; only kernel statics are `self::`
 
-Corollary: never "settle" a test convention by running the full pipeline over `tests/` — two of its three stages contradict each other there. **Rector is the only authority on test style.**
+**Assertions and expectations are `$this->`, kernel/container plumbing is `self::`** (`bootKernel`, `getContainer`, `ensureKernelShutdown`, `createClient`). Rector enforces the PHPUnit half; two families are convention only, so write them by hand:
 
-### Assertion form — everything is `$this->`; only kernel statics are `self::`
+- `assertResponse*` / `assertSelector*` (Symfony) — rector targets PHPUnit's own assertions only and leaves these alone: still `$this->`.
+- `createStub`, `fail`, `markTestSkipped`, `markTestIncomplete` — genuinely static, rector does *not* rewrite them: still `$this->`.
 
-| Call | Form | Enforced by |
-|---|---|---|
-| `assert*` (PHPUnit) | `$this->` | rector, `PreferPHPUnitThisCallRector` |
-| `expectException*`, mock matchers (`once`, `never`, `any`, `exactly`, …), `createMock` | `$this->` | same rector rule — its `NonAssertNonStaticMethods` whitelist covers them |
-| `assertResponse*`, `assertSelector*` (Symfony) | `$this->` | convention — rector's rule targets `PHPUnit\Framework\Assert` only and leaves these alone, so write `$this->` |
-| `createStub`, `fail`, `markTestSkipped`, `markTestIncomplete` | `$this->` | convention only — these are **static** and rector does *not* rewrite them; both testbases still use `$this->` |
-| `bootKernel`, `getContainer`, `ensureKernelShutdown`, `createClient` | **`self::`** | genuinely static, and left alone by rector |
+Verify: `grep -rn 'self::assert' tests/` → 0. `$this->assertSame()` is deliberately a dynamic call to a static method — do not "correct" it back.
 
-Simple rule: **assertions and expectations are `$this->`, kernel/container plumbing is `self::`.** 772 `$this->assert*` / 0 `self::assert*`, matching Ephemere (2156 / 0).
+## Conventions
 
-`$this->assertSame()` is deliberately a dynamic call to a static method — that is why phpstan must not see `tests/`. Do not "correct" it back.
-
-### Conventions
-
-- **`#[Test]` attribute, never a `test*` prefix.** 340/340 methods comply. Attributes from `PHPUnit\Framework\Attributes\`, never doc-comment annotations.
+- **`#[Test]` attribute, never a `test*` prefix.** Attributes from `PHPUnit\Framework\Attributes\`, never doc-comment annotations.
 - **Names are behaviour sentences**, articles spelled out: `aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled`, `addingAnAlreadyOwnedAdvanceIsRefused`.
 - **AAA by blank lines, never `// Arrange` comments.** Docblocks explain *why a test exists*, not what it does.
 - **The directory now states the base class**, which is the point of the layer split: `Unit/` is pure `TestCase`, everything else needs the container (`WebTestCase` is the de-facto base; `KernelTestCase` is used once and is an anomaly). A test whose base class contradicts its directory is misfiled — move it rather than justify it.
@@ -191,31 +228,10 @@ Simple rule: **assertions and expectations are `$this->`, kernel/container plumb
 - **Private helpers at the bottom of the class**, after all `#[Test]` methods. Prefer aligning on an existing helper's name and signature — `createPlayer()`, `createCart()` and `makeAdvance()` currently have several incompatible signatures across files; don't add a new variant.
 - **Data providers**: none exist yet. When adding the first, name it `provide<TestMethodPascal>Cases()`, `public static`, return `iterable`, blank line between yields — rector's PHPUnit set runs on `tests/` and will rewrite anything else.
 
-### Functional selectors — semantics first, styling classes are a last resort
+## Functional selectors — semantics first, styling classes are a last resort
 
 Priority: native semantic tag → `id` → `data-*` → ARIA role. **Avoid CSS classes**: they are presentational and rename on restyling.
 
-The testbase does not fully honour this yet — 18 of 85 crawler selectors target BEM classes, `.shop__submit` being the most-relied-on selector in the suite. Treat those as debt: don't add new ones, and when a template you touch already has a semantic hook, migrate the assertion.
+The testbase does not fully honour this yet — a minority of crawler selectors still target BEM classes, `.shop__submit` being the most-relied-on selector in the suite. Treat those as debt: don't add new ones, and when a template you touch already has a semantic hook, migrate the assertion.
 
 Consequence for the CSS-only skip rule (below/global): it does **not** apply here — a Twig `class` change can break tests, so run the suite.
-
-## 🔒 Environment
-
-- `.env`: defaults (committed) · `.env.local`: local overrides (NOT committed)
-- New APP_SECRET: `docker compose exec app php -r "echo bin2hex(random_bytes(26)), PHP_EOL;"`
-
-## 🚀 Workflows
-
-### Daily
-```bash
-make dev                # start (http://localhost:8020)
-make quality            # before committing
-```
-
-### Adding features
-1. Entities / config yaml → migration (`doctrine:migrations:diff`, lands in `system/database/migrations/`)
-2. Repository / bounded-context Dto following the yaml-reader pattern
-3. Component + template (atomic design tier)
-4. Tests (mirror the existing per-directory conventions)
-
-Project TODO backlog: `TODO.md` at repo root.

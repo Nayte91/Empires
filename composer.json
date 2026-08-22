@@ -125,6 +125,7 @@
         "doctrine/deprecations": "^1.1.6",
         "doctrine/doctrine-fixtures-bundle": "^4.3",
         "friendsofphp/php-cs-fixer": "^3.95.18",
+        "phpat/phpat": "^0.12.4",
         "phpstan/phpstan": "^2.2.8",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0.12",

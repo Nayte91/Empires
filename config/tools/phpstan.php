@@ -6,6 +6,13 @@ return [
     'includes' => [
         __DIR__.'/../../vendor/phpstan/phpstan-strict-rules/rules.neon',
         __DIR__.'/../../vendor/phpstan/phpstan-deprecation-rules/rules.neon',
+        __DIR__.'/../../vendor/phpat/phpat/extension.neon',
+    ],
+    'services' => [
+        [
+            'class' => App\Tests\Architecture\LayerDependencies::class,
+            'tags' => ['phpat.test'],
+        ],
     ],
     'parameters' => [
         'level' => 6,
