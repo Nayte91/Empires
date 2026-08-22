@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Engine\Event\PlayerUpdated;
-use App\Infrastructure\Repository\PlayerRepository;
 use App\Rules\Action\RenamePlayer;
+use App\State\Repository\PlayerRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -23,13 +23,13 @@ final readonly class RenamePlayerHandler
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private PlayerRepository $playerRepository,
+        private PlayerRepositoryInterface $playerRepository,
         private MessageBusInterface $eventBus,
     ) {}
 
     public function __invoke(RenamePlayer $command): void
     {
-        $player = $this->playerRepository->find($command->playerId) ?? throw new \RuntimeException('Player not found.');
+        $player = $this->playerRepository->findById($command->playerId) ?? throw new \RuntimeException('Player not found.');
 
         if ($player->name === $command->name) {
             return;

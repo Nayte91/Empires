@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Engine\Event\GameUpdated;
-use App\Infrastructure\Repository\GameRepository;
 use App\Rules\Action\PreviousTurn;
+use App\State\Repository\GameRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -17,13 +17,13 @@ final readonly class PreviousTurnHandler
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private GameRepository $gameRepository,
+        private GameRepositoryInterface $gameRepository,
         private MessageBusInterface $eventBus,
     ) {}
 
     public function __invoke(PreviousTurn $command): void
     {
-        $game = $this->gameRepository->find($command->gameId) ?? throw new \RuntimeException('Game not found.');
+        $game = $this->gameRepository->findById($command->gameId) ?? throw new \RuntimeException('Game not found.');
 
         if ($game->finished) {
             return;

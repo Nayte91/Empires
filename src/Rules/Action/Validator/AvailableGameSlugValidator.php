@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Rules\Action\Validator;
 
-use App\Infrastructure\Repository\GameRepository;
+use App\State\Game;
+use App\State\Repository\GameRepositoryInterface;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
@@ -12,7 +13,7 @@ use Symfony\Component\Validator\Exception\UnexpectedValueException;
 
 final class AvailableGameSlugValidator extends ConstraintValidator
 {
-    public function __construct(private readonly GameRepository $gameRepository) {}
+    public function __construct(private readonly GameRepositoryInterface $gameRepository) {}
 
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -36,7 +37,7 @@ final class AvailableGameSlugValidator extends ConstraintValidator
             return;
         }
 
-        if (null !== $this->gameRepository->findOneBy(['slug' => $value])) {
+        if ($this->gameRepository->findOneBySlug($value) instanceof Game) {
             $this->context->buildViolation($constraint->takenMessage)
                 ->setParameter('{{ slug }}', $value)
                 ->addViolation()

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Infrastructure\Shop;
+namespace App\Presentation\Shop;
 
 use App\State\Player;
 
@@ -18,6 +18,8 @@ use App\State\Player;
  */
 final class CartKey
 {
+    // REFACTOR-WHEN: a non-Presentation consumer needs to address a cart — move CartKey down to Rules/Shop/.
+
     public static function shop(Player $player): string
     {
         return $player->id->toRfc4122();

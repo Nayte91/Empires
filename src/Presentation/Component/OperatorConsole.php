@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Infrastructure\Repository\OrderRepository;
 use App\Rules\Action\FinishGame;
 use App\Rules\Action\NextTurn;
 use App\Rules\Action\PreviousTurn;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
+use App\State\Repository\OrderRepositoryInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -26,7 +26,7 @@ final class OperatorConsole
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(
-        private readonly OrderRepository $orderRepository,
+        private readonly OrderRepositoryInterface $orderRepository,
         private readonly MessageBusInterface $commandBus,
     ) {}
 

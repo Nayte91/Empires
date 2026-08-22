@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Engine\Shop;
 
-use App\Infrastructure\Repository\PlayerRepository;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\CreditEntry;
 use App\State\CreditSource;
 use App\State\Player;
+use App\State\Repository\PlayerRepositoryInterface;
 use Symfony\Component\Uid\Uuid;
 use Userforged\ShopEngine\FulfillmentInterface;
 
@@ -35,7 +35,7 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
     private const string SOURCE_PREFIX = 'advance:';
 
     public function __construct(
-        private PlayerRepository $playerRepository,
+        private PlayerRepositoryInterface $playerRepository,
         private AdvanceRegistry $advanceRegistry,
     ) {}
 
@@ -63,6 +63,6 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
 
     private function resolve(Uuid $buyerId): Player
     {
-        return $this->playerRepository->find($buyerId) ?? throw new \RuntimeException('Player not found.');
+        return $this->playerRepository->findById($buyerId) ?? throw new \RuntimeException('Player not found.');
     }
 }

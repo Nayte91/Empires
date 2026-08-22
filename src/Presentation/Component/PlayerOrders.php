@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
-use App\Infrastructure\Repository\OrderRepository;
-use App\Infrastructure\Shop\CartKey;
 use App\Presentation\Shop\CartItemAdder;
+use App\Presentation\Shop\CartKey;
 use App\Presentation\Shop\CatalogView;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\Shop\ShopConnector;
 use App\State\Order;
 use App\State\Player;
+use App\State\Repository\OrderRepositoryInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -48,7 +48,7 @@ final class PlayerOrders
     public ?string $error = null;
 
     public function __construct(
-        private readonly OrderRepository $orderRepository,
+        private readonly OrderRepositoryInterface $orderRepository,
         private readonly AdvanceRegistry $advanceRegistry,
         private readonly CartItemAdder $cartItemAdder,
         private readonly CartStorageInterface $cartStorage,

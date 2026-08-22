@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Presentation\Controller;
 
-use App\Infrastructure\Repository\PlayerRepository;
 use App\State\Player;
+use App\State\Repository\PlayerRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class PlayerController extends AbstractController
 {
-    public function __construct(private readonly PlayerRepository $playerRepository) {}
+    public function __construct(private readonly PlayerRepositoryInterface $playerRepository) {}
 
     #[Route('/{gameSlug}/player/{playerSlug}', name: 'app_player_board', requirements: ['gameSlug' => '[a-z0-9-]+', 'playerSlug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function board(string $gameSlug, string $playerSlug): Response

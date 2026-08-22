@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
-use App\Infrastructure\Repository\OrderRepository;
 use App\State\Player;
+use App\State\Repository\OrderRepositoryInterface;
 
 /**
  * What a player spent, turn by turn, read back off their own validated orders — the shop-side
@@ -20,7 +20,7 @@ final readonly class PurchaseHistoryCalculator
      */
     public const int AVERAGE_FROM_TURN = 6;
 
-    public function __construct(private OrderRepository $orderRepository) {}
+    public function __construct(private OrderRepositoryInterface $orderRepository) {}
 
     /**
      * One total per turn, turn 1 to the turn the game stopped on. A turn with no validated
