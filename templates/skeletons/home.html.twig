@@ -11,13 +11,13 @@
     <main>
         <twig:atoms:PageTitle :title="'Games in progress'" />
 
-        <a class="button" href="{{ path('app_game_create') }}">Create a game</a>
+        <a class="button" href="{{ path('app_create') }}">Create a game</a>
 
         <ul class="game-grid">
         {% for game in games %}
             <li>{% include 'molecules/gameTile.html.twig' with {game} only %}</li>
         {% else %}
-            <p>No game in progress. <a href="{{ path('app_game_create') }}">Create a game</a></p>
+            <p>No game in progress. <a href="{{ path('app_create') }}">Create a game</a></p>
         {% endfor %}
         </ul>
     </main>
