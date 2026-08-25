@@ -18,4 +18,5 @@ return [
     Userforged\ShopEngine\UserforgedShopEngineBundle::class => ['all' => true],
     Symfony\UX\Chartjs\ChartjsBundle::class => ['all' => true],
     Doctrine\Bundle\FixturesBundle\DoctrineFixturesBundle::class => ['dev' => true, 'test' => true],
+    Symfony\UX\Turbo\TurboBundle::class => ['all' => true],
 ];

@@ -29,4 +29,5 @@ return [
     '@symfony/ux-live-component' => ['path' => './vendor/symfony/ux-live-component/assets/dist/live_controller.js'],
     'chart.js' => ['version' => '4.5.1'],
     '@kurkle/color' => ['version' => '0.3.4'],
+    '@hotwired/turbo' => ['version' => '8.0.23'],
 ];

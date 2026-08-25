@@ -14,17 +14,19 @@
 
         {{ component('ThemeColors') }}
 
+        {{ turbo_exempts_page_from_cache() }}
+
         {% block stylesheets %}
-            <link rel="stylesheet" href="{{ asset('styles/globals.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/molecules/panel.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/atoms/touchButton.css') }}">
-            <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}">
+            <link rel="stylesheet" href="{{ asset('styles/globals.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/molecules/panel.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/atoms/touchButton.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}" data-turbo-track="reload">
         {% endblock %}
 
         {% block javascripts %}
-            {% block importmap %}{{ importmap('app') }}{% endblock %}
+            {% block importmap %}{{ importmap('app', {'data-turbo-track': 'reload'}) }}{% endblock %}
         {% endblock %}
     </head>
     <body {% block body_attr %}{% endblock %}>
