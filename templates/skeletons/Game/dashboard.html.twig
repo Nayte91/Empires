@@ -4,13 +4,13 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/skeletons/game/dashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/tabBar.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/navigation.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/roster.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/game/dashboard.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/tabBar.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/navigation.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/astRequirements.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/roster.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block main %}

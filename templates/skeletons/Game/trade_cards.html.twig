@@ -4,8 +4,8 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/tradeCards.css') }}">
+    <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/tradeCards.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block main %}
