@@ -14,13 +14,13 @@
 
     <section aria-label="Owned advances">
         {% set advancePoints = this.advancePoints %}
-        <h2>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</h2>
+        <twig:atoms:SectionTitle>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</twig:atoms:SectionTitle>
 
         <div class="advances-grid">
             {% for advance in this.ownedAdvances %}
                 <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
             {% else %}
-                <p>No advance owned yet.</p>
+                <twig:atoms:Hint>No advance owned yet.</twig:atoms:Hint>
             {% endfor %}
         </div>
     </section>

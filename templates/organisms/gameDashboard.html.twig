@@ -1,18 +1,18 @@
 <main class="game-dashboard">
-    <twig:atoms:PageTitle :title="game.slug" />
+    <twig:atoms:PageTitle :heading="game.slug" :qualifier="'Turn ' ~ game.currentTurn" />
 
     <section id="panel-nav" aria-label="Navigation">
         <twig:Navigation :game="game" />
     </section>
 
     <section id="panel-roster" aria-label="Roster">
-        <h2><a href="#roster">Roster</a></h2>
+        <twig:atoms:SectionTitle><a href="#roster">Roster</a></twig:atoms:SectionTitle>
         <twig:Turbo:Stream:From :topics="roster_topic(game)" />
         <twig:Roster :game="game" />
     </section>
 
     <section id="panel-ast" aria-label="Archaeological Succession Timeline">
-        <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
+        <twig:atoms:SectionTitle><a href="#ast">Archaeological Succession Timeline</a></twig:atoms:SectionTitle>
         <twig:Turbo:Stream:From :topics="ast_topic(game)" />
         <twig:Ast :game="game" />
         <twig:molecules:AstRequirements :eras="this.astEras" :astVersion="game.astVersion.value" />

@@ -1,10 +1,20 @@
-{% props title = '', subtitle = '' %}
+{% props heading, qualifier = null, variant = 'page', back = null, backHref = null, renameFor = null %}
 
-{% if title is not empty %}
-<hgroup id="page-title">
-	<h1>{{ title }}</h1>
-	{% if subtitle is not empty %}
-		<p>{{ subtitle }}</p>
-	{% endif %}
-</hgroup>
-{% endif %}
+<header id="page-title" data-title="{{ variant }}">
+    {% if back is not null %}
+        <a href="{{ backHref }}" class="button touch-button">{{ back }}</a>
+    {% endif %}
+
+    <hgroup>
+        <h1>{{ heading }}</h1>
+        {% if qualifier is not null %}
+            <p>{{ qualifier }}</p>
+        {% endif %}
+    </hgroup>
+
+    {% if renameFor is not null %}
+        <button type="button" class="touch-button" commandfor="{{ renameFor }}" command="show-modal">
+            Rename
+        </button>
+    {% endif %}
+</header>

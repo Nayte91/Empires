@@ -1,11 +1,8 @@
-{% set title = player.name ~ '\'s shop' %}
-{% set subtitle = 'Turn ' ~ player.game.currentTurn ~ (player.game.finished ? ' — finished' : '') %}
-
 <main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: shop_topic(player)})) }}
     class="shop"
 >
-    <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
+    <twig:molecules:PlayerHeading :player="player" />
 
     {% if error %}
         <p class="shop__error" role="alert">{{ error }}</p>
@@ -44,7 +41,7 @@
 
             {% if this.isOrderVisible %}
                 <div class="shop__order" data-status="{{ this.orderStatus }}">
-                    <h3>Your order</h3>
+                    <twig:atoms:Label>Your order</twig:atoms:Label>
 
                     <p class="shop__order-status" role="status">
                         {% if this.orderStatus == 'validated' %}

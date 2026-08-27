@@ -1,10 +1,1 @@
-.player-heading {
-    display: contents;
-
-    .heading {
-        display: flex;
-        align-items: start;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-}
+.player-heading { display: contents }

@@ -1,7 +1,7 @@
 {% props eras, astVersion %}
 
 <section class="ast-requirements">
-    <h3>A.S.T. requirements ({{ astVersion }})</h3>
+    <twig:atoms:Label>A.S.T. requirements ({{ astVersion }})</twig:atoms:Label>
     <ul>
         {% for era in eras %}
             {% set requirements = astVersion == 'expert' ? era.expertRequirements : era.basicRequirements %}

@@ -86,12 +86,31 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function aGameWithNoDefinedDistributionReadsAsEmptyRatherThanAsABrokenPage(): void
     {
-        $crawler = $this->goToTradeCards($this->createGame(playerCount: 3, region: null));
+        $game = $this->createGame(playerCount: 3, region: null);
+
+        $crawler = $this->goToTradeCards($game);
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(0, $crawler->filter('table'));
-        $this->assertCount(1, $crawler->filter('hgroup#page-title h1'));
-        $this->assertCount(1, $crawler->filter('p'));
+        $this->assertSame($game->slug, trim($crawler->filter('#page-title h1')->text()));
+        $this->assertCount(1, $crawler->filter('#page-title ~ p'));
+    }
+
+    /**
+     * The page used to be titled with its own section name. Its title now names the game being
+     * played, and the section name it displaced reads one level down. The demotion is the change,
+     * so both ends are asserted together: either half alone passes against a page that lost a
+     * heading rather than moved one.
+     */
+    #[Test]
+    public function thePageIsTitledWithTheGameAndTheNameItUsedToCarryReadsAsASectionHeading(): void
+    {
+        $game = $this->createGame(playerCount: 9, region: Region::West);
+
+        $crawler = $this->goToTradeCards($game);
+
+        $this->assertSame($game->slug, trim($crawler->filter('#page-title h1')->text()));
+        $this->assertSame('Trade card distribution', trim($crawler->filter('h2')->text()));
     }
 
     private function goToTradeCards(Game $game): Crawler
