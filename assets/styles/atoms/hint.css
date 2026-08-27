@@ -1,6 +1,6 @@
 .hint {
     margin: 0;
     font-size: var(--size-small);
-    font-weight: var(--weight-context);
+    font-weight: var(--weight-body);
     color: var(--ink-muted);
 }

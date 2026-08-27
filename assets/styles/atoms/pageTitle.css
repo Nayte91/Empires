@@ -4,13 +4,15 @@
     justify-content: space-between;
     align-items: start;
     gap: 1rem;
-    font-family: var(--font-title);
     color: var(--ink-primary);
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 
-    hgroup { flex: 1 }
+    hgroup {
+        flex: 1;
+        font-family: var(--font-title);
+    }
     h1, p { margin: 0 auto }
     h1 {
         font-size: var(--size-title);
@@ -23,7 +25,6 @@
     }
 
     &[data-title="celebration"] h1 {
-        font-family: var(--font-hero);
         font-size: var(--size-hero);
         font-weight: var(--weight-hero);
         line-height: 1;

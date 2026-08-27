@@ -1,5 +1,6 @@
 .ast {
-    --ast-rule: 1px solid rgb(255 255 255 / 0.15);
+    --ast-rule-width: 1px;
+    --ast-rule: var(--ast-rule-width) solid rgb(255 255 255 / 0.15);
     --turn-edge: 1px double gold;
     --ast-cell-size: 3rem;
     --ast-band-tint: rgb(255 255 255 / 0.07);
@@ -67,10 +68,10 @@
         position: absolute;
         z-index: 1;
         inset-block-start: 50%;
-        inset-inline-start: 50%;
+        inset-inline-start: calc(50% + var(--marker-pos, 0) * (100% + var(--ast-rule-width)));
         inline-size: 1.5rem;
-        translate: calc(-50% + var(--marker-pos, 0) * var(--ast-cell-size)) -50%;
-        transition: translate 0.4s linear;
+        translate: -50% -50%;
+        transition: inset-inline-start 0.4s linear;
     }
 
     td[data-score] {
@@ -107,7 +108,7 @@
 
         .marker {
             inline-size: 1rem;
-            translate: calc(-50% + max(0, var(--marker-pos, 0)) * var(--ast-cell-size)) -50%;
+            inset-inline-start: calc(50% + max(0, var(--marker-pos, 0)) * (100% + var(--ast-rule-width)));
         }
     }
 
