@@ -22,8 +22,15 @@
                         {{- position < openingSpan ? ' data-opening' : '' }}
                         {{- position == openingSpan ? ' data-anchor' : '' }}
                         {{- position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
-                        {%- if position == player.astPosition -%}
-                            <twig:atoms:Marker empire="{{ player.empire }}" title="{{ player.name }} — {{ this.eraNameFor(player) }}" />
+                        {#- One marker per row, parked on the anchor column whatever the player's
+                            position: it is the same element from turn to turn, which is the only
+                            way the move can be animated rather than jump. -#}
+                        {%- if position == openingSpan -%}
+                            <twig:atoms:Marker
+                                empire="{{ player.empire }}"
+                                title="{{ player.name }} — {{ this.eraNameFor(player) }}"
+                                :position="player.astPosition - openingSpan"
+                                id="ast-marker-{{ player.id }}" />
                         {%- endif -%}
                         {%- if columnEras[position].key == 'start' -%}→{%- endif -%}
                     </td>
