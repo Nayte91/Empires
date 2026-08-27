@@ -1,5 +1,3 @@
-*, *::before, *::after { box-sizing: border-box }
-
 :root {
     --operator-border: gainsboro;
     --operator-bg-subtle: whitesmoke;
@@ -20,22 +18,25 @@
     --ink-primary: lch(from var(--ground) clamp(15, calc((49 - l) * infinity), 92) clamp(0, calc(c * 0.6), 8) h);
     --ink-muted: color-mix(in oklab, var(--ink-primary) 65%, var(--ground));
 
-    --font-title: P052, serif;
-    --font-hero: 'Noto Serif', Georgia, serif;
+    --font-title: 'Cinzel', Georgia, serif;
+    --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
     --size-hero: 2.5rem;
     --size-title: 2rem;
     --size-body: 1rem;
     --size-small: 0.75rem;
 
-    --weight-context: 400;
+    --weight-body: 400;
     --weight-answer: 600;
     --weight-hero: 700;
 }
 
+*, *::before, *::after { box-sizing: border-box }
+
 body {
     margin: 0;
     padding: 0;
+    font-family: var(--font-body);
     font-size: var(--size-body);
     background-color: var(--ground);
 }

@@ -16,7 +16,11 @@
 
         {{ turbo_exempts_page_from_cache() }}
 
+        <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ asset('fonts/cinzel-latin.woff2') }}">
+        <link rel="preload" as="font" type="font/woff2" crossorigin href="{{ asset('fonts/inter-latin.woff2') }}">
+
         {% block stylesheets %}
+            <link rel="stylesheet" href="{{ asset('styles/fonts.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/globals.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/molecules/panel.css') }}" data-turbo-track="reload">

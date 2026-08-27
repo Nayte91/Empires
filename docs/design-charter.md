@@ -60,24 +60,41 @@ modest; the app currently runs it at `2rem`, closer to the celebrated one.
 
 | Token | Value | It claims |
 |---|---|---|
-| `--weight-context` | `400` | this is context — the default, declared only to undo a tag that arrives bold |
+| `--weight-body` | `400` | the weight of running text — the default, declared only to undo a tag that arrives bold |
 | `--weight-answer` | `600` | this is the answer the box exists for — one per box |
 | `--weight-hero` | `700` | the peak of the screen — at most one |
 
 `500` is deliberately absent. At 12px it does not read as different from 400, and "somewhat
 important" is the escape hatch that rebuilds the same problem one notch lower.
 
-**With today's stand-in fonts, 600 and 700 render identically.** P052 and Noto Serif each ship one
-roman and one bold and nothing between; asked for 600, the browser's font matching looks upward
-first and serves the bold rather than synthesising a semibold. The three crans are therefore
-correctly declared and only two of them are visible — the distinction appears on its own the day a
-face with a real semibold lands, which both Cinzel and Inter have.
+The three cuts are real, because both faces are variable: their `@font-face` declares a weight
+*range*, so 400, 600 and 700 are three positions on one continuum rather than three files. A face
+shipping only a roman and a bold would collapse 600 onto 700 — the browser's matching looks upward
+first and serves the bold rather than synthesising a semibold.
 
 ## Fonts
 
-`--font-title` dresses every page title, `--font-hero` the celebrated one. Both are stand-ins: the
-canvas draws its titles in Cinzel, which the app does not ship yet. They are named for their role,
-so the day the real face lands there is nothing to rename.
+Two families, two roles: `--font-title` dresses every page title, `--font-body` everything else.
+The celebrated title has no font of its own — it wears the title face and differs by size and
+weight alone.
+
+Both are self-hosted under `assets/fonts/`, as the subsets Google Fonts serves for
+`?family=Cinzel:wght@600..700&family=Inter:wght@400..700` — split by `unicode-range` *and* by
+weight range, which is what keeps them small: 25kB and 47kB for the latin cuts a French screen
+actually downloads, against ~340kB for Inter's full variable file. The `latin-ext` cuts ship too
+but only travel when a glyph asks for them. Re-running that request is how the files are
+reproduced; the `unicode-range` values in `fonts.css` are copied from its answer verbatim.
+
+Cinzel had to be self-hosted — no system font resembles it, its model being Trajan, which no
+platform ships. Inter did not, strictly: `system-ui` resolves to SF Pro, Roboto or Segoe UI, all
+close relatives. It ships anyway so that the three weight cuts exist everywhere, which `system-ui`
+cannot promise.
+
+AssetMapper rewrites the relative `url()` in `fonts.css` to a digested path, and the Caddyfile
+already answers `/assets/*` with `Cache-Control: public, max-age=31536000, immutable` — so a font
+is fetched once and never again. The two latin cuts are preloaded from `layout.html.twig`;
+`crossorigin` is mandatory there even same-origin, since fonts are fetched in CORS mode, and
+without it the browser downloads the file twice.
 
 ## Four ranks of text, and which one to reach for
 

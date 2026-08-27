@@ -27,7 +27,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: var(--weight-context);
+            font-weight: var(--weight-body);
             transition: border-color 0.15s, background-color 0.15s;
 
             &:hover { border-color: var(--stat-picker-accent) }
