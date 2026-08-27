@@ -1,8 +1,5 @@
 {% set openingSpan = this.openingSpan %}
-<table
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: ast_topic(game)})) }}
-    class="ast"
->
+<table {{ attributes.defaults({'data-region': 'ast'}) }} class="ast">
     <caption id="ast"{{ game.finished ? ' data-finished' }}>{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
     <thead>
         <tr>

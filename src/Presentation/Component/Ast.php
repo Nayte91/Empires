@@ -10,37 +10,23 @@ use App\Rules\StandingsCalculator;
 use App\State\ASTVersion;
 use App\State\Game;
 use App\State\Player;
-use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
-use Symfony\UX\LiveComponent\Attribute\LiveProp;
-use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-/**
- * Read-only display of the Archaeological Succession Table: no writable prop, no action.
- * Re-rendered by a Mercure ping whenever the operator console changes the game.
- */
-#[AsLiveComponent(template: 'molecules/ast.html.twig')]
+#[AsTwigComponent(template: 'molecules/ast.html.twig')]
 final class Ast
 {
-    use DefaultActionTrait;
-
     // Shared board layout is deliberately approximated to the 'standard' track — genuinely
     // correct per-empire column widths (each empire's own era boundaries) is a separate,
     // larger redesign. Per-player marker info (getEraNameFor()) stays fully accurate though.
     private const string SHARED_LAYOUT_GROUP = 'standard';
 
-    #[LiveProp]
-    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
+    public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
     public function __construct(
         private readonly AstRegistry $astRegistry,
         private readonly StandingsCalculator $standingsCalculator,
     ) {}
 
-    /**
-     * The leading columns the compact board drops: the opening stretch nobody has to earn — Start
-     * and the Stone Age ask nothing of anyone — so it separates no empire from another. Derived
-     * from the requirements rather than counted in, so a rules change carries the board with it.
-     */
     public function getOpeningSpan(): int
     {
         $span = 0;
@@ -63,10 +49,6 @@ final class Ast
         return $this->standingsCalculator->scoreOf($player);
     }
 
-    /**
-     * The podium colour of the player's score, or null when they are off it. A player who has not
-     * scored yet is not leading anything, so an all-zero board wears no medal at all.
-     */
     public function medalOf(Player $player): ?string
     {
         if (0 === $this->scoreOf($player)) {

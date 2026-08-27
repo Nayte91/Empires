@@ -15,17 +15,8 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
-/**
- * The single publisher of game-originated Mercure signals: the `src/Engine/Handler/` handlers that
- * mutate a game dispatch a domain event after their own flush, and this turns one into a signal on
- * each screen region the mutation could have changed.
- *
- * `CreateGameHandler` dispatches nothing — a game nobody has open yet has no client to refresh, so
- * the home only shows a fresh game on reload.
- */
 final readonly class GameMercurePublisher
 {
-    /** The topic says which screen; nothing is left for the payload to carry. */
     public const string SIGNAL = '{}';
 
     public function __construct(
@@ -33,10 +24,10 @@ final readonly class GameMercurePublisher
         private PlayerRepository $playerRepository,
         private GameRepository $gameRepository,
         private GameTopics $topics,
+        private DashboardStreamPublisher $dashboard,
         private LoggerInterface $logger,
     ) {}
 
-    /** The shared boards, plus the board of the one player who moved — no other board can differ. */
     #[AsMessageHandler]
     public function onPlayerUpdated(PlayerUpdated $event): void
     {
@@ -50,10 +41,10 @@ final readonly class GameMercurePublisher
 
         $game = $player->game;
 
-        $this->publish([...$this->topics->shared($game->id), $this->topics->board($game->id, $player->id)]);
+        $this->dashboard->publish($game);
+        $this->publish([$this->topics->operator($game->id), $this->topics->board($game->id, $player->id)]);
     }
 
-    /** A turn change locks every shop, and no player board reads the turn. */
     #[AsMessageHandler]
     public function onGameUpdated(GameUpdated $event): void
     {
@@ -70,7 +61,8 @@ final readonly class GameMercurePublisher
             $game->players->toArray(),
         );
 
-        $this->publish([...$this->topics->shared($game->id), ...array_values($shops)]);
+        $this->dashboard->publish($game);
+        $this->publish([$this->topics->operator($game->id), ...array_values($shops)]);
     }
 
     /** @param list<string> $topics */
