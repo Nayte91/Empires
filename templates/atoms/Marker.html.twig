@@ -1,3 +1,12 @@
-{% props empire, title = '' %}
+{% props empire, title = '', position = null, id = null %}
 
-<span class="marker" data-empire="{{ empire }}" title="{{ title }}"></span>
+{# `position` turns the dot into a pawn on a track: it is a column offset from wherever the marker
+   is anchored, and the stylesheet turns it into a distance. Without it the marker is what the
+   evolution legend needs — a coloured dot, nothing more. #}
+<span
+    class="marker"
+    data-empire="{{ empire }}"
+    title="{{ title }}"
+    {%- if id %} id="{{ id }}"{% endif %}
+    {%- if position is not null %} style="--marker-pos: {{ position }}"{% endif %}
+></span>

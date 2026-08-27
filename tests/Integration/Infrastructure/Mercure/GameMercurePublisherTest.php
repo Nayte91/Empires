@@ -119,6 +119,11 @@ final class GameMercurePublisherTest extends WebTestCase
         $this->assertStringContainsString('<turbo-stream action="replace"', $payloads['roster']);
         $this->assertStringContainsString('<turbo-stream action="replace"', $payloads['ast']);
         $this->assertSame('{}', $payloads['operator']);
+
+        // Morph, not swap: nothing on this screen is a Live Component, so the cells can be patched
+        // in place — which is what lets their CSS transitions play at all.
+        $this->assertStringContainsString('method="morph"', $payloads['roster']);
+        $this->assertStringContainsString('method="morph"', $payloads['ast']);
     }
 
     /**

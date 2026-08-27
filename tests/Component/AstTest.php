@@ -56,12 +56,14 @@ final class AstTest extends WebTestCase
     }
 
     /**
-     * The pawn sits in the cell of the position it stands on — not in a shared cell offset by a
-     * count of column widths, which drifted as soon as the browser gave a column less width than
-     * the stylesheet asked for. The table places the column; nothing has to agree on its size.
+     * One pawn per row, parked on the anchor column and offset by whole columns from it. It used to
+     * be rendered inside the cell of its own position — correct, but a different element every
+     * turn, so a move could only ever jump. Keeping one element is what lets the stylesheet animate
+     * it; the offset counts in `--ast-cell-size`, the variable the cells are sized from, where the
+     * first attempt hardcoded a pitch in pixels and drifted.
      */
     #[Test]
-    public function theMarkerSitsInTheCellOfThePositionItStandsOn(): void
+    public function theMarkerIsOffsetFromTheAnchorByThePositionItStandsOn(): void
     {
         $game = new Game();
         $player = new Player($game, 'Alice', 'minoa');
@@ -69,29 +71,32 @@ final class AstTest extends WebTestCase
 
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
         $cells = $crawler->filter('tbody tr td');
+        $anchor = array_keys(array_filter($cells->each(static fn (Crawler $cell): bool => null !== $cell->attr('data-anchor'))))[0];
+        $marker = $crawler->filter('tbody tr .marker');
 
-        $this->assertSame(
-            [7],
-            array_keys(array_filter(
-                $cells->each(static fn (Crawler $cell): bool => 1 === $cell->filter('.marker')->count()),
-            )),
-        );
-        $this->assertStringContainsString('Alice — Early Bronze Age', $cells->eq(7)->filter('.marker')->attr('title') ?? '');
+        $this->assertCount(1, $marker, 'One pawn per row, wherever the player stands.');
+        $this->assertNotNull($marker->closest('td')?->attr('data-anchor'), 'It is parked on the anchor column.');
+        $this->assertStringContainsString('--marker-pos: '.(7 - $anchor), (string) $marker->attr('style'));
+        $this->assertStringContainsString('Alice — Early Bronze Age', (string) $marker->attr('title'));
     }
 
-    /** Inside the opening stretch the cell is one the compact board drops, and the pawn goes with it. */
+    /**
+     * Inside the opening stretch the pawn stands left of the anchor, so its offset is negative. The
+     * compact board drops those columns entirely and parks it back on the anchor from the
+     * stylesheet, rather than letting it float outside the table.
+     */
     #[Test]
-    public function aPlayerStillInsideTheOpeningStretchIsMarkedOnAnOpeningCell(): void
+    public function aPlayerStillInsideTheOpeningStretchStandsLeftOfTheAnchor(): void
     {
         $game = new Game();
         $player = new Player($game, 'Alice', 'minoa');
-        $player->astPosition = 4;
+        $player->astPosition = 0;
 
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
-        $cell = $crawler->filter('tbody tr td')->eq(4);
+        $marker = $crawler->filter('tbody tr .marker');
 
-        $this->assertCount(1, $cell->filter('.marker'));
-        $this->assertNotNull($cell->attr('data-opening'));
+        $this->assertCount(1, $marker);
+        $this->assertMatchesRegularExpression('/--marker-pos: -\d+/', (string) $marker->attr('style'));
     }
 
     /**

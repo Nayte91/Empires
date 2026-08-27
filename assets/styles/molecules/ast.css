@@ -63,15 +63,18 @@
     tbody td:has(.marker) { position: relative }
     tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
 
-    /* Centred in its own cell rather than offset from a shared anchor: the table places the column,
-       so the pawn cannot drift when the browser gives a column less width than it was asked for. */
+    /* One pawn per row, anchored on the first demanding column and offset by whole columns. It
+       keeps its identity from turn to turn — which is what lets a move be animated instead of
+       jumping — and the offset is counted in `--ast-cell-size`, the same variable the cells are
+       sized from, so it cannot drift the way a hardcoded pitch once did. */
     .marker {
         position: absolute;
         z-index: 1;
         inset-block-start: 50%;
         inset-inline-start: 50%;
         inline-size: 1.5rem;
-        translate: -50% -50%;
+        translate: calc(-50% + var(--marker-pos, 0) * var(--ast-cell-size)) -50%;
+        transition: translate 0.4s linear;
     }
 
     td[data-score] {
@@ -109,6 +112,16 @@
         }
 
         td[data-score] { inline-size: 1.75rem }
-        .marker { inline-size: 1rem }
+
+        /* The opening columns are hidden here, so a pawn still inside them has nowhere to stand:
+           it parks on the first visible column rather than float outside the table. */
+        .marker {
+            inline-size: 1rem;
+            translate: calc(-50% + max(0, var(--marker-pos, 0)) * var(--ast-cell-size)) -50%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .marker { transition: none }
     }
 }
