@@ -77,7 +77,7 @@
         </div>
 
         {% if computed.isPlayerLimitReached %}
-            <p class="game-creator__hint">Player limit reached ({{ players|length }}/{{ game.playerCount }}).</p>
+            <twig:atoms:Hint>Player limit reached ({{ players|length }}/{{ game.playerCount }}).</twig:atoms:Hint>
         {% endif %}
 
         <table>

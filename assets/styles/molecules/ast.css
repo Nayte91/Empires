@@ -14,9 +14,9 @@
     caption {
         caption-side: top;
         margin-block-end: 0.75rem;
-        color: darkgray;
+        color: var(--ink-muted);
         font-size: var(--size-small);
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
     }
 
@@ -42,10 +42,10 @@
     thead th {
         padding-inline: 0.25em;
         padding-block: 0.5em;
-        color: darkgray;
+        color: var(--ink-muted);
         font-size: var(--size-small);
         line-height: 1.25;
-        letter-spacing: 0.02em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
         overflow-wrap: break-word;
         hyphens: auto;
@@ -63,10 +63,6 @@
     tbody td:has(.marker) { position: relative }
     tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
 
-    /* One pawn per row, anchored on the first demanding column and offset by whole columns. It
-       keeps its identity from turn to turn — which is what lets a move be animated instead of
-       jumping — and the offset is counted in `--ast-cell-size`, the same variable the cells are
-       sized from, so it cannot drift the way a hardcoded pitch once did. */
     .marker {
         position: absolute;
         z-index: 1;
@@ -78,19 +74,15 @@
     }
 
     td[data-score] {
-        color: white;
+        color: var(--ink-primary);
 
         &[data-medal="gold"] { color: gold }
         &[data-medal="silver"] { color: silver }
         &[data-medal="bronze"] { color: peru }
     }
 
-    tfoot { color: darkgray }
+    tfoot { color: var(--ink-muted) }
 
-    /* Viewport, not container, by exception: both skeletons switch to desktop at this same 60rem, and
-       that rule adds `padding: 1rem` — so crossing the breakpoint shrinks the container's own content
-       box back below it. A container query here stays compact until ~1007px (32px padding + 15px
-       scrollbar), i.e. it disagrees with the page it lives on for 47px. */
     @media (width < 60rem) {
         --ast-cell-size: 1.5rem;
         font-size: var(--size-small);
@@ -113,8 +105,6 @@
 
         td[data-score] { inline-size: 1.75rem }
 
-        /* The opening columns are hidden here, so a pawn still inside them has nowhere to stand:
-           it parks on the first visible column rather than float outside the table. */
         .marker {
             inline-size: 1rem;
             translate: calc(-50% + max(0, var(--marker-pos, 0)) * var(--ast-cell-size)) -50%;

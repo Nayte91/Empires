@@ -58,7 +58,7 @@
 
         small {
             margin-block-start: 0.125rem;
-            color: darkgray;
+            color: var(--ink-muted);
             font-size: var(--size-small);
         }
     }

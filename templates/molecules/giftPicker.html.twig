@@ -13,9 +13,9 @@
 {% elseif candidates is not empty %}
     <div class="gift-picker">
         {% for facet, threshold in row.advance.promotion.gift %}
-            <p class="intro">
+            <twig:atoms:Hint>
                 {{ row.advance.name|capitalize }} offers a free {{ facet }} advance (base cost below {{ threshold }}).
-            </p>
+            </twig:atoms:Hint>
         {% endfor %}
         <ul class="candidates">
             {% for candidate in candidates %}

@@ -7,9 +7,9 @@
         padding: 0;
         gap: 0.5rem;
         list-style: none;
-        color: darkgray;
+        color: var(--ink-muted);
 
-        strong { color: white }
+        strong { color: var(--ink-primary) }
     }
 }
 

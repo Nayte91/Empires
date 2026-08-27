@@ -3,7 +3,7 @@
 :root {
     --operator-border: gainsboro;
     --operator-bg-subtle: whitesmoke;
-    --operator-accent: steelblue;
+    --operator-accent: royalblue;
     --operator-error: crimson;
     --operator-error-bg: color-mix(in oklab, crimson 10%, white);
     --operator-success: seagreen;

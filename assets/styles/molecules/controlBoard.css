@@ -4,20 +4,15 @@
     gap: 1rem;
 
     .shop-link {
-        /* The sibling stat pickers are <button>s and keep the browser's control font; this is an
-           <a> and inherits the document's. With em-based padding the two resolve to different
-           boxes — 36px against 32px. Aligning the link down rather than letting the buttons
-           inherit avoids adopting the page's unchosen serif. The project declares no interface
-           font at all, which is the actual root of this; see #31. */
-        font-family: Arial, sans-serif;
         font-size: var(--size-body);
         border: 1px solid var(--operator-accent);
         border-radius: var(--operator-radius);
         padding: 0.5em 1em;
         display: inline-grid;
         place-content: center;
-        background: var(--operator-accent);
-        color: white;
+        --ground: var(--operator-accent);
+        background: var(--ground);
+        color: var(--ink-primary);
         text-decoration: none;
         transition: background-color 0.15s;
 

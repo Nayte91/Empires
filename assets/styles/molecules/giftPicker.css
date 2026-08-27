@@ -6,11 +6,7 @@
     font-size: var(--size-small);
 
     &.chosen { color: var(--operator-success) }
-
-    .intro {
-        margin: 0 0 0.5rem;
-        color: var(--ink-muted);
-    }
+    .hint { margin-block-end: 0.5rem }
 
     .candidates {
         display: flex;
@@ -19,9 +15,9 @@
         margin: 0;
         padding: 0;
         list-style: none;
-    }
 
-    .candidate { font-size: var(--size-small) }
+        .candidate { font-size: var(--size-small) }
+    }
 
     .cost {
         color: var(--ink-muted);
