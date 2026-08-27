@@ -6,7 +6,6 @@
 
     > summary {
         padding: 1rem;
-        font-weight: var(--weight-answer);
         cursor: pointer;
     }
 

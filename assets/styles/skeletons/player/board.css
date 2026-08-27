@@ -23,10 +23,5 @@
             aspect-ratio: 5 / 7;
             object-fit: cover;
         }
-
-        p {
-            margin: 0;
-            color: var(--ink-muted);
-        }
     }
 }

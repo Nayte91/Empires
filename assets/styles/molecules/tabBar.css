@@ -5,7 +5,8 @@
     margin: 0;
     padding: 0;
     border-block-start: 1px solid rgb(255 255 255 / 0.18);
-    background: #111;
+    --ground: #111;
+    background: var(--ground);
     list-style: none;
 
     li { display: contents }
@@ -17,7 +18,7 @@
         align-content: center;
         gap: 0.3125rem;
         min-block-size: 3.75rem;
-        color: #8a8a8a;
+        color: var(--ink-muted);
         font-size: var(--size-small);
         font-weight: var(--weight-context);
         cursor: pointer;

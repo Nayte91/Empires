@@ -6,7 +6,7 @@
     overflow: hidden;
     --ground: #111;
     background: var(--ground);
-    color: white;
+    color: var(--ink-primary);
 
     > #page-title {
         flex: none;
@@ -40,8 +40,6 @@
 
     @media (min-width: 60rem) {
         display: grid;
-        /* Not the dashboard's `place-content: start center`: the chart is the only element here that
-           has no width of its own, and a max-content column lets its canvas push the page sideways. */
         grid-template-columns: minmax(0, 1fr);
         align-content: start;
         justify-items: center;

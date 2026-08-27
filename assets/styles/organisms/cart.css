@@ -66,13 +66,15 @@
     }
 
     .submit {
-        background: var(--operator-accent);
-        color: white;
+        --ground: var(--operator-accent);
+        background: var(--ground);
+        color: var(--ink-primary);
 
         &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8%)) }
 
         &:disabled {
-            background: var(--operator-border);
+            --ground: var(--operator-border);
+            background: var(--ground);
             color: var(--ink-muted);
         }
     }

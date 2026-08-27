@@ -28,7 +28,8 @@
         }
 
         &:disabled {
-            background: var(--operator-bg-subtle);
+            --ground: var(--operator-bg-subtle);
+            background: var(--ground);
             color: var(--ink-muted);
         }
     }
@@ -172,12 +173,7 @@
         }
     }
 
-    .game-creator__hint {
-        flex-basis: 100%;
-        margin: 0;
-        color: var(--ink-muted);
-        font-size: var(--size-small);
-    }
+    .hint { flex-basis: 100% }
 
     .game-creator__players { overflow-x: auto }
 
@@ -238,9 +234,10 @@
     .game-creator__launch {
         align-self: start;
         padding: 0.75em 1.5em;
-        background: var(--operator-accent);
+        --ground: var(--operator-accent);
+        background: var(--ground);
         font-size: var(--size-body);
-        color: white;
+        color: var(--ink-primary);
 
         &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8%)) }
 

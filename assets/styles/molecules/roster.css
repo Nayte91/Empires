@@ -7,9 +7,9 @@
         display: block;
         caption-side: top;
         margin-block-end: 0.75rem;
-        color: darkgray;
+        color: var(--ink-muted);
         font-size: var(--size-small);
-        letter-spacing: 0.05em;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
     }
 
@@ -36,11 +36,11 @@
 
         b { font-size: var(--size-body) }
 
-        small { color: darkgray }
+        small { color: var(--ink-muted) }
     }
 
     [data-rank] {
-        color: darkgray;
+        color: var(--ink-muted);
         font-variant-numeric: tabular-nums;
     }
 
@@ -57,9 +57,9 @@
 
         &::before {
             content: attr(data-label);
-            color: darkgray;
+            color: var(--ink-muted);
             font-size: var(--size-small);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
         }
     }
@@ -90,9 +90,9 @@
         thead th {
             border-block-end-width: 2px;
             writing-mode: sideways-lr;
-            color: darkgray;
+            color: var(--ink-muted);
             font-size: var(--size-small);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.06em;
             text-transform: uppercase;
             text-align: end;
         }

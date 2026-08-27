@@ -6,7 +6,7 @@
     overflow: hidden;
     --ground: #111;
     background: var(--ground);
-    color: white;
+    color: var(--ink-primary);
 
     section {
         flex: 1;
