@@ -5,13 +5,6 @@
     gap: var(--operator-gap);
     padding: clamp(1rem, 4vw, 1.5rem);
 
-    .heading {
-        display: flex;
-        align-items: start;
-        justify-content: space-between;
-        gap: 1rem;
-    }
-
     .panels {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));

@@ -1,37 +1,8 @@
-{% set title = player.name %}
-{% set subtitle = player.empire|capitalize %}
-
 <main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['player-updated']})) }}
     class="player-board"
 >
-    <div class="heading">
-        <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />
-
-        <button type="button" class="touch-button" commandfor="rename-player-{{ player.id }}" command="show-modal">
-            Rename
-        </button>
-    </div>
-
-    {% if _errors.has('newName') %}
-        <p data-error="newName" role="alert">{{ _errors.get('newName') }}</p>
-    {% endif %}
-
-    <dialog id="rename-player-{{ player.id }}" class="modal" closedby="any">
-        <form method="dialog">
-            <h2>Rename {{ player.name }}</h2>
-
-            <label>
-                Name
-                <input type="text" data-model="norender|newName" value="{{ newName }}" maxlength="50">
-            </label>
-
-            <menu>
-                <li><button type="submit" class="touch-button">Cancel</button></li>
-                <li><button type="submit" class="touch-button" {{ live_action('rename') }}>Confirm</button></li>
-            </menu>
-        </form>
-    </dialog>
+    <twig:molecules:PlayerHeading :player="player" />
 
     <twig:molecules:ControlBoard :player="player" :withShopLink="true" />
 
