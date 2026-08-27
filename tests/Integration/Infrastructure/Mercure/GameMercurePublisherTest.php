@@ -97,15 +97,28 @@ final class GameMercurePublisherTest extends WebTestCase
         $this->assertNotContains('player/'.$alice->id, $this->hub()->regions());
     }
 
-    /** The topic says which screen; the payload is deliberately empty of meaning. */
+    /**
+     * Two payload shapes, and which is which is the whole design: the dashboard regions travel
+     * already rendered because nothing on that screen holds state a replace could destroy, and
+     * every other region travels as a signal its own component answers by re-rendering itself.
+     */
     #[Test]
-    public function theSignalCarriesNothingBeyondItsTopic(): void
+    public function theDashboardRegionsCarryMarkupAndEveryOtherRegionCarriesNothing(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        $this->hub()->clear();
 
         $this->bus->dispatch(new NextTurn($game->id));
 
-        $this->assertSame('{}', $this->hub()->updates()[0]->getData());
+        $payloads = array_combine($this->hub()->regions(), array_map(
+            static fn (\Symfony\Component\Mercure\Update $update): string => $update->getData(),
+            $this->hub()->updates(),
+        ));
+
+        $this->assertStringContainsString('<turbo-stream action="replace"', $payloads['roster']);
+        $this->assertStringContainsString('<turbo-stream action="replace"', $payloads['ast']);
+        $this->assertSame('{}', $payloads['operator']);
     }
 
     /**

@@ -10,12 +10,12 @@ use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 final class RosterTest extends WebTestCase
 {
     use GameFixtureTrait;
-    use InteractsWithLiveComponents;
+    use InteractsWithTwigComponents;
 
     #[Test]
     public function rendersCitiesAndPopulationColumnsWithoutPoints(): void
@@ -24,7 +24,7 @@ final class RosterTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
         $this->assertStringContainsString('Cities', $rendered);
         $this->assertStringContainsString('Population', $rendered);
@@ -40,7 +40,7 @@ final class RosterTest extends WebTestCase
         $player->treasury = 12;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $row = new Crawler($rendered)->filter('tbody tr');
 
         $this->assertStringContainsString('(Alice)', $row->filter('th[data-empire]')->text());
@@ -54,7 +54,7 @@ final class RosterTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $crawler = new Crawler($rendered);
 
         $this->assertSame('minoan', trim($crawler->filter('tbody tr th[data-empire] b')->text()));
@@ -67,7 +67,7 @@ final class RosterTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $cells = new Crawler($rendered)->filter('tbody tr td');
 
         $this->assertSame(
@@ -87,7 +87,7 @@ final class RosterTest extends WebTestCase
         $player->cards = 7;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $cells = new Crawler($rendered)->filter('tbody tr td');
 
         $this->assertStringNotContainsString('Ships', $rendered);
@@ -102,7 +102,7 @@ final class RosterTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
         $this->assertStringContainsString('<small data-player>(Alice)</small>', $rendered);
         $this->assertStringNotContainsString('<svg', $rendered);
@@ -119,7 +119,7 @@ final class RosterTest extends WebTestCase
         $player->cities = 5;                         // 11 victory points in total
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
         $cells = new Crawler($rendered)->filter('tbody tr td');
 
@@ -144,7 +144,7 @@ final class RosterTest extends WebTestCase
         $carl->census = 20;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
         $this->assertLessThan(strpos($rendered, 'Alice'), strpos($rendered, 'Bob'), 'Higher census (Bob) plays before lower census (Alice).');
         $this->assertLessThan(strpos($rendered, 'Carl'), strpos($rendered, 'Alice'), 'Military owner (Carl) plays last whatever their census.');
@@ -157,7 +157,7 @@ final class RosterTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withAdvances(['military'])->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
 
         $this->assertSame('1. sabaean (Bob)', preg_replace('/\s+/u', ' ', trim($rows->eq(0)->filter('th[data-empire]')->text())));
@@ -181,7 +181,7 @@ final class RosterTest extends WebTestCase
         $carl->census = 20;
         $this->entityManager->flush();
 
-        $crawler = new Crawler($this->createLiveComponent('Roster', ['game' => $game])->render()->toString());
+        $crawler = new Crawler($this->renderTwigComponent('Roster', ['game' => $game])->toString());
 
         $this->assertStringContainsString('Census order', $crawler->filter('caption')->text());
         $this->assertSame(
@@ -202,21 +202,19 @@ final class RosterTest extends WebTestCase
         $game->currentTurn = 7;
         $this->entityManager->flush();
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
         $this->assertStringStartsWith('Turn 7', trim(new Crawler($rendered)->filter('caption')->text()));
     }
 
     #[Test]
-    public function theRosterListensOnItsOwnTopic(): void
+    public function theRosterOffersTheTargetItsPushReplaces(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->crawler();
+        $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->crawler();
 
-        $this->assertSame(
-            'empires/game/'.$game->id.'/roster',
-            $rendered->filter('[data-mercure-refresh-topic-value]')->attr('data-mercure-refresh-topic-value'),
-        );
+        $this->assertSame('roster', $rendered->filter('table')->attr('data-region'));
+        $this->assertCount(0, $rendered->filter('[data-controller]'), 'It drives no controller: it is replaced, not refreshed.');
     }
 }

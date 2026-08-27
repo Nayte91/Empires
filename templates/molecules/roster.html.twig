@@ -1,7 +1,4 @@
-<table
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: roster_topic(game)})) }}
-    class="roster"
->
+<table {{ attributes.defaults({'data-region': 'roster'}) }} class="roster">
     <caption id="roster">Turn {{ game.currentTurn }} — Census order</caption>
     <thead>
         <tr>
