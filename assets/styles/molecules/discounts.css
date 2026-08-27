@@ -10,7 +10,7 @@
     }
 
     th {
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         text-transform: uppercase;
     }
 

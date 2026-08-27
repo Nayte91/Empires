@@ -18,8 +18,8 @@
         gap: 0.3125rem;
         min-block-size: 3.75rem;
         color: #8a8a8a;
-        font-size: 0.625rem;
-        font-weight: 500;
+        font-size: var(--size-small);
+        font-weight: var(--weight-context);
         cursor: pointer;
 
         &:hover { background: rgb(255 255 255 / 0.06) }

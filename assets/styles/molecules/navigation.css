@@ -51,7 +51,7 @@
 
         b {
             overflow: hidden;
-            font-size: 0.875rem;
+            font-size: var(--size-body);
             text-overflow: ellipsis;
             white-space: nowrap;
         }
@@ -59,7 +59,7 @@
         small {
             margin-block-start: 0.125rem;
             color: darkgray;
-            font-size: 0.6875rem;
+            font-size: var(--size-small);
         }
     }
 

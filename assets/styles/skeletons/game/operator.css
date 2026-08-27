@@ -1,10 +1,11 @@
 .operator-console {
     container-type: inline-size;
     min-block-size: 100vh;
-    padding: 1rem;
+    padding-inline: 1rem;
     display: grid;
     place-content: start center;
     gap: 1rem;
+    --ground: white;
     background: white;
 
     .operator-console__turn-controls {
@@ -19,6 +20,6 @@
         display: inline-block;
         background: var(--operator-success-bg);
         color: var(--operator-success);
-        font-weight: bold;
+        font-weight: var(--weight-answer);
     }
 }

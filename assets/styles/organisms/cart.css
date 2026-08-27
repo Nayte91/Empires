@@ -22,25 +22,25 @@
     }
 
     .cost {
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         font-variant-numeric: tabular-nums;
     }
 
     .original {
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         text-decoration: line-through;
     }
 
     .badge {
         color: var(--operator-success);
-        font-size: 0.8125rem;
+        font-size: var(--size-small);
     }
 
     .remove {
         border: none;
         padding-inline: 0.25rem;
         background: none;
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         font-size: 1.25rem;
         line-height: 1;
 
@@ -50,13 +50,13 @@
         }
     }
 
-    .empty { color: var(--operator-text-muted) }
+    .empty { color: var(--ink-muted) }
 
     .total {
         border-block-start: 1px solid var(--operator-border);
         margin: 0;
         padding-block-start: 0.5rem;
-        font-weight: bold;
+        font-weight: var(--weight-answer);
     }
 
     footer {
@@ -73,7 +73,7 @@
 
         &:disabled {
             background: var(--operator-border);
-            color: var(--operator-text-muted);
+            color: var(--ink-muted);
         }
     }
 }

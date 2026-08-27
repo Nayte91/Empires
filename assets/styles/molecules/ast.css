@@ -8,14 +8,14 @@
     border: var(--ast-rule);
     border-radius: var(--operator-radius);
     border-collapse: collapse;
-    font-size: 1rem;
+    font-size: var(--size-body);
     text-align: center;
 
     caption {
         caption-side: top;
         margin-block-end: 0.75rem;
         color: darkgray;
-        font-size: 0.75rem;
+        font-size: var(--size-small);
         letter-spacing: 0.05em;
         text-transform: uppercase;
     }
@@ -43,7 +43,7 @@
         padding-inline: 0.25em;
         padding-block: 0.5em;
         color: darkgray;
-        font-size: 0.75rem;
+        font-size: var(--size-small);
         line-height: 1.25;
         letter-spacing: 0.02em;
         text-transform: uppercase;
@@ -93,7 +93,7 @@
        scrollbar), i.e. it disagrees with the page it lives on for 47px. */
     @media (width < 60rem) {
         --ast-cell-size: 1.5rem;
-        font-size: 0.75rem;
+        font-size: var(--size-small);
 
         thead, tfoot, [data-opening] { display: none }
         tr:has([data-opening][data-current-turn]) [data-anchor] { border-inline-start: var(--turn-edge) }

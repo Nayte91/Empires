@@ -4,12 +4,28 @@
     justify-content: space-between;
     align-items: start;
     gap: 1rem;
-    font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', P052, serif;
+    font-family: var(--font-title);
+    color: var(--ink-primary);
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 
     hgroup { flex: 1 }
     h1, p { margin: 0 auto }
-    p { font-weight: 600 }
+    h1 {
+        font-size: var(--size-title);
+        font-weight: var(--weight-answer);
+    }
+    p {
+        font-size: var(--size-small);
+        font-weight: var(--weight-answer);
+        color: var(--ink-muted);
+    }
+
+    &[data-title="celebration"] h1 {
+        font-family: var(--font-hero);
+        font-size: var(--size-hero);
+        font-weight: var(--weight-hero);
+        line-height: 1;
+    }
 }

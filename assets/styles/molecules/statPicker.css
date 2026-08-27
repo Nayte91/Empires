@@ -27,8 +27,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: inherit;
-            font-weight: 500;
+            font-weight: var(--weight-context);
             transition: border-color 0.15s, background-color 0.15s;
 
             &:hover { border-color: var(--stat-picker-accent) }
@@ -42,7 +41,7 @@
                 border-color: var(--stat-picker-accent);
                 background: hsl(from var(--stat-picker-accent) h s calc(l + 40%));
                 color: var(--stat-picker-accent);
-                font-weight: 600;
+                font-weight: var(--weight-answer);
             }
         }
     }

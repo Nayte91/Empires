@@ -22,6 +22,7 @@ main {
     border: 1px solid var(--operator-border);
     border-radius: var(--operator-radius);
     padding: 1rem;
+    --ground: white;
     background: white;
     text-decoration: none;
     color: inherit;
@@ -39,19 +40,19 @@ main {
     & .game-tile__title {
         display: block;
         margin: 0 0 0.35rem;
-        font-size: 1.0625rem;
-        font-weight: bold;
+        font-size: var(--size-body);
+        font-weight: var(--weight-answer);
     }
 
     & .game-tile__turn {
         display: block;
-        color: var(--operator-text-muted);
-        font-size: 0.875rem;
+        color: var(--ink-muted);
+        font-size: var(--size-small);
     }
 
     & .game-tile__players {
         display: block;
-        color: var(--operator-text-muted);
-        font-size: 0.875rem;
+        color: var(--ink-muted);
+        font-size: var(--size-small);
     }
 }
