@@ -12,12 +12,7 @@ export default class extends Controller {
         }
     }
 
-    /* A dialog stacking several [data-key] panels opens on the one the trigger names, the rest
-       staying a scroll away; a dialog with a single body ignores the param and opens as-is. */
-    open = ({ params: { key } = {} }) => {
-        this.dialogTarget.showModal();
-        this.dialogTarget.querySelector(`[data-key="${key}"]`)?.scrollIntoView({ block: 'center' });
-    };
+    open = () => this.dialogTarget.showModal();
 
     close = () => this.dialogTarget.close();
 }
