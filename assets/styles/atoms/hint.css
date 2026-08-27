@@ -1,0 +1,5 @@
+.hint {
+    font-size: var(--size-small);
+    font-weight: var(--weight-context);
+    color: var(--ink-muted);
+}

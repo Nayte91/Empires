@@ -1,19 +1,19 @@
 {% props game %}
 
 <main class="game-chronicle">
-    <twig:atoms:PageTitle :title="game.slug" />
+    <twig:atoms:PageTitle variant="celebration" :heading="game.slug" :qualifier="game.astVersion.value|capitalize ~ ' version — Turn ' ~ game.currentTurn ~ ' — Finished'" />
 
     <section id="panel-nav" aria-label="Navigation">
         <twig:Navigation :game="game" />
     </section>
 
     <section id="panel-ast" aria-label="Archaeological Succession Timeline">
-        <h2><a href="#ast">Archaeological Succession Timeline</a></h2>
+        <twig:atoms:SectionTitle><a href="#ast">Archaeological Succession Timeline</a></twig:atoms:SectionTitle>
         <twig:Ast :game="game" />
     </section>
 
     <section id="panel-evolution" aria-label="Evolution">
-        <h2><a href="#evolution">Evolution</a></h2>
+        <twig:atoms:SectionTitle><a href="#evolution">Evolution</a></twig:atoms:SectionTitle>
         <twig:Evolution :game="game" />
     </section>
 

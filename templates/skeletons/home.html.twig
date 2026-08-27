@@ -9,7 +9,7 @@
 
 {% block main %}
     <main>
-        <twig:atoms:PageTitle :title="'Games in progress'" />
+        <twig:atoms:PageTitle heading="Empires" qualifier="Games in progress" />
 
         <a class="button" href="{{ path('app_create') }}">Create a game</a>
 
@@ -17,7 +17,7 @@
         {% for game in games %}
             <li>{% include 'molecules/gameTile.html.twig' with {game} only %}</li>
         {% else %}
-            <p>No game in progress. <a href="{{ path('app_create') }}">Create a game</a></p>
+            <twig:atoms:Hint>No game in progress. <a href="{{ path('app_create') }}">Create a game</a></twig:atoms:Hint>
         {% endfor %}
         </ul>
     </main>

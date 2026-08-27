@@ -1,10 +1,15 @@
 #page-title {
-    margin-block: 1.5rem;
+    margin: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    gap: 1rem;
     font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', P052, serif;
     text-align: center;
     text-transform: uppercase;
     letter-spacing: 0.1em;
 
+    hgroup { flex: 1 }
     h1, p { margin: 0 auto }
     p { font-weight: 600 }
 }

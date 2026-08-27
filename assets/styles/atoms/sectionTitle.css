@@ -1,0 +1,12 @@
+.section-title {
+    margin-block: 2rem 0.75rem;
+    font-size: var(--size-body);
+    font-weight: var(--weight-answer);
+
+    &[data-spacing="tight"] { margin-block-start: 1rem }
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+}

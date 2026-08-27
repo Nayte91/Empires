@@ -27,8 +27,8 @@ final class PlayerHeadingTest extends WebTestCase
 
         $crawler = $this->render($player);
 
-        $this->assertSame('Alice', trim($crawler->filter('.heading h1')->text()));
-        $this->assertSame('Minoa', trim($crawler->filter('.heading hgroup p')->text()));
+        $this->assertSame('Alice', trim($crawler->filter('#page-title h1')->text()));
+        $this->assertSame('Minoa · Turn 1', trim($crawler->filter('#page-title hgroup p')->text()));
     }
 
     #[Test]
@@ -39,7 +39,7 @@ final class PlayerHeadingTest extends WebTestCase
         $crawler = $this->render($player);
 
         $dialogId = 'rename-player-'.$player->id;
-        $this->assertCount(1, $crawler->filter('button[command="show-modal"][commandfor="'.$dialogId.'"]'));
+        $this->assertCount(1, $crawler->filter('#page-title button[command="show-modal"][commandfor="'.$dialogId.'"]'));
         $this->assertCount(1, $crawler->filter('dialog[id="'.$dialogId.'"]'));
     }
 

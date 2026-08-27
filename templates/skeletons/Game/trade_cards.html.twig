@@ -4,11 +4,11 @@
 
 {% block stylesheets %}
     {{ parent() }}
-    <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/tradeCards.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block main %}
-    <twig:atoms:PageTitle title="Trade card distribution" />
+    <twig:atoms:PageTitle :heading="game.slug" :qualifier="'Turn ' ~ game.currentTurn" />
+    <twig:atoms:SectionTitle>Trade card distribution</twig:atoms:SectionTitle>
     {% include 'molecules/TradeCards.html.twig' with {distribution} only %}
 {% endblock %}

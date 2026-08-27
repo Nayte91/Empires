@@ -1,7 +1,5 @@
-{% set title = 'Create a new game' %}
-
 <main {{ attributes }} class="game-creator">
-    <twig:atoms:PageTitle :title="title" />
+    <twig:atoms:PageTitle heading="Create a game" />
 
     {% if error %}
         <p class="game-creator__error" data-error role="alert">{{ error }}</p>
@@ -41,7 +39,7 @@
     </fieldset>
 
     <section class="game-creator__players">
-        <h2>Players</h2>
+        <twig:atoms:SectionTitle>Players</twig:atoms:SectionTitle>
 
         <div class="game-creator__add-player">
             {% set isNewPlayerNameDisabled = computed.isPlayerLimitReached %}

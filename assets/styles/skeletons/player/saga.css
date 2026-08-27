@@ -3,14 +3,7 @@
     max-inline-size: 75rem;
     margin-inline: auto;
     gap: var(--operator-gap);
-    padding: clamp(1rem, 4vw, 1.5rem);
-
-    .heading {
-        display: flex;
-        align-items: start;
-        justify-content: space-between;
-        gap: 1rem;
-    }
+    padding-inline: 1rem;
 
     .panels {
         display: grid;
