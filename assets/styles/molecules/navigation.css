@@ -63,21 +63,11 @@
         }
     }
 
-    dialog > div {
-        block-size: 70vh;
-        overflow-y: auto;
-        overscroll-behavior: contain;
-        scroll-snap-type: y mandatory;
-    }
-
     figure {
         display: grid;
-        align-content: center;
         justify-items: center;
         gap: 1rem;
-        min-block-size: 100%;
         margin: 0;
-        scroll-snap-align: center;
 
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }

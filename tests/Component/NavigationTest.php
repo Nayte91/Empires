@@ -72,40 +72,45 @@ final class NavigationTest extends WebTestCase
         $this->assertStringContainsString('minoan', $rows->eq(1)->text());
     }
 
-    /** The point of the component: nineteen targets, nineteen QR codes, one single dialog. */
     #[Test]
-    public function everyTargetGetsItsOwnQrPanelInsideOneSharedDialog(): void
+    public function eachTargetGetsADialogOfItsOwnHoldingOneCode(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->render($game);
-        $panels = $crawler->filter('dialog figure[data-key]');
+        $dialogs = $crawler->filter('dialog');
 
-        $this->assertCount(1, $crawler->filter('dialog'));
-        $this->assertCount(3, $panels);
-        $this->assertSame(['operator', 'alice', 'bob'], $panels->each(static fn (Crawler $panel): ?string => $panel->attr('data-key')));
-        $this->assertCount(3, $panels->filter('svg'));
+        $this->assertCount(3, $dialogs);
+        $this->assertSame(
+            ['qr-operator', 'qr-alice', 'qr-bob'],
+            $dialogs->each(static fn (Crawler $dialog): ?string => $dialog->attr('id')),
+        );
+
+        foreach ($dialogs as $dialog) {
+            $this->assertCount(1, new Crawler($dialog)->filter('img[loading="lazy"]'), 'One code per dialog, and it waits to be asked for.');
+        }
     }
 
-    /** The panels are stacked and scrolled through, so each trigger must name the one it jumps to. */
     #[Test]
-    public function eachTriggerNamesThePanelItScrollsTo(): void
+    public function eachTriggerCommandsItsOwnDialogWithoutJavaScript(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
         $crawler = $this->render($game);
+        $triggers = $crawler->filter('li button[commandfor]');
 
         $this->assertSame(
-            ['operator', 'alice'],
-            $crawler->filter('li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-modal-key-param')),
+            ['qr-operator', 'qr-alice'],
+            $triggers->each(static fn (Crawler $button): ?string => $button->attr('commandfor')),
         );
         $this->assertSame(
-            ['modal#open', 'modal#open'],
-            $crawler->filter('li button[data-modal-key-param]')->each(static fn (Crawler $button): ?string => $button->attr('data-action')),
+            ['show-modal', 'show-modal'],
+            $triggers->each(static fn (Crawler $button): ?string => $button->attr('command')),
         );
+        $this->assertCount(0, $crawler->filter('[data-controller]'), 'The panel drives no Stimulus controller any more.');
     }
 
     /** A panel states whose view it opens, and nothing else: the URL is the QR code's job. */
@@ -117,7 +122,7 @@ final class NavigationTest extends WebTestCase
         $panel = $this->render($game)->filter('dialog figure[data-key="operator"]');
 
         $this->assertSame('Operator', $panel->filter('h2')->text());
-        $this->assertCount(1, $panel->filter('svg'));
+        $this->assertCount(1, $panel->filter('img[loading="lazy"]'));
         $this->assertCount(0, $panel->filter('a'));
     }
 

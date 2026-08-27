@@ -38,7 +38,11 @@ final class GameDashboardTest extends WebTestCase
 
         $this->assertLessThan(strpos($html, '<table'), strpos($html, '<nav'), 'Navigation comes before the roster.');
         $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<nav'), 'Navigation comes after the title.');
-        $this->assertSame(1, substr_count($html, '<dialog'), 'The dashboard carries exactly one dialog, Navigation’s.');
+        $this->assertSame(
+            2,
+            substr_count($html, '<dialog'),
+            'The only dialogs the dashboard carries are Navigation’s, one QR code per target — here the operator console and Alice.',
+        );
         $this->assertStringContainsString('/'.$game->slug.'/operator', $html);
     }
 

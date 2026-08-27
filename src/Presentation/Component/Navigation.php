@@ -6,21 +6,23 @@ namespace App\Presentation\Component;
 
 use App\State\Game;
 use App\State\Player;
-use Endroid\QrCode\Builder\Builder;
-use Endroid\QrCode\Writer\SvgWriter;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
  * The way in to every view of a game — the operator console, then one board per player.
- * Each target carries its own QR code so a phone reaches the view without typing the URL.
+ * Each target names its own QR code so a phone reaches the view without typing the URL.
+ *
+ * The codes are addresses, not markup: inlining nineteen 320px SVGs made them 60% of the
+ * dashboard's weight, for a panel that starts closed and shows one code at a time. The template
+ * asks for them with `loading="lazy"`, so the browser fetches none of them until the panel opens.
  */
 #[AsTwigComponent(template: 'molecules/navigation.html.twig')]
 final class Navigation
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
-    /** @var null|list<array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}> */
+    /** @var null|list<array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}> */
     private ?array $targetsCache = null;
 
     public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}
@@ -29,7 +31,7 @@ final class Navigation
      * Seat order, not play order: a player looks for their own name, and a list that reshuffles
      * every turn is a list you have to read twice.
      *
-     * @return list<array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}>
+     * @return list<array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}>
      */
     public function getTargets(): array
     {
@@ -50,7 +52,7 @@ final class Navigation
      * Dropped once the game is finished: the console still answers, but every one of its controls
      * refuses a finished game, so offering the way in would only promise something.
      *
-     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}
+     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}
      */
     private function operatorTarget(): array
     {
@@ -66,7 +68,7 @@ final class Navigation
             'caption' => 'console',
             'empire' => null,
             'url' => $url,
-            'qr' => $this->buildQr($url),
+            'qrUrl' => $this->qrUrl('operator'),
         ];
     }
 
@@ -75,7 +77,7 @@ final class Navigation
      * slug through the `empire_adjective` filter. Only a target that has no empire — the operator
      * console — carries a caption of its own.
      *
-     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qr: string}
+     * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}
      */
     private function playerTarget(Player $player): array
     {
@@ -91,17 +93,12 @@ final class Navigation
             'caption' => null,
             'empire' => $player->empire,
             'url' => $url,
-            'qr' => $this->buildQr($url),
+            'qrUrl' => $this->qrUrl($player->slug),
         ];
     }
 
-    private function buildQr(string $url): string
+    private function qrUrl(string $key): string
     {
-        return new Builder(
-            writer: new SvgWriter(),
-            data: $url,
-            size: 320,
-            margin: 0,
-        )->build()->getString();
+        return $this->urlGenerator->generate('app_game_qr', ['slug' => $this->game->slug, 'key' => $key]);
     }
 }
