@@ -57,14 +57,9 @@ final readonly class GameMercurePublisher
     //   spelled out at every call site while the topic stays public and guards nothing.
     private function publish(Uuid $gameId, string $mercureEvent): void
     {
-        try {
-            $this->hub->publish(new Update(
-                'empires/game/'.$gameId,
-                sprintf('{"event":"%s"}', $mercureEvent),
-            ));
-        } catch (\Throwable $e) {
-            // The mutation already committed: an unreachable hub costs the ping, never a 500.
-            $this->logger->error('Mercure publication failed', ['exception' => $e, 'gameId' => (string) $gameId, 'event' => $mercureEvent]);
-        }
+        $this->hub->publish(new Update(
+            'empires/game/'.$gameId,
+            sprintf('{"event":"%s"}', $mercureEvent),
+        ));
     }
 }

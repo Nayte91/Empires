@@ -17,7 +17,6 @@ use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\Mercure\RecordingHub;
-use App\Tests\Support\Mercure\ThrowingHub;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -111,25 +110,6 @@ final class GameMercurePublisherTest extends WebTestCase
         $this->bus->dispatch($command);
 
         $this->assertSame([], $this->hub()->updates());
-    }
-
-    /**
-     * An unreachable hub must cost a stale screen, never a 500 on a move that did happen.
-     *
-     * Substitutes the concrete RecordingHub, not HubInterface: the when@test alias resolves at
-     * compile time, so replacing the interface id would silently do nothing.
-     */
-    #[Test]
-    public function anUnreachableHubCostsThePingButNotTheMutation(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $unreachableHub = new ThrowingHub();
-        self::getContainer()->set(RecordingHub::class, $unreachableHub);
-
-        $this->bus->dispatch(new NextTurn($game->id));
-
-        $this->assertSame(2, $game->currentTurn);
-        $this->assertSame(1, $unreachableHub->attempts);
     }
 
     /**
