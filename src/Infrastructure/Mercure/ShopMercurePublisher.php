@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Mercure;
 
 use App\Infrastructure\Repository\PlayerRepository;
+use App\State\Player;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -45,35 +46,56 @@ final readonly class ShopMercurePublisher
     public function __construct(
         private HubInterface $hub,
         private PlayerRepository $playerRepository,
+        private GameTopics $topics,
     ) {}
 
+    /** A submitted order changes what the console owes the operator, and nothing else. */
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrderSubmitted(OrderSubmitted $event): void
     {
-        $this->publish($event->buyerId, 'order-updated');
+        $player = $this->player($event->buyerId);
+
+        $this->publish([
+            $this->topics->operator($player->game->id),
+            $this->topics->shop($player->game->id, $player->id),
+        ]);
     }
 
+    /** A purchase moves the player's own state, so the shared boards move with it. */
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrderValidated(OrderValidated $event): void
     {
-        $this->publish($event->buyerId, 'order-updated');
-        $this->publish($event->buyerId, 'player-updated');
+        $this->publishPurchase($event->buyerId);
     }
 
     #[AsMessageHandler(bus: 'shop.event.bus')]
     public function onOrdersErased(OrdersErased $event): void
     {
-        $this->publish($event->buyerId, 'player-updated');
-        $this->publish($event->buyerId, 'order-updated');
+        $this->publishPurchase($event->buyerId);
     }
 
-    private function publish(Uuid $playerId, string $mercureEvent): void
+    private function publishPurchase(Uuid $playerId): void
     {
-        $player = $this->playerRepository->find($playerId) ?? throw new \RuntimeException('Player not found.');
+        $player = $this->player($playerId);
+        $gameId = $player->game->id;
 
-        $this->hub->publish(new Update(
-            'empires/game/'.$player->game->id,
-            sprintf('{"event":"%s"}', $mercureEvent),
-        ));
+        $this->publish([
+            ...$this->topics->shared($gameId),
+            $this->topics->board($gameId, $player->id),
+            $this->topics->shop($gameId, $player->id),
+        ]);
+    }
+
+    /** @param list<string> $topics */
+    private function publish(array $topics): void
+    {
+        foreach ($topics as $topic) {
+            $this->hub->publish(new Update($topic, GameMercurePublisher::SIGNAL));
+        }
+    }
+
+    private function player(Uuid $playerId): Player
+    {
+        return $this->playerRepository->find($playerId) ?? throw new \RuntimeException('Player not found.');
     }
 }

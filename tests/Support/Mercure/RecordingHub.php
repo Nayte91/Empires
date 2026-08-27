@@ -9,10 +9,12 @@ use Symfony\Component\Mercure\Jwt\TokenFactoryInterface;
 use Symfony\Component\Mercure\Update;
 
 /**
- * Test double for the Mercure hub: no network I/O, no JWT signing, but every
- * Update is kept so a test can assert the exact sequence a code path publishes.
- * Registered in place of the real hub for the test environment (see
- * config/services.yaml, when@test).
+ * Test double for the Mercure hub: no network I/O, no JWT signing, but every Update is kept so a
+ * test can assert the exact sequence a code path publishes.
+ * Registered in place of the real hub for the test environment (see config/services.yaml, when@test).
+ *
+ * The topic is the contract now — it names the screen region a signal wakes — so `regions()` is
+ * what a test asserts on, not the payload, which carries nothing.
  */
 final class RecordingHub implements HubInterface
 {
@@ -43,23 +45,20 @@ final class RecordingHub implements HubInterface
     }
 
     /**
-     * Event names in publication order, decoded from the `{"event":"…"}` payloads.
+     * The regions woken, in publication order: what `empires/game/{id}/` is followed by, so a test
+     * reads `roster` or `player/{uuid}/shop` instead of restating the whole topic.
      *
      * @return list<string>
      */
-    public function eventNames(): array
+    public function regions(): array
     {
         return array_map(
-            static fn (Update $update): string => json_decode($update->getData(), true, 512, \JSON_THROW_ON_ERROR)['event'],
+            static fn (Update $update): string => explode('/', $update->getTopics()[0], 4)[3] ?? '',
             $this->updates,
         );
     }
 
-    /**
-     * One topic per recorded Update — the Shop paths always publish to a single topic.
-     *
-     * @return list<string>
-     */
+    /** @return list<string> */
     public function topics(): array
     {
         return array_map(static fn (Update $update): string => $update->getTopics()[0], $this->updates);

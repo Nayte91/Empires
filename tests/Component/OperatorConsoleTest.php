@@ -22,13 +22,16 @@ final class OperatorConsoleTest extends WebTestCase
     use InteractsWithLiveComponents;
 
     #[Test]
-    public function mercureRefreshHasNoEventFilterSoItReceivesEveryEvent(): void
+    public function theConsoleListensOnItsOwnTopic(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render()->crawler();
 
-        $this->assertStringNotContainsString('data-mercure-refresh-events-value', $rendered);
+        $this->assertSame(
+            'empires/game/'.$game->id.'/operator',
+            $rendered->filter('[data-mercure-refresh-topic-value]')->attr('data-mercure-refresh-topic-value'),
+        );
     }
 
     #[Test]

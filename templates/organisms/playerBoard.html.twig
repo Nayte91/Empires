@@ -1,5 +1,5 @@
 <main
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ player.game.id, events: ['player-updated']})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: board_topic(player)})) }}
     class="player-board"
 >
     <twig:molecules:PlayerHeading :player="player" />

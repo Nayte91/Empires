@@ -162,15 +162,16 @@ final class DirectSaleTest extends WebTestCase
     }
 
     #[Test]
-    public function sellingDirectPublishesOrderUpdatedThenPlayerUpdatedOnTheGameTopic(): void
+    public function sellingDirectWakesEveryRegionThePurchaseMoved(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
-        $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
-        $topic = 'empires/game/'.$player->game->id;
-        $this->assertSame([$topic, $topic], $this->hub->topics());
+        $this->assertSame(
+            ['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'],
+            $this->hub->regions(),
+        );
     }
 
     /**

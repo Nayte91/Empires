@@ -2,7 +2,7 @@
 {% set subtitle = 'Turn ' ~ game.currentTurn ~ (game.finished ? ' — finished' : '') %}
 
 <main
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}
     class="operator-console"
 >
     <twig:atoms:PageTitle :title="title" :subtitle="subtitle" />

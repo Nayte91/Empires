@@ -53,15 +53,15 @@ final class RenamePlayerHandlerTest extends WebTestCase
     }
 
     #[Test]
-    public function aRenameAnnouncesThePlayerAsUpdatedOnTheGamesTopic(): void
+    public function aRenameWakesTheSharedBoardsAndThatPlayersOwnBoard(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         ($this->handler)(new RenamePlayer($player->id, 'Bob the Builder'));
 
-        $this->assertSame(['player-updated'], $this->hub->eventNames());
-        $this->assertSame(['empires/game/'.$game->id], $this->hub->topics());
+        $this->assertSame(['roster', 'ast', 'operator', 'player/'.$player->id], $this->hub->regions());
+        $this->assertSame('empires/game/'.$game->id.'/roster', $this->hub->topics()[0]);
     }
 
     /**
@@ -77,7 +77,7 @@ final class RenamePlayerHandlerTest extends WebTestCase
 
         ($this->handler)(new RenamePlayer($player->id, 'Bob'));
 
-        $this->assertSame([], $this->hub->eventNames());
+        $this->assertSame([], $this->hub->regions());
         $this->assertSame('Bob', $player->name);
         $this->assertSame('bob', $player->slug);
     }
