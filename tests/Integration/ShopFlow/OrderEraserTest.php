@@ -251,16 +251,17 @@ final class OrderEraserTest extends WebTestCase
     }
 
     #[Test]
-    public function erasingOrdersPublishesPlayerUpdatedThenOrderUpdatedOnTheGameTopic(): void
+    public function erasingOrdersWakesEveryRegionTheRefundMoved(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->createPendingOrder($player, 1, ['pottery']);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
-        $this->assertSame(['player-updated', 'order-updated'], $this->hub->eventNames());
-        $topic = 'empires/game/'.$player->game->id;
-        $this->assertSame([$topic, $topic], $this->hub->topics());
+        $this->assertSame(
+            ['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'],
+            $this->hub->regions(),
+        );
     }
 
     #[Test]
@@ -268,12 +269,12 @@ final class OrderEraserTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
-        $publishedBySale = $this->hub->eventNames();
+        $wokenBySale = $this->hub->regions();
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
 
-        $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
-        $this->assertSame($publishedBySale, $this->hub->eventNames());
+        $this->assertSame(['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'], $wokenBySale);
+        $this->assertSame($wokenBySale, $this->hub->regions());
     }
 
     #[Test]
@@ -281,12 +282,12 @@ final class OrderEraserTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
-        $publishedBySale = $this->hub->eventNames();
+        $wokenBySale = $this->hub->regions();
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [2, 3]));
 
-        $this->assertSame(['order-updated', 'player-updated'], $publishedBySale);
-        $this->assertSame($publishedBySale, $this->hub->eventNames());
+        $this->assertSame(['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'], $wokenBySale);
+        $this->assertSame($wokenBySale, $this->hub->regions());
     }
 
     /** @param list<string> $slugs */

@@ -208,15 +208,15 @@ final class RosterTest extends WebTestCase
     }
 
     #[Test]
-    public function mercureRefreshFiltersOutOrderUpdatedButKeepsGameStateEvents(): void
+    public function theRosterListensOnItsOwnTopic(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->toString();
+        $rendered = $this->createLiveComponent('Roster', ['game' => $game])->render()->crawler();
 
-        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        $this->assertStringContainsString('player-updated', $rendered);
-        $this->assertStringContainsString('game-updated', $rendered);
-        $this->assertStringNotContainsString('order-updated', $rendered);
+        $this->assertSame(
+            'empires/game/'.$game->id.'/roster',
+            $rendered->filter('[data-mercure-refresh-topic-value]')->attr('data-mercure-refresh-topic-value'),
+        );
     }
 }

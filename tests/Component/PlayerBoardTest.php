@@ -148,15 +148,16 @@ final class PlayerBoardTest extends WebTestCase
     }
 
     #[Test]
-    public function mercureRefreshFiltersToPlayerUpdated(): void
+    public function theBoardListensOnItsOwnPlayersTopicAndNoOther(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();
+        $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->crawler();
 
-        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        $this->assertStringContainsString('player-updated', $rendered);
-        $this->assertStringNotContainsString('order-updated', $rendered);
+        $this->assertSame(
+            'empires/game/'.$player->game->id.'/player/'.$player->id,
+            $rendered->filter('[data-mercure-refresh-topic-value]')->attr('data-mercure-refresh-topic-value'),
+        );
     }
 
     #[Test]

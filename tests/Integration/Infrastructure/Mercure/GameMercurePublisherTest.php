@@ -48,10 +48,11 @@ final class GameMercurePublisherTest extends WebTestCase
      * weaker test for the wrong reason.
      *
      * @param \Closure(Player): object $command
+     * @param \Closure(Player): list<string> $expectedRegions
      */
     #[Test]
-    #[DataProvider('provideEveryGameMutationPublishesItsEventOnTheGamesTopicCases')]
-    public function everyGameMutationPublishesItsEventOnTheGamesTopic(\Closure $command, string $expectedEvent): void
+    #[DataProvider('provideEveryGameMutationWakesTheRegionsItTouchesCases')]
+    public function everyGameMutationWakesTheRegionsItTouches(\Closure $command, \Closure $expectedRegions): void
     {
         $game = GameBuilder::create()->withCurrentTurn(2)->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
@@ -60,35 +61,51 @@ final class GameMercurePublisherTest extends WebTestCase
 
         $this->bus->dispatch($command($player));
 
-        $this->assertSame([$expectedEvent], $this->hub()->eventNames());
-        $this->assertSame(['empires/game/'.$game->id], $this->hub()->topics());
+        $this->assertSame($expectedRegions($player), $this->hub()->regions());
     }
 
-    public static function provideEveryGameMutationPublishesItsEventOnTheGamesTopicCases(): iterable
+    public static function provideEveryGameMutationWakesTheRegionsItTouchesCases(): iterable
     {
-        yield 'advancing the turn' => [static fn (Player $player): object => new NextTurn($player->game->id), 'game-updated'];
+        $turnChange = static fn (Player $player): array => ['roster', 'ast', 'operator', 'player/'.$player->id.'/shop'];
+        $playerChange = static fn (Player $player): array => ['roster', 'ast', 'operator', 'player/'.$player->id];
 
-        yield 'rewinding the turn' => [static fn (Player $player): object => new PreviousTurn($player->game->id), 'game-updated'];
+        yield 'advancing the turn' => [static fn (Player $player): object => new NextTurn($player->game->id), $turnChange];
 
-        yield 'finishing the game' => [static fn (Player $player): object => new FinishGame($player->game->id), 'game-updated'];
+        yield 'rewinding the turn' => [static fn (Player $player): object => new PreviousTurn($player->game->id), $turnChange];
 
-        yield 'writing a stat' => [static fn (Player $player): object => new SetStat($player->id, Stat::Cities, 7), 'player-updated'];
+        yield 'finishing the game' => [static fn (Player $player): object => new FinishGame($player->game->id), $turnChange];
 
-        yield 'applying a stat action' => [static fn (Player $player): object => new ApplyStatAction($player->id, StatAction::BuildShip), 'player-updated'];
+        yield 'writing a stat' => [static fn (Player $player): object => new SetStat($player->id, Stat::Cities, 7), $playerChange];
+
+        yield 'applying a stat action' => [static fn (Player $player): object => new ApplyStatAction($player->id, StatAction::BuildShip), $playerChange];
     }
 
     /**
-     * The Stimulus controller parses the payload by hand, so its exact shape is the contract —
-     * asserted as a literal, since eventNames() would only prove the JSON decodes.
+     * A board only wakes for its own player: the whole point of splitting the game topic, and the
+     * thing a single shared topic could not express.
      */
     #[Test]
-    public function theUpdateCarriesTheBareEventNameEnvelopeTheStimulusControllerParses(): void
+    public function aStatWriteLeavesEveryOtherPlayersBoardAsleep(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+
+        $this->bus->dispatch(new SetStat($bob->id, Stat::Cities, 7));
+
+        $this->assertContains('player/'.$bob->id, $this->hub()->regions());
+        $this->assertNotContains('player/'.$alice->id, $this->hub()->regions());
+    }
+
+    /** The topic says which screen; the payload is deliberately empty of meaning. */
+    #[Test]
+    public function theSignalCarriesNothingBeyondItsTopic(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
 
         $this->bus->dispatch(new NextTurn($game->id));
 
-        $this->assertSame('{"event":"game-updated"}', $this->hub()->updates()[0]->getData());
+        $this->assertSame('{}', $this->hub()->updates()[0]->getData());
     }
 
     /**

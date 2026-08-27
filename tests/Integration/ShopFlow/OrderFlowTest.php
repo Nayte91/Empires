@@ -197,18 +197,17 @@ final class OrderFlowTest extends WebTestCase
     }
 
     #[Test]
-    public function submittingAnOrderPublishesOrderUpdatedOnTheGameTopic(): void
+    public function submittingAnOrderWakesTheConsoleAndTheBuyersShop(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
 
-        $this->assertSame(['order-updated'], $this->hub->eventNames());
-        $this->assertSame(['empires/game/'.$player->game->id], $this->hub->topics());
+        $this->assertSame(['operator', 'player/'.$player->id.'/shop'], $this->hub->regions());
     }
 
     #[Test]
-    public function validatingAnOrderPublishesOrderUpdatedThenPlayerUpdated(): void
+    public function validatingAnOrderWakesEveryRegionThePurchaseMoved(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), $player->game->currentTurn));
@@ -216,9 +215,10 @@ final class OrderFlowTest extends WebTestCase
 
         $this->orderValidator->validate($order);
 
-        $this->assertSame(['order-updated', 'player-updated'], $this->hub->eventNames());
-        $topic = 'empires/game/'.$player->game->id;
-        $this->assertSame([$topic, $topic], $this->hub->topics());
+        $this->assertSame(
+            ['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'],
+            $this->hub->regions(),
+        );
     }
 
     /**

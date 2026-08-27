@@ -386,15 +386,16 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function mercureRefreshFiltersToGameUpdatedAndOrderUpdated(): void
+    public function theShopListensOnItsOwnTopic(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
 
-        $this->assertStringContainsString('data-mercure-refresh-events-value', $rendered);
-        $this->assertStringContainsString('game-updated', $rendered);
-        $this->assertStringContainsString('order-updated', $rendered);
+        $this->assertSame(
+            'empires/game/'.$player->game->id.'/player/'.$player->id.'/shop',
+            $rendered->filter('[data-mercure-refresh-topic-value]')->attr('data-mercure-refresh-topic-value'),
+        );
     }
 
     #[Test]

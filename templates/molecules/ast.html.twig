@@ -1,6 +1,6 @@
 {% set openingSpan = this.openingSpan %}
 <table
-    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: 'empires/game/' ~ game.id, events: ['player-updated', 'game-updated']})) }}
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: ast_topic(game)})) }}
     class="ast"
 >
     <caption id="ast"{{ game.finished ? ' data-finished' }}>{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
