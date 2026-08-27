@@ -43,7 +43,7 @@
 
     .original {
         color: black;
-        font-size: 0.75rem;
+        font-size: var(--size-small);
         opacity: 0.6;
         font-variant-numeric: tabular-nums;
     }

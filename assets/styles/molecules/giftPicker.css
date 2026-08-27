@@ -3,13 +3,13 @@
     margin: 0;
     border-inline-start: 2px solid var(--operator-accent);
     padding-inline-start: 0.75rem;
-    font-size: 0.8125rem;
+    font-size: var(--size-small);
 
     &.chosen { color: var(--operator-success) }
 
     .intro {
         margin: 0 0 0.5rem;
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
     }
 
     .candidates {
@@ -21,15 +21,15 @@
         list-style: none;
     }
 
-    .candidate { font-size: 0.75rem }
+    .candidate { font-size: var(--size-small) }
 
     .cost {
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         text-decoration: line-through;
     }
 
     .revoke {
         margin-inline-start: 0.5rem;
-        font-size: 0.75rem;
+        font-size: var(--size-small);
     }
 }

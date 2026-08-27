@@ -4,7 +4,8 @@
     flex-direction: column;
     block-size: 100dvh;
     overflow: hidden;
-    background: #111;
+    --ground: #111;
+    background: var(--ground);
     color: white;
 
     section {

@@ -4,6 +4,7 @@
     display: grid;
     gap: 0.5rem;
     padding: 0.75rem;
+    --ground: white;
     background: white;
 
     &[data-status="pending"] {
@@ -21,9 +22,8 @@
         background: var(--operator-error-bg);
     }
 
-    h4 { margin: 0 }
     p { margin: 0 }
-    &[data-status="empty"] > p:first-of-type { color: var(--operator-text-muted) }
+    &[data-status="empty"] > p:first-of-type { color: var(--ink-muted) }
 
     > div:first-of-type {
         border-block-start: 1px solid var(--operator-border);
@@ -32,6 +32,6 @@
         align-items: baseline;
         padding-block-start: 0.5rem;
 
-        small { color: var(--operator-text-muted) }
+        small { color: var(--ink-muted) }
     }
 }

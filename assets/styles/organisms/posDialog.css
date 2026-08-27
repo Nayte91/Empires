@@ -5,12 +5,7 @@
         overflow-y: auto;
     }
 
-    h2 {
-        font-family: revert;
-        font-weight: revert;
-        text-transform: revert;
-        letter-spacing: revert;
-    }
+    h2 { font-weight: var(--weight-answer) }
 
     [role="status"] {
         margin: 0;

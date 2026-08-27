@@ -13,7 +13,7 @@
         background: var(--player-color, dimgray);
         list-style: none;
         text-align: center;
-        font-weight: 600;
+        font-weight: var(--weight-answer);
         /* The fill is an empire colour, so the label picks its own polarity from that fill's
            lightness: white above the 0.85 OKLCH threshold, black below. Measured against the
            palette, 0.85 sits in the empty band between Iberia (0.8975) and Minoa (0.7964), so
@@ -29,7 +29,6 @@
 
     &:open > summary { box-shadow: var(--tab-shadow) }
 
-    > h3 { margin-block: 0 }
 }
 
 .tab:not(:open)::details-content { display: none }

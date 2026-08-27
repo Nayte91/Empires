@@ -4,31 +4,15 @@
     margin-inline: auto;
     gap: var(--operator-gap);
     padding: clamp(1rem, 4vw, 1.5rem);
-    font-size: 0.9375rem;
 
-    h1 {
-        margin: 0;
-        font-size: clamp(1.25rem, 1vw + 1rem, 1.5rem);
-    }
+    h3 { margin-block-end: 0.5rem }
 
-    h2 {
-        margin-block: 0 0.75rem;
-        font-size: 1.125rem;
-    }
-
-    h3 { margin-block: 0 0.5rem }
-
-    /* Excludes the catalogue tiles: they are buttons too, and this generic rule outweighs
-       .product-tile, flattening their category stripes to plain white.
-       :where() rather than :not() alone — :not() would add its argument's specificity, taking this
-       rule from (0,1,1) to (0,2,1), enough to start beating .cart .submit and paint the checkout
-       button white on white. :where() contributes zero, so the cascade is otherwise untouched. */
     button:not(:where(.product-tile)) {
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
         padding: 0.5em 0.9em;
         background: white;
-        font-size: 0.875rem;
+        font-size: var(--size-body);
         cursor: pointer;
         transition: background-color 0.15s;
 
@@ -96,7 +80,7 @@
 
     .shop__order-status {
         margin: 0;
-        font-weight: bold;
+        font-weight: var(--weight-answer);
     }
 
     .shop__order-lines {
@@ -106,7 +90,7 @@
         padding: 0;
         list-style: none;
 
-        & li {
+        li {
             display: flex;
             justify-content: space-between;
             gap: 1rem;
@@ -115,7 +99,7 @@
 
     .shop__order-total {
         margin: 0;
-        color: var(--operator-text-muted);
+        color: var(--ink-muted);
         font-style: italic;
     }
 }

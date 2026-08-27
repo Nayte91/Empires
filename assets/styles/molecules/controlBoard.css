@@ -10,7 +10,7 @@
            inherit avoids adopting the page's unchosen serif. The project declares no interface
            font at all, which is the actual root of this; see #31. */
         font-family: Arial, sans-serif;
-        font-size: 0.875rem;
+        font-size: var(--size-body);
         border: 1px solid var(--operator-accent);
         border-radius: var(--operator-radius);
         padding: 0.5em 1em;

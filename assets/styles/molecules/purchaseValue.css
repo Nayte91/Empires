@@ -15,7 +15,7 @@
     > .average {
         margin: 0;
 
-        &[data-empty] { color: var(--operator-text-muted) }
+        &[data-empty] { color: var(--ink-muted) }
     }
 }
 

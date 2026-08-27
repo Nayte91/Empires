@@ -7,9 +7,10 @@
     display: grid;
     gap: 1rem;
     color: #1a1a1a;
+    --ground: white;
     background: white;
 
-    h2 { margin: 0 }
+    h2 { font-weight: var(--weight-answer) }
 
     img {
         justify-self: center;
@@ -29,7 +30,7 @@
     label {
         display: grid;
         gap: 0.25rem;
-        font-size: 0.875rem;
+        font-size: var(--size-body);
     }
 
     input {
@@ -37,7 +38,7 @@
         padding-inline: 0.75em;
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
-        font-size: 1rem;
+        font-size: var(--size-body);
 
         &:focus-visible {
             outline: 2px solid var(--operator-accent);
