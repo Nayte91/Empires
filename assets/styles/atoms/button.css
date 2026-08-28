@@ -2,7 +2,14 @@ button, .button {
     --ground: white;
 
     inline-size: fit-content;
-    display: inline-block;
+    /* `grid-auto-flow: column` keeps a multi-part label ("Population 17") on one line, and
+       `place-content` — not `place-items` — is what centres an icon wider than the padded content
+       box: item alignment is clamped at the start edge, content distribution overflows evenly.
+       The gap replaces the inter-child HTML space, which the grid absorbs. */
+    display: inline-grid;
+    grid-auto-flow: column;
+    place-content: center;
+    gap: 0.25em;
     border: 1px solid var(--operator-border);
     border-radius: var(--operator-radius);
     padding: 0.5em 0.9em;

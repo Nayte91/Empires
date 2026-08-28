@@ -18,15 +18,12 @@
         /* What a grid tile needs on top of the button atom and the modal layer: both read as defaults
            but are overrides. `stretch` undoes modal.css's `justify-self: start`, without which the tile
            shrink-wraps its digit to 9px inside a 48px track and loses the touch target; `padding-block`
-           zeroes only the vertical half, since min-block-size and the flex centring own the height. */
+           zeroes only the vertical half, since min-block-size and the atom's centring own the height. */
         button {
             min-block-size: 3rem;
             inline-size: auto;
             justify-self: stretch;
             padding-block: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             font-weight: var(--weight-body);
             transition: border-color 0.15s, background-color 0.15s;
 
