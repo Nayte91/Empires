@@ -20,6 +20,7 @@
                         <span class="operator-console__finished-badge">Finished</span>
                     {% else %}
                         <button
+    class="button"
                             type="button"
                             {{ live_action('previousTurn') }}
                             {{ game.currentTurn == 1 ? 'disabled' }}
@@ -27,6 +28,7 @@
                             « Previous turn
                         </button>
                         <button
+    class="button"
                             type="button"
                             {{ live_action('nextTurn') }}
                             data-loading="addAttribute(disabled)"
@@ -34,6 +36,7 @@
                             Next turn »
                         </button>
                         <button
+    class="button"
                             type="button"
                             {{ live_action('finishGame') }}
                             data-loading="addAttribute(disabled)"

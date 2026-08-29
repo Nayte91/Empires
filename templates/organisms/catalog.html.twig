@@ -2,6 +2,11 @@
     <twig:atoms:Label>Catalog</twig:atoms:Label>
 
     {% for row in this.rows %}
-        {% include 'molecules/productTile.html.twig' with {row, locked: view.locked, remainingBudget: view.remainingBudget, action: 'add'} only %}
+        <twig:molecules:productTile
+            :row="row"
+            :locked="view.locked"
+            :remainingBudget="view.remainingBudget"
+            action="add"
+        />
     {% endfor %}
 </section>

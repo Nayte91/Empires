@@ -1,11 +1,12 @@
+{% props row, locked = false, remainingBudget = null, action = 'addToCart' %}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
 {% set isOverBudget = remainingBudget is not null and row.product.netCost > remainingBudget %}
-{% set isDisabled = locked|default(false) or isOverBudget %}
+{% set isDisabled = locked or isOverBudget %}
 <button
     type="button"
     id="product-{{ row.advance.key }}"
-    {{ live_action(action|default('addToCart'), {key: row.advance.key}) }}
+    {{ live_action(action, {key: row.advance.key}) }}
     {{ isDisabled ? 'disabled' }}
     {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
     class="product-tile"
