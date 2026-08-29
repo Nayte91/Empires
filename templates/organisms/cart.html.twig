@@ -18,7 +18,7 @@
                             type="button"
                             {{ live_action('remove', {key: row.advance.key}) }}
                             data-loading="addAttribute(disabled)"
-                            class="quiet"
+                            class="button quiet"
                         >
                             ×
                         </button>
@@ -57,7 +57,7 @@
                     {{ live_action('checkout') }}
                     {{ isDisabled ? 'disabled' }}
                     {% if not isDisabled %}data-loading="addAttribute(disabled)"{% endif %}
-                    class="submit"
+                    class="button submit"
                 >
                     {{ checkoutLabel }}
                 </button>
@@ -65,6 +65,7 @@
                 {% if clearable %}
                     {% set isClearDisabled = this.isEmpty %}
                     <button
+    class="button"
                         type="button"
                         {{ live_action('clear') }}
                         {{ isClearDisabled ? 'disabled' }}

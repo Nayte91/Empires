@@ -67,6 +67,7 @@
 
             {% set isAddPlayerDisabled = computed.isPlayerLimitReached %}
             <button
+    class="button"
                 type="button"
                 {{ live_action('addPlayer') }}
                 {{ isAddPlayerDisabled ? 'disabled' }}
@@ -104,7 +105,7 @@
                             {% if player.empire == '' %}
                                 <button
                                     type="button"
-                                    class="quiet"
+                                    class="button quiet"
                                     {{ live_action('assignRandomEmpire', {index: loop.index0}) }}
                                     data-loading="addAttribute(disabled)"
                                     aria-label="Assign a random empire"
@@ -122,7 +123,7 @@
                             {% endif %}
                             <button
                                 type="button"
-                                class="quiet"
+                                class="button quiet"
                                 {{ live_action('removePlayer', {index: loop.index0}) }}
                                 data-loading="addAttribute(disabled)"
                                 aria-label="Delete player"
@@ -146,7 +147,7 @@
         {% set isRandomAllDisabled = not this.canAssignRandomEmpires %}
         <button
             type="button"
-            class="game-creator__random-all"
+            class="button game-creator__random-all"
             {{ live_action('assignRandomEmpires') }}
             {{ isRandomAllDisabled ? 'disabled' }}
             {% if not isRandomAllDisabled %}data-loading="addAttribute(disabled)"{% endif %}
@@ -179,7 +180,7 @@
         {% set isLaunchDisabled = not this.canLaunch %}
         <button
             type="button"
-            class="game-creator__launch"
+            class="button game-creator__launch"
             {{ live_action('launch') }}
             {{ isLaunchDisabled ? 'disabled' }}
             {% if not isLaunchDisabled %}data-loading="addAttribute(disabled)"{% endif %}

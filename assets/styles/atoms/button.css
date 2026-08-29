@@ -1,4 +1,4 @@
-button, .button {
+.button {
     --ground: white;
     --button-accent: var(--operator-accent);
     --button-border: var(--operator-border);

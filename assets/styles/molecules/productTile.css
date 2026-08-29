@@ -1,17 +1,18 @@
 .product-tile {
     inline-size: 100%;
-    padding: 0.75rem 1rem;
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    border: 1px solid var(--operator-border);
+    border-radius: var(--operator-radius);
+    padding: 0.75rem 1rem;
     background: repeating-linear-gradient(-45deg, var(--category-color) 0 10px, var(--cat-2) 10px 20px);
-    transition: box-shadow 0.15s;
-
-    &:not(:disabled):hover { box-shadow: 0 2px 8px rgb(0 0 0 / 0.08) }
+    cursor: copy;
 
     &:disabled {
         filter: grayscale(70%);
         opacity: 0.6;
+        cursor: not-allowed;
     }
 
     img {

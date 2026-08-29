@@ -5,7 +5,8 @@
     <ul id="evolution-legend">
         {% for player in this.game.players %}
             <li>
-                <button type="button" data-action="evolution#toggle" data-evolution-index-param="{{ loop.index0 }}">
+                <button
+    class="button" type="button" data-action="evolution#toggle" data-evolution-index-param="{{ loop.index0 }}">
                     <twig:atoms:Marker empire="{{ player.empire }}" title="{{ player.name }}" />
                     {{ player.name }}
                 </button>
