@@ -4,7 +4,7 @@
     grid-template-columns: repeat(3, 1fr);
     margin: 0;
     padding: 0;
-    border-block-start: 1px solid rgb(255 255 255 / 0.18);
+    border-block-start: 1px solid var(--rule);
     background: var(--ground);
     list-style: none;
 
@@ -21,7 +21,7 @@
         font-size: var(--size-small);
         cursor: pointer;
 
-        &:hover { background: rgb(255 255 255 / 0.06) }
+        &:hover { background: var(--tint) }
 
         svg {
             inline-size: 1.25rem;

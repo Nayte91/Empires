@@ -22,7 +22,7 @@
         grid-template-columns: repeat(2, 1fr);
         gap: 0.25rem 0.75rem;
         padding: 0.625rem 0.75rem;
-        border-block-start: 1px solid rgb(255 255 255 / 0.12);
+        border-block-start: 1px solid var(--rule);
         border-inline-start: 0.1875rem solid var(--player-color, dimgray);
     }
 
@@ -105,7 +105,7 @@
             &::before { content: none }
         }
 
-        tbody tr:nth-child(even) { background: rgb(255 255 255 / 0.05) }
+        tbody tr:nth-child(even) { background: var(--tint) }
 
         small[data-player] { display: none }
     }
