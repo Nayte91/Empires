@@ -1,24 +1,18 @@
 .tab {
-    --tab-radius: 0.375rem;
-    --tab-border: 1px solid gainsboro;
+    --tab-border: 1px solid var(--operator-border);
     --tab-shadow: 0 2px 4px hsl(0 0% 0% / 0.2);
 
-    > summary {
+    summary {
         order: 1;
         flex: 1 0 auto;
         border: var(--tab-border);
         border-block-end: none;
-        border-radius: var(--tab-radius) var(--tab-radius) 0 0;
+        border-radius: var(--operator-radius) var(--operator-radius) 0 0;
         padding: 0.5em 1.25em;
         background: var(--player-color, dimgray);
         list-style: none;
         text-align: center;
         font-weight: var(--weight-answer);
-        /* The fill is an empire colour, so the label picks its own polarity from that fill's
-           lightness: white above the 0.85 OKLCH threshold, black below. Measured against the
-           palette, 0.85 sits in the empty band between Iberia (0.8975) and Minoa (0.7964), so
-           only the three near-white fills flip. `color: white` stays as the pre-relative-colour
-           fallback. */
         color: white;
         color: oklch(from var(--player-color, dimgray) clamp(0, (0.85 - l) * 100, 1) 0 0);
         cursor: pointer;
@@ -27,25 +21,19 @@
         &::-webkit-details-marker { display: none }
     }
 
-    &:open > summary { box-shadow: var(--tab-shadow) }
+    &:open summary { box-shadow: var(--tab-shadow) }
+    &:not(:open)::details-content { display: none }
 
-}
-
-.tab:not(:open)::details-content { display: none }
-
-.tab::details-content {
-    order: 2;
-    /* Not redundant with the global reset: `*` does not match ::details-content, and this box
-       carries a flex-basis of 100% plus 1.5rem of padding — content-box here overflows the row. */
-    box-sizing: border-box;
-    flex: 1 0 100%;
-    border: var(--tab-border);
-    border-radius: 0 var(--tab-radius) var(--tab-radius) var(--tab-radius);
-    box-shadow: var(--tab-shadow);
-    display: grid;
-    gap: 1rem;
-    padding: 1.5rem;
-    /* Tinted, not white: the panel's own children (`.panel`, `.order-card`) are white, so the tint
-       is what separates the panel from the page *and* lets those cards read as raised on it. */
-    background: var(--operator-bg-subtle);
+    &::details-content {
+        order: 2;
+        box-sizing: border-box;
+        flex: 1 0 100%;
+        border: var(--tab-border);
+        border-radius: 0 var(--operator-radius) var(--operator-radius) var(--operator-radius);
+        box-shadow: var(--tab-shadow);
+        display: grid;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: var(--operator-bg-subtle);
+    }
 }
