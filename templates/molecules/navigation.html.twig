@@ -7,16 +7,13 @@
                     <b>{{ target.label }}</b>
                     <small>{{ caption }}</small>
                 </a>
-                <button type="button" title="QR code — {{ target.label }}" commandfor="qr-{{ target.key }}" command="show-modal">
+                <button type="button" class="quiet" title="QR code — {{ target.label }}" commandfor="qr-{{ target.key }}" command="show-modal">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zM13 3h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zM13 13h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>
                 </button>
             </li>
         {% endfor %}
     </ul>
 
-    {# One dialog per target rather than one stack scrolled to the right panel. Two reasons, and the
-       second is the point: a reader who asks for one code sees that code alone, and the browser
-       fetches that image alone — a stack put every code one scroll away from being downloaded. #}
     {% for target in this.targets %}
         <dialog id="qr-{{ target.key }}" class="modal" closedby="any">
             <figure data-key="{{ target.key }}"{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
@@ -24,7 +21,7 @@
                 <img src="{{ target.qrUrl }}" width="320" height="320" loading="lazy" decoding="async" alt="QR code — {{ target.label }}">
             </figure>
             <form method="dialog">
-                <button type="submit" class="touch-button">Close</button>
+                <button type="submit">Close</button>
             </form>
         </dialog>
     {% endfor %}

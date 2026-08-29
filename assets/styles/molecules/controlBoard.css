@@ -4,18 +4,9 @@
     gap: 1rem;
 
     .shop-link {
-        font-size: var(--size-body);
-        border: 1px solid var(--operator-accent);
-        border-radius: var(--operator-radius);
-        padding: 0.5em 1em;
-        display: inline-grid;
-        place-content: center;
         --ground: var(--operator-accent);
-        background: var(--ground);
-        color: var(--ink-primary);
-        text-decoration: none;
-        transition: background-color 0.15s;
+        border-color: var(--operator-accent);
 
-        &:hover { background: hsl(from var(--operator-accent) h s calc(l - 10%)) }
+        &:hover { background: hsl(from var(--operator-accent) h s calc(l - 10)) }
     }
 }

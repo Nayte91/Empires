@@ -12,7 +12,7 @@
 
     li {
         display: grid;
-        grid-template-columns: 1fr 3rem;
+        grid-template-columns: 1fr auto;
         align-items: center;
         min-block-size: 3.5rem;
         padding: 0.5rem;
@@ -20,23 +20,6 @@
         border-inline-start: 0.2rem solid var(--player-color, white);
 
         &:not([data-empire]) { background: rgb(70 130 180 / 0.1) }
-
-        button {
-            inline-size: 3rem;
-            block-size: 3rem;
-            border: 1px solid rgb(255 255 255 / 0.24);
-            border-radius: 0.5rem;
-            background: none;
-            color: inherit;
-            cursor: pointer;
-
-            &:hover { background: rgb(255 255 255 / 0.12) }
-
-            svg {
-                inline-size: 1.5rem;
-                block-size: 1.5rem;
-            }
-        }
     }
 
     a {
@@ -86,18 +69,6 @@
                 box-shadow: 0 0 0 1px dimgray;
 
                 &:not([data-empire]) { background: none }
-
-                button {
-                    /* `stretch` degrades to `start` against a definite size — without this the
-                       button keeps its 3rem and sits at the top of a taller row. */
-                    block-size: auto;
-                    align-self: stretch;
-                    border: none;
-                    border-inline-start: 1px solid dimgray;
-                    border-radius: 0;
-
-                    &:hover { background: rgb(255 255 255 / 0.1) }
-                }
             }
         }
 
@@ -105,6 +76,7 @@
             display: flex;
             align-items: baseline;
             gap: 0.5rem;
+            border-inline-end: 1px solid dimgray;
             padding: 1rem;
 
             b { font-weight: inherit }

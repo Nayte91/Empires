@@ -1,34 +1,59 @@
 button, .button {
     --ground: white;
+    --button-accent: var(--operator-accent);
+    --button-border: var(--operator-border);
 
     inline-size: fit-content;
-    /* `grid-auto-flow: column` keeps a multi-part label ("Population 17") on one line, and
-       `place-content` — not `place-items` — is what centres an icon wider than the padded content
-       box: item alignment is clamped at the start edge, content distribution overflows evenly.
-       The gap replaces the inter-child HTML space, which the grid absorbs. */
+    min-inline-size: 2.75rem;
+    min-block-size: 2.75rem;
     display: inline-grid;
     grid-auto-flow: column;
     place-content: center;
     gap: 0.25em;
-    border: 1px solid var(--operator-border);
+    border: 1px solid var(--button-border);
     border-radius: var(--operator-radius);
-    padding: 0.5em 0.9em;
+    padding: 0.5em 0.75em;
     background: var(--ground);
     color: var(--ink-primary);
     text-decoration: none;
     font-size: var(--size-body);
     cursor: pointer;
-    transition: background-color 0.15s;
+    transition: background-color 0.15s, border-color 0.15s;
 
-    &:hover { background: var(--operator-bg-subtle) }
+    &:hover {
+        --button-border: var(--button-accent);
 
-    &:focus-visible {
-        outline: 2px solid var(--operator-accent);
-        outline-offset: 2px;
+        background: var(--operator-bg-subtle);
+    }
+
+    &:focus-visible { outline: 2px solid var(--operator-accent) }
+
+    &[data-selected] {
+        --ground: hsl(from var(--button-accent) h s calc(l + 40));
+        --button-border: var(--button-accent);
+
+        color: var(--button-accent);
+        font-weight: var(--weight-answer);
     }
 
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
+    }
+
+    &.quiet {
+        --ground: inherit;
+        --button-border: transparent;
+
+        background: none;
+        color: var(--ink-muted);
+
+        &:hover { background: color-mix(in oklab, var(--ink-muted) 12%, transparent) }
+
+    }
+
+    svg {
+        inline-size: 1.5rem;
+        block-size: 1.5rem;
     }
 }
