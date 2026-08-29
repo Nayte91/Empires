@@ -1,8 +1,6 @@
-{# Scope goes last so the id keeps its `stat-picker-{stat}-{player}` prefix: readers and tests
-   locate the stat at a fixed position, and an unscoped picker's id is unchanged. #}
 {% set dialogId = 'stat-picker-' ~ stat.value ~ '-' ~ player.id ~ (this.scope ? '-' ~ this.scope : '') %}
 <div {{ attributes }} class="stat-picker">
-    <button type="button" class="touch-button" commandfor="{{ dialogId }}" command="show-modal">
+    <button type="button" commandfor="{{ dialogId }}" command="show-modal">
         {{ stat.label }} <span class="stat-picker__value">{{ stat.format(value) }}</span>
     </button>
     <dialog id="{{ dialogId }}" class="modal stat-picker__dialog"
@@ -10,16 +8,13 @@
         <form method="dialog">
             <h2>{{ stat.label }} — {{ player.name }}</h2>
 
-            {# Actions first: they name a move ("Draw cards", "Build a ship") where the grid below only
-               offers numbers, and the grid runs to 54 tiles on treasury — buried under it, they were
-               a scroll away from the thing the player came to do. #}
             <section>
                 {% if this.actions is not empty %}
                     <menu>
                         {% for action in this.actions %}
                             {% set isDisabled = not this.isAvailable(action) %}
                             <li>
-                                <button type="submit" class="touch-button" data-action="live#update"
+                                <button type="submit" data-action="live#update"
                                         data-model="norender|pendingAction" data-value="{{ action.value }}"
                                         {{ isDisabled ? 'disabled' }}>
                                     {{ action.label }}
@@ -32,7 +27,7 @@
                 <fieldset>
                     {% set ceiling = this.ceiling %}
                     {% for n in this.floor..this.displayCeiling %}
-                        <button type="submit" class="touch-button" data-action="live#update" data-model="norender|value"
+                        <button type="submit" data-action="live#update" data-model="norender|value"
                                 data-value="{{ n }}" {{ value == n ? 'data-selected' }}
                                 {{ n > ceiling ? 'disabled' }}>
                             {{ stat.format(n) }}

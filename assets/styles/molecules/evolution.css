@@ -5,14 +5,16 @@
     inline-size: 100%;
     max-inline-size: 40rem;
 
-    > .plot {
+    .plot {
         position: relative;
         aspect-ratio: 4 / 5;
 
         canvas { display: block }
     }
 
-    > #evolution-legend {
+    @media (min-width: 60rem) { .plot { aspect-ratio: 3 / 2 } }
+
+    #evolution-legend {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem 1rem;
@@ -29,17 +31,10 @@
             background: none;
             font: inherit;
             color: inherit;
-            cursor: pointer;
 
             &[data-hidden] { opacity: 0.4 }
         }
 
         .marker { inline-size: 1rem }
-    }
-}
-
-@media (min-width: 60rem) {
-    .evolution > .plot {
-        aspect-ratio: 3 / 2;
     }
 }

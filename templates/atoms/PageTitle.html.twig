@@ -2,7 +2,7 @@
 
 <header id="page-title" data-title="{{ variant }}">
     {% if back is not null %}
-        <a href="{{ backHref }}" class="button touch-button">{{ back }}</a>
+        <a href="{{ backHref }}" class="button">{{ back }}</a>
     {% endif %}
 
     <hgroup>
@@ -13,7 +13,7 @@
     </hgroup>
 
     {% if renameFor is not null %}
-        <button type="button" class="touch-button" commandfor="{{ renameFor }}" command="show-modal">
+        <button type="button" commandfor="{{ renameFor }}" command="show-modal">
             Rename
         </button>
     {% endif %}

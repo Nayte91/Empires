@@ -5,7 +5,7 @@
             type="button"
             {{ live_action('revokeGift', {for: row.advance.key}) }}
             data-loading="addAttribute(disabled)"
-            class="revoke touch-button"
+            class="revoke"
         >
             Change gift
         </button>
@@ -24,7 +24,7 @@
                         type="button"
                         {{ live_action('chooseGift', {for: row.advance.key, key: candidate.key}) }}
                         data-loading="addAttribute(disabled)"
-                        class="candidate touch-button"
+                        class="candidate"
                     >
                         {{ candidate.name|capitalize }}
                         <small class="cost">{{ candidate.cost }}</small>

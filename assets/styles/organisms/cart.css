@@ -36,20 +36,6 @@
         font-size: var(--size-small);
     }
 
-    .remove {
-        border: none;
-        padding-inline: 0.25rem;
-        background: none;
-        color: var(--ink-muted);
-        font-size: 1.25rem;
-        line-height: 1;
-
-        &:hover {
-            background: none;
-            color: var(--operator-error);
-        }
-    }
-
     .empty { color: var(--ink-muted) }
 
     .total {
@@ -67,10 +53,8 @@
 
     .submit {
         --ground: var(--operator-accent);
-        background: var(--ground);
-        color: var(--ink-primary);
 
-        &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8%)) }
+        &:hover { background: hsl(from var(--operator-accent) h s calc(l - 8)) }
 
         &:disabled {
             --ground: var(--operator-border);

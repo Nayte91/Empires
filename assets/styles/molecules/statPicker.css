@@ -1,13 +1,11 @@
 .stat-picker__dialog {
-    --stat-picker-accent: var(--operator-accent, steelblue);
-
     section {
         display: grid;
         gap: 1rem;
     }
 
     fieldset {
-        --grid-min-tile-size: 3rem;
+        --grid-min-tile-size: 2.75rem;
         border: none;
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(var(--grid-min-tile-size), 100%), 1fr));
@@ -15,32 +13,8 @@
         margin: 0;
         padding: 0;
 
-        /* What a grid tile needs on top of the button atom and the modal layer: both read as defaults
-           but are overrides. `stretch` undoes modal.css's `justify-self: start`, without which the tile
-           shrink-wraps its digit to 9px inside a 48px track and loses the touch target; `padding-block`
-           zeroes only the vertical half, since min-block-size and the atom's centring own the height. */
-        button {
-            min-block-size: 3rem;
-            inline-size: auto;
-            justify-self: stretch;
-            padding-block: 0;
-            font-weight: var(--weight-body);
-            transition: border-color 0.15s, background-color 0.15s;
-
-            &:hover { border-color: var(--stat-picker-accent) }
-
-            &:disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-            }
-
-            &[data-selected] {
-                border-color: var(--stat-picker-accent);
-                background: hsl(from var(--stat-picker-accent) h s calc(l + 40%));
-                color: var(--stat-picker-accent);
-                font-weight: var(--weight-answer);
-            }
-        }
+        /* Undoes the atom's `fit-content`: here the grid owns the width. */
+        button { inline-size: auto }
     }
 
     menu {

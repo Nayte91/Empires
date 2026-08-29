@@ -6,6 +6,6 @@
             <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" :scope="scope" />
         {% endfor %}
 
-        {% if withShopLink %}<a href="{{ this.shopUrl }}" class="shop-link">Shop</a>{% endif %}
+        {% if withShopLink %}<a href="{{ this.shopUrl }}" class="button shop-link">Shop</a>{% endif %}
     </div>
 </details>
