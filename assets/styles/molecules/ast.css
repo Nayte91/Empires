@@ -1,9 +1,9 @@
 .ast {
     --ast-rule-width: 1px;
-    --ast-rule: var(--ast-rule-width) solid rgb(255 255 255 / 0.15);
+    --ast-rule: var(--ast-rule-width) solid var(--rule);
     --turn-edge: 1px double gold;
     --ast-cell-size: 3rem;
-    --ast-band-tint: rgb(255 255 255 / 0.07);
+    --ast-band-tint: var(--tint);
     isolation: isolate;
     justify-self: center;
     border: var(--ast-rule);

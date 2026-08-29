@@ -48,8 +48,7 @@
         background: none;
         color: var(--ink-muted);
 
-        &:hover { background: color-mix(in oklab, var(--ink-muted) 12%, transparent) }
-
+        &:hover { background: var(--tint) }
     }
 
     svg {
