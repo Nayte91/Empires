@@ -24,6 +24,7 @@ return RectorConfig::configure()
         RemoveEmptyClassMethodRector::class => [
             __DIR__.'/../../src/Presentation/Component/Shop.php',
             __DIR__.'/../../src/Presentation/Component/PlayerOrders.php',
+            __DIR__.'/../../src/Presentation/Component/CashierTerminal.php',
         ],
     ])
     ->withCache(__DIR__.'/../../var/cache/rector')

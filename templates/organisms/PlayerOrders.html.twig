@@ -45,20 +45,11 @@
                         </form>
                     </twig:molecules:Modal>
                 {% else %}
-                    <button
-                        class="button"
-                        type="button"
-                        {{ live_action('openPos', {turn: card.turn}) }}
-                        data-loading="addAttribute(disabled)"
-                    >
+                    <a class="button" href="{{ path('app_game_pos', {slug: player.game.slug, player: player.slug, turn: card.turn}) }}">
                         {{ card.status == 'pending' ? 'Verify' : (card.status == 'missing' ? 'Buy' : 'Edit') }}
-                    </button>
+                    </a>
                 {% endif %}
             </twig:molecules:OrderCard>
         {% endfor %}
     </section>
-
-    {% if posOpen %}
-        {% include 'organisms/pos_dialog.html.twig' %}
-    {% endif %}
 </div>

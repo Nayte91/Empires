@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Presentation\Shop\CartKey;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
@@ -137,11 +138,10 @@ final class KioskOperatorFlowTest extends WebTestCase
     private function validateOrder(Order $order): void
     {
         $client = self::getContainer()->get('test.client');
-        $component = $this->createLiveComponent('PlayerOrders', [
-            'player' => $order->player,
-            'ordersStamp' => '',
-        ], $client);
-        $component->call('openPos', ['turn' => $order->turn]);
+        $this->createLiveComponent('CashierTerminal', [
+            'game' => $order->player->game,
+            'turn' => $order->turn,
+        ], $client)->set('playerSlug', $order->player->slug);
 
         $this->createPosCart($order->player, $order->turn, $client)->call('checkout');
     }
@@ -150,7 +150,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     {
         return $this->createLiveComponent('Cart', [
             'player' => $player,
-            'storageKey' => (string) $player->id,
+            'storageKey' => CartKey::shop($player),
         ], $client);
     }
 
@@ -158,7 +158,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     {
         return $this->createLiveComponent('Cart', [
             'player' => $player,
-            'storageKey' => 'pos.'.$player->id->toRfc4122(),
+            'storageKey' => CartKey::pos($player, $turn),
             'directSale' => true,
             'window' => $turn,
         ], $client);

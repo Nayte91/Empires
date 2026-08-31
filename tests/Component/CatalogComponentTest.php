@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Presentation\Shop\CartKey;
 use App\State\Order;
 use App\State\Player;
 use App\Engine\Shop\AdvanceFulfillment;
@@ -229,7 +230,7 @@ final class CatalogComponentTest extends KernelTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $crawler = $this->renderCatalog($player, $this->posKey($player))->crawler();
+        $crawler = $this->renderCatalog($player, CartKey::pos($player, $player->game->currentTurn))->crawler();
 
         $pottery = $crawler->filter('#product-pottery');
         $this->assertSame('button', $pottery->nodeName());
@@ -322,8 +323,8 @@ final class CatalogComponentTest extends KernelTestCase
     public function storageKeyIsolatesTwoCartsForTheSamePlayer(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $shopKey = (string) $player->id;
-        $posKey = $this->posKey($player);
+        $shopKey = CartKey::shop($player);
+        $posKey = CartKey::pos($player, $player->game->currentTurn);
 
         $storage = self::getContainer()->get(CartStorageInterface::class);
         $storage->save($shopKey, Cart::fromKeys(['pottery']));
@@ -389,11 +390,6 @@ final class CatalogComponentTest extends KernelTestCase
         return $rendered->crawler()->filter('[id^="product-"]')->each(
             static fn (Crawler $node): string => substr((string) $node->attr('id'), \strlen('product-')),
         );
-    }
-
-    private function posKey(Player $player): string
-    {
-        return 'pos.'.$player->id->toRfc4122();
     }
 
 }

@@ -66,6 +66,9 @@ final class Cart
     #[LiveProp(updateFromParent: true)]
     public bool $clearable = false;
 
+    #[LiveProp(updateFromParent: true)]
+    public string $hint = '';
+
     public ?string $error = null;
 
     public function __construct(
@@ -103,16 +106,6 @@ final class Cart
         }
     }
 
-    /**
-     * Every action below changes which keys the cart holds, and the catalogue is rendered by the
-     * host, not here — so the host has to be told, or an advance the cart released never reappears
-     * on the shelf. Adding needs no such signal: the add action already belongs to the host, and
-     * `allocate()` moves points within a line without touching the key list.
-     *
-     * The gift pair counts, which is easy to miss: `Cart::withGift()` appends a LineIntent for a
-     * newly chosen gift and drops the old one once nothing references it, so both directions move
-     * the key list exactly as remove() does.
-     */
     #[LiveAction]
     public function remove(#[LiveArg] string $key): void
     {
@@ -203,12 +196,7 @@ final class Cart
         return null;
     }
 
-    /**
-     * Every facet defaulted to 0, in ShopConnector::facets() order, so the
-     * picker template can iterate it directly (mirrors Component\Discounts::getCredits).
-     *
-     * @return array<string, int>
-     */
+    /** @return array<string, int> */
     public function getAllocationFor(string $key): array
     {
         $stored = [];

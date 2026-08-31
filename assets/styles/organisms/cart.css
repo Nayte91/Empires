@@ -1,4 +1,14 @@
 .cart {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+
+    .label {
+        margin: -1rem -1rem 0;
+        border-block-end: 1px solid var(--operator-border);
+        padding: 1rem;
+    }
+
     .lines {
         display: grid;
         gap: 0.5rem;

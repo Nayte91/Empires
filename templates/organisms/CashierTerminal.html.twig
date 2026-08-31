@@ -1,0 +1,121 @@
+{% set pos = this %}
+{% set player = pos.player %}
+
+<main {{ attributes }} class="pos">
+    <twig:atoms:PageTitle
+        :heading="game.slug"
+        :qualifier="'Turn ' ~ game.currentTurn"
+        back="Orders"
+        :backHref="path('app_game_operator', {slug: game.slug})"
+    />
+
+    <twig:atoms:SectionTitle>Point of sale</twig:atoms:SectionTitle>
+
+    <div class="controls">
+        <label>
+            Buyer
+            <select data-model="playerSlug">
+                <option value="">Choose a buyer…</option>
+                {% for buyer in game.players %}
+                    <option value="{{ buyer.slug }}">
+                        {{ buyer.empire|empire_demonym|capitalize }} ({{ buyer.name }})
+                    </option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <label>
+            Turn
+            <select data-model="turn">
+                {% for candidate in 1..game.currentTurn %}
+                    <option value="{{ candidate }}">{{ candidate }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    {% if player is null %}
+        <twig:atoms:Hint>Choose a buyer to open their till for this turn.</twig:atoms:Hint>
+    {% else %}
+        {% if error %}
+            <p role="alert">{{ error }}</p>
+        {% endif %}
+
+        {% set posOrder = pos.posOrder %}
+        {% set isValidated = posOrder and posOrder.status.value == 'validated' %}
+        {% set ticketState = posOrder ? (posOrder.status.value == 'pending' ? 'submitted' : posOrder.status.value) : 'empty' %}
+        {% set ticketStatus = posOrder ? posOrder.status.value : (pos.turn == game.currentTurn ? 'missing' : 'empty') %}
+
+        <div class="summary" data-empire="{{ player.empire }}">
+            <twig:molecules:Discounts :player="player" />
+
+            {% if isValidated %}
+                <section class="cart panel" data-status="{{ ticketStatus }}">
+                    <twig:atoms:Label>Cart</twig:atoms:Label>
+                    <twig:atoms:Hint>Order for turn {{ pos.turn }} — {{ ticketState }}</twig:atoms:Hint>
+
+                    <ul class="lines">
+                        {% for row in pos.ticketLines %}
+                            <li class="line">
+                                <span class="name">{{ row.advance.name|capitalize }}</span>
+                                <span class="cost">{{ row.line.netCost }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <p class="total">Total: {{ pos.ticketTotal }}</p>
+
+                    <footer>
+                        <button
+                            class="button"
+                            type="button"
+                            commandfor="erase-confirm-{{ player.id }}-{{ pos.turn }}"
+                            command="show-modal"
+                        >
+                            Empty
+                        </button>
+                    </footer>
+                </section>
+            {% else %}
+                {% set ticketHint = 'Order for turn ' ~ pos.turn ~ ' — ' ~ ticketState %}
+
+                <twig:Cart
+                    :key="'cart-' ~ player.slug ~ '-' ~ pos.turn"
+                    :data-status="ticketStatus"
+                    :player="player"
+                    :cartStamp="pos.getCartStamp()"
+                    :directSale="true"
+                    :window="pos.turn"
+                    checkoutLabel="Validate"
+                    :clearable="true"
+                    :storageKey="pos.cartKey"
+                    :hint="ticketHint"
+                />
+            {% endif %}
+        </div>
+
+        {% if isValidated %}
+
+            <twig:molecules:Modal :id="'erase-confirm-' ~ player.id ~ '-' ~ pos.turn">
+                <form method="dialog">
+                    {% if pos.turn == game.currentTurn %}
+                        <p>Empty turn {{ pos.turn }}?</p>
+                    {% elseif pos.turn + 1 == game.currentTurn %}
+                        <p>Emptying turn {{ pos.turn }} will also empty turn {{ pos.turn + 1 }}.</p>
+                    {% else %}
+                        <p>
+                            Emptying turn {{ pos.turn }} will also empty turns
+                            {{ pos.turn + 1 }}…{{ game.currentTurn }}.
+                        </p>
+                    {% endif %}
+                    <menu>
+                        <li><button class="button" type="submit">Cancel</button></li>
+                        <li><button class="button" type="submit" {{ live_action('eraseOrder') }}>Confirm</button></li>
+                    </menu>
+                </form>
+            </twig:molecules:Modal>
+        {% else %}
+            <twig:organisms:Catalog :player="player" :storageKey="pos.cartKey" :view="pos.catalogView" />
+        {% endif %}
+    {% endif %}
+</main>

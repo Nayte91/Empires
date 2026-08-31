@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Component;
 
 use App\Engine\Shop\AdvanceFulfillment;
+use App\Presentation\Shop\CartKey;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Order;
@@ -557,18 +558,21 @@ final class ShopComponentTest extends WebTestCase
     {
         return $this->createLiveComponent('Cart', [
             'player' => $player,
-            'storageKey' => (string) $player->id,
+            'storageKey' => CartKey::shop($player),
         ], $client);
     }
 
+    /**
+     * The till reads its cart at mount — that is where it offers a submitted order — so unlike the
+     * kiosk it cannot be built outside a request that has a session.
+     */
     private function openPos(Player $player): Crawler
     {
-        return $this->createLiveComponent('PlayerOrders', [
-            'player' => $player,
-            'ordersStamp' => '',
-            'posOpen' => true,
-            'posTurn' => $player->game->currentTurn,
-        ])->render()->crawler();
+        return $this->createLiveComponent('CashierTerminal', [
+            'game' => $player->game,
+            'turn' => $player->game->currentTurn,
+            'playerSlug' => $player->slug,
+        ], self::getContainer()->get('test.client'))->render()->crawler();
     }
 
     /** @return list<string> */
