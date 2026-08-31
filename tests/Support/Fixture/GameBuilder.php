@@ -5,21 +5,16 @@ declare(strict_types=1);
 namespace App\Tests\Support\Fixture;
 
 use App\State\Game;
+use App\State\Region;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Object mother for Game. Replaces the eight near-identical private createGame() helpers
- * the suite used to carry, so a test states the one property its scenario turns on and inherits
- * the entity's own defaults for everything else.
- *
- * build() returns an unmanaged instance for tests that never touch the database; persist() writes
- * it and flushes, for tests that do. DAMA rolls the write back, so neither path needs cleanup.
- */
 final class GameBuilder
 {
     private ?string $slug = null;
     private ?int $playerCount = null;
     private ?int $currentTurn = null;
+    private bool $regionGiven = false;
+    private ?Region $region = null;
 
     public static function create(): self
     {
@@ -47,6 +42,14 @@ final class GameBuilder
         return $this;
     }
 
+    public function withRegion(?Region $region): self
+    {
+        $this->regionGiven = true;
+        $this->region = $region;
+
+        return $this;
+    }
+
     public function build(): Game
     {
         $game = new Game($this->slug);
@@ -57,6 +60,10 @@ final class GameBuilder
 
         if (null !== $this->currentTurn) {
             $game->currentTurn = $this->currentTurn;
+        }
+
+        if ($this->regionGiven) {
+            $game->region = $this->region;
         }
 
         return $game;

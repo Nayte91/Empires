@@ -25,6 +25,11 @@
 
                 b { font-size: var(--size-body) }
 
+                &[target] b::after {
+                    content: ' \2197';
+                    color: var(--ink-muted);
+                }
+
                 small {
                     margin-block-start: 0.125rem;
                     color: var(--ink-muted);
