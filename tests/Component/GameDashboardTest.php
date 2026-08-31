@@ -27,17 +27,16 @@ final class GameDashboardTest extends WebTestCase
         $this->assertSame($game->slug, trim($matches[1]));
     }
 
-    /** Every route out of the dashboard now lives in one place, above the roster. */
     #[Test]
-    public function navigationIsTheFirstBlockUnderTheTitle(): void
+    public function navigationIsTheLastBlockUnderTheBoards(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
 
-        $this->assertLessThan(strpos($html, '<table'), strpos($html, '<nav'), 'Navigation comes before the roster.');
-        $this->assertGreaterThan(strpos($html, '</h1>'), strpos($html, '<nav'), 'Navigation comes after the title.');
+        $this->assertGreaterThan(strrpos($html, '<table'), strpos($html, '<nav'), 'Navigation comes after the roster and the A.S.T.');
+        $this->assertLessThan(strrpos($html, '<nav'), strpos($html, '<nav'), 'The help block closes the page, after the navigation.');
         $this->assertSame(
             2,
             substr_count($html, '<dialog'),
