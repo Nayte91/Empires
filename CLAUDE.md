@@ -151,7 +151,21 @@ Live — it is **PascalCase**, because the file name *is* the component's name. 
 skeleton, an `{% include %}`d partial, a Turbo stream template — is **snake_case**. Two neighbours
 show the seam: `atoms/PageTitle` is an anonymous component, `atoms/tab` is a plain `{% embed %}`
 target, and they sit in the same directory. Directories are always lowercase.
+**Modals**: every `<dialog>` goes through `molecules/Modal` — it owns the element, `class="modal"`
+and the `closedby="any"` light dismiss (opt out with `:closedby="false"`, never `null`), and
+nothing else. It deliberately does **not** render the opening button: no two callers put it in the
+same place (`atoms/PageTitle` owns Rename's, `Navigation` emits its QR buttons in a different loop
+than its dialogs, the POS has none and is rendered `open` by the server). The link is the `id`, which
+the caller's own `<button command="show-modal" commandfor="…">` points at — native HTML, no
+JavaScript. `assets/controllers/modal_controller.js` exists only for the server-opened case: a
+`<dialog open>` written in markup is *non-modal*, so it re-opens it with `showModal()`.
+
 **Colors**: empire/advance colors are emitted once by the `ThemeColors` atom as `--empire-<slug>` / `--advance-<category>` CSS vars. Never resolve colors in PHP; use `var(--empire-{{ slug }}, dimgray)` in templates.
+
+**`this` is rebound inside a component's slot.** Wrap markup in `<twig:X>…</twig:X>` and every
+`this.foo` in that slot resolves against X, not against the template that wrote it — ordinary
+variables pass through untouched, so the breakage is narrow and looks like a typo. Alias before the
+tag (`{% set picker = this %}`), as `StatPicker` and `pos_dialog` do around `molecules/Modal`.
 
 **Live Components — `data-loading` vs conditional `disabled`**: never put an unconditional `data-loading="addAttribute(disabled)"` on an element that also has a business-conditional `disabled` — the loading plugin strips `addAttribute`/`removeAttribute` directives on mount ([symfony/ux#372](https://github.com/symfony/ux/issues/372)), silently re-enabling it. Wrap the directive in the inverted condition:
 ```twig

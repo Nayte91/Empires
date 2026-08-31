@@ -5,7 +5,7 @@
         <p data-error="newName" role="alert">{{ _errors.get('newName') }}</p>
     {% endif %}
 
-    <dialog id="rename-player-{{ player.id }}" class="modal" closedby="any">
+    <twig:molecules:Modal :id="'rename-player-' ~ player.id">
         <form method="dialog">
             <h2>Rename {{ player.name }}</h2>
 
@@ -15,11 +15,9 @@
             </label>
 
             <menu>
-                <li><button
-    class="button" type="submit">Cancel</button></li>
-                <li><button
-    class="button" type="submit" {{ live_action('rename') }}>Confirm</button></li>
+                <li><button class="button" type="submit">Cancel</button></li>
+                <li><button class="button" type="submit" {{ live_action('rename') }}>Confirm</button></li>
             </menu>
         </form>
-    </dialog>
+    </twig:molecules:Modal>
 </div>

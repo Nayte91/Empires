@@ -1,9 +1,5 @@
-<div {{ stimulus_controller('modal') }} {{ attributes }}>
-    <button
-    class="button" type="button" {{ stimulus_action('modal', 'open') }}>
-        {% block button %}{% endblock %}
-    </button>
-    <dialog class="modal" {{ stimulus_target('modal', 'dialog') }}>
-        {% block content %}{% endblock %}
-    </dialog>
-</div>
+{% props id %}
+
+<dialog id="{{ id }}" {{ attributes.defaults({class: 'modal', closedby: 'any'}) }}>
+    {% block content %}{% endblock %}
+</dialog>

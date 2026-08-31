@@ -1,8 +1,4 @@
 twig_component:
-    # '' (not 'components/') so anonymous components resolve directly under
-    # templates/ — <twig:molecules:Modal> maps to templates/molecules/Modal.html.twig,
-    # matching this project's Atomic Design template layout.
     anonymous_template_directory: ''
     defaults:
-        # Namespace & directory for components
         App\Presentation\Component\: 'component/'
