@@ -22,6 +22,7 @@ use Userforged\ShopEngine\Promotion\AppliedPromotion;
 use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -75,8 +76,8 @@ final class ShopComponentTest extends WebTestCase
         $crawler = $component->call('add', ['key' => 'democracy'])->render()->crawler();
 
         $this->assertCount(1, $crawler->filter('[role="alert"]'));
-        $this->assertCount(1, $crawler->filter('.shop__order[data-status="validated"]'));
-        $this->assertCount(0, $crawler->filter('.lines'));
+        $this->assertCount(1, $crawler->filter('.cart[data-status="validated"]'));
+        $this->assertCount(0, $crawler->filter('[data-live-action-param="remove"]'));
     }
 
     #[Test]
@@ -120,21 +121,21 @@ final class ShopComponentTest extends WebTestCase
         $this->assertSame(['pottery'], $order->keys());
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-        $this->assertStringNotContainsString('class="lines"', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
         $this->assertStringContainsString('data-status="pending"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
         $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
     }
 
     #[Test]
-    public function pendingOrderHidesTheCartAndShowsTheOrderBlockWithModify(): void
+    public function aPendingOrderTurnsTheCartIntoAReadOnlyTicketCarryingModify(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $this->createPendingOrder($player, 'pottery');
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
-        $this->assertStringNotContainsString('class="lines"', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
         $this->assertStringContainsString('data-status="pending"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
         $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
@@ -159,6 +160,66 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
+    #[DataProvider('provideTheCartTellsThePlayerWhereTheirOrderStandsCases')]
+    public function theCartTellsThePlayerWhereTheirOrderStands(bool $withOrder, string $status, string $wording): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
+        if ($withOrder) {
+            $this->createPendingOrder($player, 'pottery');
+        }
+
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+
+        $this->assertSame($status, $crawler->filter('.cart')->attr('data-status'));
+        $this->assertStringContainsString($wording, $crawler->filter('.cart .hint')->text());
+    }
+
+    /** @return iterable<string, array{bool, string, string}> */
+    public static function provideTheCartTellsThePlayerWhereTheirOrderStandsCases(): iterable
+    {
+        yield 'nothing submitted for the turn' => [false, 'missing', 'empty'];
+
+        yield 'an order awaiting the operator' => [true, 'pending', 'submitted'];
+    }
+
+    #[Test]
+    public function modifyingAPendingOrderWithdrawsItSoTheOperatorStopsSeeingIt(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $this->createPendingOrder($player, 'pottery', 'agriculture');
+
+        $this->createLiveComponent('Shop', ['player' => $player])->call('editPendingOrder');
+
+        $this->entityManager->clear();
+
+        $this->assertNotInstanceOf(
+            Order::class,
+            self::getContainer()->get(OrderRepository::class)
+                ->findOneByPlayerAndWindow($player, $player->game->currentTurn),
+        );
+    }
+
+    #[Test]
+    public function aWithdrawnOrderGoesBackWithASingleResubmission(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $this->createPendingOrder($player, 'pottery', 'agriculture');
+
+        $client = self::getContainer()->get('test.client');
+        $this->createLiveComponent('Shop', ['player' => $player], $client)->call('editPendingOrder');
+        $this->createCart($player, $client)->call('checkout');
+
+        $this->entityManager->clear();
+        $order = self::getContainer()->get(OrderRepository::class)
+            ->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+
+        $this->assertInstanceOf(Order::class, $order);
+        $this->assertSame(['pottery', 'agriculture'], $order->keys());
+        $this->assertSame(OrderStatus::Pending, $order->status);
+    }
+
+    #[Test]
     public function aValidatedOrderLocksTheKioskForTheTurn(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
@@ -171,7 +232,7 @@ final class ShopComponentTest extends WebTestCase
         $this->assertTrue($this->getShopComponent($component)->isLockedForTurn());
 
         $rendered = $component->render()->toString();
-        $this->assertStringNotContainsString('class="lines"', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
         $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
         $this->assertStringContainsString('data-status="validated"', $rendered);
         $this->assertStringContainsString('Pottery', $rendered);
@@ -208,7 +269,7 @@ final class ShopComponentTest extends WebTestCase
 
         $this->assertStringContainsString('999', $rendered);
         $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
-        $this->assertStringNotContainsString('class="lines"', $rendered);
+        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
     }
 
     #[Test]

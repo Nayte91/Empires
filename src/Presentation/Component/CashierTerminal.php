@@ -52,6 +52,9 @@ final class CashierTerminal
     #[LiveProp(writable: true, onUpdated: 'preloadTicket', url: new UrlMapping(as: 'player'))]
     public ?string $playerSlug = null;
 
+    #[LiveProp]
+    public string $loadedTicket = '';
+
     public ?string $error = null;
 
     public function __construct(
@@ -121,6 +124,12 @@ final class CashierTerminal
     #[LiveListener('cartChanged')]
     public function onCartChanged(): void {}
 
+    #[LiveListener('cartCleared')]
+    public function onCartCleared(): void
+    {
+        $this->eraseOrder();
+    }
+
     public function getPlayer(): ?Player
     {
         foreach ($this->game->players as $player) {
@@ -159,10 +168,10 @@ final class CashierTerminal
     #[PostMount]
     public function preloadTicket(): void
     {
-        if (!$this->requestStack->getMainRequest() instanceof Request) {
+        if (!$this->requestStack->getMainRequest() instanceof Request || $this->loadedTicket === $this->getCartKey()) {
             return;
         }
-
+        $this->loadedTicket = $this->getCartKey();
         $player = $this->getPlayer();
         if (!$player instanceof Player || [] !== $this->cartStorage->load($this->getCartKey())->items) {
             return;

@@ -56,10 +56,7 @@
 
                     <ul class="lines">
                         {% for row in pos.ticketLines %}
-                            <li class="line">
-                                <span class="name">{{ row.advance.name|capitalize }}</span>
-                                <span class="cost">{{ row.line.netCost }}</span>
-                            </li>
+                            <twig:molecules:TicketLine :row="row" />
                         {% endfor %}
                     </ul>
 
@@ -81,13 +78,14 @@
 
                 <twig:Cart
                     :key="'cart-' ~ player.slug ~ '-' ~ pos.turn"
-                    :data-status="ticketStatus"
+                    :status="ticketStatus"
                     :player="player"
                     :cartStamp="pos.getCartStamp()"
                     :directSale="true"
                     :window="pos.turn"
                     checkoutLabel="Validate"
                     :clearable="true"
+                    clearLabel="Empty"
                     :storageKey="pos.cartKey"
                     :hint="ticketHint"
                 />

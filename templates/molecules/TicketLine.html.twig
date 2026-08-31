@@ -1,0 +1,17 @@
+{% props row %}
+
+<li class="line">
+    <span class="name">{{ row.advance.name|capitalize }}</span>
+
+    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+        <small class="original">{{ row.line.netCost + row.line.promotion.amount }}</small>
+    {% endif %}
+
+    <span class="cost">{{ row.line.netCost }}</span>
+
+    {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
+        <span class="badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+</li>
