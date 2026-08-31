@@ -13,7 +13,7 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
- * Under 60rem the dashboard is one screen with three tabs, switched by the browser alone: one radio
+ * Under 60rem the dashboard is one screen with four tabs, switched by the browser alone: one radio
  * group in the bar, the panels shown or hidden off the checked one. Which tab is open is the
  * browser's business end to end — the server neither reads it nor writes it. Above 60rem the very
  * same markup is the stack it has always been, which is why every panel ships regardless, and why
@@ -53,7 +53,7 @@ final class DashboardTabsTest extends WebTestCase
     }
 
     /**
-     * The bar carries no script at all: three radios of one group, each paired with the label that
+     * The bar carries no script at all: four radios of one group, each paired with the label that
      * drives it. This is the assertion that fails the day someone reaches for a controller.
      */
     #[Test]
@@ -67,20 +67,20 @@ final class DashboardTabsTest extends WebTestCase
 
         $this->assertNull($crawler->filter('main')->attr('data-controller'));
         $this->assertSame(
-            ['tab', 'tab', 'tab'],
+            ['tab', 'tab', 'tab', 'tab'],
             $radios->each(static fn (Crawler $radio): ?string => $radio->attr('name')),
         );
         $this->assertSame(
-            ['roster', 'ast', 'nav'],
+            ['roster', 'ast', 'nav', 'help'],
             $radios->each(static fn (Crawler $radio): ?string => $radio->attr('value')),
         );
         $this->assertSame(
-            ['tab-roster', 'tab-ast', 'tab-nav'],
+            ['tab-roster', 'tab-ast', 'tab-nav', 'tab-help'],
             $crawler->filter('menu label')->each(static fn (Crawler $label): ?string => $label->attr('for')),
         );
     }
 
-    /** All three panels ship in one response: switching tabs is a paint, never a round trip. */
+    /** All four panels ship in one response: switching tabs is a paint, never a round trip. */
     #[Test]
     public function everyPanelIsServedInOneResponse(): void
     {
@@ -92,6 +92,18 @@ final class DashboardTabsTest extends WebTestCase
         $this->assertCount(1, $crawler->filter('#panel-nav'));
         $this->assertCount(1, $crawler->filter('#panel-roster'));
         $this->assertCount(1, $crawler->filter('#panel-ast'));
+        $this->assertCount(1, $crawler->filter('#panel-help'));
+    }
+
+    #[Test]
+    public function theHelpPanelIsTheWayInToTheTradeCardDistribution(): void
+    {
+        $client = self::createClient();
+        $game = $this->game();
+
+        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+
+        $this->assertCount(1, $crawler->filter('#panel-help a[href="/'.$game->slug.'/trade-cards"]'));
     }
 
     /**

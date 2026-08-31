@@ -1,0 +1,12 @@
+{% props game %}
+
+<nav class="help">
+    <ul>
+        <li>
+            <a href="{{ path('app_game_trade_cards', {slug: game.slug}) }}">
+                <b>Trade card distribution</b>
+                <small>what each stack deals, turn by turn</small>
+            </a>
+        </li>
+    </ul>
+</nav>

@@ -19,9 +19,13 @@
         h2 { display: none }
     }
 
-    &:has(> .tab-bar [value="nav"]:checked) :is(#panel-roster, #panel-ast),
-    &:has(> .tab-bar [value="roster"]:checked) :is(#panel-nav, #panel-ast),
-    &:has(> .tab-bar [value="ast"]:checked) :is(#panel-nav, #panel-roster) { display: none }
+    @media (width < 60rem) {
+        &:has(> .tab-bar [value="roster"]:checked) > section:not(#panel-roster),
+        &:has(> .tab-bar [value="ast"]:checked) > section:not(#panel-ast),
+        &:has(> .tab-bar [value="nav"]:checked) > section:not(#panel-nav),
+        &:has(> .tab-bar [value="help"]:checked) > section:not(#panel-help) { display: none }
+    }
+
     caption { scroll-margin-block-start: 1rem }
 
     h2 {
@@ -39,18 +43,17 @@
         overflow: visible;
         padding: 1rem;
 
-        > #page-title { margin-block: 1.5rem }
-        > section > h2 { display: revert }
-        &:has(> .tab-bar [value]:checked) :is(#panel-nav, #panel-roster, #panel-ast) { display: contents }
-        > .tab-bar { display: none }
+        #page-title { margin-block: 1.5rem }
+        section > h2 { display: revert }
+        section { display: contents }
+        .tab-bar { display: none }
     }
 
     @media (min-width: 112rem) {
         grid-template-columns: max-content max-content;
 
-        > :is(#page-title, #panel-nav) { grid-column: 1 / -1 }
-        > #panel-nav > * { margin-inline: auto }
-        > #panel-roster { max-inline-size: 46rem }
-        &:has(> .tab-bar [value]:checked) :is(#panel-nav, #panel-roster, #panel-ast) { display: block }
+        #page-title { grid-column: 1 / -1 }
+        :is(#panel-roster, #panel-nav) { max-inline-size: 46rem }
+        section { display: block }
     }
 }
