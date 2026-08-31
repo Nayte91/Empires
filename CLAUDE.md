@@ -186,7 +186,10 @@ Project TODO backlog: `TODO.md` at repo root.
 - **Game**: session (slug, currentTurn 1–20, region, `astVersion` basic/expert, players)
 - **Player**: empire slug, advances (json), cities (0–9), census, treasury, `astPosition` (0–15)
 - **AST**: 16-position track across 6 eras (Stone → Late Iron); era boundaries/requirements in `ast.yaml`; read-only board on the game dashboard
-- **Shop/Orders**: player cart → pending order → operator validation (POS console)
+- **Shop/Orders**: player cart → pending order → operator validation (POS console). `OrderStatus`
+  also carries `rejected`, from the shop-engine's generic vocabulary — **this app never reaches it**:
+  the operator either validates the player's cart, adjusts it for them, or sends them back to edit.
+  A player buying nothing this turn simply has no order. Do not build for `rejected`
 - **Mercure**: components subscribe to topic `empires/game/{id}` (`mercure-refresh` Stimulus controller); publish on state changes
 
 Routes — the whole list, no `/game` prefix: `/`, `/create`, `/{slug}` (dashboard, or the chronicle once the game is finished), `/{slug}/operator`, `/{slug}/trade-cards`, `/{gameSlug}/player/{playerSlug}` (board, or the saga once the game is finished), `/{gameSlug}/player/{playerSlug}/shop`. Nothing links to `/{slug}/trade-cards` — deliberately, for now.

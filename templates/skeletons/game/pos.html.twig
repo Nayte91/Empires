@@ -1,0 +1,19 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - Point of sale{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/molecules/productTile.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/giftPicker.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/molecules/allocationPicker.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/organisms/catalog.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/organisms/cart.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/organisms/pos.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/shop.css') }}" data-turbo-track="dynamic">
+{% endblock %}
+
+{% block main %}
+    {{ component('CashierTerminal', {game}) }}
+{% endblock %}

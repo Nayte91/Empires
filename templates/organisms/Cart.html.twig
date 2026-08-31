@@ -1,7 +1,11 @@
 <div {{ attributes }}>
     {% if this.showLines %}
-        <details class="cart panel" open>
-            <summary class="label">Cart</summary>
+        <section class="cart panel">
+            <twig:atoms:Label>Cart</twig:atoms:Label>
+
+            {% if hint %}
+                <twig:atoms:Hint>{{ hint }}</twig:atoms:Hint>
+            {% endif %}
 
             <ul class="lines">
                 {% for row in this.lines %}
@@ -75,6 +79,6 @@
                     </button>
                 {% endif %}
             </footer>
-        </details>
+        </section>
     {% endif %}
 </div>

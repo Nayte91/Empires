@@ -17,6 +17,8 @@
     color: var(--ink-primary);
     text-decoration: none;
     font-size: var(--size-body);
+    text-transform: none;
+    letter-spacing: normal;
     cursor: pointer;
     transition: background-color 0.15s, border-color 0.15s;
 

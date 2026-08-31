@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Presentation\Shop\CartKey;
 use App\State\Order;
 use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
@@ -21,8 +22,9 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
- * The Cart LiveComponent is shared between the player kiosk (Shop, storageKey
- * = player id) and the operator POS (PlayerOrders, storageKey = 'pos.'.player
+ * The Cart LiveComponent is shared between the player kiosk (Shop) and the
+ * operator till (Pos). Both spellings live in CartKey — never retype one here,
+ * a self-consistent test keeps passing long after production has moved on.
  * id) — see App\Presentation\Component\Cart. It only owns cart lines/gift/allocation/total;
  * the catalog and the add() action live on App\Presentation\Component\Catalog and
  * its hosts, covered by CatalogComponentTest/ShopComponentTest/PosConsoleTest.
@@ -153,7 +155,7 @@ final class CartComponentTest extends WebTestCase
     {
         return $this->createLiveComponent('Cart', [
             'player' => $player,
-            'storageKey' => $storageKey ?? (string) $player->id,
+            'storageKey' => $storageKey ?? CartKey::shop($player),
         ], $client);
     }
 
