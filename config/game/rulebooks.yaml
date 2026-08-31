@@ -1,0 +1,13 @@
+rulebooks:
+    west:
+        label: "Mega Empires: The West"
+        caption: "the west official rulebook — PDF"
+        url: "https://mega-empires.com/wp-content/uploads/2025/01/MEEM001-MegaEmpires-TheWest-Rulebook-EN-downloaded-from-mega-empires-2025.pdf"
+    east:
+        label: "Mega Empires: The East"
+        caption: "the east official rulebook — PDF"
+        url: "https://mega-empires.com/wp-content/uploads/2025/01/MEEM002-MegaEmpires-TheEast-Rulebook-EN-downloaded-from-mega-empires-2025.pdf"
+    scenarios:
+        label: "Mega Empires — Scenarios"
+        caption: "setups for a combined East & West game — PDF"
+        url: "https://mega-empires.com/wp-content/uploads/2025/01/MEEM002-MegaEmpires-TheEast-Rulebook-Scenarios-EN-downloaded-from-mega-empires-2025-1.pdf"

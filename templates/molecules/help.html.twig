@@ -1,0 +1,18 @@
+<nav class="help">
+    <ul>
+        <li>
+            <a href="{{ path('app_game_trade_cards', {slug: game.slug}) }}">
+                <b>Trade card distribution</b>
+                <small>what each stack deals, turn by turn</small>
+            </a>
+        </li>
+        {% for document in this.documents %}
+            <li>
+                <a href="{{ document.url }}" target="_blank" rel="noopener">
+                    <b>{{ document.label }}</b>
+                    <small>{{ document.caption }}</small>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+</nav>
