@@ -1,60 +1,57 @@
-.modal[open] {
-    inline-size: min(90vw, 600px);
-    padding: clamp(1.25rem, 4vw, 2rem);
-    border: none;
-    border-radius: 0.5rem;
-    box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.25);
-    display: grid;
-    gap: 1rem;
-    color: var(--ink-primary);
-    --ground: white;
-    background: white;
+.modal {
+    &::backdrop { background: hsl(0 0% 0% / 0.5) }
 
-    h2 { font-weight: var(--weight-answer) }
-
-    img {
-        justify-self: center;
-        max-inline-size: 100%;
-        block-size: auto;
-    }
-
-    > button { justify-self: start }
-
-    > form {
+    &[open] {
+        inline-size: min(90vw, 600px);
+        padding: clamp(1.25rem, 4vw, 2rem);
+        border: none;
+        border-radius: 0.5rem;
+        box-shadow: 0 1.5rem 3rem rgb(0 0 0 / 0.25);
         display: grid;
         gap: 1rem;
-    }
+        color: var(--ink-primary);
+        --ground: white;
+        background: white;
 
-    p { margin: 0 }
+        h2 { font-weight: var(--weight-answer) }
+        p { margin: 0 }
+        > button { justify-self: start }
 
-    label {
-        display: grid;
-        gap: 0.25rem;
-        font-size: var(--size-body);
-    }
+        img {
+            justify-self: center;
+            max-inline-size: 100%;
+            block-size: auto;
+        }
 
-    input {
-        block-size: 2.75rem;
-        padding-inline: 0.75em;
-        border: 1px solid var(--operator-border);
-        border-radius: var(--operator-radius);
-        font-size: var(--size-body);
+        form {
+            display: grid;
+            gap: 1rem;
+        }
 
-        &:focus-visible {
-            outline: 2px solid var(--operator-accent);
-            outline-offset: 2px;
+        label {
+            display: grid;
+            gap: 0.25rem;
+            font-size: var(--size-body);
+        }
+
+        input {
+            block-size: 2.75rem;
+            padding-inline: 0.75em;
+            border: 1px solid var(--operator-border);
+            border-radius: var(--operator-radius);
+            font-size: var(--size-body);
+
+            &:focus-visible { outline: 2px solid var(--operator-accent) }
+        }
+
+        menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: end;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
     }
-
-    > menu, > form > menu {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: end;
-        gap: 0.5rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-    }
 }
-
-.modal::backdrop { background: hsl(0 0% 0% / 0.5) }

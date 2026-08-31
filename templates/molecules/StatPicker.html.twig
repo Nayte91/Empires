@@ -1,19 +1,24 @@
 {% set dialogId = 'stat-picker-' ~ stat.value ~ '-' ~ player.id ~ (this.scope ? '-' ~ this.scope : '') %}
+{# Inside a component's slot `this` is rebound to that component — here the Modal — while ordinary
+   variables pass through untouched. Hence the alias: it is this picker the slot needs to read. #}
+{% set picker = this %}
 <div {{ attributes }} class="stat-picker">
     <button
     class="button" type="button" commandfor="{{ dialogId }}" command="show-modal">
         {{ stat.label }} <span class="stat-picker__value">{{ stat.format(value) }}</span>
     </button>
-    <dialog id="{{ dialogId }}" class="modal stat-picker__dialog"
-            data-action="close->live#action" data-live-action-param="save">
+    {# No light dismiss: closing triggers `save`, so a click on the backdrop would record a
+       value nobody chose. #}
+    <twig:molecules:Modal :id="dialogId" :closedby="false" class="stat-picker__dialog"
+                          data-action="close->live#action" data-live-action-param="save">
         <form method="dialog">
             <h2>{{ stat.label }} — {{ player.name }}</h2>
 
             <section>
-                {% if this.actions is not empty %}
+                {% if picker.actions is not empty %}
                     <menu>
-                        {% for action in this.actions %}
-                            {% set isDisabled = not this.isAvailable(action) %}
+                        {% for action in picker.actions %}
+                            {% set isDisabled = not picker.isAvailable(action) %}
                             <li>
                                 <button
     class="button" type="submit" data-action="live#update"
@@ -27,8 +32,8 @@
                 {% endif %}
 
                 <fieldset>
-                    {% set ceiling = this.ceiling %}
-                    {% for n in this.floor..this.displayCeiling %}
+                    {% set ceiling = picker.ceiling %}
+                    {% for n in picker.floor..picker.displayCeiling %}
                         <button
     class="button" type="submit" data-action="live#update" data-model="norender|value"
                                 data-value="{{ n }}" {{ value == n ? 'data-selected' }}
@@ -39,5 +44,5 @@
                 </fieldset>
             </section>
         </form>
-    </dialog>
+    </twig:molecules:Modal>
 </div>

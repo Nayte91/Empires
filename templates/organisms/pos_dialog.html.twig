@@ -1,7 +1,9 @@
-<dialog
+{% set orders = this %}
+
+<twig:molecules:Modal
+    :id="'pos-' ~ player.id"
     open
-    closedby="any"
-    class="modal pos-dialog"
+    class="pos-dialog"
     aria-labelledby="pos-heading-{{ player.id }}"
     data-controller="modal"
     data-action="close->live#action"
@@ -13,7 +15,7 @@
         <p role="alert">{{ error }}</p>
     {% endif %}
 
-    {% set posOrder = this.posOrder %}
+    {% set posOrder = orders.posOrder %}
     {% set isValidated = posOrder and posOrder.status.value == 'validated' %}
 
     <div class="summary">
@@ -22,11 +24,11 @@
         {% if not isValidated %}
             <twig:Cart
                 :player="player"
-                :cartStamp="this.getCartStamp()"
+                :cartStamp="orders.getCartStamp()"
                 :directSale="true"
                 :window="posTurn"
                 checkoutLabel="Confirm purchase"
-                :storageKey="this.posCartKey"
+                :storageKey="orders.posCartKey"
             />
         {% endif %}
     </div>
@@ -39,6 +41,6 @@
             Close
         </button>
     {% else %}
-        <twig:organisms:Catalog :player="player" :storageKey="this.posCartKey" :view="this.catalogView" />
+        <twig:organisms:Catalog :player="player" :storageKey="orders.posCartKey" :view="orders.catalogView" />
     {% endif %}
-</dialog>
+</twig:molecules:Modal>

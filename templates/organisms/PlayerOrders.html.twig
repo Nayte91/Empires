@@ -10,11 +10,15 @@
             >
                 {% if card.status == 'validated' %}
                     <button
-    class="button" type="button" commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}" command="show-modal">
+                        class="button"
+                        type="button"
+                        commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}"
+                        command="show-modal"
+                    >
                         Empty
                     </button>
 
-                    <dialog id="erase-confirm-{{ player.id }}-{{ card.turn }}" class="modal" closedby="any">
+                    <twig:molecules:Modal :id="'erase-confirm-' ~ player.id ~ '-' ~ card.turn">
                         <form method="dialog">
                             {% if card.turn == player.game.currentTurn %}
                                 <p>Empty turn {{ card.turn }}?</p>
@@ -27,20 +31,22 @@
                                 </p>
                             {% endif %}
                             <menu>
-                                <li><button
-    class="button" type="submit">Cancel</button></li>
                                 <li>
-                                    <button
-    class="button" type="submit" {{ live_action('eraseOrder', {turn: card.turn}) }}>
+                                    <button class="button" type="submit">
+                                        Cancel
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="button" type="submit" {{ live_action('eraseOrder', {turn: card.turn}) }}>
                                         Confirm
                                     </button>
                                 </li>
                             </menu>
                         </form>
-                    </dialog>
+                    </twig:molecules:Modal>
                 {% else %}
                     <button
-    class="button"
+                        class="button"
                         type="button"
                         {{ live_action('openPos', {turn: card.turn}) }}
                         data-loading="addAttribute(disabled)"

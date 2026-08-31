@@ -15,15 +15,14 @@
     </ul>
 
     {% for target in this.targets %}
-        <dialog id="qr-{{ target.key }}" class="modal" closedby="any">
+        <twig:molecules:Modal :id="'qr-' ~ target.key">
             <figure data-key="{{ target.key }}"{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                 <h2>{{ target.label }}</h2>
                 <img src="{{ target.qrUrl }}" width="320" height="320" loading="lazy" decoding="async" alt="QR code — {{ target.label }}">
             </figure>
             <form method="dialog">
-                <button
-    class="button" type="submit">Close</button>
+                <button class="button" type="submit">Close</button>
             </form>
-        </dialog>
+        </twig:molecules:Modal>
     {% endfor %}
 </nav>
