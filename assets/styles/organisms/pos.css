@@ -32,27 +32,6 @@
         }
     }
 
-    [data-status] .hint {
-        border: 1px solid transparent;
-        border-radius: var(--operator-radius);
-        padding: 0.25rem 0.5rem;
-    }
-
-    [data-status="pending"] .hint {
-        border-color: var(--operator-warning);
-        background: var(--operator-warning-bg);
-    }
-
-    [data-status="validated"] .hint {
-        border-color: var(--operator-success);
-        background: var(--operator-success-bg);
-    }
-
-    [data-status="missing"] .hint {
-        border-color: var(--operator-error);
-        background: var(--operator-error-bg);
-    }
-
     [role="status"] {
         margin: 0;
         border-radius: var(--operator-radius);

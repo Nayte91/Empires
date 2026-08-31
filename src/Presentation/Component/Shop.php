@@ -14,6 +14,7 @@ use App\Rules\Shop\ShopConnector;
 use App\State\Order;
 use App\State\Player;
 use App\State\Repository\OrderRepositoryInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -22,6 +23,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Command\EraseOrders;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\Exception\ShopExceptionReason;
 use Userforged\ShopEngine\OrderStatus;
@@ -56,6 +58,7 @@ final class Shop
         private readonly OrderRepositoryInterface $orderRepository,
         private readonly LineQuoter $lineQuoter,
         private readonly ShopConnector $shopConnector,
+        private readonly MessageBusInterface $commandBus,
         private readonly ShopExceptionTranslator $shopExceptionTranslator,
     ) {}
 
@@ -92,9 +95,14 @@ final class Shop
         $cart->items = $this->lineQuoter->intentsFromLines($order->lines());
 
         $this->cartStorage->save($this->getCartKey(), $cart);
+
+        $windows = $this->shopConnector->windowsToErase($this->player, $order->turn);
+
+        if ([] !== $windows) {
+            $this->commandBus->dispatch(new EraseOrders($this->player->id, $windows));
+        }
     }
 
-    /** Editable order for the current turn — a rejected order reopens for revision, resubmitting it. */
     public function getPendingOrder(): ?Order
     {
         $order = $this->getCurrentTurnOrder();
@@ -143,10 +151,25 @@ final class Shop
         return OrderStatus::Validated === $this->getCurrentTurnOrder()?->status;
     }
 
-    /** Status of the order for the current turn — only meaningful while {@see isOrderVisible()} is true. */
     public function getOrderStatus(): ?string
     {
         return $this->getCurrentTurnOrder()?->status->value;
+    }
+
+    public function getOrderStatusHook(): string
+    {
+        return $this->getCurrentTurnOrder()?->status->value ?? 'missing';
+    }
+
+    public function getOrderHint(): string
+    {
+        $status = $this->getCurrentTurnOrder()?->status->value ?? 'empty';
+
+        return \sprintf(
+            'Order for turn %d — %s',
+            $this->player->game->currentTurn,
+            'pending' === $status ? 'submitted' : $status,
+        );
     }
 
     public function isCartVisible(): bool
@@ -164,30 +187,21 @@ final class Shop
         return $this->cartStorage->load($this->getCartKey())->stamp();
     }
 
-    /**
-     * Null when no budget is set. Deliberately raw and possibly negative: Catalog uses it as-is
-     * to decide which cards disable (a negative remainder must still disable every card); only
-     * the figure shown in the template is clamped at zero.
-     */
     public function getRemainingBudget(): ?int
     {
         return null === $this->budget ? null : $this->budget - $this->getCartTotal();
     }
 
-    /** Sorted by what this player actually pays: two thirds of the catalogue is discounted, so
-     * the list-price order the shelf inherits contradicts the price printed on most of its tiles. */
     public function getCatalogView(): CatalogView
     {
         return CatalogView::kiosk($this->isLockedForTurn(), $this->getRemainingBudget());
     }
 
-    /** Public for organisms/shop, which hands it to the nested Catalog and Cart as their storageKey. */
     public function getCartKey(): string
     {
         return CartKey::shop($this->player);
     }
 
-    /** Mirrors Cart::getTotal()'s own computation — the two components run independently and can't share an instance, so this reuses the same trait methods rather than inventing a second way to total a cart. */
     private function getCartTotal(): int
     {
         $cart = $this->cartStorage->load($this->getCartKey());

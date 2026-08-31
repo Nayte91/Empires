@@ -39,9 +39,6 @@ final class Cart
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     #[LiveProp(updateFromParent: true)]
-    public bool $showLines = true;
-
-    #[LiveProp(updateFromParent: true)]
     public string $cartStamp = '';
 
     #[LiveProp]
@@ -50,24 +47,26 @@ final class Cart
     #[LiveProp(updateFromParent: true)]
     public string $checkoutLabel = 'Submit my order';
 
-    /** Whether checkout dispatches SellDirect (POS, immediate validation) instead of SubmitOrder (player shop, pending order). */
+    #[LiveProp(updateFromParent: true)]
+    public string $clearLabel = 'Clear';
+
     #[LiveProp(updateFromParent: true)]
     public bool $directSale = false;
 
-    /** Opaque ordering-window index for the POS, where it may differ from the current turn; null lets checkout() default to the current one. */
     #[LiveProp(updateFromParent: true)]
     public ?int $window = null;
 
-    /** Mirrors Catalog's own `locked` prop — gates checkout when the turn's order is already validated (e.g. stray shop-cart items surviving a POS-side validation of the same turn). */
     #[LiveProp(updateFromParent: true)]
     public bool $locked = false;
 
-    /** Whether the footer offers to empty the cart. The POS does not: its operator erases a whole order instead. */
     #[LiveProp(updateFromParent: true)]
     public bool $clearable = false;
 
     #[LiveProp(updateFromParent: true)]
     public string $hint = '';
+
+    #[LiveProp(updateFromParent: true)]
+    public string $status = '';
 
     public ?string $error = null;
 
@@ -119,6 +118,7 @@ final class Cart
     public function clear(): void
     {
         $this->cartStorage->clear($this->storageKey);
+        $this->emitUp('cartCleared');
         $this->emitUp('cartChanged');
     }
 

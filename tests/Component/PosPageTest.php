@@ -65,6 +65,23 @@ final class PosPageTest extends WebTestCase
         $this->assertCount(0, $crawler->filter('button[id^="product-"]'));
     }
 
+    #[Test]
+    public function clearingTheTillAlsoWithdrawsTheOrderBehindIt(): void
+    {
+        [, , $bob] = $this->createGameWithAliceAndBob();
+        $this->createPendingOrderFor($bob, ['pottery']);
+
+        $this->createPos($bob->game)->set('playerSlug', $bob->slug)->call('onCartCleared');
+
+        $this->entityManager->clear();
+
+        $this->assertNotInstanceOf(
+            Order::class,
+            self::getContainer()->get(OrderRepository::class)
+                ->findOneByPlayerAndWindow($bob, $bob->game->currentTurn),
+        );
+    }
+
     /** @return iterable<string, array{string}> */
     public static function provideASlugMatchingNobodyIsTreatedAsNoBuyerChosenCases(): iterable
     {

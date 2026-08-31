@@ -29,60 +29,47 @@
         <twig:organisms:Catalog :player="player" :storageKey="this.cartKey" :view="this.catalogView" />
 
         <aside class="shop__cart">
-            <twig:Cart
-                :player="player"
-                :showLines="this.isCartVisible"
-                :cartStamp="this.getCartStamp()"
-                :locked="this.isLockedForTurn"
-                checkoutLabel="Submit my order"
-                :clearable="true"
-                :storageKey="this.cartKey"
-            />
-
             {% if this.isOrderVisible %}
-                <div class="shop__order" data-status="{{ this.orderStatus }}">
-                    <twig:atoms:Label>Your order</twig:atoms:Label>
+                {% set orderHint = this.orderHint %}
 
-                    <p class="shop__order-status" role="status">
-                        {% if this.orderStatus == 'validated' %}
-                            Order validated for this turn.
-                        {% elseif this.orderStatus == 'rejected' %}
-                            Order rejected for this turn — revise and resubmit.
-                        {% else %}
-                            Order pending for this turn.
-                        {% endif %}
-                    </p>
+                <section class="cart panel" data-status="{{ this.orderStatusHook }}">
+                    <twig:atoms:Label>Cart</twig:atoms:Label>
+                    <twig:atoms:Hint>{{ orderHint }}</twig:atoms:Hint>
 
-                    <ul class="shop__order-lines">
+                    <ul class="lines">
                         {% for row in this.orderLines %}
-                            <li>
-                                <span>{{ row.advance.name|capitalize }}</span>
-                                {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                                    <small class="shop__cart-line-original">{{ row.line.netCost + row.line.promotion.amount }}</small>
-                                {% endif %}
-                                <span>{{ row.line.netCost }}</span>
-                                {% if row.line.promotion and row.line.promotion.type.value != 'option' %}
-                                    <span class="shop__cart-line-badge">−{{ row.line.promotion.amount }} {{ row.line.promotion.source }}</span>
-                                {% endif %}
-                            </li>
+                            <twig:molecules:TicketLine :row="row" />
                         {% endfor %}
                     </ul>
 
-                    <p class="shop__order-total">
+                    <p class="total">
                         {{ this.isLockedForTurn ? 'Total' : 'Indicative total' }}: {{ this.orderTotal }}
                     </p>
 
                     {% if not this.isLockedForTurn %}
-                        <button
-    class="button"
-                            type="button"
-                            {{ live_action('editPendingOrder') }}
-                            data-loading="addAttribute(disabled)"
-                        >
-                            Modify
-                        </button>
+                        <footer>
+                            <button
+                                class="button"
+                                type="button"
+                                {{ live_action('editPendingOrder') }}
+                                data-loading="addAttribute(disabled)"
+                            >
+                                Modify
+                            </button>
+                        </footer>
                     {% endif %}
-                </div>
+                </section>
+            {% else %}
+                <twig:Cart
+                    :player="player"
+                    :cartStamp="this.getCartStamp()"
+                    :locked="this.isLockedForTurn"
+                    checkoutLabel="Submit my order"
+                    :clearable="true"
+                    :storageKey="this.cartKey"
+                    :hint="this.orderHint"
+                    :status="this.orderStatusHook"
+                />
             {% endif %}
         </aside>
     </div>
