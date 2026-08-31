@@ -27,7 +27,7 @@ use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Promotion\PromotionType;
 use Userforged\ShopEngine\Service\LineQuoter;
 
-#[AsLiveComponent(template: 'organisms/cart.html.twig')]
+#[AsLiveComponent(template: 'organisms/Cart.html.twig')]
 final class Cart
 {
     use ComponentToolsTrait;

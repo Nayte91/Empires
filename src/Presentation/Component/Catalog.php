@@ -15,7 +15,7 @@ use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\Product;
 use Userforged\ShopEngine\Service\ProductCatalog;
 
-#[AsTwigComponent(name: 'organisms:Catalog', template: 'organisms/catalog.html.twig')]
+#[AsTwigComponent(name: 'organisms:Catalog', template: 'organisms/Catalog.html.twig')]
 final class Catalog
 {
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

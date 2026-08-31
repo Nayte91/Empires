@@ -28,7 +28,7 @@ use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Service\LineQuoter;
 
-#[AsLiveComponent(template: 'organisms/playerOrders.html.twig')]
+#[AsLiveComponent(template: 'organisms/PlayerOrders.html.twig')]
 final class PlayerOrders
 {
     use DefaultActionTrait;

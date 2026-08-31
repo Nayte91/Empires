@@ -17,7 +17,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * {@see Evolution} it draws no legend: there is only one line to read, already named by the
  * chart title.
  */
-#[AsTwigComponent(template: 'molecules/purchaseValue.html.twig')]
+#[AsTwigComponent(template: 'molecules/PurchaseValue.html.twig')]
 final class PurchaseValue
 {
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

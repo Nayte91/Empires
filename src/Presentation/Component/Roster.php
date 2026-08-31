@@ -9,7 +9,7 @@ use App\State\Game;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-#[AsTwigComponent(template: 'molecules/roster.html.twig')]
+#[AsTwigComponent(template: 'molecules/Roster.html.twig')]
 final class Roster
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

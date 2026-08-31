@@ -28,7 +28,7 @@ use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\LiveComponent\ValidatableComponentTrait;
 
-#[AsLiveComponent(template: 'organisms/gameCreator.html.twig')]
+#[AsLiveComponent(template: 'organisms/GameCreator.html.twig')]
 final class GameCreator
 {
     use DefaultActionTrait;

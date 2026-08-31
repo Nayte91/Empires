@@ -15,7 +15,7 @@
 
         <ul class="game-grid">
         {% for game in games %}
-            <li>{% include 'molecules/gameTile.html.twig' with {game} only %}</li>
+            <li>{% include 'molecules/game_tile.html.twig' with {game} only %}</li>
         {% else %}
             <twig:atoms:Hint>No game in progress. <a href="{{ path('app_create') }}">Create a game</a></twig:atoms:Hint>
         {% endfor %}

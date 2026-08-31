@@ -16,7 +16,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * Live for one reason: a Mercure ping asks it to re-render itself. It carries no write of its own —
  * the rename moved out to {@see PlayerHeading}, the stat pickers are components in their own right.
  */
-#[AsLiveComponent(template: 'organisms/playerBoard.html.twig')]
+#[AsLiveComponent(template: 'organisms/PlayerBoard.html.twig')]
 final class PlayerBoard
 {
     use DefaultActionTrait;

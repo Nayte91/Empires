@@ -12,7 +12,7 @@ use App\State\Game;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-#[AsTwigComponent(template: 'molecules/ast.html.twig')]
+#[AsTwigComponent(template: 'molecules/Ast.html.twig')]
 final class Ast
 {
     // Shared board layout is deliberately approximated to the 'standard' track — genuinely

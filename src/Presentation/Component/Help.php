@@ -10,7 +10,7 @@ use App\State\Game;
 use App\State\Region;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
-#[AsTwigComponent(template: 'molecules/help.html.twig')]
+#[AsTwigComponent(template: 'molecules/Help.html.twig')]
 final class Help
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

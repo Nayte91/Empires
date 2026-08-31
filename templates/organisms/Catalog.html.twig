@@ -2,7 +2,7 @@
     <twig:atoms:Label>Catalog</twig:atoms:Label>
 
     {% for row in this.rows %}
-        <twig:molecules:productTile
+        <twig:molecules:ProductTile
             :row="row"
             :locked="view.locked"
             :remainingBudget="view.remainingBudget"
