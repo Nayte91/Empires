@@ -10,7 +10,7 @@ use App\Rules\Ruleset\EmpireRegistry;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /** Single routing point config yaml → display for colors: emits empire and advance-category colors as CSS custom properties. */
-#[AsTwigComponent(template: 'atoms/themeColors.html.twig')]
+#[AsTwigComponent(template: 'atoms/ThemeColors.html.twig')]
 final readonly class ThemeColors
 {
     public function __construct(

@@ -141,11 +141,16 @@ Yaml readers follow one pattern: `#[Autowire('%kernel.project_dir%/config/game/x
 ```
 templates/
 ├── layout.html.twig  # root layout (all skeletons extend it; wires the ThemeColors atom)
-├── atoms/            # themeColors (yaml → CSS custom properties, single color route), PageTitle, Marker, tab
-├── molecules/        # ast, AstRequirements, Discounts, productTile, StatPicker, TradeCards, ...
-├── organisms/        # gameDashboard, playerBoard, operatorConsole, shop, gameCreator, playerSaga
-└── skeletons/        # full pages, split Game/ and Player/ — `assets/styles/skeletons/` mirrors it
+├── atoms/            # ThemeColors (yaml → CSS custom properties, single color route), PageTitle, Marker, tab
+├── molecules/        # Ast, AstRequirements, Discounts, ProductTile, StatPicker, trade_cards, ...
+├── organisms/        # GameDashboard, PlayerBoard, OperatorConsole, Shop, GameCreator, PlayerSaga
+└── skeletons/        # full pages, split game/ and player/ — `assets/styles/skeletons/` mirrors it
 ```
+**A template's name says whether it is a component.** Backed by a component — anonymous, Twig or
+Live — it is **PascalCase**, because the file name *is* the component's name. Anything else — a
+skeleton, an `{% include %}`d partial, a Turbo stream template — is **snake_case**. Two neighbours
+show the seam: `atoms/PageTitle` is an anonymous component, `atoms/tab` is a plain `{% embed %}`
+target, and they sit in the same directory. Directories are always lowercase.
 **Colors**: empire/advance colors are emitted once by the `ThemeColors` atom as `--empire-<slug>` / `--advance-<category>` CSS vars. Never resolve colors in PHP; use `var(--empire-{{ slug }}, dimgray)` in templates.
 
 **Live Components — `data-loading` vs conditional `disabled`**: never put an unconditional `data-loading="addAttribute(disabled)"` on an element that also has a business-conditional `disabled` — the loading plugin strips `addAttribute`/`removeAttribute` directives on mount ([symfony/ux#372](https://github.com/symfony/ux/issues/372)), silently re-enabling it. Wrap the directive in the inverted condition:

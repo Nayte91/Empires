@@ -10,7 +10,7 @@ use App\State\Game;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /** Static shell containing game metadata and embedded live components (AST, Roster). */
-#[AsTwigComponent(template: 'organisms/gameDashboard.html.twig')]
+#[AsTwigComponent(template: 'organisms/GameDashboard.html.twig')]
 final class GameDashboard
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

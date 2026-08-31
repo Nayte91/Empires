@@ -29,19 +29,19 @@ final class GameController extends AbstractController
             return $this->chronicle($game);
         }
 
-        return $this->render('skeletons/Game/dashboard.html.twig', ['game' => $game]);
+        return $this->render('skeletons/game/dashboard.html.twig', ['game' => $game]);
     }
 
     #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
     {
-        return $this->render('skeletons/Game/operator.html.twig', ['game' => $game]);
+        return $this->render('skeletons/game/operator.html.twig', ['game' => $game]);
     }
 
     #[Route('/{slug}/trade-cards', name: 'app_game_trade_cards', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function tradeCards(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
     {
-        return $this->render('skeletons/Game/trade_cards.html.twig', [
+        return $this->render('skeletons/game/trade_cards.html.twig', [
             'game' => $game,
             'distribution' => $this->tradeCardRegistry->distributionFor(
                 $this->scenarioRegistry->find($game->playerCount, $game->region),
@@ -86,6 +86,6 @@ final class GameController extends AbstractController
 
     private function chronicle(Game $game): Response
     {
-        return $this->render('skeletons/Game/chronicle.html.twig', ['game' => $game]);
+        return $this->render('skeletons/game/chronicle.html.twig', ['game' => $game]);
     }
 }

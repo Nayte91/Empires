@@ -17,7 +17,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * dashboard's weight, for a panel that starts closed and shows one code at a time. The template
  * asks for them with `loading="lazy"`, so the browser fetches none of them until the panel opens.
  */
-#[AsTwigComponent(template: 'molecules/navigation.html.twig')]
+#[AsTwigComponent(template: 'molecules/Navigation.html.twig')]
 final class Navigation
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

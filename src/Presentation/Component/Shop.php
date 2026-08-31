@@ -27,7 +27,7 @@ use Userforged\ShopEngine\Exception\ShopExceptionReason;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Service\LineQuoter;
 
-#[AsLiveComponent(template: 'organisms/shop.html.twig')]
+#[AsLiveComponent(template: 'organisms/Shop.html.twig')]
 final class Shop
 {
     use DefaultActionTrait;

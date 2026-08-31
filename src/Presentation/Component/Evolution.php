@@ -17,7 +17,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * A line chart of how each player's score grew, turn by turn — static, since a finished game
  * never Mercure-refreshes.
  */
-#[AsTwigComponent(template: 'molecules/evolution.html.twig')]
+#[AsTwigComponent(template: 'molecules/Evolution.html.twig')]
 final class Evolution
 {
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)

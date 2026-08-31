@@ -15,7 +15,7 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * The player's counterpart to GameChronicle: a finished game's read-only retrospective,
  * one player at a time. Static — a finished game never Mercure-refreshes.
  */
-#[AsTwigComponent(template: 'organisms/playerSaga.html.twig')]
+#[AsTwigComponent(template: 'organisms/PlayerSaga.html.twig')]
 final class PlayerSaga
 {
     /** Same stats ControlBoard offers live, minus astPosition — the shared A.S.T. board already carries that one. */
