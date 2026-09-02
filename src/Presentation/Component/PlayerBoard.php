@@ -35,7 +35,11 @@ final class PlayerBoard
         return array_values($this->advanceRegistry->getAdvancesByNames($this->player->advances));
     }
 
-    /** What the owned advances alone are worth, for the Advances heading. */
+    /**
+     * What the owned advances alone are worth, for the Advances heading — quoted from the score
+     * itself so the two can never drift. Zero is printed rather than hidden: a heading that keeps
+     * its shape is easier to read turn over turn, and a zero in a named source is information.
+     */
     public function getAdvancePoints(): int
     {
         return $this->scoreCalculator->advancePointsFor($this->getOwnedAdvances());

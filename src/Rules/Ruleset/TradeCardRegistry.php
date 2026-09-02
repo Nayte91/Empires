@@ -39,7 +39,12 @@ final class TradeCardRegistry
         return new TradeCardTable(columns: array_column($columns, 'label'), stacks: $stacks);
     }
 
-    /** @return list<array{label: string, bracketKey: string}> */
+    /**
+     * Below ten players a game is East or West and never both. From twelve the pool splits, so the
+     * page answers with two columns instead of one.
+     *
+     * @return list<array{label: string, bracketKey: string}>
+     */
     private function resolveColumns(Scenario $scenario): array
     {
         $playerCount = $scenario->playerCount;

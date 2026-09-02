@@ -11,6 +11,11 @@ use App\State\Repository\OrderRepositoryInterface;
  * What a player spent, turn by turn, read back off their own validated orders — the shop-side
  * counterpart to {@see ScoreHistoryCalculator}, but per player and narrower: how much buying
  * cost, not what it was worth.
+ *
+ * Two of its answers are product rulings rather than arithmetic: a turn without an order is a
+ * zero, never a skipped point; and a game too short to average returns null, a different fact
+ * from the genuine zero of a player who played on and bought nothing. The two absences must
+ * never collapse into one another, in either direction.
  */
 final readonly class PurchaseHistoryCalculator
 {

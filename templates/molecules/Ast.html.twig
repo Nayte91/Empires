@@ -24,7 +24,11 @@
                         {{- position == game.currentTurn - 1 ? ' data-current-turn' : '' }}>
                         {#- One marker per row, parked on the anchor column whatever the player's
                             position: it is the same element from turn to turn, which is the only
-                            way the move can be animated rather than jump. -#}
+                            way the move can be animated rather than jump. The offset counts in
+                            --ast-cell-size, the variable the cells are sized from, so the pitch
+                            cannot drift from them. Inside the opening stretch the offset is
+                            negative; the compact board drops those columns and the stylesheet
+                            parks the marker back on the anchor rather than outside the table. -#}
                         {%- if position == openingSpan -%}
                             <twig:atoms:Marker
                                 empire="{{ player.empire }}"

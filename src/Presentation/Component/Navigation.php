@@ -16,6 +16,11 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
  * The codes are addresses, not markup: inlining nineteen 320px SVGs made them 60% of the
  * dashboard's weight, for a panel that starts closed and shows one code at a time. The template
  * asks for them with `loading="lazy"`, so the browser fetches none of them until the panel opens.
+ *
+ * The phone gives the seats a screen of their own, where folding the list away would hide the only
+ * thing that screen is for — so it is a flat list of ways in, and the element says so. A player row
+ * leads to their board, never to their shop: the board is the player's home, and the kiosk is
+ * reached from there.
  */
 #[AsTwigComponent(template: 'molecules/Navigation.html.twig')]
 final class Navigation

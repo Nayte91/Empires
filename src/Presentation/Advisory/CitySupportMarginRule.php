@@ -29,6 +29,7 @@ final readonly class CitySupportMarginRule implements AdvisoryRule
         // No clamp: the guard above has already established that the demand is met.
         $spare = $player->census - $this->citySupportCalculator->required($player);
 
+        // "Up to 0" reads as a mistake, so the boundary gets its own sentence.
         if (0 === $spare) {
             return new Advisory('You cannot afford to lose any population', AdvisoryLevel::Caution);
         }

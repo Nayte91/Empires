@@ -108,6 +108,10 @@ final readonly class ShopConnector implements FacetProviderInterface
      * total, is what stops an intervening withdrawal from swallowing a later
      * gain: [+5, -10, +5] must settle at 5, never at 0.
      *
+     * Cross-class invariant: this replay is also the only thing keeping a
+     * revoked grant from driving a balance negative. It breaks the day capping
+     * moves back to write time, in AdvanceFulfillment.
+     *
      * @param list<CreditEntry> $creditLedger
      *
      * @return list<Entitlement>

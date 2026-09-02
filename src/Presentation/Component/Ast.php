@@ -27,6 +27,11 @@ final class Ast
         private readonly StandingsCalculator $standingsCalculator,
     ) {}
 
+    /**
+     * Start and the Stone Age ask nothing of anybody, so the compact board drops those columns. The
+     * span is read off the requirements rather than counted in, and the expert track opens the same
+     * way.
+     */
     public function getOpeningSpan(): int
     {
         $span = 0;

@@ -49,6 +49,12 @@ class Player
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $astPosition = 0;
 
+    /**
+     * A player has one limit, and the slug is a derived writing of the name rather than a second
+     * field with a bound of its own. Transliteration expands — thirty CJK characters are inside the
+     * bound yet slugify to 119 of pinyin — and this hook is the only place a slug is produced, so it
+     * is the only place that can hold the single limit for both.
+     */
     #[ORM\Column(length: self::MAX_NAME_LENGTH)]
     public string $name {
         set {

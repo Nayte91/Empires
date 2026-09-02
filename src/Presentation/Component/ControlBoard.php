@@ -13,7 +13,14 @@ final class ControlBoard
 {
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
-    /** @var list<string> */
+    /**
+     * The player's own board takes this default. The operator console drives the same component with
+     * its own list, AST position included — a stat the player must never move on their own board.
+     *
+     * Advisories belong to the Outlook block; this one is controls only.
+     *
+     * @var list<string>
+     */
     public array $stats = ['cities', 'ships', 'census', 'treasury', 'cards'];
 
     /** Off by default: a link to a player's own shop only makes sense on that player's own board. */

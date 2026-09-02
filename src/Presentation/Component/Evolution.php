@@ -16,6 +16,9 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 /**
  * A line chart of how each player's score grew, turn by turn — static, since a finished game
  * never Mercure-refreshes.
+ *
+ * The legend is HTML beside the plot rather than drawn inside the canvas: one drawn inside can only
+ * take height away from the plot, and fourteen empires is the ordinary case for this game.
  */
 #[AsTwigComponent(template: 'molecules/Evolution.html.twig')]
 final class Evolution

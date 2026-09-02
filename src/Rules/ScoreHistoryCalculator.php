@@ -10,7 +10,8 @@ use App\State\Game;
 use App\State\Repository\OrderRepositoryInterface;
 
 /**
- * What each empire was worth, turn by turn, read back off the shop's own record.
+ * What each empire was worth, turn by turn, read back off the shop's own record. A score is the
+ * points of the advances owned plus the marker's position on the A.S.T., five points a square.
  *
  * Nothing snapshots a past turn — cities and A.S.T. position are counters the operator overwrites.
  * Orders are the exception, one validated basket per player and per turn, and the shop sells

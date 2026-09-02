@@ -9,6 +9,14 @@ use App\State\Game;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
+/**
+ * The live counters of the table, read down the movement-phase order rather than down the
+ * standings: the operator uses it to call the players in turn.
+ *
+ * Ships and cards are deliberately left to the player's own board, no victory-point column is
+ * rendered — the score belongs to the A.S.T. board — and no cell links anywhere: reaching a view is
+ * Navigation's job.
+ */
 #[AsTwigComponent(template: 'molecules/Roster.html.twig')]
 final class Roster
 {

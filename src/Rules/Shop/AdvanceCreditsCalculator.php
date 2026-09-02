@@ -17,6 +17,9 @@ use App\Rules\Ruleset\Advance;
  *
  * "Empty" — never earned — is deliberately not reported: it is readable off a
  * zero amount by the caller.
+ *
+ * Entitlements are read opaquely by scope, whatever their origin: an elective
+ * entitlement sharing a named key folds into that same named total.
  */
 final readonly class AdvanceCreditsCalculator
 {

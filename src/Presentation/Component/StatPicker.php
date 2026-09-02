@@ -90,6 +90,11 @@ final class StatPicker
         return $action->isAvailable($this->player, $this->handSizeCalculator, $this->statBoundsCalculator, $this->taxCalculator);
     }
 
+    /**
+     * Every button inside the dialog commits the value it carries: one gesture, no confirmation
+     * step. Save is driven from the tile's own `data-value`, which ties the markup the player taps
+     * to the number that gets stored.
+     */
     #[LiveAction]
     public function save(): void
     {

@@ -14,6 +14,9 @@ use App\State\Player;
  * already own each bound rather than replacing them: GameRegistry for the table's own limits,
  * StockCalculator for the census/treasury shared pool, AstRegistry for the exact track length of
  * the player's own AST version and empire group.
+ *
+ * Each display ceiling answers to the opposite stat's floor, so the floors and the display ceilings
+ * can never drift apart: raising the census floor is what takes the treasury's top tile away.
  */
 final readonly class StatBoundsCalculator
 {
@@ -63,6 +66,10 @@ final readonly class StatBoundsCalculator
         };
     }
 
+    /**
+     * Exact per version and empire group — every group of a version shares one track length, and a
+     * player with no empire yet falls back to the standard group.
+     */
     private function astPositionCeiling(Player $player): int
     {
         $group = $this->astRegistry->resolveEmpireGroup($player->game->astVersion, $player->empire);

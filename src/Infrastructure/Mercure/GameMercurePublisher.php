@@ -15,6 +15,14 @@ use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * The topic and the event name are a contract shared with the `mercure-refresh` Stimulus controller
+ * and with nothing else.
+ *
+ * Two payload shapes, and which is which is the whole design: the dashboard regions travel already
+ * rendered, because nothing on that screen holds state a replace could destroy; every other region
+ * travels as a signal its own component answers by re-rendering itself.
+ */
 final readonly class GameMercurePublisher
 {
     public const string SIGNAL = '{}';
