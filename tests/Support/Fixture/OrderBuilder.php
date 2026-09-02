@@ -75,15 +75,6 @@ final class OrderBuilder
         return $this;
     }
 
-    /** No ownership: a rejected order delivers nothing. */
-    public function rejected(int $total): self
-    {
-        $this->status = OrderStatus::Rejected;
-        $this->total = $total;
-
-        return $this;
-    }
-
     public function build(): Order
     {
         $order = new Order($this->player, $this->turn ?? $this->player->game->currentTurn);
