@@ -1,17 +1,17 @@
+body {
+    --ground: #111;
+    block-size: 100dvh;
+}
+
 .game-chronicle {
     container-type: inline-size;
     display: flex;
     flex-direction: column;
-    block-size: 100dvh;
+    min-block-size: 0;
     overflow: hidden;
-    --ground: #111;
+    padding: 0;
     background: var(--ground);
     color: var(--ink-primary);
-
-    > #page-title {
-        flex: none;
-        margin-block: 0.75rem;
-    }
 
     > section {
         flex: 1;
@@ -47,8 +47,6 @@
         min-block-size: 100vh;
         overflow: visible;
         padding: 1rem;
-
-        > #page-title { margin-block: 1.5rem }
 
         > section > h2 { display: revert }
 

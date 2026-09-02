@@ -37,16 +37,6 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     #[Test]
-    public function rendersTheCurrentTurn(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
-
-        $this->assertStringContainsString('Turn 1', $rendered->toString());
-    }
-
-    #[Test]
     #[DataProvider('providePreviousTurnButtonIsDisabledOnlyOnTheFirstTurnCases')]
     public function previousTurnButtonIsDisabledOnlyOnTheFirstTurn(int $currentTurn, bool $expectedDisabled): void
     {

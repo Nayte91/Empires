@@ -2,8 +2,6 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: shop_topic(player)})) }}
     class="shop"
 >
-    <twig:molecules:PlayerHeading :player="player" />
-
     {% if error %}
         <p class="shop__error" role="alert">{{ error }}</p>
     {% endif %}

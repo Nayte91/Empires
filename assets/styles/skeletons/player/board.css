@@ -4,8 +4,6 @@
     margin-inline: auto;
     gap: var(--operator-gap);
 
-    > :not(.player-heading) { margin-inline: 1rem }
-
     .panels {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));

@@ -77,7 +77,7 @@ final class TradeCardsViewTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertCount(0, $crawler->filter('table'));
         $this->assertSame($game->slug, trim($crawler->filter('#page-title h1')->text()));
-        $this->assertCount(1, $crawler->filter('#page-title ~ p'));
+        $this->assertCount(1, $crawler->filter('main > p'));
     }
 
     #[Test]

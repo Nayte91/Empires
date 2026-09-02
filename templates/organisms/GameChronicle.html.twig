@@ -1,8 +1,6 @@
 {% props game %}
 
 <main class="game-chronicle">
-    <twig:atoms:PageTitle variant="celebration" :heading="game.slug" :qualifier="game.astVersion.value|capitalize ~ ' version — Turn ' ~ game.currentTurn ~ ' — Finished'" />
-
     <section id="panel-nav" aria-label="Navigation">
         <twig:Navigation :game="game" />
     </section>

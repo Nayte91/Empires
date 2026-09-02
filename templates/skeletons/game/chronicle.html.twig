@@ -12,6 +12,10 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/evolution.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:atoms:PageTitle variant="celebration" :heading="game.slug" :qualifier="game.astVersion.value|capitalize ~ ' version — Turn ' ~ game.currentTurn ~ ' — Finished'" />
+{% endblock %}
+
 {% block main %}
     <twig:organisms:GameChronicle :game="game" />
 {% endblock %}

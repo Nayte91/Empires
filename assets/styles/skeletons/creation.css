@@ -4,7 +4,6 @@
     max-inline-size: 40rem;
     margin-inline: auto;
     gap: var(--operator-gap);
-    padding: 1.5rem;
 
     input, select, button:not(.game-creator__launch) {
         block-size: var(--control-size);

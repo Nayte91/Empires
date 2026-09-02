@@ -1,0 +1,3 @@
+<div {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}>
+    <twig:atoms:PageTitle :heading="game.slug" :qualifier="'Turn ' ~ game.currentTurn ~ (game.finished ? ' — finished' : '')" />
+</div>

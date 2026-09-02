@@ -26,8 +26,6 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * lists are intentionally different, and nothing else guards them against converging back: the
  * General tab tracks how far along each empire is, economy management belongs to the player's own
  * tab.
- *
- * It is also the one screen still answering for a finished game, so its title qualifier says so.
  */
 #[AsLiveComponent(template: 'organisms/OperatorConsole.html.twig')]
 final class OperatorConsole

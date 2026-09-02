@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="{{ asset('styles/skeletons/creation.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:atoms:PageTitle heading="Create a game" />
+{% endblock %}
+
 {% block main %}
     {{ component('GameCreator') }}
 {% endblock %}

@@ -8,11 +8,14 @@
     {{ parent() }}
 
     <link rel="stylesheet" href="{{ asset('styles/skeletons/player/board.css') }}" data-turbo-track="dynamic">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/playerHeading.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/discounts.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/statPicker.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/controlBoard.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/outlook.css') }}" data-turbo-track="dynamic">
+{% endblock %}
+
+{% block header %}
+    <twig:molecules:PlayerHeading :player="player" />
 {% endblock %}
 
 {% block main %}

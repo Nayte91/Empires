@@ -13,6 +13,10 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/purchaseValue.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:atoms:PageTitle variant="celebration" :heading="player.name" :qualifier="player.empire|capitalize" />
+{% endblock %}
+
 {% block main %}
     {{ component('PlayerSaga', {player}) }}
 {% endblock %}
