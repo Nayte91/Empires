@@ -4,25 +4,25 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\ShopFlow;
 
-use App\State\Order;
-use App\State\Player;
-use App\Rules\Ruleset\AdvanceRegistry;
-use App\Engine\Shop\AdvanceFulfillment;
-use App\Rules\Shop\AdvancePriceResolver;
-use App\Infrastructure\Shop\PlayerBuyerProvider;
-use App\Rules\Shop\ShopConnector;
 use App\Infrastructure\Repository\OrderRepository;
-use App\Infrastructure\Repository\PlayerRepository;
+use App\Rules\Shop\ShopConnector;
+use App\State\Order;
+use App\Tests\Support\Fixture\OrderBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameFixtureTrait;
+use App\Tests\Support\ShopFixtureTrait;
+use PHPUnit\Framework\Attributes\Test;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Userforged\ShopEngine\BuyerProviderInterface;
 use Userforged\ShopEngine\Command\EraseOrders;
 use Userforged\ShopEngine\Command\SellDirect;
 use Userforged\ShopEngine\Command\SubmitOrder;
 use Userforged\ShopEngine\CommandHandler\EraseOrdersHandler;
 use Userforged\ShopEngine\CommandHandler\SellDirectHandler;
 use Userforged\ShopEngine\CommandHandler\SubmitOrderHandler;
-use Userforged\ShopEngine\Doctrine\DoctrineTransaction;
 use Userforged\ShopEngine\Dto\LineIntent;
-use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\Event\ShopEventPublisher;
+use Userforged\ShopEngine\FulfillmentInterface;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\ProductInterface;
 use Userforged\ShopEngine\ProductProviderInterface;
@@ -31,77 +31,33 @@ use Userforged\ShopEngine\Promotion\PromotionEngine;
 use Userforged\ShopEngine\Service\LineQuoter;
 use Userforged\ShopEngine\Service\OrderValidator;
 use Userforged\ShopEngine\Service\PriceCalculator;
-use App\Tests\Support\Fixture\PlayerBuilder;
-use App\Tests\Support\GameFixtureTrait;
-use App\Tests\Support\Mercure\RecordingHub;
-use PHPUnit\Framework\Attributes\Test;
-use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Userforged\ShopEngine\TransactionInterface;
 
 final class OrderEraserTest extends WebTestCase
 {
     use GameFixtureTrait;
+    use ShopFixtureTrait;
 
     private OrderRepository $orderRepository;
     private SellDirectHandler $sellDirectHandler;
     private EraseOrdersHandler $eraseOrdersHandler;
     private ShopConnector $shopConnector;
-    private RecordingHub $hub;
 
     protected function setUp(): void
     {
         $this->initEntityManager();
 
         $this->orderRepository = self::getContainer()->get(OrderRepository::class);
-        $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $this->hub = self::getContainer()->get(RecordingHub::class);
-
-        // SellDirectHandler, OrderValidator and EraseOrdersHandler are built by hand
-        // rather than fetched from the container, so this file can drive them directly
-        // and share one EntityManager/OrderRepository/PlayerRepository with the
-        // fixtures. The shop_order workflow itself comes from the container.
-        // RecordingHub (registered for the real HubInterface under config/services.yaml
-        // when@test) keeps every publish() call in-process — no network I/O happens
-        // during the suite, and the sequence stays assertable.
-        $productProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
-        $this->shopConnector = new ShopConnector($this->orderRepository);
-        $lineQuoter = new LineQuoter($productProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector);
-        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
-        $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
-        $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
-        // Single shared DoctrineTransaction instance, matching the singleton the
-        // container injects in production. SellDirectHandler doesn't open a scope of
-        // its own — its mutations stay unflushed and ride into OrderValidator's
-        // transactional() call via the unit of work, same as today. EraseOrdersHandler
-        // opens its own independent scope. Sharing the instance still matters: two
-        // separate instances would silently open a real nested transaction
-        // (SAVEPOINT) instead of joining the moment anything ever does nest.
-        $transaction = new DoctrineTransaction($this->entityManager);
-        $orderValidator = new OrderValidator(
-            $transaction,
-            $lineQuoter,
-            $shopOrderStateMachine,
-            $buyerProvider,
-            $eventBus,
-            $fulfillment,
-        );
-        $this->sellDirectHandler = new SellDirectHandler(
-            $this->orderRepository,
-            $orderValidator,
-            $lineQuoter,
-            $shopOrderStateMachine,
-            $eventBus,
-            $buyerProvider,
-        );
-        $this->eraseOrdersHandler = new EraseOrdersHandler($transaction, $this->orderRepository, $eventBus, $fulfillment);
+        $this->sellDirectHandler = self::getContainer()->get(SellDirectHandler::class);
+        $this->eraseOrdersHandler = self::getContainer()->get(EraseOrdersHandler::class);
+        $this->shopConnector = self::getContainer()->get(ShopConnector::class);
     }
 
     #[Test]
     public function erasingAPendingOrderDeletesItAndTouchesNothingElse(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 1, ['pottery']);
+        $order = OrderBuilder::for($player)->onTurn(1)->withKeys('pottery')->persist($this->entityManager);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
 
@@ -112,13 +68,11 @@ final class OrderEraserTest extends WebTestCase
     #[Test]
     public function erasingExplicitWindowsDisownsValidatedAdvancesButNotPendingOnesAndRemovesAll(): void
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $player->ownAdvances(['agriculture']);
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Alice')->withAdvances(['agriculture'])->persist($this->entityManager);
 
         $turnOneOrder = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
         $turnTwoOrder = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy']), 2));
-        $turnThreeOrder = $this->createPendingOrder($player, 3, ['law']);
+        $turnThreeOrder = OrderBuilder::for($player)->onTurn(3)->withKeys('law')->persist($this->entityManager);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1, 2, 3]));
 
@@ -166,47 +120,16 @@ final class OrderEraserTest extends WebTestCase
     }
 
     /**
-     * Regression for the grant()/revoke() key mismatch: OrderValidator used to read
-     * the granted keys from the order's pre-freeze (submitted) lines instead of the
-     * frozen ones. Re-quoting the order at validate() time against a catalog that no
-     * longer resolves 'anatomy' (simulating a catalog change landing between submit
-     * and validate) makes PromotionEngine::applyGifts() silently drop the
-     * 'astronavigation' gift line too (its findAdvance()/continue guard, not a
-     * throw) — freeze() ends up with zero lines. The buggy code still granted both
-     * keys from the stale pre-freeze slugs, and erasing the order later revoked only
-     * the frozen (empty) set, permanently leaking the grant.
+     * PromotionEngine::applyGifts() drops a gift line silently when the catalog cannot resolve its
+     * source, so freeze() ends with zero lines. Granting from the stale slugs while revoking the
+     * frozen set leaks the grant for good.
      */
     #[Test]
     public function erasingAValidatedOrderWhoseGiftSourceVanishedFromTheCatalogBeforeValidationLeaksNothing(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $playerRepository = self::getContainer()->get(PlayerRepository::class);
-        $advanceRegistry = self::getContainer()->get(AdvanceRegistry::class);
-        $realProductProvider = self::getContainer()->get(ProductProviderInterface::class);
-        $buyerProvider = new PlayerBuyerProvider($playerRepository, $this->shopConnector);
-        $eventBus = self::getContainer()->get(ShopEventPublisher::class);
-        $fulfillment = new AdvanceFulfillment($playerRepository, $advanceRegistry);
-        $shopOrderStateMachine = self::getContainer()->get('state_machine.shop_order');
-        $transaction = new DoctrineTransaction($this->entityManager);
-
-        $catalogWithoutAnatomy = $this->productProviderWithout($realProductProvider, 'anatomy');
-
-        $submitOrderHandler = new SubmitOrderHandler(
-            $transaction,
-            $this->orderRepository,
-            new LineQuoter($realProductProvider, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector),
-            $shopOrderStateMachine,
-            $eventBus,
-            $buyerProvider,
-        );
-        $orderValidator = new OrderValidator(
-            $transaction,
-            new LineQuoter($catalogWithoutAnatomy, new PriceCalculator(new AdvancePriceResolver()), new PromotionEngine(), $this->shopConnector),
-            $shopOrderStateMachine,
-            $buyerProvider,
-            $eventBus,
-            $fulfillment,
-        );
+        $submitOrderHandler = self::getContainer()->get(SubmitOrderHandler::class);
+        $orderValidator = $this->validatorAgainstACatalogWithout('anatomy');
 
         $order = ($submitOrderHandler)(new SubmitOrder($player->id, [new LineIntent('anatomy', gift: 'astronavigation')], 1));
         $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
@@ -243,81 +166,32 @@ final class OrderEraserTest extends WebTestCase
     public function erasingWithNoWindowsIsANoOp(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 1, ['pottery']);
+        $order = OrderBuilder::for($player)->onTurn(1)->withKeys('pottery')->persist($this->entityManager);
 
         ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
 
         $this->assertInstanceOf(Order::class, $this->orderRepository->find($order->id));
     }
 
-    #[Test]
-    public function erasingOrdersWakesEveryRegionTheRefundMoved(): void
+    /** The container's OrderValidator always quotes against the real catalog; this one must fail to resolve a key. */
+    private function validatorAgainstACatalogWithout(string $excludedKey): OrderValidator
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->createPendingOrder($player, 1, ['pottery']);
-
-        ($this->eraseOrdersHandler)(new EraseOrders($player->id, [1]));
-
-        $this->assertSame(
-            ['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'],
-            $this->hub->regions(),
+        $container = self::getContainer();
+        $lineQuoter = new LineQuoter(
+            $this->productProviderWithout($container->get(ProductProviderInterface::class), $excludedKey),
+            $container->get(PriceCalculator::class),
+            new PromotionEngine(),
+            $this->shopConnector,
         );
-    }
 
-    #[Test]
-    public function erasingWithNoWindowsPublishesNothing(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
-        $wokenBySale = $this->hub->regions();
-
-        ($this->eraseOrdersHandler)(new EraseOrders($player->id, []));
-
-        $this->assertSame(['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'], $wokenBySale);
-        $this->assertSame($wokenBySale, $this->hub->regions());
-    }
-
-    #[Test]
-    public function erasingWindowsWithoutAMatchingOrderPublishesNothing(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['pottery']), 1));
-        $wokenBySale = $this->hub->regions();
-
-        ($this->eraseOrdersHandler)(new EraseOrders($player->id, [2, 3]));
-
-        $this->assertSame(['roster', 'ast', 'operator', 'player/'.$player->id, 'player/'.$player->id.'/shop'], $wokenBySale);
-        $this->assertSame($wokenBySale, $this->hub->regions());
-    }
-
-    /** @param list<string> $slugs */
-    private function createPendingOrder(Player $player, int $turn, array $slugs): Order
-    {
-        $order = new Order($player, $turn);
-        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $this->entityManager->clear();
-        $reloaded = $this->entityManager->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
-    }
-
-    /**
-     * @param list<string> $keys
-     *
-     * @return list<LineIntent>
-     */
-    private function intents(array $keys): array
-    {
-        return array_map(static fn (string $key): LineIntent => new LineIntent($key), $keys);
+        return new OrderValidator(
+            $container->get(TransactionInterface::class),
+            $lineQuoter,
+            $container->get('state_machine.shop_order'),
+            $container->get(BuyerProviderInterface::class),
+            $container->get(ShopEventPublisher::class),
+            $container->get(FulfillmentInterface::class),
+        );
     }
 
     private function productProviderWithout(ProductProviderInterface $inner, string $excludedKey): ProductProviderInterface

@@ -10,6 +10,7 @@ use App\Rules\Shop\Entitlement;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\GameConfig;
 
 final class AdvanceCreditsCalculatorTest extends TestCase
 {
@@ -58,14 +59,6 @@ final class AdvanceCreditsCalculatorTest extends TestCase
         $this->assertSame($this->facetCredits(['craft' => 20, 'science' => 15]), $credits['facets']);
     }
 
-    /**
-     * Entitlements are read opaquely by scope regardless of origin, matching
-     * AdvancePriceResolver's own named-credit rule (see
-     * AdvancePriceResolverTest::resolveSumsNamedCreditsFromOwnedAdvancesAndElectiveCreditsTogether()):
-     * an elective entitlement sharing a named key sums straight into the
-     * same named total, it is never held back because it isn't an owned
-     * advance's credit.
-     */
     #[Test]
     public function creditsForFoldsAnyEntitlementSharingANamedKeyIntoTheSameNamedTotal(): void
     {
@@ -77,15 +70,6 @@ final class AdvanceCreditsCalculatorTest extends TestCase
         $this->assertSame($this->namedCredits(['democracy' => 25]), $credits['named']);
     }
 
-    /**
-     * Same owned pair as AdvancePriceResolverTest::resolveCreditsOnlyTheBestFacet...():
-     * pottery grants craft 10, anatomy grants craft 5 and science 20. Pricing
-     * engineering through the resolver only ever credits the best facet
-     * (science's 20) — craft's 15 never shows up in that net cost. This
-     * display aggregate has no single product in mind, so it never collapses
-     * facets against each other: craft's 15 stays visible right alongside
-     * science's 20.
-     */
     #[Test]
     public function creditsForKeepsEachFacetsFullSumWhereTheResolverWouldOnlyCreditTheBest(): void
     {
@@ -131,11 +115,9 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     }
 
     /**
-     * Pins the `[] === $carriers` guard of the private facet check, which no
-     * other tier can reach: every real category in config/game/advances.yaml
-     * has twelve carriers, so a carrier-less facet only ever arises here.
-     * Without the guard, array_all() over an empty carrier list returns true
-     * and a facet nobody can ever spend would report itself as spent.
+     * Pins the empty-carriers guard: array_all() over an empty list returns true, so a facet nobody
+     * can spend would report itself spent. Every real category has twelve carriers, so only this
+     * fixture reaches it.
      */
     #[Test]
     public function creditsForLeavesAFacetUnspentWhenNoAdvanceInTheCatalogueCarriesIt(): void
@@ -147,16 +129,6 @@ final class AdvanceCreditsCalculatorTest extends TestCase
         $this->assertSame(['amount' => 5, 'spent' => false], $credits['facets']['religion']);
     }
 
-    /**
-     * The empty-versus-spent pair pinned by issue #24: a facet worth 0 whose
-     * carriers are all owned is genuinely both. The calculator reports the two
-     * facts as it finds them — amount 0 AND spent — because deciding between
-     * them is not its job: templates/molecules/discounts.html.twig tests
-     * `amount == 0` first, so "empty" wins and the row is dimmed without a
-     * strikethrough. Striking it would claim "you had this and it is gone",
-     * which is untrue of a credit never earned. Hence raw data saying spent
-     * while the screen shows none.
-     */
     #[Test]
     public function creditsForStillReportsAFacetWorthNothingAsSpentWhenEveryCarrierIsOwned(): void
     {
@@ -184,9 +156,7 @@ final class AdvanceCreditsCalculatorTest extends TestCase
     }
 
     /**
-     * Builds the expected facets map: every known facet at zero, overridden by whichever
-     * amounts the test cares about. No test consuming this helper passes owned keys or a
-     * catalogue, so every facet it describes is unspent.
+     * Callers pass no owned keys and no catalogue, so every facet described here is unspent.
      *
      * @param array<string, int> $nonZeroAmounts
      *
@@ -221,27 +191,9 @@ final class AdvanceCreditsCalculatorTest extends TestCase
         $advances = [];
 
         for ($i = 1; $i <= $count; ++$i) {
-            $advances[] = $this->makeAdvance($facet.'_'.$i, [$facet]);
+            $advances[] = GameConfig::advance($facet.'_'.$i, facets: [$facet]);
         }
 
         return $advances;
-    }
-
-    /**
-     * @param list<string> $facets
-     */
-    private function makeAdvance(string $key, array $facets): Advance
-    {
-        return new Advance(
-            key: $key,
-            name: str_replace('_', ' ', $key),
-            fileName: $key.'.webp',
-            cost: 0,
-            points: 0,
-            facets: $facets,
-            credits: [],
-            mitigations: [],
-            aggravations: [],
-        );
     }
 }

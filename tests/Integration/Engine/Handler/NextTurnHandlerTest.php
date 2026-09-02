@@ -47,9 +47,7 @@ final class NextTurnHandlerTest extends WebTestCase
     #[Test]
     public function refusesToAdvanceAFinishedGame(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $game->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->finished()->persist($this->entityManager);
 
         ($this->handler)(new NextTurn($game->id));
 

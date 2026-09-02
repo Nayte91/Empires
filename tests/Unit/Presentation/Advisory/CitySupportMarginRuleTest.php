@@ -17,9 +17,7 @@ final class CitySupportMarginRuleTest extends TestCase
     #[Test]
     public function theMarginIsStatedAsPopulationHeldOverTheCityCount(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 7;
-        $player->census = 20;
+        $player = PlayerBuilder::named('Bob')->withCities(7)->withCensus(20)->build();
 
         $advisory = $this->rule()->evaluate($player);
 
@@ -28,13 +26,10 @@ final class CitySupportMarginRuleTest extends TestCase
         $this->assertSame(AdvisoryLevel::Neutral, $advisory->level);
     }
 
-    /** "Up to 0" reads as a mistake, so the boundary gets its own sentence. */
     #[Test]
     public function sittingExactlyOnTheThresholdIsWordedWithoutAFigure(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(10)->build();
 
         $advisory = $this->rule()->evaluate($player);
 
@@ -42,13 +37,10 @@ final class CitySupportMarginRuleTest extends TestCase
         $this->assertSame('You cannot afford to lose any population', $advisory->message);
     }
 
-    /** Below the threshold the warning rule speaks instead: there is no margin left to report. */
     #[Test]
     public function anUnderSupportedPlayerGetsNoMarginLine(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 4;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(4)->build();
 
         $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, $this->rule()->evaluate($player));
     }

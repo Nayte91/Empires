@@ -6,6 +6,7 @@ namespace App\Tests\Component;
 
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -15,17 +16,6 @@ final class GameDashboardTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
-
-    #[Test]
-    public function headingDisplaysTheGameSlugWithoutTurn(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
-
-        $this->assertSame(1, preg_match('/<h1>(.*?)<\/h1>/s', $html, $matches), '<h1> not found in rendered output.');
-        $this->assertSame($game->slug, trim($matches[1]));
-    }
 
     #[Test]
     public function navigationIsTheLastBlockUnderTheBoards(): void
@@ -48,7 +38,7 @@ final class GameDashboardTest extends WebTestCase
     #[Test]
     public function dashboardRootCarriesNoMercureRefreshController(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $html = $this->renderTwigComponent('GameDashboard', ['game' => $game])->toString();
         $rootTag = substr($html, 0, (int) strpos($html, '>') + 1);

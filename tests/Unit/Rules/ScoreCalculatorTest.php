@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules;
 
-use App\State\Game;
-use App\State\Player;
-use App\Rules\Ruleset\Advance;
 use App\Rules\ScoreCalculator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\GameConfig;
 
 final class ScoreCalculatorTest extends TestCase
 {
@@ -21,12 +20,10 @@ final class ScoreCalculatorTest extends TestCase
     #[DataProvider('provideScoreSumsAdvancePointsCitiesAndAstPositionCases')]
     public function scoreSumsAdvancePointsCitiesAndAstPosition(int $cities, int $astPosition, array $advancePoints, int $expectedScore): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = $cities;
-        $player->astPosition = $astPosition;
+        $player = PlayerBuilder::named('Bob')->withCities($cities)->withAstPosition($astPosition)->build();
         $advances = [];
         foreach ($advancePoints as $key => $points) {
-            $advances[] = $this->makeAdvance($key, $points);
+            $advances[] = GameConfig::advance($key, points: $points);
         }
 
         $this->assertSame($expectedScore, new ScoreCalculator()->scoreFor($player, $advances));
@@ -50,18 +47,14 @@ final class ScoreCalculatorTest extends TestCase
         yield 'three cities and the fifth A.S.T. position' => [3, 5, [], 28];
     }
 
-    /**
-     * The player board's heading quotes this term on its own, so it has to answer on its own.
-     *
-     * @param array<string, int> $advancePoints advance key => its victory-point value
-     */
+    /** @param array<string, int> $advancePoints advance key => its victory-point value */
     #[Test]
     #[DataProvider('provideAdvancePointsSumWhatTheOwnedAdvancesAreWorthCases')]
     public function advancePointsSumWhatTheOwnedAdvancesAreWorth(array $advancePoints, int $expectedPoints): void
     {
         $advances = [];
         foreach ($advancePoints as $key => $points) {
-            $advances[] = $this->makeAdvance($key, $points);
+            $advances[] = GameConfig::advance($key, points: $points);
         }
 
         $this->assertSame($expectedPoints, new ScoreCalculator()->advancePointsFor($advances));
@@ -79,33 +72,14 @@ final class ScoreCalculatorTest extends TestCase
         yield 'an advance carrying no point contributes nothing' => [['cloth_making' => 0], 0];
     }
 
-    /**
-     * What the heading shows and what the score counts are the same arithmetic, not two copies of
-     * it: with no city and the track at its start, the whole score *is* the advance term.
-     */
     #[Test]
     public function theAdvanceTermIsExactlyWhatTheScoreCountsForAdvances(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $advances = [$this->makeAdvance('pottery', 1), $this->makeAdvance('agriculture', 3)];
+        $playerWithNoCityAtTheTrackStart = PlayerBuilder::named('Bob')->build();
+        $advances = [GameConfig::advance('pottery', points: 1), GameConfig::advance('agriculture', points: 3)];
 
         $calculator = new ScoreCalculator();
 
-        $this->assertSame($calculator->scoreFor($player, $advances), $calculator->advancePointsFor($advances));
-    }
-
-    private function makeAdvance(string $key, int $points): Advance
-    {
-        return new Advance(
-            key: $key,
-            name: str_replace('_', ' ', $key),
-            fileName: $key.'.webp',
-            cost: 0,
-            points: $points,
-            facets: [],
-            credits: [],
-            mitigations: [],
-            aggravations: [],
-        );
+        $this->assertSame($calculator->scoreFor($playerWithNoCityAtTheTrackStart, $advances), $calculator->advancePointsFor($advances));
     }
 }

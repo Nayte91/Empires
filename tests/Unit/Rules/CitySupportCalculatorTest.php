@@ -14,8 +14,7 @@ final class CitySupportCalculatorTest extends TestCase
     #[Test]
     public function everyCityDemandsTwoPopulation(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 7;
+        $player = PlayerBuilder::named('Bob')->withCities(7)->build();
 
         $this->assertSame(14, new CitySupportCalculator()->required($player));
     }
@@ -23,9 +22,7 @@ final class CitySupportCalculatorTest extends TestCase
     #[Test]
     public function aPlayerHoldingMoreThanTheDemandSupportsTheirCities(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 7;
-        $player->census = 20;
+        $player = PlayerBuilder::named('Bob')->withCities(7)->withCensus(20)->build();
 
         $this->assertFalse(new CitySupportCalculator()->citiesAreUnsupported($player));
     }
@@ -33,20 +30,15 @@ final class CitySupportCalculatorTest extends TestCase
     #[Test]
     public function aPlayerHoldingLessThanTheDemandLeavesTheCitiesUnsupported(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 7;
-        $player->census = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(7)->withCensus(10)->build();
 
         $this->assertTrue(new CitySupportCalculator()->citiesAreUnsupported($player));
     }
 
-    /** The boundary belongs to the player: meeting the demand exactly still supports the cities. */
     #[Test]
     public function meetingTheDemandExactlySupportsTheCities(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(10)->build();
 
         $this->assertFalse(new CitySupportCalculator()->citiesAreUnsupported($player));
     }

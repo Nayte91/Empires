@@ -27,10 +27,6 @@ final class ControlBoardTest extends WebTestCase
         $this->assertCount(5, $crawler->filter('button[commandfor]'));
     }
 
-    /**
-     * The operator console drives the same component with its own stat list, AST position
-     * included — a stat the player must never be able to move on their own board.
-     */
     #[Test]
     public function anExplicitStatListRendersExactlyThoseControlsInOrder(): void
     {
@@ -76,16 +72,11 @@ final class ControlBoardTest extends WebTestCase
         );
     }
 
-    /** The advisories moved to the Outlook block; the control board is now controls only. */
     #[Test]
     public function noAdvisoryIsRenderedHereAnyMore(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->cities = 5;
-        $player->census = 1;
-        $player->treasury = 50;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCities(5)->withCensus(1)->withTreasury(50)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 

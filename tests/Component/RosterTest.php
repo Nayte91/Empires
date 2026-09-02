@@ -6,6 +6,7 @@ namespace App\Tests\Component;
 
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -20,9 +21,7 @@ final class RosterTest extends WebTestCase
     #[Test]
     public function rendersCitiesAndPopulationColumnsWithoutPoints(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
@@ -36,9 +35,7 @@ final class RosterTest extends WebTestCase
     public function rendersPlayerTreasuryValue(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $player->treasury = 12;
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withTreasury(12)->persist($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $row = new Crawler($rendered)->filter('tbody tr');
@@ -47,7 +44,6 @@ final class RosterTest extends WebTestCase
         $this->assertSame('12', trim($row->filter('td')->eq(0)->text()));
     }
 
-    /** One identity cell, like the A.S.T. rows: the people first, the player they belong to in parentheses. */
     #[Test]
     public function empireCellNamesTheEmpireAdjectiveThenThePlayerInParentheses(): void
     {
@@ -77,15 +73,11 @@ final class RosterTest extends WebTestCase
         $this->assertSame(['0', '1', '0', '0'], $cells->each(static fn (Crawler $cell): string => trim($cell->text())));
     }
 
-    /** Two stats the table deliberately leaves to the player's own board. */
     #[Test]
     public function shipsAndCardsAreNotDisplayedAtAll(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $player->ships = 4;
-        $player->cards = 7;
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withShips(4)->withCards(7)->persist($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
         $cells = new Crawler($rendered)->filter('tbody tr td');
@@ -95,12 +87,10 @@ final class RosterTest extends WebTestCase
         $this->assertSame([], array_intersect(['4', '7'], $cells->each(static fn (Crawler $cell): string => trim($cell->text()))));
     }
 
-    /** Reaching a view is Navigation's job: the table states scores and links to nothing. */
     #[Test]
     public function theNameCellIsPlainTextCarryingNoLinkNorQrCode(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
@@ -109,15 +99,11 @@ final class RosterTest extends WebTestCase
         $this->assertStringNotContainsString('<dialog', $rendered);
     }
 
-    /** The score belongs to the A.S.T. board now: the roster must not grow a second one. */
     #[Test]
     public function noVictoryPointColumnIsRendered(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        $player->ownAdvances(['advanced_military']); // 6 points
-        $player->cities = 5;                         // 11 victory points in total
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withAdvances(['advanced_military'])->withCities(5)->persist($this->entityManager); // 6 points + 5 cities = 11 victory points in total
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
@@ -128,21 +114,13 @@ final class RosterTest extends WebTestCase
         $this->assertNotContains('11', $cells->each(static fn (Crawler $cell): string => trim($cell->text())));
     }
 
-    /**
-     * The table is read down the movement-phase order, not down the standings: the operator uses it
-     * to call the players in turn.
-     */
     #[Test]
     public function playersAreOrderedByPlayOrderRatherThanByScore(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(5)->persist($this->entityManager);
-        $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
-        $carl = PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->persist($this->entityManager);
-        $alice->census = 2;
-        $bob->census = 9;
-        $carl->census = 20;
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(5)->withCensus(2)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(9)->persist($this->entityManager);
+        PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->withCensus(20)->persist($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->toString();
 
@@ -164,22 +142,13 @@ final class RosterTest extends WebTestCase
         $this->assertSame('2. minoan (Alice) ⚔', preg_replace('/\s+/u', ' ', trim($rows->eq(1)->filter('th[data-empire]')->text())), 'The military owner plays last, and its people carries the ⚔ flag.');
     }
 
-    /**
-     * The order is the census order, and nothing on screen said so. The caption names it and each
-     * row carries its place in it — as `1.`, never `#1`, which on a board game reads as first place
-     * and would smuggle back the standings this table refuses to state.
-     */
     #[Test]
     public function eachRowIsNumberedByItsPlaceInTheCensusOrder(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-        $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
-        $carl = PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->persist($this->entityManager);
-        $alice->census = 2;
-        $bob->census = 9;
-        $carl->census = 20;
-        $this->entityManager->flush();
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(2)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(9)->persist($this->entityManager);
+        PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withAdvances(['military'])->withCensus(20)->persist($this->entityManager);
 
         $crawler = new Crawler($this->renderTwigComponent('Roster', ['game' => $game])->toString());
 
@@ -210,7 +179,7 @@ final class RosterTest extends WebTestCase
     #[Test]
     public function theRosterOffersTheTargetItsPushReplaces(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $rendered = $this->renderTwigComponent('Roster', ['game' => $game])->crawler();
 

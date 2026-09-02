@@ -36,12 +36,6 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->shopConnector = new ShopConnector($orderRepository);
     }
 
-    /**
-     * Pottery's credits block (config/game/advances.yaml) is { art: 5, craft:
-     * 10, agriculture: 10 } — one ledger entry per entry of that block, at
-     * the player's current turn, reasoned by the advance's own key so the
-     * grant stays traceable back to its source.
-     */
     #[Test]
     public function grantingAnAdvancePostsEachOfItsCreditsAtThePlayersCurrentTurnWithATraceableReason(): void
     {
@@ -60,13 +54,6 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->assertContains('pottery', $player->advances);
     }
 
-    /**
-     * The non-negotiable grant()/revoke() symmetry: revoking an order must
-     * bring every scope the advance credited back to exactly what it was
-     * before the grant. revoke() achieves this by removing the entries
-     * outright rather than compensating them, so the ledger itself must end
-     * up empty — not merely balanced back to zero.
-     */
     #[Test]
     public function revokingAnAdvanceThatWasJustGrantedRemovesEveryEntryItPostedRatherThanCompensatingThem(): void
     {
@@ -79,12 +66,6 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->assertSame([], $player->advances);
     }
 
-    /**
-     * Discriminating on the reason alone (see AdvanceFulfillment::revoke())
-     * is deliberate and must stay scoped to it: an entry posted under a
-     * different reason, even for the same scope pottery would have credited,
-     * is untouched by revoking pottery.
-     */
     #[Test]
     public function revokingAnAdvanceOnlyRemovesEntriesReasonedByThatAdvanceLeavingOtherReasonsUntouched(): void
     {
@@ -99,15 +80,6 @@ final class AdvanceFulfillmentTest extends WebTestCase
         );
     }
 
-    /**
-     * The scenario that breaks if capping ever moves back to write time: a
-     * real loss can only ever spend what a grant made available. Once that
-     * grant is later revoked — removed outright, not offset — nothing
-     * re-validates the loss that relied on it: a straight sum of what
-     * remains (-10) would be negative. Only ShopConnector::ledgerEntitlements()'s
-     * chronological replay, which caps each withdrawal against what is still
-     * available at that point in the walk, keeps the balance at 0.
-     */
     #[Test]
     public function revokingAGrantAfterARealLossInTheSameScopeNeverDrivesTheWalkedBalanceNegative(): void
     {
@@ -120,10 +92,6 @@ final class AdvanceFulfillmentTest extends WebTestCase
         $this->assertSame(0, $this->walkedBalanceFor($player, 'craft'));
     }
 
-    /**
-     * Revoking an advance the player never owned finds no entry reasoned by
-     * it, so the ledger is left exactly as it was.
-     */
     #[Test]
     public function revokingAnAdvanceThatWasNeverGrantedLeavesTheLedgerUntouched(): void
     {

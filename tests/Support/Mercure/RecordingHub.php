@@ -9,12 +9,8 @@ use Symfony\Component\Mercure\Jwt\TokenFactoryInterface;
 use Symfony\Component\Mercure\Update;
 
 /**
- * Test double for the Mercure hub: no network I/O, no JWT signing, but every Update is kept so a
- * test can assert the exact sequence a code path publishes.
- * Registered in place of the real hub for the test environment (see config/services.yaml, when@test).
- *
- * The topic is the contract now — it names the screen region a signal wakes — so `regions()` is
- * what a test asserts on, not the payload, which carries nothing.
+ * Keeps every Update instead of publishing one; registered in place of the real hub under
+ * `when@test` (config/services.yaml). Assert on regions(), never on the payload.
  */
 final class RecordingHub implements HubInterface
 {
@@ -45,8 +41,7 @@ final class RecordingHub implements HubInterface
     }
 
     /**
-     * The regions woken, in publication order: what `empires/game/{id}/` is followed by, so a test
-     * reads `roster` or `player/{uuid}/shop` instead of restating the whole topic.
+     * What follows `empires/game/{id}/` in each topic published, in order.
      *
      * @return list<string>
      */
@@ -64,7 +59,6 @@ final class RecordingHub implements HubInterface
         return array_map(static fn (Update $update): string => $update->getTopics()[0], $this->updates);
     }
 
-    /** Drops what the arrange phase published, so a test can assert on the act alone. */
     public function clear(): void
     {
         $this->updates = [];

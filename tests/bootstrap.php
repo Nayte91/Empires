@@ -19,12 +19,9 @@ if ('test' === ($_SERVER['APP_ENV'] ?? null)) {
     $testSchemaBootstrapper = new class('bootstrap') extends KernelTestCase {
         public static function createTestSchema(): void
         {
-            // Container compilation walks FrameworkBundle's config tree (prototype
-            // nodes built via NodeBuilder::node(null, ...)), which triggers a "null
-            // as array offset" deprecation in symfony/config on PHP 8.5. Pre-existing
-            // symfony/config vs. PHP 8.5 issue, unrelated to DAMA/Doctrine — it fires
-            // during bootstrap, outside any test, so failOnDeprecation never catches
-            // it; it only pollutes stderr. Scoped suppression, kernel boot only.
+            // symfony/config trips a PHP 8.5 deprecation while compiling FrameworkBundle's config
+            // tree. It fires during boot, outside any test, so failOnDeprecation never sees it —
+            // suppressed for the kernel boot only.
             $previousErrorReporting = error_reporting(E_ALL & ~E_DEPRECATED);
 
             try {

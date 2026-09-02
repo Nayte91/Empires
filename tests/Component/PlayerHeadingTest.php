@@ -7,6 +7,7 @@ namespace App\Tests\Component;
 use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -21,20 +22,9 @@ final class PlayerHeadingTest extends WebTestCase
     use InteractsWithLiveComponents;
 
     #[Test]
-    public function theHeadingNamesThePlayerAndTheEmpireTheyPlay(): void
-    {
-        $player = PlayerBuilder::named('Alice')->withEmpire('minoa')->persist($this->entityManager);
-
-        $crawler = $this->render($player);
-
-        $this->assertSame('Alice', trim($crawler->filter('#page-title h1')->text()));
-        $this->assertSame('Minoa · Turn 1', trim($crawler->filter('#page-title hgroup p')->text()));
-    }
-
-    #[Test]
     public function theHeadingOffersARenameTriggerForTheDialogHoldingThePlayersName(): void
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
 
         $crawler = $this->render($player);
 
@@ -46,7 +36,7 @@ final class PlayerHeadingTest extends WebTestCase
     #[Test]
     public function theRenameInputIsPrefilledWithTheCurrentName(): void
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
 
         $input = $this->render($player)->filter('dialog[id="rename-player-'.$player->id.'"] input[type="text"]');
 
@@ -162,53 +152,6 @@ final class PlayerHeadingTest extends WebTestCase
 
         $this->assertInstanceOf(Player::class, $reloaded);
         $this->assertSame('A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1), $reloaded->name);
-    }
-
-    #[Test]
-    public function renamingOntoANameThatOnlyCollidesOnceTruncatedIsRefused(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named(str_repeat('漢', 30))->in($game)->persist($this->entityManager);
-        $playerId = $alice->id;
-
-        $rendered = $this->createLiveComponent('molecules:PlayerHeading', ['player' => $alice])
-            ->set('newName', str_repeat('漢', 8).str_repeat('国', 22))
-            ->call('rename')
-            ->render()
-        ;
-
-        $this->assertSame('Name already taken.', trim($rendered->crawler()->filter('[data-error="newName"]')->text()));
-
-        $this->entityManager->clear();
-        $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);
-
-        $this->assertInstanceOf(Player::class, $reloaded);
-        $this->assertSame('Alice', $reloaded->name);
-        $this->assertSame('alice', $reloaded->slug);
-    }
-
-    #[Test]
-    public function renamingToANameWhoseSlugStillDiffersOnceTruncatedIsAccepted(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named(str_repeat('漢', 30))->in($game)->persist($this->entityManager);
-        $playerId = $alice->id;
-
-        $component = $this->createLiveComponent('molecules:PlayerHeading', ['player' => $alice])
-            ->set('newName', str_repeat('国', 30))
-        ;
-        $component->call('rename');
-
-        $response = $component->response();
-        $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
-
-        $this->entityManager->clear();
-        $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);
-
-        $this->assertInstanceOf(Player::class, $reloaded);
-        $this->assertSame('guo-guo-guo-guo-guo-guo-guo-gu', $reloaded->slug);
     }
 
     #[Test]

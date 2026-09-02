@@ -33,16 +33,17 @@ final class HandSizeCalculatorTest extends TestCase
         yield 'large-game upper player count' => [18, 9];
     }
 
-    /** The advance stacks on the table's own bracket rather than replacing it. */
     #[Test]
     #[DataProvider('provideLimitForStacksTheExtraCardAdvanceOnTheTableBracketCases')]
     public function limitForStacksTheExtraCardAdvanceOnTheTableBracket(int $playerCount, bool $ownsTheAdvance, int $expectedLimit): void
     {
-        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount($playerCount)->build())->build();
+        $builder = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount($playerCount)->build());
 
         if ($ownsTheAdvance) {
-            $player->ownAdvances(['roadbuilding']);
+            $builder = $builder->withAdvances(['roadbuilding']);
         }
+
+        $player = $builder->build();
 
         $this->assertSame($expectedLimit, $this->hand()->limitFor($player));
     }
@@ -61,8 +62,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[DataProvider('provideExcessIsWhatTheHandHoldsBeyondItsLimitCases')]
     public function excessIsWhatTheHandHoldsBeyondItsLimit(int $cards, int $expectedExcess): void
     {
-        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(12)->build())->build();
-        $player->cards = $cards;
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(12)->build())->withCards($cards)->build();
 
         $this->assertSame($expectedExcess, $this->hand()->excessFor($player));
     }
@@ -82,8 +82,7 @@ final class HandSizeCalculatorTest extends TestCase
     #[Test]
     public function theExtraCardIsTheDifferenceBetweenBreakingTheLimitAndNot(): void
     {
-        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->build();
-        $player->cards = 9;
+        $player = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withPlayerCount(9)->build())->withCards(9)->build();
 
         $calculator = $this->hand();
 

@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\State\Game;
-use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\Fixture\Tables;
 
 final class GameCreationTest extends WebTestCase
 {
@@ -18,9 +17,7 @@ final class GameCreationTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $entityManager->persist($game);
-        $entityManager->flush();
+        $game = Tables::westTable($entityManager);
 
         $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/'.$game->slug);
 
@@ -33,13 +30,9 @@ final class GameCreationTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $player = new Player($game, 'Alice', 'minoa');
-        $entityManager->persist($game);
-        $entityManager->flush();
+        $player = Tables::seat(Tables::westTable($entityManager), 'Alice');
+        $game = $player->game;
 
-        // The operator console no longer links to the kiosk (PO decision): the
-        // shop route itself must still be reachable directly (e.g. via a QR code).
         $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/'.$game->slug.'/player/'.$player->slug.'/shop');
         $this->assertResponseIsSuccessful();
     }

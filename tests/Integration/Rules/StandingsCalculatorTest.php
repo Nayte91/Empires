@@ -11,10 +11,6 @@ use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-/**
- * A WebTestCase because resolving what a player owns needs the advance registry, which only the
- * container can build.
- */
 final class StandingsCalculatorTest extends WebTestCase
 {
     use GameFixtureTrait;
@@ -53,7 +49,6 @@ final class StandingsCalculatorTest extends WebTestCase
         $this->assertSame(5, $this->standingsCalculator->leadOverRunnerUp($leader));
     }
 
-    /** Null and zero are different answers: nobody to compare against is not a tie. */
     #[Test]
     public function aSoloPlayerHasNoRunnerUpToMeasureAgainst(): void
     {

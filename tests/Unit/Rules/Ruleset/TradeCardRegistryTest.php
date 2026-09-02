@@ -11,6 +11,7 @@ use App\Rules\Ruleset\TradeCardRegistry;
 use App\Rules\Ruleset\TradeCardStack;
 use App\Rules\Ruleset\TradeCardTable;
 use App\State\Region;
+use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +23,7 @@ final class TradeCardRegistryTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->registry = new TradeCardRegistry(\dirname(__DIR__, 4).'/config/game/trade_cards.yaml');
+        $this->registry = GameConfig::tradeCardRegistry();
     }
 
     #[Test]
@@ -287,7 +288,7 @@ final class TradeCardRegistryTest extends TestCase
 
     private function scenarioRegistry(): ScenarioRegistry
     {
-        return new ScenarioRegistry(\dirname(__DIR__, 4).'/config/game/scenarios.yaml');
+        return GameConfig::scenarioRegistry();
     }
 
     /** @return list<TradeCard> */

@@ -18,9 +18,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function aSingleCityIsWordedWithoutTheUpToQualifier(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 3;
-        $player->census = 20;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(20)->build();
 
         $advisory = $this->rule()->evaluate($player);
 
@@ -31,9 +29,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function severalCitiesAreStatedAsACeiling(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 2;
-        $player->census = 30;
+        $player = PlayerBuilder::named('Bob')->withCities(2)->withCensus(30)->build();
 
         $this->assertSame('You can build up to 3 cities', $this->rule()->evaluate($player)->message);
     }
@@ -41,9 +37,7 @@ final class CityBuildRuleTest extends TestCase
     #[Test]
     public function anEmpireTooPoorToBuildIsToldSoPlainly(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 12;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(12)->build();
 
         $advisory = $this->rule()->evaluate($player);
 
@@ -51,14 +45,10 @@ final class CityBuildRuleTest extends TestCase
         $this->assertSame(AdvisoryLevel::Neutral, $advisory->level);
     }
 
-    /** The rebate is counted before the verdict: the same empire can build once it can pay. */
     #[Test]
     public function theArchitectureRebateCanTurnTheVerdictAround(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 17;
-        $player->treasury = 3;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(17)->withTreasury(3)->build();
 
         $this->assertSame('You cannot build any city', $this->rule()->evaluate($player)->message);
 
@@ -67,13 +57,10 @@ final class CityBuildRuleTest extends TestCase
         $this->assertSame('You can build 1 city', $this->rule()->evaluate($player)->message);
     }
 
-    /** A full empire is not a shortage: it is the top of the track, and reads as good news. */
     #[Test]
     public function afullEmpireIsGoodNewsRatherThanAShortage(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 9;
-        $player->census = 55;
+        $player = PlayerBuilder::named('Bob')->withCities(9)->withCensus(55)->build();
 
         $advisory = $this->rule()->evaluate($player);
 

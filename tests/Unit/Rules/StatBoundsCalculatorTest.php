@@ -61,13 +61,10 @@ final class StatBoundsCalculatorTest extends TestCase
         yield 'cards ceiling is a permissive display bound, not the hand-size limit' => [Stat::Cards, 20];
     }
 
-    /** Census and treasury share one pool, so each one's ceiling answers to what its twin holds. */
     #[Test]
     public function censusAndTreasuryCeilingsAreBoundedByTheirTwin(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 20;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCensus(20)->withTreasury(15)->build();
 
         $calculator = $this->calculator();
 
@@ -75,11 +72,6 @@ final class StatBoundsCalculatorTest extends TestCase
         $this->assertSame(35, $calculator->ceilingFor($player, Stat::Treasury));
     }
 
-    /**
-     * The display grid offers what a stat could reach if its twin sat at its own floor, so the two
-     * floors and the two display ceilings can never drift apart: raising the census floor to two
-     * is what takes the treasury's top tile away, and nothing else has to be told about it.
-     */
     #[Test]
     public function eachDisplayCeilingAnswersToTheOppositeStatsFloor(): void
     {
@@ -91,17 +83,11 @@ final class StatBoundsCalculatorTest extends TestCase
         $this->assertSame(53, $calculator->displayCeilingFor($player, Stat::Treasury));
     }
 
-    /**
-     * The AST ceiling is exact per version and empire group — every group of a given version
-     * shares the same track length, but a null empire must still fall back to the standard group.
-     */
     #[Test]
     #[DataProvider('provideAstPositionCeilingPerVersionAndGroupCases')]
     public function astPositionCeilingPerVersionAndGroup(ASTVersion $version, ?string $empire, int $expectedCeiling): void
     {
-        $game = GameBuilder::create()->build();
-        $game->astVersion = $version;
-        $builder = PlayerBuilder::named('Bob')->in($game);
+        $builder = PlayerBuilder::named('Bob')->in(GameBuilder::create()->withAstVersion($version)->build());
 
         if (null !== $empire) {
             $builder = $builder->withEmpire($empire);

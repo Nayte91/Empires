@@ -12,16 +12,12 @@ use App\Tests\Support\Fixture\PlayerBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\Fixture\OrderBuilder;
 
 /**
- * A game's players — and the orders those players placed — do not outlive it.
- *
- * The rule is carried at two levels on purpose, because neither alone covers the graph:
- * the ORM cascade on Game::$players reaches the players and keeps the UnitOfWork in step,
- * but cannot reach the orders (Player deliberately has no $orders inverse collection, so
- * there is no association for Doctrine to traverse). The orders are swept by the database
- * cascade on orders.player_id, which in turn only fires because the EnableForeignKeys
- * middleware issues `PRAGMA foreign_keys=ON` — SQLite otherwise ignores the constraint.
+ * Player deliberately has no $orders inverse collection, so the ORM cascade cannot reach the
+ * orders; the database cascade on orders.player_id sweeps them, and only fires because the
+ * EnableForeignKeys middleware issues `PRAGMA foreign_keys=ON`.
  */
 final class GameDeletionTest extends WebTestCase
 {
@@ -51,11 +47,8 @@ final class GameDeletionTest extends WebTestCase
         $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
         $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('egypt')->persist($this->entityManager);
 
-        $aliceOrder = new Order($alice, $game->currentTurn);
-        $bobOrder = new Order($bob, $game->currentTurn);
-        $this->entityManager->persist($aliceOrder);
-        $this->entityManager->persist($bobOrder);
-        $this->entityManager->flush();
+        $aliceOrder = OrderBuilder::for($alice)->persist($this->entityManager);
+        $bobOrder = OrderBuilder::for($bob)->persist($this->entityManager);
 
         $gameId = $game->id;
         $playerIds = [$alice->id, $bob->id];
@@ -76,20 +69,13 @@ final class GameDeletionTest extends WebTestCase
         }
     }
 
-    /**
-     * The database-level half of the rule, exercised without the ORM: a raw DELETE — the shape
-     * of a hand-run `dbal:run-sql` fix, which is how the dev database grew its orphan players —
-     * must sweep the same rows. The ORM cascade never runs on this path.
-     */
     #[Test]
     public function deletingAGameRowDirectlyAlsoSweepsPlayersAndOrders(): void
     {
         $game = GameBuilder::create()->withSlug('doomed-by-sql')->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $order = new Order($player, $game->currentTurn);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->persist($this->entityManager);
 
         $connection = $this->entityManager->getConnection();
         $connection->executeStatement(
@@ -101,10 +87,6 @@ final class GameDeletionTest extends WebTestCase
         $this->assertSame(0, $this->countRows('orders'));
     }
 
-    /**
-     * Removing a single player must not drag the game down with it, nor spare that player's
-     * orders — the cascade is one-directional, and orphanRemoval was deliberately not used.
-     */
     #[Test]
     public function deletingAPlayerLeavesTheGameStandingAndSweepsOnlyItsOwnOrders(): void
     {
@@ -112,11 +94,8 @@ final class GameDeletionTest extends WebTestCase
         $alice = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
         $bob = PlayerBuilder::named('Bob')->in($game)->withEmpire('egypt')->persist($this->entityManager);
 
-        $aliceOrder = new Order($alice, $game->currentTurn);
-        $bobOrder = new Order($bob, $game->currentTurn);
-        $this->entityManager->persist($aliceOrder);
-        $this->entityManager->persist($bobOrder);
-        $this->entityManager->flush();
+        $aliceOrder = OrderBuilder::for($alice)->persist($this->entityManager);
+        $bobOrder = OrderBuilder::for($bob)->persist($this->entityManager);
 
         $gameId = $game->id;
         $bobId = $bob->id;

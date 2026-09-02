@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\State\Game;
-use App\State\Player;
 use App\Presentation\Advisory\AstAdvancementRule;
 use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
@@ -13,6 +11,8 @@ use App\Presentation\Advisory\Advisory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
 final class AstAdvancementRuleTest extends TestCase
 {
@@ -27,11 +27,8 @@ final class AstAdvancementRuleTest extends TestCase
     #[DataProvider('provideAdvisoryFiresWhenCitiesFallShortOfNextEraCases')]
     public function advisoryFiresWhenCitiesFallShortOfNextEra(ASTVersion $astVersion, string $empire, int $astPosition, int $cities, string $expectedMessage): void
     {
-        $game = new Game();
-        $game->astVersion = $astVersion;
-        $player = new Player($game, 'Bob', $empire);
-        $player->astPosition = $astPosition;
-        $player->cities = $cities;
+        $game = GameBuilder::create()->withAstVersion($astVersion)->build();
+        $player = PlayerBuilder::named('Bob')->in($game)->withEmpire($empire)->withAstPosition($astPosition)->withCities($cities)->build();
 
         $advisory = $this->rule->evaluate($player);
 
@@ -53,11 +50,8 @@ final class AstAdvancementRuleTest extends TestCase
     #[DataProvider('provideNoAdvisoryCasesCases')]
     public function noAdvisoryCases(ASTVersion $astVersion, string $empire, int $astPosition, int $cities): void
     {
-        $game = new Game();
-        $game->astVersion = $astVersion;
-        $player = new Player($game, 'Bob', $empire);
-        $player->astPosition = $astPosition;
-        $player->cities = $cities;
+        $game = GameBuilder::create()->withAstVersion($astVersion)->build();
+        $player = PlayerBuilder::named('Bob')->in($game)->withEmpire($empire)->withAstPosition($astPosition)->withCities($cities)->build();
 
         $this->assertNotInstanceOf(Advisory::class, $this->rule->evaluate($player));
     }

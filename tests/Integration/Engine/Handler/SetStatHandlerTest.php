@@ -52,9 +52,7 @@ final class SetStatHandlerTest extends WebTestCase
     public function requestingTheAlreadyStoredValueIsANoOp(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->cities = 5;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCities(5)->persist($this->entityManager);
 
         ($this->handler)(new SetStat($player->id, Stat::Cities, 5));
 

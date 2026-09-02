@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\State\Game;
-use App\State\Player;
 use App\Presentation\Advisory\TaxPaymentRule;
 use App\Presentation\Advisory\Advisory;
 use App\Rules\StockCalculator;
@@ -13,16 +11,14 @@ use App\Rules\TaxCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
 final class TaxPaymentRuleTest extends TestCase
 {
     #[Test]
     public function sufficientStockYieldsNoAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = 3;
-        $player->census = 1;
-        $player->treasury = 0;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(1)->withTreasury(0)->build();
 
         $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
     }
@@ -30,10 +26,7 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function insufficientStockGetsCantPayTaxesAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = 3;
-        $player->census = 30;
-        $player->treasury = 30;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(30)->withTreasury(30)->build();
 
         $advisory = new TaxPaymentRule($this->tax())->evaluate($player);
 
@@ -44,23 +37,15 @@ final class TaxPaymentRuleTest extends TestCase
     #[Test]
     public function stockExactlyAtCityRequirementYieldsNoAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = 3;
-        $player->census = 6;
-        $player->treasury = 43;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(6)->withTreasury(43)->build();
 
         $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
     }
 
-    /** Democracy is outright immunity, so the warning must go even on a genuine shortfall. */
     #[Test]
     public function anImmunePlayerIsNeverWarnedDespiteAShortfall(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = 3;
-        $player->census = 30;
-        $player->treasury = 30;
-        $player->ownAdvances(['democracy']);
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(30)->withTreasury(30)->withAdvances(['democracy'])->build();
 
         $this->assertNotInstanceOf(Advisory::class, new TaxPaymentRule($this->tax())->evaluate($player));
     }

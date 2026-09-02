@@ -64,10 +64,6 @@ final class CreateGameTest extends WebTestCase
         yield 'exactly the limit' => [Game::MAX_SLUG_LENGTH];
     }
 
-    /**
-     * A writable LiveComponent path may only carry a scalar, so the region travels as a raw string
-     * up to here and the enum never sees a crafted value. This is where one dies instead.
-     */
     #[Test]
     #[DataProvider('provideARegionNoScenarioOffersIsRefusedCases')]
     public function aRegionNoScenarioOffersIsRefused(string $region): void

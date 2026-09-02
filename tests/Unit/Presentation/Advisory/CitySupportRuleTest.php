@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\State\Game;
-use App\State\Player;
 use App\Presentation\Advisory\CitySupportRule;
 use App\Rules\CitySupportCalculator;
 use App\Presentation\Advisory\Advisory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
 final class CitySupportRuleTest extends TestCase
 {
@@ -19,9 +18,7 @@ final class CitySupportRuleTest extends TestCase
     #[DataProvider('provideSufficientCensusYieldsNoAdvisoryCases')]
     public function sufficientCensusYieldsNoAdvisory(int $cities, int $census): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = $cities;
-        $player->census = $census;
+        $player = PlayerBuilder::named('Bob')->withCities($cities)->withCensus($census)->build();
 
         $this->assertNotInstanceOf(\App\Presentation\Advisory\Advisory::class, new CitySupportRule(new CitySupportCalculator())->evaluate($player));
     }
@@ -37,9 +34,7 @@ final class CitySupportRuleTest extends TestCase
     #[Test]
     public function insufficientCensusGetsCantSupportCitiesAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cities = 3;
-        $player->census = 5;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(5)->build();
 
         $advisory = new CitySupportRule(new CitySupportCalculator())->evaluate($player);
 

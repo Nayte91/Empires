@@ -13,16 +13,10 @@ use PHPUnit\Framework\TestCase;
 
 final class CityBuildCalculatorTest extends TestCase
 {
-    /**
-     * A city costs 6 population to raise and 2 more to keep standing, so 20 population over 3
-     * cities buys one city, not the two a build-cost-only count would promise.
-     */
     #[Test]
     public function eachCityCostsItsBuildPriceAndItsSupportFloor(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 3;
-        $player->census = 20;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(20)->build();
 
         $this->assertSame(1, $this->calculator()->affordableCities($player));
     }
@@ -30,9 +24,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function aWiderMarginBuysProportionallyMoreCities(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 2;
-        $player->census = 30;
+        $player = PlayerBuilder::named('Bob')->withCities(2)->withCensus(30)->build();
 
         $this->assertSame(3, $this->calculator()->affordableCities($player));
     }
@@ -40,9 +32,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function anUnderSupportedPlayerCanFoundNothing(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 5;
-        $player->census = 4;
+        $player = PlayerBuilder::named('Bob')->withCities(5)->withCensus(4)->build();
 
         $this->assertSame(0, $this->calculator()->affordableCities($player));
     }
@@ -50,9 +40,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function theNineCityLimitCapsWhatTheMarginWouldAllow(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 55;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(55)->build();
 
         $this->assertSame(1, $this->calculator()->affordableCities($player));
         $this->assertSame(1, $this->calculator()->remainingCitySlots($player));
@@ -61,27 +49,19 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function afullEmpireHasNoSlotLeft(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 9;
-        $player->census = 55;
+        $player = PlayerBuilder::named('Bob')->withCities(9)->withCensus(55)->build();
 
         $this->assertSame(0, $this->calculator()->remainingCitySlots($player));
         $this->assertSame(0, $this->calculator()->affordableCities($player));
     }
 
-    /**
-     * Each coin buys exactly one population off the price, so each is checked on the margin where
-     * it alone tips a city from unaffordable to affordable.
-     */
     #[Test]
     public function eachArchitectureCoinBuysOnePopulationOffThePrice(): void
     {
         $calculator = $this->calculator();
 
         foreach ([1 => 7, 2 => 6, 3 => 5] as $coins => $census) {
-            $player = PlayerBuilder::named('Bob')->build();
-            $player->ownAdvances(['architecture']);
-            $player->census = $census;
+            $player = PlayerBuilder::named('Bob')->withAdvances(['architecture'])->withCensus($census)->build();
 
             $player->treasury = $coins - 1;
             $this->assertSame(0, $calculator->affordableCities($player), sprintf('%d coins', $coins - 1));
@@ -94,10 +74,7 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function aFourthCoinBuysNoFurtherRebate(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->ownAdvances(['architecture']);
-        $player->census = 4;
-        $player->treasury = 20;
+        $player = PlayerBuilder::named('Bob')->withAdvances(['architecture'])->withCensus(4)->withTreasury(20)->build();
 
         $this->assertSame(0, $this->calculator()->affordableCities($player));
     }
@@ -105,21 +82,15 @@ final class CityBuildCalculatorTest extends TestCase
     #[Test]
     public function withoutArchitectureTheTreasuryBuysNothing(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 7;
-        $player->treasury = 20;
+        $player = PlayerBuilder::named('Bob')->withCensus(7)->withTreasury(20)->build();
 
         $this->assertSame(0, $this->calculator()->affordableCities($player));
     }
 
-    /** The rebate can tip the count: the same margin buys a second city once a city is cheaper. */
     #[Test]
     public function theRebateCanBuyOneMoreCity(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 3;
-        $player->census = 20;
-        $player->treasury = 3;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(20)->withTreasury(3)->build();
 
         $this->assertSame(1, $this->calculator()->affordableCities($player));
 

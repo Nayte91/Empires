@@ -7,10 +7,8 @@ namespace App\Tests\Support;
 use Doctrine\ORM\EntityManagerInterface;
 
 /**
- * The kernel-and-EntityManager preamble every database-backed test class used to repeat verbatim.
- *
- * A class needing more than the EntityManager declares its own setUp() — which simply overrides
- * this one, traits losing to class methods — and opens it with initEntityManager().
+ * A class needing more than the EntityManager declares its own setUp() — class methods beat trait
+ * methods — and opens it with initEntityManager().
  */
 trait GameFixtureTrait
 {

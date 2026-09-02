@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\State\Game;
-use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
+use App\State\Game;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 
 final class ChronicleViewTest extends WebTestCase
 {
@@ -24,11 +26,10 @@ final class ChronicleViewTest extends WebTestCase
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
     }
 
-    /** Canary for the unfinished half of the fork: the address still answers with the live dashboard. */
     #[Test]
     public function aGameStillRunningServesTheDashboard(): void
     {
-        $game = $this->createGame(finished: false);
+        $game = Tables::westTable($this->entityManager);
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -36,11 +37,10 @@ final class ChronicleViewTest extends WebTestCase
         $this->assertGreaterThan(0, $crawler->filter('caption#roster')->count());
     }
 
-    /** Canary for the finished half: same address, no redirect, and the chart in place of the console. */
     #[Test]
     public function aFinishedGameServesTheChronicleAtTheVerySameAddress(): void
     {
-        $game = $this->createGame(finished: true);
+        $game = $this->finishedGame();
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -50,23 +50,22 @@ final class ChronicleViewTest extends WebTestCase
         $this->assertGreaterThan(0, $crawler->filter('canvas[data-controller~="symfony--ux-chartjs--chart"]')->count());
     }
 
-    /** The roster reads live counters the operator overwrites in place; a finished game has none to show. */
     #[Test]
     public function theChronicleDropsTheRoster(): void
     {
-        $game = $this->createGame(finished: true);
+        $game = $this->finishedGame();
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
         $this->assertCount(0, $crawler->filter('caption#roster'));
     }
 
-    /** The console still answers, but every control on it refuses a finished game — so the way in goes. */
     #[Test]
     public function theChronicleDropsTheWayInToTheOperatorConsoleThatTheDashboardOffers(): void
     {
-        $running = $this->createGame(finished: false);
-        $finished = $this->createGame(finished: true);
+        $running = Tables::westTable($this->entityManager);
+
+        $finished = $this->finishedGame();
 
         $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('a[href$="/operator"]')->count();
         $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('a[href$="/operator"]')->count();
@@ -75,11 +74,10 @@ final class ChronicleViewTest extends WebTestCase
         $this->assertSame(0, $onChronicle);
     }
 
-    /** The board is the record of the game that was played; its requirements are advice for a game still on. */
     #[Test]
     public function theChronicleKeepsTheAstBoardButDropsItsRequirements(): void
     {
-        $game = $this->createGame(finished: true);
+        $game = $this->finishedGame();
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -90,8 +88,9 @@ final class ChronicleViewTest extends WebTestCase
     #[Test]
     public function theBoardsCaptionCarriesTheFinishedMarkOnlyOnceTheGameIsFinished(): void
     {
-        $running = $this->createGame(finished: false);
-        $finished = $this->createGame(finished: true);
+        $running = Tables::westTable($this->entityManager);
+
+        $finished = $this->finishedGame();
 
         $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('caption#ast[data-finished]')->count();
         $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('caption#ast[data-finished]')->count();
@@ -103,7 +102,7 @@ final class ChronicleViewTest extends WebTestCase
     #[Test]
     public function theChronicleIsOneScreenOfThreeTabsSwitchedWithoutAnyScript(): void
     {
-        $game = $this->createGame(finished: true);
+        $game = $this->finishedGame();
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -118,19 +117,10 @@ final class ChronicleViewTest extends WebTestCase
         $this->assertCount(1, $crawler->filter('#panel-nav nav'));
     }
 
-    private function createGame(bool $finished): Game
+    private function finishedGame(): Game
     {
-        $game = new Game();
-        $game->currentTurn = 4;
-        new Player($game, 'Alice', 'minoa');
-        new Player($game, 'Bob', 'hellas');
-
-        if ($finished) {
-            $game->finishedAt = new \DateTimeImmutable();
-        }
-
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->finished()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
 
         return $game;
     }

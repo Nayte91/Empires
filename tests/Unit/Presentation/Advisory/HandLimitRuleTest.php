@@ -4,28 +4,24 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\State\Game;
-use App\State\Player;
 use App\Presentation\Advisory\HandLimitRule;
 use App\Presentation\Advisory\Advisory;
 use App\Rules\HandSizeCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
 /**
- * The rule itself only decides "over the limit → Danger advisory, otherwise silence". Which number
- * the limit happens to be, per player count and per advance owned, belongs to
- * {@see HandSizeCalculator} and is pinned by its own test — restating that bracket table here made
- * a change to it break two files instead of one.
+ * The limit itself is {@see HandSizeCalculator}'s; restating its bracket table here would break two
+ * files for one change.
  */
 final class HandLimitRuleTest extends TestCase
 {
     #[Test]
     public function aHandExactlyAtTheLimitYieldsNoAdvisory(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cards = 8;
+        $player = PlayerBuilder::named('Bob')->withCards(8)->build();
 
         $this->assertNotInstanceOf(Advisory::class, new HandLimitRule($this->hand())->evaluate($player));
     }
@@ -33,8 +29,7 @@ final class HandLimitRuleTest extends TestCase
     #[Test]
     public function aHandOneCardOverTheLimitAsksForOneCardInTheSingular(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cards = 9;
+        $player = PlayerBuilder::named('Bob')->withCards(9)->build();
 
         $advisory = new HandLimitRule($this->hand())->evaluate($player);
 
@@ -42,16 +37,11 @@ final class HandLimitRuleTest extends TestCase
         $this->assertSame('You must discard 1 card!', $advisory->message);
     }
 
-    /**
-     * The bug this guards: the message used to be a constant, so a hand three cards over still read
-     * "discard a card" and a player following it stopped two cards early. Every test on this rule
-     * happened to sit at an excess of exactly one, the single value where that constant was right.
-     */
+    /** Every other test on this rule sits at an excess of exactly one, the single value where a constant message is right. */
     #[Test]
     public function aHandSeveralCardsOverTheLimitAsksForThatManyCards(): void
     {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-        $player->cards = 11;
+        $player = PlayerBuilder::named('Bob')->withCards(11)->build();
 
         $advisory = new HandLimitRule($this->hand())->evaluate($player);
 

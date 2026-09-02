@@ -24,11 +24,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
 
-/**
- * The real-time chain driven from the bus, not from the publisher: every assertion is on what the
- * browser would receive, the topic and event name being a contract shared with the
- * `mercure-refresh` Stimulus controller and with nothing else.
- */
 final class GameMercurePublisherTest extends WebTestCase
 {
     private MessageBusInterface $bus;
@@ -43,9 +38,8 @@ final class GameMercurePublisherTest extends WebTestCase
     }
 
     /**
-     * Turn 2 and a funded player are what make all five commands legal at once: these handlers
-     * publish only after a real mutation, so a refused command would empty the hub and pass a
-     * weaker test for the wrong reason.
+     * Turn 2 and a funded player keep all five commands legal: a refused command publishes nothing
+     * and would pass.
      *
      * @param \Closure(Player): object $command
      * @param \Closure(Player): list<string> $expectedRegions
@@ -55,9 +49,7 @@ final class GameMercurePublisherTest extends WebTestCase
     public function everyGameMutationWakesTheRegionsItTouches(\Closure $command, \Closure $expectedRegions): void
     {
         $game = GameBuilder::create()->withCurrentTurn(2)->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 7;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(7)->persist($this->entityManager);
 
         $this->bus->dispatch($command($player));
 
@@ -80,10 +72,6 @@ final class GameMercurePublisherTest extends WebTestCase
         yield 'applying a stat action' => [static fn (Player $player): object => new ApplyStatAction($player->id, StatAction::BuildShip), $playerChange];
     }
 
-    /**
-     * A board only wakes for its own player: the whole point of splitting the game topic, and the
-     * thing a single shared topic could not express.
-     */
     #[Test]
     public function aStatWriteLeavesEveryOtherPlayersBoardAsleep(): void
     {
@@ -97,11 +85,6 @@ final class GameMercurePublisherTest extends WebTestCase
         $this->assertNotContains('player/'.$alice->id, $this->hub()->regions());
     }
 
-    /**
-     * Two payload shapes, and which is which is the whole design: the dashboard regions travel
-     * already rendered because nothing on that screen holds state a replace could destroy, and
-     * every other region travels as a signal its own component answers by re-rendering itself.
-     */
     #[Test]
     public function theDashboardRegionsCarryMarkupAndEveryOtherRegionCarriesNothing(): void
     {
@@ -120,16 +103,11 @@ final class GameMercurePublisherTest extends WebTestCase
         $this->assertStringContainsString('<turbo-stream action="replace"', $payloads['ast']);
         $this->assertSame('{}', $payloads['operator']);
 
-        // Morph, not swap: nothing on this screen is a Live Component, so the cells can be patched
-        // in place — which is what lets their CSS transitions play at all.
         $this->assertStringContainsString('method="morph"', $payloads['roster']);
         $this->assertStringContainsString('method="morph"', $payloads['ast']);
     }
 
-    /**
-     * The one deliberate silence in the chain, pinned because the omission reads as a forgotten
-     * line and the next reader would "fix" it.
-     */
+    /** Pinned because the silence reads as a forgotten line and would be "fixed". */
     #[Test]
     public function creatingAGamePublishesNothingAtAll(): void
     {
@@ -148,11 +126,8 @@ final class GameMercurePublisherTest extends WebTestCase
     }
 
     /**
-     * The last way this class could break a committed mutation: an unresolvable player is logged
-     * and dropped, never raised.
-     *
-     * Dispatches a domain event rather than a command, because no command reaches this path —
-     * SetStatHandler and ApplyStatActionHandler resolve the player and throw first.
+     * Dispatches a domain event, not a command: SetStatHandler and ApplyStatActionHandler resolve
+     * the player and throw before this path.
      */
     #[Test]
     public function anEventNamingAPlayerThatNoLongerExistsNeitherThrowsNorPublishes(): void

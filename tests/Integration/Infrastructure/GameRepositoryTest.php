@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Integration\Infrastructure;
 
-use App\State\Game;
 use App\Infrastructure\Repository\GameRepository;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\Fixture\GameBuilder;
 
 final class GameRepositoryTest extends WebTestCase
 {
@@ -26,10 +26,7 @@ final class GameRepositoryTest extends WebTestCase
     #[Test]
     public function persistedGameIsFoundWithItsDefaultValues(): void
     {
-        $game = new Game();
-
-        $this->entityManager->persist($game);
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->persist($this->entityManager);
 
         $foundGame = $this->gameRepository->find($game->id);
 
@@ -48,18 +45,9 @@ final class GameRepositoryTest extends WebTestCase
     #[Test]
     public function findInProgressReturnsUnfinishedGamesOrderedFromMostToLeastRecent(): void
     {
-        $oldest = new Game();
-        $this->entityManager->persist($oldest);
-        $this->entityManager->flush();
-
-        $middle = new Game();
-        $this->entityManager->persist($middle);
-        $this->entityManager->flush();
-
-        $finished = new Game();
-        $finished->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->persist($finished);
-        $this->entityManager->flush();
+        $oldest = GameBuilder::create()->persist($this->entityManager);
+        $middle = GameBuilder::create()->persist($this->entityManager);
+        GameBuilder::create()->finished()->persist($this->entityManager);
 
         $games = $this->gameRepository->findInProgress();
 

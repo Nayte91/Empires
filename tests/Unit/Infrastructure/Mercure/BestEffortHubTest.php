@@ -12,11 +12,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
 use Symfony\Component\Mercure\Update;
 
-/**
- * The one guarantee production buys by wrapping its hub: a move a player made survives a hub that
- * cannot be reached. It used to be a `catch` inside the publisher, which meant every environment
- * inherited the silence — including the one where a misconfigured hub ought to be heard at once.
- */
 final class BestEffortHubTest extends TestCase
 {
     #[Test]
@@ -32,7 +27,6 @@ final class BestEffortHubTest extends TestCase
         $this->assertSame('Mercure publication failed', $logger->records[0]['message']);
     }
 
-    /** The failure names the topic that was lost, or the log says only that something went wrong. */
     #[Test]
     public function theLoggedFailureNamesTheTopicItCouldNotReach(): void
     {
@@ -43,7 +37,6 @@ final class BestEffortHubTest extends TestCase
         $this->assertSame(['empires/game/1/operator'], $logger->records[0]['context']['topics']);
     }
 
-    /** Forgiving is all it adds: a reachable hub is passed through untouched. */
     #[Test]
     public function aReachableHubIsLeftEntirelyAlone(): void
     {

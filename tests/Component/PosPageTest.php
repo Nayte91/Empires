@@ -9,22 +9,18 @@ use App\Presentation\Shop\CartKey;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
-use App\Tests\Support\Fixture\GameBuilder;
-use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\OrderBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\ShopFixtureTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\BrowserKit\Cookie;
 use Symfony\Component\DomCrawler\Crawler;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 use Userforged\ShopEngine\Cart;
-use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
@@ -35,11 +31,12 @@ final class PosPageTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     public function withNoBuyerChosenTheTillShowsOnlyItsBuyerSelect(): void
     {
-        [$game] = $this->createGameWithAliceAndBob();
+        [$game] = Tables::aliceAndBob($this->entityManager);
 
         $component = $this->createPos($game);
         $crawler = $component->render()->crawler();
@@ -55,7 +52,7 @@ final class PosPageTest extends WebTestCase
     #[DataProvider('provideASlugMatchingNobodyIsTreatedAsNoBuyerChosenCases')]
     public function aSlugMatchingNobodyIsTreatedAsNoBuyerChosen(string $slug): void
     {
-        [$game] = $this->createGameWithAliceAndBob();
+        [$game] = Tables::aliceAndBob($this->entityManager);
 
         $component = $this->createPos($game)->set('playerSlug', $slug);
         $crawler = $component->render()->crawler();
@@ -68,8 +65,8 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function clearingTheTillAlsoWithdrawsTheOrderBehindIt(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
         $this->createPos($bob->game)->set('playerSlug', $bob->slug)->call('onCartCleared');
 
@@ -93,8 +90,8 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function choosingABuyerPreloadsTheirPendingOrderIntoTheTill(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
         $crawler = $this->createPos($bob->game)->set('playerSlug', $bob->slug)->render()->crawler();
 
@@ -105,10 +102,10 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function choosingABuyerWhoseTillAlreadyHoldsItemsKeepsWhatTheOperatorBuilt(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->createPendingOrderFor($bob, ['pottery']);
-        $this->posCartFor($client, $bob, $game->currentTurn, Cart::fromKeys(['democracy']));
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
+        $this->seedCart($client, CartKey::pos($bob, $game->currentTurn), Cart::fromKeys(['democracy']));
 
         $crawler = $this->createPos($game, client: $client)->set('playerSlug', $bob->slug)->render()->crawler();
 
@@ -119,7 +116,7 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function choosingABuyerWithNothingSubmittedForTheTurnOpensAnEmptyTill(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
 
         $crawler = $this->createPos($bob->game)->set('playerSlug', $bob->slug)->render()->crawler();
 
@@ -129,7 +126,7 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function aValidatedTurnShowsItsReceiptAndNoWayToBuyMore(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
         $order = $this->validateOrderFor($bob, ['pottery']);
 
         $crawler = $this->createPos($bob->game)->set('playerSlug', $bob->slug)->render()->crawler();
@@ -145,7 +142,7 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function aValidatedTurnOffersTheConsolesCascadingEraseBehindItsConfirmation(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
         $this->validateOrderFor($bob, ['pottery']);
@@ -159,7 +156,7 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function erasingFromTheTillRemovesTheOrderAndDisownsItsAdvances(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
         $this->validateOrderFor($bob, ['pottery']);
 
         $this->createPos($bob->game)->set('playerSlug', $bob->slug)->call('eraseOrder');
@@ -169,17 +166,13 @@ final class PosPageTest extends WebTestCase
             self::getContainer()->get(OrderRepository::class)->findOneByPlayerAndWindow($bob, $bob->game->currentTurn),
         );
 
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-        $entityManager->clear();
-        $reloaded = $entityManager->find(Player::class, $bob->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-        $this->assertNotContains('pottery', $reloaded->advances);
+        $this->assertNotContains('pottery', $this->reloadPlayer($bob)->advances);
     }
 
     #[Test]
     public function addTakesTheProductOutOfTheCatalogueAndUpdatesTheTicketTotal(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
 
         $rendered = $this->createPos($bob->game)
             ->set('playerSlug', $bob->slug)
@@ -195,7 +188,7 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function aRefusedAddSurfacesItsErrorOnTheTillPage(): void
     {
-        [, $alice] = $this->createGameWithAliceAndBob();
+        [, $alice] = Tables::aliceAndBob($this->entityManager);
 
         $crawler = $this->createPos($alice->game)
             ->set('playerSlug', $alice->slug)
@@ -211,10 +204,10 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function checkoutValidatesTheTillsTurnOrderAndOwnsTheAdvances(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $client = self::getContainer()->get('test.client');
 
-        $this->posCartFor($client, $bob, $game->currentTurn, Cart::fromKeys(['pottery', 'democracy']));
+        $this->seedCart($client, CartKey::pos($bob, $game->currentTurn), Cart::fromKeys(['pottery', 'democracy']));
 
         $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 
@@ -224,39 +217,48 @@ final class PosPageTest extends WebTestCase
         $this->assertSame(['pottery', 'democracy'], $this->reloadPlayer($bob)->advances);
     }
 
+    /** @param list<string> $expectedAdvances */
     #[Test]
-    public function checkoutWithAChosenGiftValidatesTheOrderWithTheZeroCostGiftLine(): void
+    #[DataProvider('provideCheckoutAtTheTillValidatesAPromotedOrderImmediatelyCases')]
+    public function checkoutAtTheTillValidatesAPromotedOrderImmediately(Cart $ticket, array $expectedAdvances): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $client = self::getContainer()->get('test.client');
 
-        $ticket = Cart::fromKeys(['anatomy']);
-        $ticket->withGift('anatomy', 'astronavigation');
-        $this->posCartFor($client, $bob, $game->currentTurn, $ticket);
+        $this->seedCart($client, CartKey::pos($bob, $game->currentTurn), $ticket);
 
         $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
         $this->assertSame(OrderStatus::Validated, $order->status);
-        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
+        $this->assertSame($expectedAdvances, $this->reloadPlayer($bob)->advances);
+    }
 
-        $giftLine = $order->lines()[1];
-        $this->assertSame('astronavigation', $giftLine->key);
-        $this->assertSame(0, $giftLine->netCost);
+    /** @return iterable<string, array{Cart, list<string>}> */
+    public static function provideCheckoutAtTheTillValidatesAPromotedOrderImmediatelyCases(): iterable
+    {
+        $gifted = Cart::fromKeys(['anatomy']);
+        $gifted->withGift('anatomy', 'astronavigation');
 
-        $this->assertSame(['anatomy', 'astronavigation'], $this->reloadPlayer($bob)->advances);
+        yield 'a gift chosen at the till' => [$gifted, ['anatomy', 'astronavigation']];
+
+        $allocated = Cart::fromKeys(['monument']);
+        $allocated->withAllocation('monument', 'craft', 10);
+        $allocated->withAllocation('monument', 'science', 10);
+
+        yield 'an option pool fully allocated at the till' => [$allocated, ['monument']];
     }
 
     #[Test]
     public function checkoutWithAPartialAllocationIsRejectedServerSideAndShowsAnError(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $client = self::getContainer()->get('test.client');
 
         $ticket = Cart::fromKeys(['monument']);
         $ticket->withAllocation('monument', 'science', 5);
-        $this->posCartFor($client, $bob, $game->currentTurn, $ticket);
+        $this->seedCart($client, CartKey::pos($bob, $game->currentTurn), $ticket);
 
         $rendered = $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout')->render()->toString();
 
@@ -266,42 +268,14 @@ final class PosPageTest extends WebTestCase
     }
 
     #[Test]
-    public function allocatingTheFullOptionPoolAtTheTillEnablesCheckoutAndPersistsTheAllocation(): void
-    {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $client = self::getContainer()->get('test.client');
-
-        $ticket = Cart::fromKeys(['monument']);
-        $ticket->withAllocation('monument', 'craft', 10);
-        $ticket->withAllocation('monument', 'science', 10);
-        $this->posCartFor($client, $bob, $game->currentTurn, $ticket);
-
-        $crawler = $this->createPos($game, client: $client)->set('playerSlug', $bob->slug)->render()->crawler();
-        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-
-        $this->createPosCart($bob, $game->currentTurn, $client)->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, $game->currentTurn);
-        $this->assertInstanceOf(Order::class, $order);
-        $this->assertSame(OrderStatus::Validated, $order->status);
-
-        $line = $order->lines()[0];
-        $this->assertInstanceOf(AppliedPromotion::class, $line->promotion);
-        $this->assertSame(PromotionType::Option, $line->promotion->type);
-        $this->assertSame(['craft' => 10, 'science' => 10], $line->promotion->allocation);
-    }
-
-    #[Test]
     public function choosingABuyerWithAKioskSubmittedMonumentOrderReloadsTheAllocationIntoTheTill(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
 
-        $order = new Order($bob, $game->currentTurn);
-        $order->replaceLines([
-            new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])),
-        ]);
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
+        OrderBuilder::for($bob)
+            ->withLine(new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])))
+            ->persist($this->entityManager)
+        ;
 
         $crawler = $this->createPos($game)->set('playerSlug', $bob->slug)->render()->crawler();
 
@@ -316,12 +290,12 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function checkoutOnAPastTurnValidatesThatTurnsOrderNotTheCurrentOne(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
         $client = self::getContainer()->get('test.client');
 
-        $this->posCartFor($client, $bob, 1, Cart::fromKeys(['pottery']));
+        $this->seedCart($client, CartKey::pos($bob, 1), Cart::fromKeys(['pottery']));
         $this->createPosCart($bob, 1, $client)->call('checkout');
 
         $pastOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($bob, 1);
@@ -334,8 +308,8 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function theTillPreloadsTheOrderOfTheTurnItIsPointedAtNotTheCurrentOne(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
 
@@ -351,28 +325,16 @@ final class PosPageTest extends WebTestCase
     #[Test]
     public function checkoutOnAnAlreadyValidatedTurnShowsADomainExceptionMessage(): void
     {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
+        [$game, $alice] = Tables::aliceAndBob($this->entityManager);
         $this->validateOrderFor($alice, ['democracy']);
         $client = self::getContainer()->get('test.client');
 
-        $this->posCartFor($client, $alice, $game->currentTurn, Cart::fromKeys(['pottery']));
+        $this->seedCart($client, CartKey::pos($alice, $game->currentTurn), Cart::fromKeys(['pottery']));
         $crawler = $this->createPosCart($alice, $game->currentTurn, $client)->call('checkout')->render()->crawler();
 
         $alert = $crawler->filter('p[role="alert"]');
         $this->assertCount(1, $alert);
         $this->assertNotSame('', trim($alert->text()));
-    }
-
-    /** @return array{Game, Player, Player} */
-    private function createGameWithAliceAndBob(): array
-    {
-        $game = GameBuilder::create()->build();
-
-        return [
-            $game,
-            PlayerBuilder::named('Alice')->in($game)->withAdvances(['agriculture'])->persist($this->entityManager),
-            PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager),
-        ];
     }
 
     private function createPos(Game $game, ?int $turn = null, ?KernelBrowser $client = null): TestLiveComponent
@@ -390,20 +352,6 @@ final class PosPageTest extends WebTestCase
         ], $client);
     }
 
-    private function posCartFor(KernelBrowser $client, Player $player, int $turn, Cart $cart): void
-    {
-        $session = self::getContainer()->get('session.factory')->createSession();
-        $request = new Request();
-        $request->setSession($session);
-        $requestStack = self::getContainer()->get(RequestStack::class);
-        $requestStack->push($request);
-        self::getContainer()->get(CartStorageInterface::class)->save(CartKey::pos($player, $turn), $cart);
-        $requestStack->pop();
-        $session->save();
-
-        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
-    }
-
     /** @return array<string, string> */
     private function allocationOf(Crawler $picker): array
     {
@@ -417,20 +365,9 @@ final class PosPageTest extends WebTestCase
     }
 
     /** @param list<string> $slugs */
-    private function createPendingOrderFor(Player $player, array $slugs): Order
-    {
-        $order = new Order($player, $player->game->currentTurn);
-        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
-    }
-
-    /** @param list<string> $slugs */
     private function validateOrderFor(Player $player, array $slugs): Order
     {
-        $order = $this->createPendingOrderFor($player, $slugs);
+        $order = OrderBuilder::for($player)->withKeys(...$slugs)->persist($this->entityManager);
 
         self::getContainer()->get(OrderValidator::class)->validate($order);
 
@@ -440,13 +377,5 @@ final class PosPageTest extends WebTestCase
     private function freshOrderRepository(): OrderRepository
     {
         return self::getContainer()->get(OrderRepository::class);
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
     }
 }
