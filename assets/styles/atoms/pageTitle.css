@@ -1,5 +1,6 @@
 #page-title {
-    margin: 1rem;
+    padding: 1rem;
+    border-block-end: 1px solid var(--rule);
     display: flex;
     justify-content: space-between;
     align-items: start;
@@ -13,17 +14,21 @@
         flex: 1;
         font-family: var(--font-title);
     }
+
     h1, p { margin: 0 auto }
+
     h1 {
         font-size: var(--size-title);
         font-weight: var(--weight-answer);
     }
+
     p {
         font-size: var(--size-small);
         font-weight: var(--weight-answer);
         color: var(--ink-muted);
     }
 
+    &[data-title="celebration"] { border-block-end: none }
     &[data-title="celebration"] h1 {
         font-size: var(--size-hero);
         font-weight: var(--weight-hero);

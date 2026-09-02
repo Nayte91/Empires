@@ -3,7 +3,8 @@
     max-inline-size: 75rem;
     margin-inline: auto;
     gap: var(--operator-gap);
-    padding-inline: 1rem;
+
+    > :not(.player-heading) { margin-inline: 1rem }
 
     .panels {
         display: grid;
