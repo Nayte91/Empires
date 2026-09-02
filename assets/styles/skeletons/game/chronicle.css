@@ -18,8 +18,7 @@
         min-block-size: 0;
         overflow-y: auto;
         overscroll-behavior-y: contain;
-        padding-inline: 1rem;
-        padding-block-end: 1rem;
+        padding: 1rem;
     }
 
     &:has(> .tab-bar [value="ast"]:checked) :is(#panel-evolution, #panel-nav),

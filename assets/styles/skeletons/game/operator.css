@@ -1,12 +1,13 @@
 .operator-console {
     container-type: inline-size;
     min-block-size: 100vh;
-    padding-inline: 1rem;
     display: grid;
     place-content: start center;
     gap: 1rem;
     --ground: white;
     background: white;
+
+    > :not(#page-title) { margin-inline: 1rem }
 
     .operator-console__turn-controls {
         display: flex;
