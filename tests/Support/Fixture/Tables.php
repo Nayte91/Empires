@@ -19,10 +19,7 @@ use Doctrine\ORM\EntityManagerInterface;
 final class Tables
 {
     /** @var list<string> */
-    private const array NAMES = [
-        'Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank', 'Grace', 'Heidi',
-        'Ivan', 'Judy', 'Kim', 'Leo', 'Mia', 'Ned', 'Oscar',
-    ];
+    private const array NAMES = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve'];
 
     /**
      * Turn 1, two players: Alice owns agriculture, Bob owns nothing.
@@ -61,70 +58,6 @@ final class Tables
             ->withShips(2)
             ->persist($entityManager)
         ;
-
-        self::seatTheRest($entityManager, $game, $empires);
-
-        return $game;
-    }
-
-    /**
-     * Running, turn 4, East.
-     * Alice/babylon, Bob/nubia, Carol/parthia, Dave/persia, Eve/saba.
-     * No advances, every stat on its default.
-     */
-    public static function eastTable(EntityManagerInterface $entityManager): Game
-    {
-        $game = GameBuilder::create()->withCurrentTurn(4)->withPlayerCount(5)->withRegion(Region::East)->persist($entityManager);
-        $empires = self::empiresOf(5, Region::East);
-
-        PlayerBuilder::named('Alice')->in($game)->withEmpire($empires[0])->persist($entityManager);
-
-        self::seatTheRest($entityManager, $game, $empires);
-
-        return $game;
-    }
-
-    /**
-     * Finished, turn 12, no region: the `15` scenario, fifteen seats, Alice/minoa first.
-     * Alice owns pottery and agriculture; nobody else owns anything.
-     * Each seat is scored off its place: cities = place modulo 10, A.S.T. position = place.
-     */
-    public static function grandTable(EntityManagerInterface $entityManager): Game
-    {
-        $game = GameBuilder::create()->withCurrentTurn(12)->withPlayerCount(15)->withRegion(null)->finished()->persist($entityManager);
-        $empires = self::leadWith(self::empiresOf(15, null), 'minoa');
-
-        PlayerBuilder::named('Alice')->in($game)
-            ->withEmpire($empires[0])
-            ->withAdvances(['pottery', 'agriculture'])
-            ->withCities(0)
-            ->withAstPosition(0)
-            ->persist($entityManager)
-        ;
-
-        foreach (\array_slice($empires, 1, preserve_keys: true) as $place => $empire) {
-            PlayerBuilder::named(self::NAMES[$place])->in($game)
-                ->withEmpire($empire)
-                ->withCities($place % 10)
-                ->withAstPosition($place)
-                ->persist($entityManager)
-            ;
-        }
-
-        return $game;
-    }
-
-    /**
-     * Running, turn 1, West, nine seats: Alice/minoa, Bob/assyria, Carol/carthage, Dave/celt,
-     * Eve/egypt, Frank/hatti, Grace/hellas, Heidi/iberia, Ivan/rome.
-     * Nothing bought, nothing scored.
-     */
-    public static function typicalTable(EntityManagerInterface $entityManager): Game
-    {
-        $game = GameBuilder::create()->withCurrentTurn(1)->withPlayerCount(9)->withRegion(Region::West)->persist($entityManager);
-        $empires = self::leadWith(self::empiresOf(9, Region::West), 'minoa');
-
-        PlayerBuilder::named('Alice')->in($game)->withEmpire($empires[0])->persist($entityManager);
 
         self::seatTheRest($entityManager, $game, $empires);
 

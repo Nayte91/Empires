@@ -107,7 +107,7 @@ final class Shop
     {
         $order = $this->getCurrentTurnOrder();
         $editable = $order instanceof Order
-            && (OrderStatus::Pending === $order->status || OrderStatus::Rejected === $order->status);
+            && OrderStatus::Pending === $order->status;
 
         return $editable ? $order : null;
     }

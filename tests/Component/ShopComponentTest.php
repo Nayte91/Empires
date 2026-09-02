@@ -256,32 +256,6 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function aRejectedOrderReopensForEditingAndResubmittingReturnsItToPending(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
-        $order->setMarking(OrderStatus::Rejected->value);
-        $this->entityManager->flush();
-
-        $client = self::getContainer()->get('test.client');
-        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
-        $rendered = $component->render()->toString();
-
-        $this->assertStringContainsString('data-status="rejected"', $rendered);
-
-        $component->call('editPendingOrder');
-        $editedRendered = $component->render()->toString();
-        $this->assertStringContainsString('class="lines"', $editedRendered);
-        $this->assertStringNotContainsString('id="product-pottery"', $editedRendered);
-
-        $this->createCart($player, $client)->call('checkout');
-
-        $reloadedOrder = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
-        $this->assertInstanceOf(Order::class, $reloadedOrder);
-        $this->assertSame(OrderStatus::Pending, $reloadedOrder->status);
-    }
-
-    #[Test]
     public function anEmptiedBudgetFieldIsNoConstraintWhereABudgetOfZeroIsOne(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);

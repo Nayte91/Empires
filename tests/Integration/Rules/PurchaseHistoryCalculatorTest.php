@@ -12,7 +12,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Userforged\ShopEngine\Dto\OrderLine;
-use Userforged\ShopEngine\OrderStatus;
 use App\Tests\Support\Fixture\OrderBuilder;
 
 final class PurchaseHistoryCalculatorTest extends WebTestCase
@@ -53,22 +52,13 @@ final class PurchaseHistoryCalculatorTest extends WebTestCase
      * the same zero either way.
      */
     #[Test]
-    #[DataProvider('provideABasketThatWasNeverValidatedNeverEntersTheSeriesCases')]
-    public function aBasketThatWasNeverValidatedNeverEntersTheSeries(OrderStatus $status): void
+    public function aBasketThatWasNeverValidatedNeverEntersTheSeries(): void
     {
         $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withCurrentTurn(3)->build())->persist($this->entityManager);
         OrderBuilder::for($player)->onTurn(1)->withLine(new OrderLine('pottery', 100))->validated(100)->persist($this->entityManager);
-        $order = OrderBuilder::for($player)->onTurn(2)->withLine(new OrderLine('pottery', 500));
-        (OrderStatus::Rejected === $status ? $order->rejected(500) : $order->frozenAsPending(500))->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(2)->withLine(new OrderLine('pottery', 500))->frozenAsPending(500)->persist($this->entityManager);
 
         $this->assertSame([100, 0, 0], $this->purchaseHistoryCalculator->totalsPerTurn($player));
-    }
-
-    public static function provideABasketThatWasNeverValidatedNeverEntersTheSeriesCases(): iterable
-    {
-        yield 'a basket still awaiting the operator' => [OrderStatus::Pending];
-
-        yield 'a basket the operator turned down' => [OrderStatus::Rejected];
     }
 
     #[Test]

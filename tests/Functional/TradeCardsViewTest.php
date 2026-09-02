@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\State\Game;
+use App\State\Region;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -12,7 +13,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use App\Tests\Support\Fixture\GameBuilder;
-use App\Tests\Support\Fixture\Tables;
 
 final class TradeCardsViewTest extends WebTestCase
 {
@@ -28,7 +28,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function theTradeCardsPageServesTheOneColumnOfTheGameBeingPlayed(): void
     {
-        $crawler = $this->goToTradeCards(Tables::typicalTable($this->entityManager));
+        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(9)->withRegion(Region::West)->persist($this->entityManager));
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('table'));
@@ -38,7 +38,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function aSplitPoolIsServedAsTwoBlockColumnsUnderOneCaption(): void
     {
-        $crawler = $this->goToTradeCards(Tables::grandTable($this->entityManager));
+        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(15)->withRegion(null)->persist($this->entityManager));
 
         $this->assertSame('West block / East block', trim($crawler->filter('caption')->text()));
         $this->assertCount(5, $crawler->filter('thead th[scope="col"]'));
@@ -47,7 +47,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function aCardOutOfOneBlockRendersADashAndNoCellAnywhereReadsZero(): void
     {
-        $crawler = $this->goToTradeCards(Tables::grandTable($this->entityManager));
+        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(15)->withRegion(null)->persist($this->entityManager));
 
         $cells = $crawler->filter('tbody td')->each(static fn (Crawler $cell): string => trim($cell->text()));
 
@@ -58,7 +58,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function everyStackIsOneRowGroupWhoseHeaderSpansExactlyItsOwnRows(): void
     {
-        $crawler = $this->goToTradeCards(Tables::typicalTable($this->entityManager));
+        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(9)->withRegion(Region::West)->persist($this->entityManager));
 
         $headers = $crawler->filter('tbody th[scope="rowgroup"]');
         $rowsPerStack = array_count_values($crawler->filter('tbody tr[data-stack]')->each(static fn (Crawler $row): string => (string) $row->attr('data-stack')));
@@ -83,7 +83,7 @@ final class TradeCardsViewTest extends WebTestCase
     #[Test]
     public function theNameOfTheDistributionReadsAsASectionHeading(): void
     {
-        $crawler = $this->goToTradeCards(Tables::typicalTable($this->entityManager));
+        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(9)->withRegion(Region::West)->persist($this->entityManager));
 
         $this->assertSame('Trade card distribution', trim($crawler->filter('h2')->text()));
     }
