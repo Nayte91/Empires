@@ -54,7 +54,7 @@
         "symfony/yaml": "8.1.*",
         "twig/extra-bundle": "^2.12|^3.24",
         "twig/twig": "^2.12|^3.28.0",
-        "userforged/shop-engine": "*@dev"
+        "userforged/shop-engine": "^1.0"
     },
     "config": {
         "allow-plugins": {

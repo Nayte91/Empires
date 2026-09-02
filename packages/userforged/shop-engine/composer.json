@@ -2,6 +2,7 @@
     "name": "userforged/shop-engine",
     "description": "Ordering engine (catalog, cart, checkout) — canonical shop pattern, ports-based, framework-agnostic core.",
     "type": "symfony-bundle",
+    "version": "1.0.0",
     "license": "proprietary",
     "autoload": {
         "psr-4": {
