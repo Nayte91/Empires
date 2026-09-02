@@ -75,6 +75,10 @@ final readonly class TaxCalculator
         return $this->grants($player, AdvanceEffect::TaxRevoltImmunity);
     }
 
+    /**
+     * Every consumer must read this rather than the shortfall figure alone: an immune player keeps a
+     * real shortfall and still does not revolt.
+     */
     public function citiesRevolt(Player $player): bool
     {
         return !$this->isImmune($player) && $this->stockToRecover($player) > 0;

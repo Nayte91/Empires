@@ -10,6 +10,15 @@ use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
 use App\State\Player;
 
+/**
+ * Where a marker stood turn by turn, replayed from the only history the game keeps — what was
+ * bought, and when.
+ *
+ * The replay is optimistic by construction: an era's `cities` gate cannot be read back, and a
+ * calamity that pushed a marker backwards leaves no trace at all. Where the player actually
+ * finished is therefore a ceiling on the whole run, and the last point is taken from it rather
+ * than deduced.
+ */
 final readonly class AstProgressionCalculator
 {
     public function __construct(

@@ -9,6 +9,10 @@ use App\Rules\Ruleset\AdvanceEffectRegistry;
 use App\Rules\Ruleset\GameRegistry;
 use App\State\Player;
 
+/**
+ * A city costs its build price to raise and its support floor to keep standing; affordability
+ * counts both.
+ */
 final readonly class CityBuildCalculator
 {
     private const int REGULAR_COST = 6;

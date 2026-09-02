@@ -14,6 +14,7 @@
             {% set player = row.player %}
             <tr data-empire="{{ player.empire }}">
                 <th scope="row" data-empire>
+                    {# `1.`, never `#1`: on a board game a hash reads as first place, and would smuggle back the standings this table refuses to state. #}
                     <span data-rank>{{ row.rank }}.</span>
                     <b>{{ player.empire|empire_adjective }}</b>
                     <small data-player>({{ player.name }})</small>

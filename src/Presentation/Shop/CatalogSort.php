@@ -20,7 +20,12 @@ enum CatalogSort: string
     /** What the advance costs on paper — the order the catalogue has always been rendered in. */
     case ListPrice = 'list_price';
 
-    /** What this buyer actually pays, discounts applied. Differs per player, and moves as their discounts do. */
+    /**
+     * What this buyer actually pays, discounts applied. Differs per player, and moves as their
+     * discounts do. The kiosk re-sorts on it because the registry's list-price order and the
+     * discounted prices contradict each other: most of the catalogue would otherwise show a price
+     * that does not match its position.
+     */
     case NetPrice = 'net_price';
 
     /**

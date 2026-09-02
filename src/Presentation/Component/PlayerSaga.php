@@ -14,6 +14,10 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 /**
  * The player's counterpart to GameChronicle: a finished game's read-only retrospective,
  * one player at a time. Static — a finished game never Mercure-refreshes.
+ *
+ * Everything the live board offers to change the game with is dropped: none of it has anything left
+ * to act on, and a control that answers nothing is worse than an absent one. The rename trigger
+ * goes with them — a name cannot be changed once the game that earned it is over.
  */
 #[AsTwigComponent(template: 'organisms/PlayerSaga.html.twig')]
 final class PlayerSaga

@@ -80,6 +80,10 @@ enum StatAction: string
         return null === $rate || \in_array($rate, $taxCalculator->rates($player), true);
     }
 
+    /**
+     * The action name reaches the server as a client-writable prop, so this guards apply(): an
+     * action foreign to the stat, or a hand already under the limit, must change nothing.
+     */
     public function isAvailable(Player $player, HandSizeCalculator $handSizeCalculator, StatBoundsCalculator $statBoundsCalculator, TaxCalculator $taxCalculator): bool
     {
         return match ($this) {

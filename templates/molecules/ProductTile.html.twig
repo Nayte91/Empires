@@ -16,6 +16,8 @@
     <img src="{{ row.advance.fileName }}" alt="{{ row.advance.name }} card" loading="lazy">
     <span class="name">{{ row.advance.name|capitalize }}</span>
     <span class="prices">
+        {# The tile shows only the net cost, so without the struck-through original the discount is
+           invisible at the point of choice — and an equal struck-through price would read as one. #}
         {% if row.product.netCost < row.advance.cost %}
             <s class="original">{{ row.advance.cost }}</s>
         {% endif %}

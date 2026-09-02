@@ -8,6 +8,7 @@ use App\Rules\CityBuildCalculator;
 use App\State\Player;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 
+/** A full empire is not a shortage: it is the top of the track, and reads as good news. */
 #[AsTaggedItem(priority: -25)]
 final readonly class CityBuildRule implements AdvisoryRule
 {

@@ -37,6 +37,10 @@ use Userforged\ShopEngine\Service\LineQuoter;
  * and `getCatalogView()` are then worth a shared trait. At two hosts they are four one-line
  * delegations to services both already inject, and a base class would cost more than it returns.
  */
+/**
+ * The operator's till. A promoted order needs no operator round-trip: it is validated on the spot,
+ * and what the promotion put in the payload is the engine's business, not this screen's.
+ */
 #[AsLiveComponent(template: 'organisms/CashierTerminal.html.twig')]
 final class CashierTerminal
 {

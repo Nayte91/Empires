@@ -29,6 +29,7 @@
             {% for advance in this.ownedAdvances %}
                 <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
             {% else %}
+                {# An empty grid is indistinguishable from a page that failed to draw one; a sentence is not. #}
                 <twig:atoms:Hint>No advance owned.</twig:atoms:Hint>
             {% endfor %}
         </div>

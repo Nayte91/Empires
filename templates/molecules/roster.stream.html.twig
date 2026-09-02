@@ -1,3 +1,4 @@
+{# Morph, not swap: nothing on this screen is a Live Component, so the cells are patched in place — which is what lets their CSS transitions play. #}
 <twig:Turbo:Stream:Replace :morph="true" target="[data-region='roster']">
     <twig:Roster :game="game" />
 </twig:Turbo:Stream:Replace>

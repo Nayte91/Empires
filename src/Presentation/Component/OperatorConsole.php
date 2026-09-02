@@ -17,6 +17,18 @@ use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
+/**
+ * The operator screen is deliberately operational only, counters and commands: advisories live in
+ * the Outlook block, which the console does not carry.
+ *
+ * It shares the player board's ControlBoard, but drives every player from one screen — a link into
+ * a single player's shop belongs to that player's own board, so the console omits it. Its two stat
+ * lists are intentionally different, and nothing else guards them against converging back: the
+ * General tab tracks how far along each empire is, economy management belongs to the player's own
+ * tab.
+ *
+ * It is also the one screen still answering for a finished game, so its title qualifier says so.
+ */
 #[AsLiveComponent(template: 'organisms/OperatorConsole.html.twig')]
 final class OperatorConsole
 {

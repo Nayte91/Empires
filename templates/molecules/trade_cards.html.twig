@@ -1,3 +1,4 @@
+{# A region-less game below ten players names no configuration: it must read as a page with nothing to show, not as one that failed. #}
 {% if distribution.columns is empty %}
     <twig:atoms:Hint>No trade card distribution is defined for this player count.</twig:atoms:Hint>
 {% else %}
@@ -18,11 +19,13 @@
                 {% for stack in distribution.stacks %}
                     {% for card in stack.cards %}
                         <tr data-stack="{{ stack.number }}">
+                            {# The stack a card belongs to is the first thing a player looks for, so each stack is one spanned row group. #}
                             {% if loop.first %}
                                 <th scope="rowgroup" rowspan="{{ stack.cards|length }}">{{ stack.number }}</th>
                             {% endif %}
                             <td>{{ card.name }}</td>
                             <td>{{ card.type|replace({'_': ' '}) }}</td>
+                            {# A card out of one block reads as a dash. A zero would invite players to draw a card that is not in the box. #}
                             {% for quantity in card.quantities %}
                                 <td>{{ quantity ?? '—' }}</td>
                             {% endfor %}

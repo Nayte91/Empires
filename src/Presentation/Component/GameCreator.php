@@ -273,6 +273,7 @@ final class GameCreator
      * input can only carry a range, so the widget gets its ends. A hole in the middle, if the
      * ruleset ever had one, is caught by KnownScenario at launch and by nothing here.
      */
+    /** The bound is declared once, by the scenarios the ruleset describes; the input carries their ends because a number field cannot carry a set. */
     public function getMinPlayers(): int
     {
         return $this->playableCounts()[0] ?? 1;

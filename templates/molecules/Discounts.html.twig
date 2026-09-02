@@ -1,3 +1,4 @@
+{# Empty is tested before spent: a credit never earned is dimmed, not struck through — a strikethrough would claim it was had and lost. #}
 {% macro discountState(credit) %}{{ credit.amount == 0 ? 'empty' : (credit.spent ? 'spent' : 'live') }}{% endmacro -%}
 {% import _self as discounts -%}
 <details {{ attributes }} class="discounts panel">
