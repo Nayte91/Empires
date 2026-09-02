@@ -11,19 +11,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
-/**
- * App\Presentation\Shop\CatalogView exists to make two configurations the only two expressible,
- * after three independent flags on App\Presentation\Component\Catalog had produced exactly two
- * combinations anyone ever used. What is worth pinning here is therefore not that the fields are
- * carried — the two screens assert that where it shows — but the part each named constructor
- * decides on its caller's behalf (the order), and that no third configuration is reachable at all.
- */
 final class CatalogViewTest extends TestCase
 {
-    /**
-     * The lock and the budget come from the host and pass through untouched, negative remainders
-     * included; the order is the kiosk's own decision, the same whatever it was handed.
-     */
     #[Test]
     #[DataProvider('provideTheKioskViewOrdersByNetPriceWhateverLockAndBudgetItWasGivenCases')]
     public function theKioskViewOrdersByNetPriceWhateverLockAndBudgetItWasGiven(bool $locked, ?int $remainingBudget): void
@@ -48,7 +37,6 @@ final class CatalogViewTest extends TestCase
         yield 'a turn whose order has already been validated' => [true, null];
     }
 
-    /** The operator rings up at the printed price on a shelf no turn lock and no budget touches. */
     #[Test]
     public function thePosViewIsNeverLockedNeverBudgetedAndKeepsTheListPriceOrder(): void
     {
@@ -59,12 +47,6 @@ final class CatalogViewTest extends TestCase
         $this->assertSame(CatalogSort::ListPrice, $view->sort);
     }
 
-    /**
-     * The point of the class rather than a detail of it: the two above are exhaustive only for as
-     * long as the constructor stays shut. A public one would let a caller assemble the combinations
-     * the refactor exists to rule out — a locked POS, a budgeted one, a kiosk sorted by list price —
-     * and no screen-level test would notice until one of them shipped.
-     */
     #[Test]
     public function noThirdConfigurationIsReachableBecauseTheConstructorIsClosed(): void
     {

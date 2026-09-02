@@ -5,29 +5,28 @@ declare(strict_types=1);
 namespace App\Tests\Component;
 
 use App\Infrastructure\Repository\OrderRepository;
-use App\State\Game;
 use App\State\Order;
 use App\State\Player;
-use App\Tests\Support\Fixture\GameBuilder;
-use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\OrderBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\ShopFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
-use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\Service\OrderValidator;
 
 final class PlayerOrdersTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     public function eraseOrderCascadesRemovingLaterTurnsAndDisowningAdvances(): void
     {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
+        [$game, $alice] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 1;
         $this->entityManager->flush();
         $this->validateOrderFor($alice, ['democracy']);
@@ -50,10 +49,10 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function cardsRunFromCurrentTurnDownToOneAndAKioskPendingOrderFillsItsTurnCard(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
         $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
 
@@ -67,7 +66,7 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function aMissingCurrentTurnRendersAMissingStatusCardLinkingToTheTill(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
 
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
         $card = $crawler->filter('article')->first();
@@ -87,8 +86,8 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function aPendingOrderCardShowsRecomputedNetCostsAndAVerifyLink(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
         $card = $crawler->filter('article')->first();
@@ -103,10 +102,10 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function pastTurnsWithNoOrderStayEmptyWhileTheCurrentTurnIsPending(): void
     {
-        [$game, , $bob] = $this->createGameWithAliceAndBob();
+        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
-        $this->createPendingOrderFor($bob, ['pottery']);
+        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
         $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
 
@@ -122,7 +121,7 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function aValidatedOrderCardShowsFrozenNetCostsAndSwapsTheTillLinkForTheEraseModal(): void
     {
-        [, , $bob] = $this->createGameWithAliceAndBob();
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
         $this->validateOrderFor($bob, ['democracy', 'pottery']);
 
         $crawler = $this->createPlayerOrders($bob)->render()->crawler();
@@ -141,7 +140,7 @@ final class PlayerOrdersTest extends WebTestCase
     #[Test]
     public function eraseConfirmForTheCurrentTurnHasNoCascadeMention(): void
     {
-        [$game, $alice] = $this->createGameWithAliceAndBob();
+        [$game, $alice] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 1;
         $this->entityManager->flush();
         $this->validateOrderFor($alice, ['democracy']);
@@ -152,38 +151,15 @@ final class PlayerOrdersTest extends WebTestCase
         $this->assertStringNotContainsString('also empty turn', $rendered);
     }
 
-    /** @return array{Game, Player, Player} */
-    private function createGameWithAliceAndBob(): array
-    {
-        $game = GameBuilder::create()->build();
-
-        return [
-            $game,
-            PlayerBuilder::named('Alice')->in($game)->withAdvances(['agriculture'])->persist($this->entityManager),
-            PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager),
-        ];
-    }
-
     private function createPlayerOrders(Player $player): TestLiveComponent
     {
         return $this->createLiveComponent('PlayerOrders', ['player' => $player, 'ordersStamp' => '']);
     }
 
     /** @param list<string> $slugs */
-    private function createPendingOrderFor(Player $player, array $slugs): Order
-    {
-        $order = new Order($player, $player->game->currentTurn);
-        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
-    }
-
-    /** @param list<string> $slugs */
     private function validateOrderFor(Player $player, array $slugs): Order
     {
-        $order = $this->createPendingOrderFor($player, $slugs);
+        $order = OrderBuilder::for($player)->withKeys(...$slugs)->persist($this->entityManager);
 
         self::getContainer()->get(OrderValidator::class)->validate($order);
 
@@ -193,13 +169,5 @@ final class PlayerOrdersTest extends WebTestCase
     private function freshOrderRepository(): OrderRepository
     {
         return self::getContainer()->get(OrderRepository::class);
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
     }
 }

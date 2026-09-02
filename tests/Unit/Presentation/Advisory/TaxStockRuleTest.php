@@ -18,10 +18,7 @@ final class TaxStockRuleTest extends TestCase
     #[Test]
     public function aShortfallIsStatedAsAnAmountToRecover(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->build();
 
         $advisory = $this->rule()->evaluate($player);
 
@@ -32,23 +29,15 @@ final class TaxStockRuleTest extends TestCase
     #[Test]
     public function acoveredBillIsStatedAsReassurance(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 3;
-        $player->census = 10;
-        $player->treasury = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(10)->withTreasury(10)->build();
 
         $this->assertSame('Your stock covers your taxes', $this->rule()->evaluate($player)->message);
     }
 
-    /** Immunity is stated, not merely reflected by the absence of a warning. */
     #[Test]
     public function immunityIsStatedEvenOnARealShortfall(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
-        $player->ownAdvances(['democracy']);
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->withAdvances(['democracy'])->build();
 
         $this->assertSame('Your cities never revolt over taxes', $this->rule()->evaluate($player)->message);
     }

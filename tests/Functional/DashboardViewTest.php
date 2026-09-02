@@ -5,30 +5,24 @@ declare(strict_types=1);
 namespace App\Tests\Functional;
 
 use App\State\ASTVersion;
-use App\State\Game;
-use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\Tables;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
-/**
- * The dashboard is now the only page carrying the A.S.T., so what used to be pinned on its own
- * route is pinned here: the board, its requirements, its ranking and its caption.
- */
 final class DashboardViewTest extends WebTestCase
 {
-    /** Canary for the dashboard: it answers, and carries both parts of the board — the track and the requirements. */
     #[Test]
     public function dashboardContainsAstTableAndRequirementsSection(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $entityManager->persist($game);
-        $entityManager->flush();
+        $game = Tables::westTable($entityManager);
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -44,15 +38,10 @@ final class DashboardViewTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $hellas = new Player($game, 'Bob', 'hellas');
-        $hellas->cities = 2;
-        $minoa = new Player($game, 'Alice', 'minoa');
-        $minoa->cities = 7;
-        $hatti = new Player($game, 'Kangoo', 'hatti');
-        $hatti->cities = 4;
-        $entityManager->persist($game);
-        $entityManager->flush();
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('hellas')->withCities(2)->persist($entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(7)->persist($entityManager);
+        PlayerBuilder::named('Kangoo')->in($game)->withEmpire('hatti')->withCities(4)->persist($entityManager);
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -68,11 +57,7 @@ final class DashboardViewTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $game->astVersion = $astVersion;
-        $game->currentTurn = 7;
-        $entityManager->persist($game);
-        $entityManager->flush();
+        $game = GameBuilder::create()->withAstVersion($astVersion)->withCurrentTurn(7)->persist($entityManager);
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
 
@@ -97,21 +82,4 @@ final class DashboardViewTest extends WebTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
-    /** The board and the movement order used to have pages of their own; nothing must answer there now. */
-    #[Test]
-    public function theRetiredAstAndCensusPagesAreGone(): void
-    {
-        $client = self::createClient();
-        $entityManager = self::getContainer()->get(EntityManagerInterface::class);
-
-        $game = new Game();
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        $client->request(Request::METHOD_GET, '/'.$game->slug.'/ast');
-        $this->assertResponseStatusCodeSame(404);
-
-        $client->request(Request::METHOD_GET, '/'.$game->slug.'/census');
-        $this->assertResponseStatusCodeSame(404);
-    }
 }

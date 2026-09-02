@@ -47,9 +47,7 @@ final class PreviousTurnHandlerTest extends WebTestCase
     #[Test]
     public function refusesToRewindAFinishedGame(): void
     {
-        $game = GameBuilder::create()->withCurrentTurn(2)->persist($this->entityManager);
-        $game->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->withCurrentTurn(2)->finished()->persist($this->entityManager);
 
         ($this->handler)(new PreviousTurn($game->id));
 

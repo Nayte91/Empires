@@ -6,8 +6,8 @@ namespace App\Tests\Component;
 
 use App\Rules\Ruleset\AstEraDefinition;
 use App\State\ASTVersion;
-use App\State\Game;
-use App\State\Player;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
@@ -20,7 +20,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersTheSevenEraHeadersSpanningTheFullTrackLength(): void
     {
-        $game = new Game();
+        $game = GameBuilder::create()->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -34,8 +34,8 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersTrackLengthCellsPerPlayerRow(): void
     {
-        $game = new Game();
-        new Player($game, 'Alice', 'minoa');
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -47,27 +47,19 @@ final class AstTest extends WebTestCase
     #[Test]
     public function playerAtPositionZeroGetsAMarkerTitledWithTheirNameAndEraName(): void
     {
-        $game = new Game();
-        new Player($game, 'Alice', 'minoa');
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
         $this->assertStringContainsString('title="Alice — Start"', $rendered);
     }
 
-    /**
-     * One pawn per row, parked on the anchor column and offset by whole columns from it. It used to
-     * be rendered inside the cell of its own position — correct, but a different element every
-     * turn, so a move could only ever jump. Keeping one element is what lets the stylesheet animate
-     * it; the offset counts in `--ast-cell-size`, the variable the cells are sized from, where the
-     * first attempt hardcoded a pitch in pixels and drifted.
-     */
     #[Test]
     public function theMarkerIsOffsetFromTheAnchorByThePositionItStandsOn(): void
     {
-        $game = new Game();
-        $player = new Player($game, 'Alice', 'minoa');
-        $player->astPosition = 7;
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withAstPosition(7)->build();
 
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
         $cells = $crawler->filter('tbody tr td');
@@ -80,17 +72,11 @@ final class AstTest extends WebTestCase
         $this->assertStringContainsString('Alice — Early Bronze Age', (string) $marker->attr('title'));
     }
 
-    /**
-     * Inside the opening stretch the pawn stands left of the anchor, so its offset is negative. The
-     * compact board drops those columns entirely and parks it back on the anchor from the
-     * stylesheet, rather than letting it float outside the table.
-     */
     #[Test]
     public function aPlayerStillInsideTheOpeningStretchStandsLeftOfTheAnchor(): void
     {
-        $game = new Game();
-        $player = new Player($game, 'Alice', 'minoa');
-        $player->astPosition = 0;
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withAstPosition(0)->build();
 
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
         $marker = $crawler->filter('tbody tr .marker');
@@ -99,16 +85,11 @@ final class AstTest extends WebTestCase
         $this->assertMatchesRegularExpression('/--marker-pos: -\d+/', (string) $marker->attr('style'));
     }
 
-    /**
-     * Start and the Stone Age ask nothing of anybody, so the compact board drops them. The span is
-     * read off the requirements rather than counted in, and the expert track opens the same way.
-     */
     #[Test]
     public function theFiveOpeningColumnsAskingNoRequirementAreFlaggedInBothVersions(): void
     {
-        $game = new Game();
-        $player = new Player($game, 'Alice', 'minoa');
-        $player->astPosition = 9;
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withAstPosition(9)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -121,22 +102,14 @@ final class AstTest extends WebTestCase
         $this->assertSame(5, substr_count($rendered, 'data-opening'));
     }
 
-    /**
-     * Canary for the board: the victory-point total ScoreCalculator computes reaches the last cell,
-     * and the three leading scores wear the podium colours while an unscored player wears none.
-     */
     #[Test]
     public function theScoreColumnClosesEachRowAndTheThreeLeadersWearGoldSilverAndBronze(): void
     {
-        $game = new Game();
-        $leader = new Player($game, 'Alice', 'minoa');
-        $leader->ownAdvances(['advanced_military']); // 6 points
-        $leader->cities = 5;                         // 11 in total
-        $second = new Player($game, 'Bob', 'saba');
-        $second->cities = 5;
-        $third = new Player($game, 'Carl', 'assyria');
-        $third->cities = 3;
-        new Player($game, 'Dan', 'maurya');
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withAdvances(['advanced_military'])->withCities(5)->build(); // 6 points + 5 cities = 11 in total
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCities(5)->build();
+        PlayerBuilder::named('Carl')->in($game)->withEmpire('assyria')->withCities(3)->build();
+        PlayerBuilder::named('Dan')->in($game)->withEmpire('maurya')->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
@@ -148,15 +121,12 @@ final class AstTest extends WebTestCase
         $this->assertNull($rows->eq(3)->filter('td:last-of-type')->attr('data-medal'));
     }
 
-    /** The board is read top-down as the standings, whatever the empires' order on the track. */
     #[Test]
     public function rowsAreOrderedByScoreWithTheLeaderOnTop(): void
     {
-        $game = new Game();
-        $trailing = new Player($game, 'Alice', 'minoa'); // minoa opens the empire list, so file order would put it first
-        $trailing->cities = 1;
-        $leading = new Player($game, 'Bob', 'egypt');
-        $leading->cities = 9;
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(1)->build(); // minoa opens the empire list, so file order would put it first
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('egypt')->withCities(9)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $rows = new Crawler($rendered)->filter('tbody tr');
@@ -168,11 +138,9 @@ final class AstTest extends WebTestCase
     #[Test]
     public function startColumnAlwaysRendersTheArrowRegardlessOfPlayerPosition(): void
     {
-        $game = new Game();
-        $atStart = new Player($game, 'Alice', 'minoa');
-        $atStart->astPosition = 0;
-        $elsewhere = new Player($game, 'Bob', 'saba');
-        $elsewhere->astPosition = 3;
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withAstPosition(0)->build();
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withAstPosition(3)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tbody = $this->extractTag($rendered, 'tbody');
@@ -183,8 +151,8 @@ final class AstTest extends WebTestCase
     #[Test]
     public function cellsMarkTheColumnMatchingTheCurrentTurnOncePerPlayerRowPlusTfoot(): void
     {
-        $game = new Game();
-        new Player($game, 'Alice', 'minoa');
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
 
@@ -199,7 +167,7 @@ final class AstTest extends WebTestCase
     #[Test]
     public function rendersATfootWithVictoryPointsForEachPosition(): void
     {
-        $game = new Game();
+        $game = GameBuilder::create()->build();
 
         $rendered = $this->renderTwigComponent('Ast', ['game' => $game])->toString();
         $tfoot = $this->extractTag($rendered, 'tfoot');

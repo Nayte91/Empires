@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
+use App\State\ASTVersion;
 use App\State\Game;
 use App\State\Region;
 use Doctrine\ORM\EntityManagerInterface;
@@ -15,6 +16,9 @@ final class GameBuilder
     private ?int $currentTurn = null;
     private bool $regionGiven = false;
     private ?Region $region = null;
+    private ?ASTVersion $astVersion = null;
+    private bool $finished = false;
+    private ?\DateTimeImmutable $finishedAt = null;
 
     public static function create(): self
     {
@@ -50,6 +54,28 @@ final class GameBuilder
         return $this;
     }
 
+    public function withAstVersion(ASTVersion $astVersion): self
+    {
+        $this->astVersion = $astVersion;
+
+        return $this;
+    }
+
+    public function finished(): self
+    {
+        $this->finished = true;
+
+        return $this;
+    }
+
+    /** For the one assertion that reads the date back. */
+    public function withFinishedAt(\DateTimeImmutable $finishedAt): self
+    {
+        $this->finishedAt = $finishedAt;
+
+        return $this;
+    }
+
     public function build(): Game
     {
         $game = new Game($this->slug);
@@ -64,6 +90,16 @@ final class GameBuilder
 
         if ($this->regionGiven) {
             $game->region = $this->region;
+        }
+
+        if ($this->astVersion instanceof ASTVersion) {
+            $game->astVersion = $this->astVersion;
+        }
+
+        if ($this->finishedAt instanceof \DateTimeImmutable) {
+            $game->finishedAt = $this->finishedAt;
+        } elseif ($this->finished) {
+            $game->finishedAt = new \DateTimeImmutable();
         }
 
         return $game;

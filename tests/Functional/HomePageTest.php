@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
-use App\State\Game;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use App\Tests\Support\Fixture\GameBuilder;
 
 final class HomePageTest extends WebTestCase
 {
@@ -27,12 +27,8 @@ final class HomePageTest extends WebTestCase
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $inProgressGame = new Game('in-progress-game');
-        $finishedGame = new Game('finished-game');
-        $finishedGame->finishedAt = new \DateTimeImmutable();
-        $entityManager->persist($inProgressGame);
-        $entityManager->persist($finishedGame);
-        $entityManager->flush();
+        GameBuilder::create()->withSlug('in-progress-game')->persist($entityManager);
+        GameBuilder::create()->withSlug('finished-game')->finished()->persist($entityManager);
 
         $crawler = $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
 

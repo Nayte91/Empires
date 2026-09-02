@@ -32,10 +32,6 @@ final class CreationSummarizerTest extends TestCase
         yield 'large-game threshold' => [12, 'Card limit: 9'];
     }
 
-    /**
-     * It describes the form, not a scenario: an unplayable count still gets a summary, which is
-     * exactly when the operator needs one.
-     */
     #[Test]
     public function aPlayerCountNoScenarioCoversStillGetsASummary(): void
     {

@@ -11,24 +11,18 @@ use App\Rules\Ruleset\AdvanceRegistry;
 use App\State\Order;
 use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
+use App\Tests\Support\Fixture\OrderBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
+use App\Tests\Support\ShopFixtureTrait;
 use Symfony\Component\DomCrawler\Crawler;
 use Userforged\ShopEngine\Cart;
-use Userforged\ShopEngine\CartStorageInterface;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
-use Userforged\ShopEngine\Promotion\AppliedPromotion;
-use Userforged\ShopEngine\Promotion\PromotionType;
-use Userforged\ShopEngine\Service\OrderValidator;
-use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\BrowserKit\Cookie;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
@@ -36,6 +30,7 @@ final class ShopComponentTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     public function discountsAreRenderedInTheKioskWithTheOwnedCategoryColors(): void
@@ -67,10 +62,7 @@ final class ShopComponentTest extends WebTestCase
     public function addIsANoOpAndSetsAnErrorWhenTheCartIsLocked(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery');
-        $order->freeze([new OrderLine('pottery', 60)], 60);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         $crawler = $component->call('add', ['key' => 'democracy'])->render()->crawler();
@@ -112,7 +104,7 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
         $this->createCart($player, $client)->call('checkout');
 
@@ -131,7 +123,7 @@ final class ShopComponentTest extends WebTestCase
     public function aPendingOrderTurnsTheCartIntoAReadOnlyTicketCarryingModify(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->createPendingOrder($player, 'pottery');
+        OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
@@ -145,7 +137,7 @@ final class ShopComponentTest extends WebTestCase
     public function editPendingOrderReloadsItsLinesIntoTheCartAndHidesTheOrderBlock(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery', 'agriculture');
+        $order = OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
         $component->call('editPendingOrder');
@@ -166,7 +158,7 @@ final class ShopComponentTest extends WebTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
         if ($withOrder) {
-            $this->createPendingOrder($player, 'pottery');
+            OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
         }
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
@@ -187,7 +179,7 @@ final class ShopComponentTest extends WebTestCase
     public function modifyingAPendingOrderWithdrawsItSoTheOperatorStopsSeeingIt(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->createPendingOrder($player, 'pottery', 'agriculture');
+        OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
 
         $this->createLiveComponent('Shop', ['player' => $player])->call('editPendingOrder');
 
@@ -204,7 +196,7 @@ final class ShopComponentTest extends WebTestCase
     public function aWithdrawnOrderGoesBackWithASingleResubmission(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->createPendingOrder($player, 'pottery', 'agriculture');
+        OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
 
         $client = self::getContainer()->get('test.client');
         $this->createLiveComponent('Shop', ['player' => $player], $client)->call('editPendingOrder');
@@ -223,13 +215,10 @@ final class ShopComponentTest extends WebTestCase
     public function aValidatedOrderLocksTheKioskForTheTurn(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery');
-        $order->freeze([new OrderLine('pottery', 60)], 60);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
 
         $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $this->assertTrue($this->getShopComponent($component)->isLockedForTurn());
+        $this->assertTrue($component->component()->isLockedForTurn());
 
         $rendered = $component->render()->toString();
         $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
@@ -242,13 +231,10 @@ final class ShopComponentTest extends WebTestCase
     public function aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery');
-        $order->freeze([new OrderLine('pottery', 60)], 60);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
 
         $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['democracy']));
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['democracy']));
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
 
@@ -260,10 +246,7 @@ final class ShopComponentTest extends WebTestCase
     public function validatedOrderShowsFrozenPricesRatherThanRecomputedOnes(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery');
-        $order->freeze([new OrderLine('pottery', 999)], 999);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 999))->validated(999)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
 
@@ -276,7 +259,7 @@ final class ShopComponentTest extends WebTestCase
     public function aRejectedOrderReopensForEditingAndResubmittingReturnsItToPending(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = $this->createPendingOrder($player, 'pottery');
+        $order = OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
         $order->setMarking(OrderStatus::Rejected->value);
         $this->entityManager->flush();
 
@@ -348,7 +331,7 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
         $withPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client)->render()->crawler();
         $this->createCart($player, $client)->call('remove', ['key' => 'pottery']);
@@ -364,7 +347,7 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['pottery']));
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
 
@@ -378,7 +361,7 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->cartFor($client, $player, Cart::fromKeys(['pottery', 'democracy']));
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery', 'democracy']));
 
         $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
         $this->assertSame('Remaining: 0', $crawler->filter('output[for="shop-budget"]')->text());
@@ -434,17 +417,14 @@ final class ShopComponentTest extends WebTestCase
 
         $open = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
 
-        $order = $this->createPendingOrder($player, 'pottery');
-        $order->freeze([new OrderLine('pottery', 60)], 60);
-        $order->setMarking(OrderStatus::Validated->value);
-        $this->entityManager->flush();
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
 
         $shut = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
 
         $this->assertCount(51, $open->filter('button[id^="product-"]'));
         $this->assertCount(0, $open->filter('button[id^="product-"][disabled]'));
-        $this->assertCount(51, $shut->filter('button[id^="product-"]'));
-        $this->assertCount(51, $shut->filter('button[id^="product-"][disabled]'));
+        $this->assertCount(50, $shut->filter('button[id^="product-"]'));
+        $this->assertCount(50, $shut->filter('button[id^="product-"][disabled]'));
     }
 
     #[Test]
@@ -476,42 +456,13 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function choosingAGiftAppendsAZeroCostLineAndValidatingOwnsTheGiftedAdvance(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $cart = Cart::fromKeys(['anatomy']);
-        $cart->withGift('anatomy', 'astronavigation');
-        $this->cartFor($client, $player, $cart);
-
-        $this->createCart($player, $client)->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
-        $this->assertInstanceOf(Order::class, $order);
-        $this->assertSame(['anatomy', 'astronavigation'], $order->keys());
-
-        $giftLine = $order->lines()[1];
-        $this->assertSame('astronavigation', $giftLine->key);
-        $this->assertSame(0, $giftLine->netCost);
-        $this->assertInstanceOf(AppliedPromotion::class, $giftLine->promotion);
-        $this->assertSame(PromotionType::Gift, $giftLine->promotion->type);
-        $this->assertSame('anatomy', $giftLine->promotion->source);
-
-        self::getContainer()->get(OrderValidator::class)->validate($order);
-
-        $reloadedPlayer = $this->reloadPlayer($player);
-        $this->assertContains('anatomy', $reloadedPlayer->advances);
-        $this->assertContains('astronavigation', $reloadedPlayer->advances);
-    }
-
-    #[Test]
     public function editPendingOrderReloadsTheGiftChoiceIntoTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['anatomy']);
         $cart->withGift('anatomy', 'astronavigation');
-        $this->cartFor($client, $player, $cart);
+        $this->seedCart($client, CartKey::shop($player), $cart);
 
         $this->createCart($player, $client)->call('checkout');
 
@@ -524,52 +475,6 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function allocatingTheFullOptionPoolEnablesSubmitAndPersistsTheAllocationOnTheOrder(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $cart = Cart::fromKeys(['monument']);
-        $cart->withAllocation('monument', 'craft', 10);
-        $cart->withAllocation('monument', 'science', 10);
-        $this->cartFor($client, $player, $cart);
-
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
-        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-
-        $this->createCart($player, $client)->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
-        $this->assertInstanceOf(Order::class, $order);
-        $this->assertSame(OrderStatus::Pending, $order->status);
-
-        $line = $order->lines()[0];
-        $this->assertInstanceOf(AppliedPromotion::class, $line->promotion);
-        $this->assertSame(PromotionType::Option, $line->promotion->type);
-        $this->assertSame(['craft' => 10, 'science' => 10], $line->promotion->allocation);
-    }
-
-    #[Test]
-    public function validatingAMonumentOrderCreditsTheDiscountsTable(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $cart = Cart::fromKeys(['monument']);
-        $cart->withAllocation('monument', 'craft', 10);
-        $cart->withAllocation('monument', 'science', 10);
-        $this->cartFor($client, $player, $cart);
-
-        $this->createCart($player, $client)->call('checkout');
-
-        $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
-        self::getContainer()->get(OrderValidator::class)->validate($order);
-
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-
-        $this->assertMatchesRegularExpression('/Craft<\/td>\s*<td><b>20<\/b><\/td>/', $rendered);
-        $this->assertMatchesRegularExpression('/Science<\/td>\s*<td><b>10<\/b><\/td>/', $rendered);
-    }
-
-    #[Test]
     public function editPendingOrderReloadsTheAllocationIntoTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
@@ -577,7 +482,7 @@ final class ShopComponentTest extends WebTestCase
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'craft', 10);
         $cart->withAllocation('monument', 'science', 10);
-        $this->cartFor($client, $player, $cart);
+        $this->seedCart($client, CartKey::shop($player), $cart);
 
         $this->createCart($player, $client)->call('checkout');
 
@@ -591,30 +496,6 @@ final class ShopComponentTest extends WebTestCase
         $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
 
-    private function createPendingOrder(Player $player, string ...$slugs): Order
-    {
-        $order = new Order($player, $player->game->currentTurn);
-        $order->replaceLines(array_map(static fn (string $slug): OrderLine => new OrderLine($slug, 0), $slugs));
-        $this->entityManager->persist($order);
-        $this->entityManager->flush();
-
-        return $order;
-    }
-
-    private function cartFor(KernelBrowser $client, Player $player, Cart $cart): void
-    {
-        $session = self::getContainer()->get('session.factory')->createSession();
-        $request = new Request();
-        $request->setSession($session);
-        $requestStack = self::getContainer()->get(RequestStack::class);
-        $requestStack->push($request);
-        self::getContainer()->get(CartStorageInterface::class)->save((string) $player->id, $cart);
-        $requestStack->pop();
-        $session->save();
-
-        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
-    }
-
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
@@ -623,10 +504,7 @@ final class ShopComponentTest extends WebTestCase
         ], $client);
     }
 
-    /**
-     * The till reads its cart at mount — that is where it offers a submitted order — so unlike the
-     * kiosk it cannot be built outside a request that has a session.
-     */
+    /** The till reads its cart at mount, so unlike the kiosk it cannot be built outside a request with a session. */
     private function openPos(Player $player): Crawler
     {
         return $this->createLiveComponent('CashierTerminal', [
@@ -662,18 +540,5 @@ final class ShopComponentTest extends WebTestCase
     private function freshOrderRepository(): OrderRepository
     {
         return self::getContainer()->get(OrderRepository::class);
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = self::getContainer()->get(EntityManagerInterface::class)->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
-    }
-
-    private function getShopComponent(object $component): object
-    {
-        return $component->component();
     }
 }

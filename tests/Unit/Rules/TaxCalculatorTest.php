@@ -16,8 +16,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function theStandardRateIsTwoPerCity(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->build();
 
         $calculator = $this->tax();
 
@@ -25,36 +24,25 @@ final class TaxCalculatorTest extends TestCase
         $this->assertSame(16, $calculator->billAt($player, 2));
     }
 
-    /** Coinage moves the rate either way; Monarchy only raises it; together they span 1 to 4. */
     #[Test]
     public function theAdvancesWidenTheRateIntoAChoice(): void
     {
         $calculator = $this->tax();
 
-        $coinage = PlayerBuilder::named('Bob')->build();
-        $coinage->ownAdvances(['coinage']);
+        $coinage = PlayerBuilder::named('Bob')->withAdvances(['coinage'])->build();
         $this->assertSame([1, 2, 3], $calculator->rates($coinage));
 
-        $monarchy = PlayerBuilder::named('Bob')->build();
-        $monarchy->ownAdvances(['monarchy']);
+        $monarchy = PlayerBuilder::named('Bob')->withAdvances(['monarchy'])->build();
         $this->assertSame([2, 3], $calculator->rates($monarchy));
 
-        $both = PlayerBuilder::named('Bob')->build();
-        $both->ownAdvances(['coinage', 'monarchy']);
+        $both = PlayerBuilder::named('Bob')->withAdvances(['coinage', 'monarchy'])->build();
         $this->assertSame([1, 2, 3, 4], $calculator->rates($both));
     }
 
-    /**
-     * Only the floor reaches the alarms: a player who may elect to pay less needs less stock to
-     * stay out of trouble.
-     */
     #[Test]
     public function coinageLowersTheStockAPlayerMustRecover(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->build();
 
         $calculator = $this->tax();
 
@@ -67,15 +55,10 @@ final class TaxCalculatorTest extends TestCase
         $this->assertFalse($calculator->citiesRevolt($player));
     }
 
-    /** Monarchy only raises the rate, so it can never rescue a player from a shortage. */
     #[Test]
     public function monarchyLeavesTheShortageWhereItWas(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
-        $player->ownAdvances(['monarchy']);
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->withAdvances(['monarchy'])->build();
 
         $this->assertSame(6, $this->tax()->stockToRecover($player));
     }
@@ -83,9 +66,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function availableStockIsWhatNeitherTheCensusNorTheTreasuryHolds(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 30;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCensus(30)->withTreasury(15)->build();
 
         $this->assertSame(10, $this->tax()->availableStock($player));
     }
@@ -93,10 +74,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function stockToRecoverIsWhatTheBillExceedsTheAvailableStock(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->build();
 
         $this->assertSame(6, $this->tax()->stockToRecover($player));
     }
@@ -104,27 +82,16 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function aPlayerWhoseStockCoversTheBillKeepsTheirCities(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 3;
-        $player->census = 10;
-        $player->treasury = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(3)->withCensus(10)->withTreasury(10)->build();
 
         $this->assertSame(0, $this->tax()->stockToRecover($player));
         $this->assertFalse($this->tax()->citiesRevolt($player));
     }
 
-    /**
-     * The whole point of the immunity: the arithmetic still reports a real shortfall, and the
-     * cities still do not revolt. Every consumer must read citiesRevolt(), never the figure alone.
-     */
     #[Test]
     public function immunityStopsTheRevoltWithoutClearingTheShortfall(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
-        $player->ownAdvances(['democracy']);
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->withAdvances(['democracy'])->build();
 
         $calculator = $this->tax();
 
@@ -136,10 +103,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function anOrdinaryPlayerShortOfStockSeesTheirCitiesRevolt(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->build();
 
         $this->assertFalse($this->tax()->isImmune($player));
         $this->assertTrue($this->tax()->citiesRevolt($player));
@@ -148,9 +112,7 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function collectingCreditsTheChosenRateToTheTreasury(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 4;
-        $player->treasury = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(4)->withTreasury(10)->build();
 
         $calculator = $this->tax();
 
@@ -162,22 +124,15 @@ final class TaxCalculatorTest extends TestCase
     #[Test]
     public function collectingStopsAtWhatTheCensusLeavesInThePool(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 9;
-        $player->census = 40;
-        $player->treasury = 10;
+        $player = PlayerBuilder::named('Bob')->withCities(9)->withCensus(40)->withTreasury(10)->build();
 
         $this->assertSame(15, $this->tax()->collectedAt($player, 2));
     }
 
-    /** Immunity covers the consequence of not paying, never the collection itself. */
     #[Test]
     public function immunityDoesNotChangeWhatIsCollected(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->cities = 4;
-        $player->treasury = 10;
-        $player->ownAdvances(['democracy']);
+        $player = PlayerBuilder::named('Bob')->withCities(4)->withTreasury(10)->withAdvances(['democracy'])->build();
 
         $this->assertSame(18, $this->tax()->collectedAt($player, 2));
     }

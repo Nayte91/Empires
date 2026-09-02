@@ -16,21 +16,16 @@ final class StockCalculatorTest extends TestCase
     #[Test]
     public function whatIsLeftOnTheTableIsThePileMinusBothHolders(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 20;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCensus(20)->withTreasury(15)->build();
 
         $this->assertSame(55, $this->calculator()->pool());
         $this->assertSame(20, $this->calculator()->available($player));
     }
 
-    /** Each holder is capped by what its twin already claimed. */
     #[Test]
     public function aStockHolderIsCeilingedByItsTwin(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 20;
-        $player->treasury = 15;
+        $player = PlayerBuilder::named('Bob')->withCensus(20)->withTreasury(15)->build();
 
         $calculator = $this->calculator();
 
@@ -38,12 +33,10 @@ final class StockCalculatorTest extends TestCase
         $this->assertSame(40, $calculator->ceilingFor($player, Stat::Census));
     }
 
-    /** A stat outside the stock is not this calculator's concern — see StatBoundsCalculator. */
     #[Test]
     public function aStatOutsideTheStockCannotBeAskedItsCeilingHere(): void
     {
-        $player = PlayerBuilder::named('Bob')->build();
-        $player->census = 20;
+        $player = PlayerBuilder::named('Bob')->withCensus(20)->build();
 
         $calculator = $this->calculator();
 

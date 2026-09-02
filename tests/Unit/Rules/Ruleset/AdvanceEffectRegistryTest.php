@@ -11,9 +11,8 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The one place the effect→advance bindings are asserted. The calculators' own tests state a
- * behaviour and hand the player a plain advance key, so moving an effect onto another advance in
- * config/game/advances.yaml fails here — once — rather than in nine files at once.
+ * The one place effect→advance bindings are asserted, so moving one in advances.yaml fails here
+ * once rather than in nine files.
  */
 final class AdvanceEffectRegistryTest extends TestCase
 {

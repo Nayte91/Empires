@@ -10,36 +10,30 @@ use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
+use App\Tests\Support\ShopFixtureTrait;
 use Userforged\ShopEngine\Cart;
-use Userforged\ShopEngine\CartStorageInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\BrowserKit\Cookie;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
 /**
- * The Cart LiveComponent is shared between the player kiosk (Shop) and the
- * operator till (Pos). Both spellings live in CartKey — never retype one here,
- * a self-consistent test keeps passing long after production has moved on.
- * id) — see App\Presentation\Component\Cart. It only owns cart lines/gift/allocation/total;
- * the catalog and the add() action live on App\Presentation\Component\Catalog and
- * its hosts, covered by CatalogComponentTest/ShopComponentTest/PosConsoleTest.
+ * Both storage-key spellings live in CartKey — never retype one here: a self-consistent test keeps
+ * passing long after production has moved on.
  */
 final class CartComponentTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     public function removeRemovesTheGivenKey(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'pottery', 'democracy');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['pottery', 'democracy']));
 
         $component = $this->createCart($player, client: $client);
         $rendered = $component->call('remove', ['key' => 'pottery'])->render()->toString();
@@ -55,7 +49,7 @@ final class CartComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'library', 'democracy');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['library', 'democracy']));
 
         $rendered = $this->createCart($player, client: $client)->render()->toString();
 
@@ -70,7 +64,7 @@ final class CartComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'anatomy');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['anatomy']));
 
         $rendered = $this->createCart($player, client: $client)->render()->toString();
 
@@ -83,25 +77,19 @@ final class CartComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'monument');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['monument']));
 
         $crawler = $this->createCart($player, client: $client)->render()->crawler();
 
         $this->assertStringContainsString('Remaining: 20', $crawler->filter('.allocation-picker')->text());
     }
 
-    /**
-     * One rule, one component: the checkout button is organisms/cart's, and it
-     * gates on Cart's own hasIncompleteAllocations. Both hosts used to assert
-     * this through their own render (Shop and the POS dialog); neither adds
-     * anything to it, so it is pinned here alone.
-     */
     #[Test]
     public function anIncompleteOptionAllocationDisablesCheckout(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'monument');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['monument']));
 
         $crawler = $this->createCart($player, client: $client)->render()->crawler();
 
@@ -109,18 +97,15 @@ final class CartComponentTest extends WebTestCase
     }
 
     /**
-     * checkout() converged onto Cart from Shop/PlayerOrders (see App\Presentation\Component\Cart)
-     * specifically to fix the parent submit/checkout button going stale after a
-     * Cart-only re-render; the cross-component AJAX re-render itself isn't
-     * observable in this single-component harness (covered by the browser
-     * check), but the emitUp('orderPlaced') signal it relies on is.
+     * The cross-component re-render is not observable in a single-component harness (the browser
+     * check covers it); the emitUp('orderPlaced') it relies on is.
      */
     #[Test]
     public function checkoutWithACompleteCartCreatesTheOrderAndEmitsOrderPlaced(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, 'pottery');
+        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['pottery']));
 
         $component = $this->createCart($player, client: $client);
         $component->call('checkout');
@@ -140,7 +125,7 @@ final class CartComponentTest extends WebTestCase
         $client = self::getContainer()->get('test.client');
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'science', 5);
-        $this->saveCart($client, (string) $player->id, $cart);
+        $this->seedCart($client, (string) $player->id, $cart);
 
         $component = $this->createCart($player, client: $client);
         $rendered = $component->call('checkout')->render()->toString();
@@ -159,34 +144,7 @@ final class CartComponentTest extends WebTestCase
         ], $client);
     }
 
-    /**
-     * Writes straight into the session-backed CartStorageInterface port (Cart has
-     * no add() action of its own any more) and points $client's cookie jar at
-     * that session, so the LiveComponent's own HTTP round-trip — driven by the
-     * same $client — reads the same cart back. 'test.client' is registered
-     * share(false) (Symfony\Bundle\FrameworkBundle\Resources\config\test.php),
-     * so $client must be the exact instance later passed to createCart().
-     */
-    private function seedCart(KernelBrowser $client, string $storageKey, string ...$keys): void
-    {
-        $this->saveCart($client, $storageKey, Cart::fromKeys($keys));
-    }
-
-    private function saveCart(KernelBrowser $client, string $storageKey, Cart $cart): void
-    {
-        $session = self::getContainer()->get('session.factory')->createSession();
-        $request = new Request();
-        $request->setSession($session);
-        $requestStack = self::getContainer()->get(RequestStack::class);
-        $requestStack->push($request);
-        self::getContainer()->get(CartStorageInterface::class)->save($storageKey, $cart);
-        $requestStack->pop();
-        $session->save();
-
-        $client->getCookieJar()->set(new Cookie($session->getName(), $session->getId()));
-    }
-
-    /** Scopes assertions to the cart's line items, as opposed to the catalog (which repeats advance names). */
+    /** The catalog repeats advance names, so assertions must be scoped to the cart's lines. */
     private function extractCartLinesSection(string $html): string
     {
         $start = strpos($html, '<ul class="lines">');

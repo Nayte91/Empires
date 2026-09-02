@@ -13,28 +13,18 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 /**
- * Canary for the Outlook molecule: proves the advisories the container's rule set produces reach
- * the markup, one <li> each, carrying their urgency level.
- *
- * The wording of every individual line is pinned by the rule that owns it, in
- * tests/Game/Advisory/ — asserting those sentences again here only doubled the cost of rewording
- * one. What is genuinely observable at this level, and nowhere else, is that the full registered
- * rule set (not the hand-wired subset PlayerAdvisorTest uses) renders in urgency order.
+ * The wording of each line belongs to the rule that owns it; restating those sentences here doubles
+ * the cost of rewording one.
  */
 final class OutlookTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
 
-    /** Sorted by urgency: what is broken first, then what threatens, then facts, then good news. */
     #[Test]
     public function linesAreSortedByUrgency(): void
     {
-        $player = PlayerBuilder::named('Bob')->persist($this->entityManager);
-        $player->cities = 8;
-        $player->census = 30;
-        $player->treasury = 15;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->withCities(8)->withCensus(30)->withTreasury(15)->persist($this->entityManager);
 
         $this->assertSame(['danger', 'caution', 'neutral', 'neutral', 'good', 'good'], $this->levelsOf($player));
     }

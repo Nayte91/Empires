@@ -8,7 +8,7 @@ use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Tests\Support\ShopFixtureTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -18,6 +18,7 @@ final class StatPickerTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     #[DataProvider('provideSavePersistsTheChosenValueForEachStatCases')]
@@ -58,9 +59,7 @@ final class StatPickerTest extends WebTestCase
     public function saveWithUnchangedValueIsNoOp(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->cities = 5;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCities(5)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -86,11 +85,6 @@ final class StatPickerTest extends WebTestCase
         }
     }
 
-    /**
-     * OK is gone, so every button left inside the dialog commits the value it carries. Asserting the
-     * absence structurally rather than by label catches a confirmation step returning under any
-     * other name.
-     */
     #[Test]
     public function theDialogOffersNoConfirmationButtonBesideItsValueTiles(): void
     {
@@ -105,11 +99,6 @@ final class StatPickerTest extends WebTestCase
         $this->assertCount(0, $rendered->crawler()->filter('dialog button:not([data-value])'));
     }
 
-    /**
-     * The tile is the whole gesture: it carries the value, and submitting closes the dialog, which
-     * is what fires save. Driving save from the tile's own data-value is what ties the markup the
-     * player taps to the number that gets stored.
-     */
     #[Test]
     public function tappingAValueTileRecordsThatValueInASingleGesture(): void
     {
@@ -153,9 +142,7 @@ final class StatPickerTest extends WebTestCase
     public function renderInitializesValueFromThePlayer(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->census = 30;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCensus(30)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -171,9 +158,7 @@ final class StatPickerTest extends WebTestCase
     public function theAstPositionTileShowsTheDisplayLabelWhileCarryingTheStorageValue(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->astPosition = 4;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withAstPosition(4)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -191,9 +176,7 @@ final class StatPickerTest extends WebTestCase
     public function mountedValueIsOverriddenByPassedValueProp(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->cities = 2;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCities(2)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -206,17 +189,11 @@ final class StatPickerTest extends WebTestCase
         $this->assertSame('7', $selected->attr('data-value'));
     }
 
-    /**
-     * Building a ship moves a stat this picker does not own, which is the whole reason the action
-     * name travels to the server instead of a target value.
-     */
     #[Test]
     public function buildingAShipPersistsBothTheFleetAndItsCost(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 7;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(7)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -233,9 +210,7 @@ final class StatPickerTest extends WebTestCase
     public function cuttingToLimitUsesTheGamesOwnHandLimit(): void
     {
         $game = GameBuilder::create()->withPlayerCount(12)->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->cards = 15;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCards(15)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -245,17 +220,11 @@ final class StatPickerTest extends WebTestCase
         $this->assertSame(9, $this->reloadPlayer($player)->cards);
     }
 
-    /**
-     * pendingAction is client-writable, so a picker must refuse an action that belongs to another
-     * stat rather than apply it to the player anyway.
-     */
     #[Test]
     public function anActionForeignToThePickersStatIsIgnored(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 7;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(7)->persist($this->entityManager);
 
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -268,14 +237,11 @@ final class StatPickerTest extends WebTestCase
         $this->assertSame(7, $reloaded->treasury);
     }
 
-    /** The twin's share of the stock is out of reach, so its tiles are shown but not selectable. */
     #[Test]
     public function treasuryTilesBeyondWhatThePopulationLeavesAreDisabled(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->census = 20;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withCensus(20)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
@@ -287,9 +253,8 @@ final class StatPickerTest extends WebTestCase
     }
 
     /**
-     * Coinage unlocks the cheaper rate, Monarchy the dearer one; the rest stay off the menu.
      * Three players rather than one mutated in place: rendering a live component resets the
-     * EntityManager, which detaches the entity and swallows any later flush.
+     * EntityManager, detaching the entity and swallowing any later flush.
      */
     #[Test]
     public function theTreasuryPickerOffersOnlyTheTaxRatesThePlayerUnlocked(): void
@@ -350,18 +315,5 @@ final class StatPickerTest extends WebTestCase
         ])->render()->crawler()->filter('menu [data-value]')->each(
             static fn ($node): string => (string) $node->attr('data-value'),
         );
-    }
-
-    private function freshEntityManager(): EntityManagerInterface
-    {
-        return self::getContainer()->get(EntityManagerInterface::class);
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = $this->freshEntityManager()->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
-
-        return $reloaded;
     }
 }

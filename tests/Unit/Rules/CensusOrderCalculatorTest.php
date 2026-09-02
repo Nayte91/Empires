@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Rules;
 
-use App\State\Game;
-use App\State\Player;
+use App\Rules\CensusOrderCalculator;
 use App\Rules\Ruleset\EmpireRegistry;
 use App\Rules\Ruleset\ScenarioRegistry;
-use App\Rules\CensusOrderCalculator;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,11 +18,9 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function higherCensusPlaysFirst(): void
     {
-        $game = new Game();
-        $low = new Player($game, 'Bob', 'assyria');
-        $low->census = 10;
-        $high = new Player($game, 'Alice', 'minoa');
-        $high->census = 30;
+        $game = GameBuilder::create()->build();
+        $low = PlayerBuilder::named('Bob')->in($game)->withEmpire('assyria')->withCensus(10)->build();
+        $high = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(30)->build();
 
         $order = $this->calculator()->orderFor($game);
 
@@ -32,11 +30,9 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function tiedCensusIsBrokenByEmpirePosition(): void
     {
-        $game = new Game();
-        $assyria = new Player($game, 'Bob', 'assyria');
-        $assyria->census = 20;
-        $minoa = new Player($game, 'Alice', 'minoa');
-        $minoa->census = 20;
+        $game = GameBuilder::create()->build();
+        $assyria = PlayerBuilder::named('Bob')->in($game)->withEmpire('assyria')->withCensus(20)->build();
+        $minoa = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(20)->build();
 
         $order = $this->calculator()->orderFor($game);
 
@@ -46,12 +42,9 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function militaryPlayerMovesAfterHigherCensusNonMilitary(): void
     {
-        $game = new Game();
-        $military = new Player($game, 'Bob', 'assyria');
-        $military->census = 40;
-        $military->ownAdvances(['military']);
-        $nonMilitary = new Player($game, 'Alice', 'minoa');
-        $nonMilitary->census = 5;
+        $game = GameBuilder::create()->build();
+        $military = PlayerBuilder::named('Bob')->in($game)->withEmpire('assyria')->withCensus(40)->withAdvances(['military'])->build();
+        $nonMilitary = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(5)->build();
 
         $order = $this->calculator()->orderFor($game);
 
@@ -61,13 +54,9 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function twoMilitaryPlayersAreOrderedByCensusThenPosition(): void
     {
-        $game = new Game();
-        $first = new Player($game, 'Bob', 'assyria');
-        $first->census = 20;
-        $first->ownAdvances(['military']);
-        $second = new Player($game, 'Alice', 'minoa');
-        $second->census = 20;
-        $second->ownAdvances(['military']);
+        $game = GameBuilder::create()->build();
+        $first = PlayerBuilder::named('Bob')->in($game)->withEmpire('assyria')->withCensus(20)->withAdvances(['military'])->build();
+        $second = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(20)->withAdvances(['military'])->build();
 
         $order = $this->calculator()->orderFor($game);
 
@@ -77,11 +66,9 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function anUnknownEmpirePlaysLastAtEqualCensus(): void
     {
-        $game = new Game();
-        $known = new Player($game, 'Bob', 'minoa');
-        $known->census = 15;
-        $unknown = new Player($game, 'Alice', 'atlantis');
-        $unknown->census = 15;
+        $game = GameBuilder::create()->build();
+        $known = PlayerBuilder::named('Bob')->in($game)->withEmpire('minoa')->withCensus(15)->build();
+        $unknown = PlayerBuilder::named('Alice')->in($game)->withEmpire('atlantis')->withCensus(15)->build();
 
         $order = $this->calculator()->orderFor($game);
 
@@ -91,13 +78,10 @@ final class CensusOrderCalculatorTest extends TestCase
     #[Test]
     public function rankOfCountsFromOneDownTheOrder(): void
     {
-        $game = new Game();
-        $first = new Player($game, 'Alice', 'minoa');
-        $first->census = 30;
-        $second = new Player($game, 'Bob', 'saba');
-        $second->census = 20;
-        $third = new Player($game, 'Carol', 'assyria');
-        $third->census = 10;
+        $game = GameBuilder::create()->build();
+        $first = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(30)->build();
+        $second = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(20)->build();
+        $third = PlayerBuilder::named('Carol')->in($game)->withEmpire('assyria')->withCensus(10)->build();
 
         $calculator = $this->calculator();
 
@@ -106,16 +90,12 @@ final class CensusOrderCalculatorTest extends TestCase
         $this->assertSame(3, $calculator->rankOf($third));
     }
 
-    /** A Military owner plays last whatever their census, so their rank has to follow. */
     #[Test]
     public function aMilitaryOwnerRanksLastDespiteTheHighestCensus(): void
     {
-        $game = new Game();
-        $general = new Player($game, 'Alice', 'minoa');
-        $general->census = 40;
-        $general->ownAdvances(['military']);
-        $civilian = new Player($game, 'Bob', 'saba');
-        $civilian->census = 10;
+        $game = GameBuilder::create()->build();
+        $general = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(40)->withAdvances(['military'])->build();
+        $civilian = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(10)->build();
 
         $calculator = $this->calculator();
 

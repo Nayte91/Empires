@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
-use App\State\Game;
-use App\State\Player;
 use App\Presentation\Advisory\MovementOrderRule;
 use App\Presentation\Advisory\AdvisoryLevel;
 use App\Rules\Ruleset\EmpireRegistry;
@@ -14,21 +12,19 @@ use App\Rules\CensusOrderCalculator;
 use App\Tests\Support\GameConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\PlayerBuilder;
 
 final class MovementOrderRuleTest extends TestCase
 {
     #[Test]
     public function theRankIsSpelledAsAnOrdinalExceptForTheLastPlayer(): void
     {
-        $game = new Game();
-        $first = new Player($game, 'Alice', 'minoa');
-        $first->census = 30;
-        $second = new Player($game, 'Bob', 'saba');
-        $second->census = 20;
-        $third = new Player($game, 'Carol', 'assyria');
-        $third->census = 10;
-        $fourth = new Player($game, 'Dave', 'egypt');
-        $fourth->census = 5;
+        $game = GameBuilder::create()->build();
+        $first = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(30)->build();
+        $second = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(20)->build();
+        $third = PlayerBuilder::named('Carol')->in($game)->withEmpire('assyria')->withCensus(10)->build();
+        $fourth = PlayerBuilder::named('Dave')->in($game)->withEmpire('egypt')->withCensus(5)->build();
 
         $rule = $this->rule();
 
@@ -38,20 +34,13 @@ final class MovementOrderRuleTest extends TestCase
         $this->assertSame('You play last this turn', $rule->evaluate($fourth)->message);
     }
 
-    /**
-     * Moving late is an advantage in Mega Empires, so the rank is graded: opening the turn is a
-     * position to watch, closing it is good news, and everything between is unremarkable.
-     */
     #[Test]
     public function movingFirstIsCautionedAndMovingLastIsGoodNews(): void
     {
-        $game = new Game();
-        $first = new Player($game, 'Alice', 'minoa');
-        $first->census = 30;
-        $middle = new Player($game, 'Bob', 'saba');
-        $middle->census = 20;
-        $last = new Player($game, 'Carol', 'assyria');
-        $last->census = 10;
+        $game = GameBuilder::create()->build();
+        $first = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCensus(30)->build();
+        $middle = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCensus(20)->build();
+        $last = PlayerBuilder::named('Carol')->in($game)->withEmpire('assyria')->withCensus(10)->build();
 
         $rule = $this->rule();
 

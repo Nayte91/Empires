@@ -9,12 +9,11 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
+use App\Tests\Support\Fixture\Tables;
 
 /**
- * Behind Traefik the app is reached over HTTPS but served plain HTTP, so the request's own scheme
- * reads http. The navigation panel hands out absolute URLs — as links and as the QR codes players
- * scan — and generated from that scheme they point at port 80, which production does not listen
- * on: the scan fails to connect outright, unless the reader happens to upgrade on its own.
+ * Behind Traefik the app is reached over HTTPS but served plain HTTP, so absolute URLs generated
+ * from the request scheme point at port 80 and the QR scan fails to connect.
  */
 final class QrCodeSchemeTest extends WebTestCase
 {
@@ -33,10 +32,7 @@ final class QrCodeSchemeTest extends WebTestCase
         $this->assertStringNotContainsString('http://localhost/'.$game->slug, $content);
     }
 
-    /**
-     * The other half of the guard: served directly, as in local dev on port 8020, the URLs must
-     * stay http. A fix that hardcoded the scheme would pass the test above and fail this one.
-     */
+    /** A fix that hardcoded the scheme would pass the test above and fail this one. */
     #[Test]
     public function absoluteUrlsStayHttpWhenNoProtocolIsForwarded(): void
     {
@@ -56,10 +52,6 @@ final class QrCodeSchemeTest extends WebTestCase
     {
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
 
-        $game = new Game();
-        $entityManager->persist($game);
-        $entityManager->flush();
-
-        return $game;
+        return Tables::westTable($entityManager);
     }
 }

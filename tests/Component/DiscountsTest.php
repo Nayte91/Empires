@@ -18,19 +18,13 @@ use Symfony\UX\TwigComponent\Test\RenderedComponent;
 use Userforged\ShopEngine\Cart;
 use Userforged\ShopEngine\CartStorageInterface;
 
-/**
- * App\Presentation\Component\Discounts is a plain TwigComponent aggregating a
- * player's earned credits (App\Rules\Shop\AdvanceCreditsCalculator). These
- * tests exercise the live/spent/empty tri-state the panel exposes through
- * its data-discount-state hook — see issue #24.
- */
+/** The three states are indistinguishable in the markup: read data-discount-state, never the text. */
 final class DiscountsTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
 
-    /** All twelve advances carrying the religion category (config/game/advances.yaml). */
-    private const array RELIGION_ADVANCES = [
+    private const array EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY = [
         'deism', 'diaspora', 'enlightenment', 'fundamentalism', 'monument',
         'monotheism', 'mysticism', 'mythology', 'philosophy', 'theocracy',
         'theology', 'universal_doctrine',
@@ -83,7 +77,7 @@ final class DiscountsTest extends WebTestCase
     public function aFacetCreditIsMarkedSpentOnlyOnceEveryAdvanceOfTheCategoryIsOwned(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, self::RELIGION_ADVANCES);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, self::EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY);
         $this->entityManager->flush();
 
         $crawler = $this->renderDiscounts($player)->crawler();
@@ -95,7 +89,7 @@ final class DiscountsTest extends WebTestCase
     public function aFacetCreditWithOneAdvanceOfTheCategoryStillUnownedIsNotMarkedSpent(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $incomplete = \array_slice(self::RELIGION_ADVANCES, 0, 11);
+        $incomplete = \array_slice(self::EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY, 0, 11);
         self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, $incomplete);
         $this->entityManager->flush();
 

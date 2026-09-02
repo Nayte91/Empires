@@ -30,9 +30,9 @@ rector: ## [Quality] Run Rector code modernization (composer rector)
 	@echo "🔧 Applying Rector modernization on: $(or $(PARAMS),$(RECTOR_PATHS))"
 	$(COMPOSER) rector -- $(or $(PARAMS),$(RECTOR_PATHS))
 
-phpunit: ## [Quality] Run PHPUnit tests (composer phpunit)
+phpunit: ## [Quality] Run PHPUnit tests in parallel (composer paratest)
 	@echo "🧪 Running PHPUnit tests on: $(or $(PARAMS),tests/)"
-	$(COMPOSER) phpunit -- $(or $(PARAMS),tests/)
+	$(COMPOSER) paratest -- $(or $(PARAMS),tests/)
 
 lib-quality: ## [Quality] Run rector, phpcs, phpstan and phpunit on packages/userforged/shop-engine
 lib-quality:

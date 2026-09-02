@@ -27,12 +27,6 @@ final class AdvancePriceResolverTest extends WebTestCase
         $this->resolver = new AdvancePriceResolver();
     }
 
-    /**
-     * Engineering (cost 160) is craft+science faceted. Pottery (owned) grants
-     * craft 10, anatomy (owned) grants craft 5 and science 20 — summing both
-     * facets would net 160 - 15 - 20 = 125; the rule credits only the best
-     * facet, science's 20, never their sum.
-     */
     #[Test]
     public function resolveCreditsOnlyTheBestFacetOnATwoFacetedProductWithAsymmetricCredits(): void
     {
@@ -44,11 +38,6 @@ final class AdvancePriceResolverTest extends WebTestCase
         $this->assertSame(140, $net);
     }
 
-    /**
-     * Roadbuilding's named credit is granted by owning engineering (20), and
-     * merges with whatever elective credit the buyer already banked under the
-     * same key (15) — the two sources sum, neither overrides the other.
-     */
     #[Test]
     public function resolveSumsNamedCreditsFromOwnedAdvancesAndElectiveCreditsTogether(): void
     {
@@ -82,13 +71,6 @@ final class AdvancePriceResolverTest extends WebTestCase
         $this->assertSame(0, $net);
     }
 
-    /**
-     * PlayerBuyer is the only BuyerInterface implementation the host ever
-     * constructs (ShopConnector::buyerFor()/PlayerBuyerProvider), and the
-     * resolver leans on that to reach entitlements, which BuyerInterface
-     * itself no longer declares. Anything else must be rejected loudly
-     * rather than silently treated as crediting nothing.
-     */
     #[Test]
     public function resolveRejectsABuyerThatIsNotAPlayerBuyer(): void
     {

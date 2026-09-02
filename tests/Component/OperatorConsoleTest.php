@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Component;
 
 use App\State\Game;
-use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
+use App\Tests\Support\ShopFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -20,6 +21,7 @@ final class OperatorConsoleTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
+    use ShopFixtureTrait;
 
     #[Test]
     public function theConsoleListensOnItsOwnTopic(): void
@@ -72,15 +74,13 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function rendersOneDetailsTabPerPlayerPlusGeneralSharingTheSameGroupWithGeneralOpenByDefault(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-        PlayerBuilder::named('Bob')->in($game)->withEmpire('minoa')->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
         $details = $rendered->crawler()->filter('details[name="operator-tabs"]');
 
-        $this->assertCount(3, $details);
+        $this->assertCount(\count($game->players) + 1, $details);
 
         $names = [];
         foreach ($details as $node) {
@@ -125,19 +125,17 @@ final class OperatorConsoleTest extends WebTestCase
 
         $generalPanel = $rendered->crawler()->filter('details[data-tab-id="general"]');
 
-        // Three stat pickers per player — the tracking stats only; which three is pinned by
-        // theGeneralOverviewOffersOnlyTheTrackingStatsWhileThePlayerTabKeepsThemAll.
-        $this->assertCount(6, $generalPanel->filter('button[command="show-modal"]'));
+        $trackingStatPickersPerPlayer = 3;
+
+        $this->assertCount(2 * $trackingStatPickersPerPlayer, $generalPanel->filter('button[command="show-modal"]'));
     }
 
-    /** The regression guard for the finished-game behaviour: a finished game offers no editing at all. */
     #[Test]
     public function aFinishedGameOffersNoControlBoardRow(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
+        $game = GameBuilder::create()->finished()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-        $game->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->flush();
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('rome')->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -159,10 +157,6 @@ final class OperatorConsoleTest extends WebTestCase
         $this->assertCount(6, $playerDetails->filter('button[command="show-modal"]'));
     }
 
-    /**
-     * The console shares the player board's ControlBoard, but the operator drives every player
-     * from one screen — a link into a single player's shop belongs to that player's own board.
-     */
     #[Test]
     public function aPlayerTabPanelOffersNoShopLink(): void
     {
@@ -176,18 +170,11 @@ final class OperatorConsoleTest extends WebTestCase
         $this->assertCount(0, $playerDetails->filter('a[href$="/shop"]'));
     }
 
-    /**
-     * Advisories left the control board for the Outlook block, which the console does not carry:
-     * the operator screen is deliberately operational only, counters and commands.
-     */
     #[Test]
     public function aPlayerTabPanelCarriesNoAdvisory(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-        $player->cities = 3;
-        $player->census = 2;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->withCities(3)->withCensus(2)->persist($this->entityManager);
 
         $rendered = $this->createLiveComponent('OperatorConsole', ['game' => $game])->render();
 
@@ -243,9 +230,7 @@ final class OperatorConsoleTest extends WebTestCase
     #[Test]
     public function nextTurnOnAFinishedGameDoesNotChangeTheCurrentTurn(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $game->finishedAt = new \DateTimeImmutable();
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->finished()->persist($this->entityManager);
 
         $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
 
@@ -286,11 +271,6 @@ final class OperatorConsoleTest extends WebTestCase
         $this->assertNotSame($stampAtTurnOne, $stampAtTurnTwo);
     }
 
-    /**
-     * The two lists are intentionally different, and nothing else guards them against silently
-     * converging back: the General tab tracks how far along each empire is, economy management
-     * belongs to the player's own tab.
-     */
     #[Test]
     public function theGeneralOverviewOffersOnlyTheTrackingStatsWhileThePlayerTabKeepsThemAll(): void
     {
@@ -311,10 +291,9 @@ final class OperatorConsoleTest extends WebTestCase
     }
 
     /**
-     * The overview and the player tabs both render a picker for the same player and stat, and
-     * `commandfor` resolves by id. A duplicate opens whichever dialog comes first in the document —
-     * which the exclusive `<details name>` accordion has just hidden, so the modal opens at 0×0 and
-     * the button reads as dead. Uniqueness is the only thing that keeps them apart.
+     * `commandfor` resolves by id, so a duplicate opens whichever dialog comes first — which the
+     * exclusive `<details name>` accordion has just hidden, so the modal opens at 0×0 and the button
+     * reads as dead.
      */
     #[Test]
     public function theConsoleRendersNoDuplicatedElementId(): void
@@ -347,14 +326,6 @@ final class OperatorConsoleTest extends WebTestCase
     {
         $reloaded = $this->freshEntityManager()->find(Game::class, $game->id);
         $this->assertInstanceOf(Game::class, $reloaded);
-
-        return $reloaded;
-    }
-
-    private function reloadPlayer(Player $player): Player
-    {
-        $reloaded = $this->freshEntityManager()->find(Player::class, $player->id);
-        $this->assertInstanceOf(Player::class, $reloaded);
 
         return $reloaded;
     }

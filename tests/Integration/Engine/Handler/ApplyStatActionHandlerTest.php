@@ -30,9 +30,7 @@ final class ApplyStatActionHandlerTest extends WebTestCase
     public function buildingAShipSpendsItsCostAndGrowsTheFleet(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 7;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(7)->persist($this->entityManager);
 
         ($this->handler)(new ApplyStatAction($player->id, StatAction::BuildShip));
 
@@ -40,18 +38,11 @@ final class ApplyStatActionHandlerTest extends WebTestCase
         $this->assertSame(5, $player->treasury);
     }
 
-    /**
-     * The bug this handler exists to close: StatPicker::runAction() used to check only
-     * isOffered() (via getActions()), so an offered-but-unaffordable action still applied,
-     * clamped down to the treasury floor instead of being refused outright.
-     */
     #[Test]
     public function refusesAnActionThatIsOfferedButNotAffordable(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 1;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(1)->persist($this->entityManager);
 
         ($this->handler)(new ApplyStatAction($player->id, StatAction::BuildShip));
 
@@ -63,9 +54,7 @@ final class ApplyStatActionHandlerTest extends WebTestCase
     public function refusesATaxRateTheirAdvancesDidNotUnlock(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        $player->treasury = 10;
-        $this->entityManager->flush();
+        $player = PlayerBuilder::named('Bob')->in($game)->withTreasury(10)->persist($this->entityManager);
 
         ($this->handler)(new ApplyStatAction($player->id, StatAction::PayTaxes4));
 

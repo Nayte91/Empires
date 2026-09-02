@@ -9,9 +9,8 @@ use Symfony\Component\Mercure\Jwt\TokenFactoryInterface;
 use Symfony\Component\Mercure\Update;
 
 /**
- * The unreachable hub, substituted for {@see RecordingHub} to pin the publisher's try/catch.
- * The attempt counter keeps that test honest: a substitution that failed to take would otherwise
- * leave it green for the wrong reason.
+ * The attempt counter keeps the test honest: a substitution that failed to take would leave it green
+ * for the wrong reason.
  */
 final class ThrowingHub implements HubInterface
 {

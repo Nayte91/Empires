@@ -8,6 +8,7 @@ use App\Rules\Ruleset\RulebookRegistry;
 use App\State\Game;
 use App\State\Region;
 use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -57,7 +58,7 @@ final class HelpTest extends WebTestCase
     #[Test]
     public function onlyThePublishersLinksLeaveTheApp(): void
     {
-        $game = GameBuilder::create()->withRegion(Region::West)->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $crawler = $this->renderTwigComponent('Help', ['game' => $game])->crawler();
 

@@ -11,11 +11,7 @@ use PHPat\Selector\Selector;
 use PHPat\Test\Builder\Rule;
 use PHPat\Test\PHPat;
 
-/**
- * The dependency-direction invariant of src/ (CLAUDE.md, Project Architecture):
- * Presentation ──> Engine ──> Rules ──> State, and Rules/State never persist.
- * Not a PHPUnit test — loaded by phpstan through phpat, runs with make phpstan.
- */
+/** Not a PHPUnit test: loaded by phpstan through phpat, runs with make phpstan. */
 final class LayerDependencies
 {
     public function testRulesAndStateIgnoreUpperLayers(): Rule

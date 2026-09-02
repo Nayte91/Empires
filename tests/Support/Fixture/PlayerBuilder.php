@@ -4,29 +4,28 @@ declare(strict_types=1);
 
 namespace App\Tests\Support\Fixture;
 
+use App\State\CreditEntry;
 use App\State\Game;
 use App\State\Player;
 use Doctrine\ORM\EntityManagerInterface;
 
-/**
- * Object mother for Player. Replaces the twenty-eight private createPlayer() helpers the suite
- * used to carry under three mutually incompatible signatures — in-memory, persisted-with-its-own-
- * game, and persisted-into-a-given-game — which are now the in() and build()/persist() choices.
- *
- * Only the properties a fixture helper actually needed are exposed. Stats a test tunes as part of
- * its own Arrange block (census, treasury, cards, ships, astPosition) stay assigned at the call
- * site, where they read as the scenario rather than as construction.
- */
 final class PlayerBuilder
 {
     private ?Game $game = null;
     private ?int $cities = null;
+    private ?int $census = null;
+    private ?int $treasury = null;
+    private ?int $cards = null;
+    private ?int $ships = null;
+    private ?int $astPosition = null;
 
-    /** A player in a game always holds an empire; tests that turn on which one call withEmpire(). */
     private string $empire = 'minoa';
 
     /** @var list<string> */
     private array $advances = [];
+
+    /** @var list<CreditEntry> */
+    private array $credits = [];
 
     private function __construct(private readonly string $name) {}
 
@@ -35,7 +34,6 @@ final class PlayerBuilder
         return new self($name);
     }
 
-    /** Places the player in an existing game rather than in one of its own. */
     public function in(Game $game): self
     {
         $this->game = $game;
@@ -57,6 +55,49 @@ final class PlayerBuilder
         return $this;
     }
 
+    public function withCensus(int $census): self
+    {
+        $this->census = $census;
+
+        return $this;
+    }
+
+    public function withTreasury(int $treasury): self
+    {
+        $this->treasury = $treasury;
+
+        return $this;
+    }
+
+    public function withCards(int $cards): self
+    {
+        $this->cards = $cards;
+
+        return $this;
+    }
+
+    public function withShips(int $ships): self
+    {
+        $this->ships = $ships;
+
+        return $this;
+    }
+
+    public function withAstPosition(int $astPosition): self
+    {
+        $this->astPosition = $astPosition;
+
+        return $this;
+    }
+
+    /** In the order they were posted: the walk that reads them back is order-sensitive. */
+    public function withCredits(CreditEntry ...$entries): self
+    {
+        $this->credits = array_values($entries);
+
+        return $this;
+    }
+
     /** @param list<string> $keys */
     public function withAdvances(array $keys): self
     {
@@ -73,17 +114,38 @@ final class PlayerBuilder
             $player->cities = $this->cities;
         }
 
+        if (null !== $this->census) {
+            $player->census = $this->census;
+        }
+
+        if (null !== $this->treasury) {
+            $player->treasury = $this->treasury;
+        }
+
+        if (null !== $this->cards) {
+            $player->cards = $this->cards;
+        }
+
+        if (null !== $this->ships) {
+            $player->ships = $this->ships;
+        }
+
+        if (null !== $this->astPosition) {
+            $player->astPosition = $this->astPosition;
+        }
+
         if ([] !== $this->advances) {
             $player->ownAdvances($this->advances);
+        }
+
+        foreach ($this->credits as $entry) {
+            $player->postCredit($entry);
         }
 
         return $player;
     }
 
-    /**
-     * Persisting the game unconditionally is safe whether it came from in() or was built here:
-     * Doctrine treats persist() on an already-managed entity as a no-op.
-     */
+    /** persist() on an already-managed entity is a no-op, so persisting the game unconditionally is safe. */
     public function persist(EntityManagerInterface $entityManager): Player
     {
         $player = $this->build();

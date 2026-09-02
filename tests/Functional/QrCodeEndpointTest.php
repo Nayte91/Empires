@@ -6,6 +6,7 @@ namespace App\Tests\Functional;
 
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
+use App\Tests\Support\Fixture\Tables;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
@@ -26,8 +27,8 @@ final class QrCodeEndpointTest extends WebTestCase
     #[Test]
     public function eachTargetHasItsOwnFetchableCode(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
+        $player = Tables::seat($game, 'Alice');
 
         foreach (['operator', $player->slug] as $key) {
             $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/qr/'.$key);
@@ -41,7 +42,7 @@ final class QrCodeEndpointTest extends WebTestCase
     #[Test]
     public function aKeyNamingNoTargetIsNotFound(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
+        $game = Tables::westTable($this->entityManager);
 
         $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/qr/nobody');
 

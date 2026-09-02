@@ -62,7 +62,6 @@ final class ScoreStandingRuleTest extends WebTestCase
         $this->assertSame('You share the lead', $this->rule->evaluate($first)->message);
     }
 
-    /** Nobody to compare against reads as leading, never as sharing. */
     #[Test]
     public function aSoloPlayerSimplyLeads(): void
     {

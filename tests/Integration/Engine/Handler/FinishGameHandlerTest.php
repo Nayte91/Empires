@@ -37,9 +37,7 @@ final class FinishGameHandlerTest extends WebTestCase
     #[Test]
     public function refusesToRefinishAnAlreadyFinishedGame(): void
     {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $game->finishedAt = new \DateTimeImmutable('2020-01-01');
-        $this->entityManager->flush();
+        $game = GameBuilder::create()->withFinishedAt(new \DateTimeImmutable('2020-01-01'))->persist($this->entityManager);
 
         ($this->handler)(new FinishGame($game->id));
 

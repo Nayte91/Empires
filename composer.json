@@ -103,13 +103,15 @@
         "rector": "vendor/bin/rector process --config=config/tools/rector.php",
         "phpcs": "vendor/bin/php-cs-fixer fix --config=config/tools/php-cs-fixer.php",
         "phpstan": "vendor/bin/phpstan analyse --configuration=config/tools/phpstan.php --memory-limit=1G",
-        "phpunit": "vendor/bin/phpunit --configuration=config/tools/phpunit.xml"
+        "phpunit": "vendor/bin/phpunit --configuration=config/tools/phpunit.xml",
+        "paratest": "vendor/bin/paratest --configuration=config/tools/phpunit.xml --processes=8"
     },
     "scripts-descriptions": {
         "rector": "Apply Rector modernization sources/rules (defaults to src/ — pass paths after --)",
         "phpcs": "Run PHP-CS-Fixer code style fix (defaults to src/ — pass paths after --)",
         "phpstan": "Run PHPStan static analysis (defaults to src/ — pass paths after --)",
-        "phpunit": "Run PHPUnit test suite (defaults to tests/ — pass paths after --)"
+        "phpunit": "Run PHPUnit test suite single-process (defaults to tests/ — pass paths after --)",
+        "paratest": "Run the test suite in parallel over 8 workers (defaults to tests/ — pass paths after --)"
     },
     "conflict": {
         "symfony/symfony": "*"
@@ -122,6 +124,7 @@
         }
     },
     "require-dev": {
+        "brianium/paratest": "^7.24",
         "dama/doctrine-test-bundle": "^8.6",
         "doctrine/deprecations": "^1.1.6",
         "doctrine/doctrine-fixtures-bundle": "^4.3",

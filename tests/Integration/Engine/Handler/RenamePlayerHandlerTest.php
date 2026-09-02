@@ -30,11 +30,6 @@ final class RenamePlayerHandlerTest extends WebTestCase
         $this->hub = self::getContainer()->get(RecordingHub::class);
     }
 
-    /**
-     * The slug is not a second field to keep in step, it is derived by Player's own name hook —
-     * and it is the URL segment the board is served under, so the write is only complete once the
-     * database holds both.
-     */
     #[Test]
     public function writingANewNameRewritesTheSlugTheBoardUrlIsBuiltFrom(): void
     {
@@ -64,11 +59,6 @@ final class RenamePlayerHandlerTest extends WebTestCase
         $this->assertSame('empires/game/'.$game->id.'/roster', $this->hub->topics()[0]);
     }
 
-    /**
-     * Mirrors SetStatHandler's guard: a request that asks for the name already stored writes
-     * nothing and, above all, spares every board subscribed to the game a refresh it has no
-     * reason to perform.
-     */
     #[Test]
     public function renamingAPlayerToTheNameTheyAlreadyCarryIsANoOp(): void
     {
@@ -82,18 +72,13 @@ final class RenamePlayerHandlerTest extends WebTestCase
         $this->assertSame('bob', $player->slug);
     }
 
-    /**
-     * uniq_player_game_slug spans (game_id, slug), so this flush must reach the database rather
-     * than bounce off a constraint — the per-game scoping is what the rename form's uniqueness
-     * check is allowed to assume.
-     */
     #[Test]
     public function twoPlayersOfDifferentGamesMayCarryTheSameName(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
-        $otherGame = GameBuilder::create()->persist($this->entityManager);
+        $outsideBobsUniqPlayerGameSlugScope = GameBuilder::create()->persist($this->entityManager);
         $bob = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named('Alice')->in($otherGame)->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($outsideBobsUniqPlayerGameSlugScope)->persist($this->entityManager);
         $bobId = $bob->id;
 
         ($this->handler)(new RenamePlayer($bobId, 'Alice'));
