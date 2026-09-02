@@ -46,15 +46,8 @@ body {
     font-size: var(--size-body);
     background-color: var(--ground);
 
-    &[data-empire] {
-        --ground: var(--player-color);
-        background-color: var(--ground);
-    }
-
-    > main {
-        min-block-size: 0;
-        padding: 1rem;
-    }
+    &[data-empire] { --ground: var(--player-color) }
+    > main { padding: 1rem }
 }
 
 h1, h2, h3, h4, h5, h6 {

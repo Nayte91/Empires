@@ -7,7 +7,6 @@ body {
     container-type: inline-size;
     display: flex;
     flex-direction: column;
-    min-block-size: 0;
     overflow: hidden;
     padding: 0;
     background: var(--ground);
@@ -15,19 +14,11 @@ body {
 
     section {
         flex: 1;
-        min-block-size: 0;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         padding: 1rem;
 
         h2 { display: none }
-    }
-
-    @media (width < 60rem) {
-        &:has(> .tab-bar [value="roster"]:checked) > section:not(#panel-roster),
-        &:has(> .tab-bar [value="ast"]:checked) > section:not(#panel-ast),
-        &:has(> .tab-bar [value="nav"]:checked) > section:not(#panel-nav),
-        &:has(> .tab-bar [value="help"]:checked) > section:not(#panel-help) { display: none }
     }
 
     caption { scroll-margin-block-start: 1rem }
@@ -49,7 +40,6 @@ body {
 
         section > h2 { display: revert }
         section { display: contents }
-        .tab-bar { display: none }
     }
 
     @media (min-width: 112rem) {
@@ -58,4 +48,15 @@ body {
         :is(#panel-roster, #panel-nav) { max-inline-size: 46rem }
         section { display: block }
     }
+}
+
+@media (width < 60rem) {
+    body:has(> footer [value="roster"]:checked) .game-dashboard > section:not(#panel-roster),
+    body:has(> footer [value="ast"]:checked) .game-dashboard > section:not(#panel-ast),
+    body:has(> footer [value="nav"]:checked) .game-dashboard > section:not(#panel-nav),
+    body:has(> footer [value="help"]:checked) .game-dashboard > section:not(#panel-help) { display: none }
+}
+
+@media (min-width: 60rem) {
+    body > footer { display: none }
 }
