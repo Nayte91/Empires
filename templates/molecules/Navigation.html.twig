@@ -8,7 +8,7 @@
                     <small>{{ caption }}</small>
                 </a>
                 <button type="button" class="button quiet" title="QR code — {{ target.label }}" commandfor="qr-{{ target.key }}" command="show-modal">
-                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zm2 2v4h4V5zM13 3h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zM13 13h3v3h-3zm5 0h3v3h-3zm-5 5h3v3h-3zm5 0h3v3h-3z"/></svg>
+                    <twig:ux:icon name="lucide:qr-code" />
                 </button>
             </li>
         {% endfor %}

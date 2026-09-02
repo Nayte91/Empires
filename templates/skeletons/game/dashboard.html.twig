@@ -6,7 +6,6 @@
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/skeletons/game/dashboard.css') }}" data-turbo-track="dynamic">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/tabBar.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/navigation.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/help.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}" data-turbo-track="dynamic">
@@ -20,4 +19,13 @@
 
 {% block main %}
     {{ component('GameDashboard', {game}) }}
+{% endblock %}
+
+{% block footer %}
+    <twig:molecules:SectionSwitcher active="roster" :tabs="[
+        {value: 'roster', label: 'Roster', icon: 'lucide:users'},
+        {value: 'ast', label: 'A.S.T.', icon: 'clarity:timeline-line'},
+        {value: 'nav', label: 'Navigation', icon: 'lucide:menu'},
+        {value: 'help', label: 'Help', icon: 'lucide:circle-question-mark'},
+    ]" />
 {% endblock %}

@@ -6,7 +6,6 @@
     {{ parent() }}
     <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/skeletons/game/chronicle.css') }}" data-turbo-track="dynamic">
-    <link rel="stylesheet" href="{{ asset('styles/molecules/tabBar.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/navigation.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/ast.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/evolution.css') }}" data-turbo-track="dynamic">
@@ -18,4 +17,12 @@
 
 {% block main %}
     <twig:organisms:GameChronicle :game="game" />
+{% endblock %}
+
+{% block footer %}
+    <twig:molecules:SectionSwitcher active="ast" :tabs="[
+        {value: 'ast', label: 'Ranking', icon: 'lucide:trophy'},
+        {value: 'evolution', label: 'Evolution', icon: 'lucide:trending-up'},
+        {value: 'nav', label: 'Navigation', icon: 'lucide:menu'},
+    ]" />
 {% endblock %}

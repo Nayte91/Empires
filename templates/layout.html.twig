@@ -24,6 +24,7 @@
             <link rel="stylesheet" href="{{ asset('styles/globals.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/molecules/modal.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/molecules/panel.css') }}" data-turbo-track="reload">
+            <link rel="stylesheet" href="{{ asset('styles/molecules/sectionSwitcher.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/atoms/button.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/atoms/pageTitle.css') }}" data-turbo-track="reload">
             <link rel="stylesheet" href="{{ asset('styles/atoms/sectionTitle.css') }}" data-turbo-track="reload">
@@ -38,6 +39,6 @@
     <body {% block body_attr %}{% endblock %}>
         {% block header %}{% endblock %}
         {% block main %}{% endblock %}
-        <footer></footer>
+        {% block footer %}{% endblock %}
     </body>
 </html>

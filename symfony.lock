@@ -310,6 +310,19 @@
     "symfony/ux-chartjs": {
         "version": "v3.3.0"
     },
+    "symfony/ux-icons": {
+        "version": "3.4",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "3.4",
+            "ref": "16a3114526e46593b494471d1654dfa46831beb5"
+        },
+        "files": [
+            "assets/icons/symfony.svg",
+            "config/packages/ux_icons.yaml"
+        ]
+    },
     "symfony/ux-live-component": {
         "version": "2.27",
         "recipe": {

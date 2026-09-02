@@ -7,7 +7,6 @@ body {
     container-type: inline-size;
     display: flex;
     flex-direction: column;
-    min-block-size: 0;
     overflow: hidden;
     padding: 0;
     background: var(--ground);
@@ -15,16 +14,9 @@ body {
 
     > section {
         flex: 1;
-        min-block-size: 0;
         overflow-y: auto;
         overscroll-behavior-y: contain;
         padding: 1rem;
-    }
-
-    &:has(> .tab-bar [value="ast"]:checked) :is(#panel-evolution, #panel-nav),
-    &:has(> .tab-bar [value="evolution"]:checked) :is(#panel-ast, #panel-nav),
-    &:has(> .tab-bar [value="nav"]:checked) :is(#panel-ast, #panel-evolution) {
-        display: none;
     }
 
     h2 {
@@ -34,7 +26,6 @@ body {
     }
 
     > section > h2 { display: none }
-
     caption { scroll-margin-block-start: 1rem }
 
     @media (min-width: 60rem) {
@@ -49,9 +40,14 @@ body {
         padding: 1rem;
 
         > section > h2 { display: revert }
-
-        &:has(> .tab-bar [value]:checked) :is(#panel-ast, #panel-evolution, #panel-nav) { display: contents }
-
-        > .tab-bar { display: none }
     }
+}
+
+body:has(> footer [value="ast"]:checked) .game-chronicle :is(#panel-evolution, #panel-nav),
+body:has(> footer [value="evolution"]:checked) .game-chronicle :is(#panel-ast, #panel-nav),
+body:has(> footer [value="nav"]:checked) .game-chronicle :is(#panel-ast, #panel-evolution) { display: none }
+
+@media (min-width: 60rem) {
+    body:has(> footer [value]:checked) .game-chronicle :is(#panel-ast, #panel-evolution, #panel-nav) { display: contents }
+    body > footer { display: none }
 }

@@ -1,0 +1,15 @@
+{% props tabs, active %}
+
+<footer>
+    <menu class="section-switcher">
+        {% for tab in tabs %}
+            <li>
+                <input type="radio" name="tab" id="tab-{{ tab.value }}" value="{{ tab.value }}" {{ tab.value == active ? 'checked' }} hidden>
+                <label for="tab-{{ tab.value }}">
+                    <twig:ux:icon :name="tab.icon" />
+                    {{ tab.label }}
+                </label>
+            </li>
+        {% endfor %}
+    </menu>
+</footer>
