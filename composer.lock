@@ -8025,11 +8025,11 @@
         },
         {
             "name": "userforged/shop-engine",
-            "version": "dev-feat/GH58-turbo",
+            "version": "1.0.0",
             "dist": {
                 "type": "path",
                 "url": "packages/userforged/shop-engine",
-                "reference": "bfc13b3f0f29889542ed8a00e3f0bfb39b74d50b"
+                "reference": "43e9f80d0c4982147783e65b28ece8d01bc1371b"
             },
             "require": {
                 "doctrine/dbal": "^4.4",
@@ -12239,9 +12239,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "userforged/shop-engine": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
