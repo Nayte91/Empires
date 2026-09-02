@@ -7,10 +7,12 @@
     <link rel="stylesheet" href="{{ asset('styles/skeletons/home.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:atoms:PageTitle heading="Empires" qualifier="Games in progress" />
+{% endblock %}
+
 {% block main %}
     <main>
-        <twig:atoms:PageTitle heading="Empires" qualifier="Games in progress" />
-
         <a class="button" href="{{ path('app_create') }}">Create a game</a>
 
         <ul class="game-grid">

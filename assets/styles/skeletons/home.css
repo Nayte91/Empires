@@ -3,7 +3,6 @@ main {
     grid-template-columns: min(75rem, 100%);
     justify-content: center;
     gap: 1rem;
-    padding: 1rem;
 }
 
 .game-grid {

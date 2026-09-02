@@ -2,8 +2,6 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: board_topic(player)})) }}
     class="player-board"
 >
-    <twig:molecules:PlayerHeading :player="player" />
-
     <twig:molecules:ControlBoard :player="player" :withShopLink="true" />
 
     <div class="panels">

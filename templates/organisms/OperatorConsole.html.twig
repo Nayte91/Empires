@@ -1,12 +1,7 @@
-{% set title = game.slug %}
-{% set subtitle = 'Turn ' ~ game.currentTurn ~ (game.finished ? ' — finished' : '') %}
-
 <main
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}
     class="operator-console"
 >
-    <twig:atoms:PageTitle :heading="title" :qualifier="subtitle" />
-
     <div class="tab-group">
         {% embed 'atoms/tab.html.twig' with {
             group: 'operator-tabs',

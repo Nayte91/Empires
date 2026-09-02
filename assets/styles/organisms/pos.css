@@ -1,12 +1,8 @@
 .pos {
     container-type: inline-size;
-    min-block-size: 100vh;
-    padding-inline: 1rem;
     display: grid;
-    place-content: start center;
+    place-content: start stretch;
     gap: 1rem;
-    --ground: white;
-    background: white;
 
     .controls {
         display: flex;

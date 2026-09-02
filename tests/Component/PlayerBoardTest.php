@@ -17,10 +17,6 @@ final class PlayerBoardTest extends WebTestCase
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
 
-    /**
-     * Scoped to the pickers' own dialog ids: the board hosts unrelated dialogs (rename), and a
-     * census of all of them turns this red for the wrong reasons.
-     */
     #[Test]
     public function allFiveStatPickerTriggerButtonsAreRendered(): void
     {

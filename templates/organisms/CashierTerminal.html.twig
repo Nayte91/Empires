@@ -2,13 +2,6 @@
 {% set player = pos.player %}
 
 <main {{ attributes }} class="pos">
-    <twig:atoms:PageTitle
-        :heading="game.slug"
-        :qualifier="'Turn ' ~ game.currentTurn"
-        back="Orders"
-        :backHref="path('app_game_operator', {slug: game.slug})"
-    />
-
     <twig:atoms:SectionTitle>Point of sale</twig:atoms:SectionTitle>
 
     <div class="controls">

@@ -173,6 +173,19 @@ final class PlayerHeadingTest extends WebTestCase
         $this->assertCount(0, $crawler->filter('dialog [data-error="newName"]'));
     }
 
+    #[Test]
+    public function theHeadingRefreshesOnTheTopicATurnChangeReachesThePlayerBy(): void
+    {
+        $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
+
+        $crawler = $this->render($player);
+
+        $this->assertSame(
+            'empires/game/'.$player->game->id.'/player/'.$player->id.'/shop',
+            $crawler->filter('div[data-controller~="mercure-refresh"]')->attr('data-mercure-refresh-topic-value'),
+        );
+    }
+
     private function render(Player $player): Crawler
     {
         return $this->createLiveComponent('molecules:PlayerHeading', ['player' => $player])->render()->crawler();

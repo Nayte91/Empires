@@ -14,6 +14,10 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/roster.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:atoms:PageTitle :heading="game.slug" :qualifier="'Turn ' ~ game.currentTurn" />
+{% endblock %}
+
 {% block main %}
     {{ component('GameDashboard', {game}) }}
 {% endblock %}

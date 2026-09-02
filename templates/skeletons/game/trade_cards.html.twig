@@ -7,8 +7,13 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/tradeCards.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
-{% block main %}
+{% block header %}
     <twig:atoms:PageTitle :heading="game.slug" :qualifier="'Turn ' ~ game.currentTurn" />
-    <twig:atoms:SectionTitle>Trade card distribution</twig:atoms:SectionTitle>
-    {% include 'molecules/trade_cards.html.twig' with {distribution} only %}
+{% endblock %}
+
+{% block main %}
+    <main>
+        <twig:atoms:SectionTitle>Trade card distribution</twig:atoms:SectionTitle>
+        {% include 'molecules/trade_cards.html.twig' with {distribution} only %}
+    </main>
 {% endblock %}

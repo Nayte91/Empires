@@ -15,6 +15,10 @@
     <link rel="stylesheet" href="{{ asset('styles/molecules/allocationPicker.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
+{% block header %}
+    <twig:molecules:PlayerHeading :player="player" />
+{% endblock %}
+
 {% block main %}
     {{ component('Shop', {player}) }}
 {% endblock %}
