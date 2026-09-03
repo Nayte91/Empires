@@ -12,13 +12,17 @@ final class FakeFulfillment implements FulfillmentInterface
     /** @var list<list<string>> */
     public array $granted = [];
 
+    /** @var list<int> */
+    public array $grantedWindows = [];
+
     /** @var list<list<string>> */
     public array $revoked = [];
 
     /** @param list<string> $productKeys */
-    public function grant(Uuid $buyerId, array $productKeys): void
+    public function grant(Uuid $buyerId, array $productKeys, int $window): void
     {
         $this->granted[] = $productKeys;
+        $this->grantedWindows[] = $window;
     }
 
     /** @param list<string> $productKeys */

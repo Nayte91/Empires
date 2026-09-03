@@ -15,8 +15,13 @@ use Symfony\Component\Uid\Uuid;
  */
 interface FulfillmentInterface
 {
-    /** @param list<string> $productKeys */
-    public function grant(Uuid $buyerId, array $productKeys): void;
+    /**
+     * @param list<string> $productKeys
+     * @param int          $window      the sales window the products were bought in. A
+     *                                  confirmation may come late; a host that dates its
+     *                                  deliveries must date the purchase, not the confirmation.
+     */
+    public function grant(Uuid $buyerId, array $productKeys, int $window): void;
 
     /** @param list<string> $productKeys */
     public function revoke(Uuid $buyerId, array $productKeys): void;
