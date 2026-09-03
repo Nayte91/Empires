@@ -6,6 +6,7 @@ namespace App\Presentation\Component;
 
 use App\Presentation\Shop\CartItemAdder;
 use App\Presentation\Shop\CartKey;
+use App\Presentation\Shop\CatalogSort;
 use App\Presentation\Shop\CatalogView;
 use App\Presentation\Shop\ShopExceptionTranslator;
 use App\Rules\Ruleset\Advance;
@@ -46,6 +47,10 @@ final class Shop
      */
     #[LiveProp(writable: true)]
     public ?int $budget = null;
+
+    /** Planning aid only — never persisted, never reaching Engine/ or the command bus. */
+    #[LiveProp(writable: true)]
+    public CatalogSort $sort = CatalogSort::NetPrice;
 
     public ?string $error = null;
     private bool $currentOrderLoaded = false;
@@ -194,7 +199,7 @@ final class Shop
 
     public function getCatalogView(): CatalogView
     {
-        return CatalogView::kiosk($this->isLockedForTurn(), $this->getRemainingBudget());
+        return CatalogView::kiosk($this->isLockedForTurn(), $this->getRemainingBudget(), $this->sort);
     }
 
     public function getCartKey(): string

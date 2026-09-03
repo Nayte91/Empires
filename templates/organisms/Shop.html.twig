@@ -8,25 +8,27 @@
 
     <twig:molecules:Discounts :player="player" :open="true" />
 
-    <p class="shop__pictures-toggle">
-        <label>
-            <input type="checkbox" id="display-pictures">
-            Show pictures
-        </label>
-    </p>
+    {% set shop = this %}
 
-    <p class="shop__budget">
-        <label>
-            Budget
-            <input type="number" id="shop-budget" min="0" data-model="budget" value="{{ budget }}">
-        </label>
-        <output for="shop-budget">{{ budget is null ? '' : 'Remaining: ' ~ max(0, this.remainingBudget) }}</output>
-    </p>
+    <div>
+        <twig:organisms:Catalog :player="player" :storageKey="this.cartKey" :view="this.catalogView">
+            <twig:block name="controls">
+                <fieldset>
+                    {% for case in enum_cases('App\\Presentation\\Shop\\CatalogSort') %}
+                        <input type="radio" name="sort" id="sort-{{ case.value }}" value="{{ case.value }}" data-model="sort" {{ case == sort ? 'checked' }} hidden>
+                        <label for="sort-{{ case.value }}">{{ case.label }}</label>
+                    {% endfor %}
+                </fieldset>
 
-    <div class="shop__layout">
-        <twig:organisms:Catalog :player="player" :storageKey="this.cartKey" :view="this.catalogView" />
+                <p>
+                    <label><input type="checkbox" id="display-pictures"> Show pictures</label>
+                    <label>Budget <input type="number" id="shop-budget" min="0" data-model="budget" value="{{ budget }}"></label>
+                    <output for="shop-budget">{{ budget is null ? '' : 'Remaining: ' ~ max(0, shop.remainingBudget) }}</output>
+                </p>
+            </twig:block>
+        </twig:organisms:Catalog>
 
-        <aside class="shop__cart">
+        <aside>
             {% if this.isOrderVisible %}
                 {% set orderHint = this.orderHint %}
 
