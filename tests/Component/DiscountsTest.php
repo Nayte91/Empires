@@ -35,8 +35,8 @@ final class DiscountsTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $fulfillment = self::getContainer()->get(AdvanceFulfillment::class);
-        $fulfillment->grant($player->id, ['agriculture']);
-        $fulfillment->grant($player->id, ['democracy']);
+        $fulfillment->grant($player->id, ['agriculture'], $player->game->currentTurn, $player->game->currentTurn);
+        $fulfillment->grant($player->id, ['democracy'], $player->game->currentTurn, $player->game->currentTurn);
         $this->entityManager->flush();
 
         $row = $this->findRowByLabel($this->renderDiscounts($player)->crawler(), 'Democracy');
@@ -48,7 +48,7 @@ final class DiscountsTest extends WebTestCase
     public function aNamedCreditWhoseAdvanceIsNotOwnedIsNotMarkedSpent(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture'], $player->game->currentTurn, $player->game->currentTurn);
         $this->entityManager->flush();
 
         $row = $this->findRowByLabel($this->renderDiscounts($player)->crawler(), 'Democracy');
@@ -60,7 +60,7 @@ final class DiscountsTest extends WebTestCase
     public function aNamedCreditWhoseAdvanceIsOnlyInTheCartIsNotMarkedSpent(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture'], $player->game->currentTurn, $player->game->currentTurn);
         $this->entityManager->flush();
 
         $request = new Request();
@@ -77,7 +77,7 @@ final class DiscountsTest extends WebTestCase
     public function aFacetCreditIsMarkedSpentOnlyOnceEveryAdvanceOfTheCategoryIsOwned(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, self::EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, self::EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY, $player->game->currentTurn);
         $this->entityManager->flush();
 
         $crawler = $this->renderDiscounts($player)->crawler();
@@ -90,7 +90,7 @@ final class DiscountsTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $incomplete = \array_slice(self::EVERY_ADVANCE_CARRYING_THE_RELIGION_CATEGORY, 0, 11);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, $incomplete);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, $incomplete, $player->game->currentTurn);
         $this->entityManager->flush();
 
         $crawler = $this->renderDiscounts($player)->crawler();

@@ -76,7 +76,7 @@ final class PlayerBoardTest extends WebTestCase
     public function discountsAreRenderedForAPlayerOwningAgriculture(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture'], $player->game->currentTurn);
         $this->entityManager->flush();
 
         $rendered = $this->createLiveComponent('PlayerBoard', ['player' => $player])->render()->toString();

@@ -121,7 +121,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     {
         [$game, $alice, $bob] = Tables::aliceAndBob($this->entityManager);
 
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($alice->id, ['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($alice->id, ['agriculture'], $alice->game->currentTurn);
         $this->entityManager->flush();
 
         return [$game, $alice, $bob];

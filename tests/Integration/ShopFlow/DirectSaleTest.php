@@ -44,7 +44,7 @@ final class DirectSaleTest extends WebTestCase
     public function sellValidatesOrderImmediatelyAndOwnsAdvances(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->fulfillment->grant($player->id, ['agriculture']);
+        $this->fulfillment->grant($player->id, ['agriculture'], $player->game->currentTurn);
         $this->entityManager->flush();
 
         $order = ($this->sellDirectHandler)(new SellDirect($player->id, $this->intents(['democracy', 'pottery']), $player->game->currentTurn));

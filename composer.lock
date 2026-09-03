@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e84645411855626fb0292ffc7a13cb0b",
+    "content-hash": "1712a708ca703ccf4ad3752844b331aa",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -8118,11 +8118,11 @@
         },
         {
             "name": "userforged/shop-engine",
-            "version": "1.0.0",
+            "version": "2.0.0",
             "dist": {
                 "type": "path",
                 "url": "packages/userforged/shop-engine",
-                "reference": "43e9f80d0c4982147783e65b28ece8d01bc1371b"
+                "reference": "a37fa099bbfe5eabca946e009fc739f608b8965c"
             },
             "require": {
                 "doctrine/dbal": "^4.4",
