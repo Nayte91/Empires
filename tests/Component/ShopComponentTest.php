@@ -6,8 +6,7 @@ namespace App\Tests\Component;
 
 use App\Engine\Shop\AdvanceFulfillment;
 use App\Presentation\Shop\CartKey;
-use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceRegistry;
+use App\Presentation\Shop\CatalogSort;
 use App\State\Order;
 use App\State\Player;
 use App\Infrastructure\Repository\OrderRepository;
@@ -366,22 +365,60 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function theKioskShelfIsOrderedByWhatThePlayerPaysWhereTheOperatorsPosKeepsTheRegistryOrder(): void
+    public function theKioskOffersThreeSortsWithBestValuePreselected(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
-        $this->entityManager->flush();
 
-        $kiosk = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+
+        $this->assertCount(3, $crawler->filter('input[name="sort"]'));
+        $this->assertCount(1, $crawler->filter('input[name="sort"][checked]'));
+        $this->assertCount(1, $crawler->filter('input[name="sort"][value="net_price"][checked]'));
+    }
+
+    #[Test]
+    public function aShopMountedSortedByNameShelvesTheAdvancesAlphabetically(): void
+    {
+        $player = $this->discountedPlayer();
+
+        $byBestValue = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $byName = $this->createLiveComponent('Shop', ['player' => $player, 'sort' => CatalogSort::Name])->render()->crawler();
+
+        $names = $this->shelfNames($byName);
+        $alphabetical = $names;
+        sort($alphabetical);
+
+        $this->assertCount(1, $byName->filter('input[name="sort"][value="name"][checked]'));
+        $this->assertSame($alphabetical, $names);
+        $this->assertNotSame($this->shelfKeys($byBestValue), $this->shelfKeys($byName));
+    }
+
+    #[Test]
+    public function choosingNameOnTheShelfReordersItAlphabetically(): void
+    {
+        $player = $this->discountedPlayer();
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $byBestValue = $component->render()->crawler();
+        $byName = $component->set('sort', 'name')->render()->crawler();
+
+        $names = $this->shelfNames($byName);
+        $alphabetical = $names;
+        sort($alphabetical);
+
+        $this->assertCount(1, $byName->filter('input[name="sort"][value="name"][checked]'));
+        $this->assertSame($alphabetical, $names);
+        $this->assertNotSame($this->shelfKeys($byBestValue), $this->shelfKeys($byName));
+    }
+
+    #[Test]
+    public function theSortIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+
         $pos = $this->openPos($player);
 
-        $kioskNetCosts = $kiosk->filter('[data-price-net]')->each(static fn (Crawler $node): int => (int) $node->text());
-        $ascendingNetCosts = $kioskNetCosts;
-        sort($ascendingNetCosts);
-
-        $this->assertSame($ascendingNetCosts, $kioskNetCosts);
-        $this->assertNotSame($this->shelfKeys($kiosk), $this->shelfKeys($pos));
-        $this->assertSame($this->registryOrderOf($this->shelfKeys($pos)), $this->shelfKeys($pos));
+        $this->assertCount(0, $pos->filter('input[name="sort"]'));
     }
 
     #[Test]
@@ -496,19 +533,19 @@ final class ShopComponentTest extends WebTestCase
         );
     }
 
-    /**
-     * @param list<string> $keys
-     *
-     * @return list<string>
-     */
-    private function registryOrderOf(array $keys): array
+    /** @return list<string> */
+    private function shelfNames(Crawler $crawler): array
     {
-        return array_map(
-                static fn(Advance $advance): string => $advance->key,
-                self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
-            )
-                |> (fn($x): array => array_filter($x, static fn(string $key): bool => \in_array($key, $keys, true),))
-                |> array_values(...);
+        return $crawler->filter('.product-tile .name')->each(static fn (Crawler $node): string => $node->text());
+    }
+
+    private function discountedPlayer(): Player
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        $this->entityManager->flush();
+
+        return $player;
     }
 
     private function freshOrderRepository(): OrderRepository

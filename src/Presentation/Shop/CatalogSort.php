@@ -17,9 +17,6 @@ use Userforged\ShopEngine\Dto\Product;
  */
 enum CatalogSort: string
 {
-    /** What the advance costs on paper — the order the catalogue has always been rendered in. */
-    case ListPrice = 'list_price';
-
     /**
      * What this buyer actually pays, discounts applied. Differs per player, and moves as their
      * discounts do. The kiosk re-sorts on it because the registry's list-price order and the
@@ -27,6 +24,21 @@ enum CatalogSort: string
      * that does not match its position.
      */
     case NetPrice = 'net_price';
+
+    /** Alphabetical by advance name — the order a buyer scans when they know what they want. */
+    case Name = 'name';
+
+    /** What the advance costs on paper — the order the catalogue has always been rendered in. */
+    case ListPrice = 'list_price';
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::NetPrice => 'Net price',
+            self::Name => 'Name',
+            self::ListPrice => 'Raw price',
+        };
+    }
 
     /**
      * Ascending only, and deliberately so: no descending order has been asked for.
@@ -42,6 +54,7 @@ enum CatalogSort: string
         return match ($this) {
             self::ListPrice => $a['advance']->cost <=> $b['advance']->cost,
             self::NetPrice => $a['product']->netCost <=> $b['product']->netCost,
+            self::Name => strcmp($a['advance']->name, $b['advance']->name),
         };
     }
 }

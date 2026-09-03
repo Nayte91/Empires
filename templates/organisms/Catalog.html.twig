@@ -1,12 +1,16 @@
-<section class="catalog">
+<section class="catalog panel">
     <twig:atoms:Label>Catalog</twig:atoms:Label>
 
-    {% for row in this.rows %}
-        <twig:molecules:ProductTile
-            :row="row"
-            :locked="view.locked"
-            :remainingBudget="view.remainingBudget"
-            action="add"
-        />
-    {% endfor %}
+    {% block controls %}{% endblock %}
+
+    <div>
+        {% for row in this.rows %}
+            <twig:molecules:ProductTile
+                :row="row"
+                :locked="view.locked"
+                :remainingBudget="view.remainingBudget"
+                action="add"
+            />
+        {% endfor %}
+    </div>
 </section>

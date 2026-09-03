@@ -1,15 +1,21 @@
 .panel {
-    border: 1px solid var(--operator-border);
-    border-radius: var(--operator-radius);
+    border: 1px solid var(--ink-primary);
+    border-radius: 0.75rem;
     --ground: white;
     background: white;
 
-    > summary {
+    &:where(:not(details)) {
+        display: grid;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+
+    summary {
         padding: 1rem;
         cursor: pointer;
     }
 
-    &:open > summary { border-block-end: 1px solid var(--operator-border) }
+    &:open summary { border-block-end: 1px solid var(--operator-border) }
 
     &:open::details-content {
         display: grid;

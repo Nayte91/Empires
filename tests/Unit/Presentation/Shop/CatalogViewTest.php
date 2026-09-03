@@ -38,6 +38,14 @@ final class CatalogViewTest extends TestCase
     }
 
     #[Test]
+    public function theKioskViewTakesTheSortTheBuyerChose(): void
+    {
+        $view = CatalogView::kiosk(false, null, CatalogSort::Name);
+
+        $this->assertSame(CatalogSort::Name, $view->sort);
+    }
+
+    #[Test]
     public function thePosViewIsNeverLockedNeverBudgetedAndKeepsTheListPriceOrder(): void
     {
         $view = CatalogView::pos();

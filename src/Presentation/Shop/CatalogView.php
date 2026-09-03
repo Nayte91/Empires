@@ -6,9 +6,10 @@ namespace App\Presentation\Shop;
 
 /**
  * The catalogue's presentation as one of the two configurations its callers actually use — not
- * three independent switches a caller could set by name. Three flags in the wild (locked, sort,
- * remainingBudget) landing on only two combinations is what a view-model in denial looks like;
- * this closes the constructor so nothing else is expressible.
+ * three independent switches a caller could set by name. The kiosk's sort is the one flag a buyer
+ * actually chooses, net price by default; the POS never offers that choice, so its constructor
+ * fixes list-price order instead of accepting one. The constructor stays private: nothing else is
+ * expressible.
  */
 final readonly class CatalogView
 {
@@ -18,10 +19,10 @@ final readonly class CatalogView
         public ?int $remainingBudget,
     ) {}
 
-    /** The kiosk shop: locked per the turn, net-price order, over-budget tiles disabled. */
-    public static function kiosk(bool $locked, ?int $remainingBudget): self
+    /** The kiosk shop: locked per the turn, buyer-chosen order, over-budget tiles disabled. */
+    public static function kiosk(bool $locked, ?int $remainingBudget, CatalogSort $sort = CatalogSort::NetPrice): self
     {
-        return new self($locked, CatalogSort::NetPrice, $remainingBudget);
+        return new self($locked, $sort, $remainingBudget);
     }
 
     /** The operator POS: never locked, list-price order, no budget effect. */

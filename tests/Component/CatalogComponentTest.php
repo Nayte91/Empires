@@ -8,9 +8,6 @@ use App\Presentation\Shop\CartKey;
 use App\State\Player;
 use App\Engine\Shop\AdvanceFulfillment;
 use App\Presentation\Shop\CatalogView;
-use App\Rules\Ruleset\Advance;
-use App\Rules\Ruleset\AdvanceRegistry;
-use Symfony\Component\DomCrawler\Crawler;
 use App\Tests\Support\Fixture\OrderBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
@@ -230,42 +227,6 @@ final class CatalogComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function theKioskViewOrdersTheCatalogueByWhatThePlayerActuallyPays(): void
-    {
-        $player = $this->discountedPlayer();
-        $kiosk = CatalogView::kiosk(locked: false, remainingBudget: null);
-
-        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, $kiosk));
-        $netCosts = $this->renderCatalog($player, (string) $player->id, $kiosk)
-            ->crawler()->filter('[data-price-net]')->each(static fn (Crawler $node): int => (int) $node->text());
-
-        $ascending = $netCosts;
-        sort($ascending);
-
-        $this->assertSame($ascending, $netCosts);
-        $this->assertNotSame($this->productKeys($this->renderCatalog($player, (string) $player->id, CatalogView::pos())), $keys);
-    }
-
-    /** Compared against the registry, not against ascending list prices: the latter passes with no sort at all. */
-    #[Test]
-    public function thePosViewLeavesTheCatalogueInTheOrderTheRegistryProvides(): void
-    {
-        $player = $this->discountedPlayer();
-
-        $keys = $this->productKeys($this->renderCatalog($player, (string) $player->id, CatalogView::pos()));
-
-        $registryOrder = array_values(array_filter(
-            array_map(
-                static fn (Advance $advance): string => $advance->key,
-                self::getContainer()->get(AdvanceRegistry::class)->getAdvances(),
-            ),
-            static fn (string $key): bool => \in_array($key, $keys, true),
-        ));
-
-        $this->assertSame($registryOrder, $keys);
-    }
-
-    #[Test]
     public function storageKeyIsolatesTwoCartsForTheSamePlayer(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
@@ -319,13 +280,4 @@ final class CatalogComponentTest extends WebTestCase
 
         return $player;
     }
-
-    /** @return list<string> */
-    private function productKeys(RenderedComponent $rendered): array
-    {
-        return $rendered->crawler()->filter('[id^="product-"]')->each(
-            static fn (Crawler $node): string => substr((string) $node->attr('id'), \strlen('product-')),
-        );
-    }
-
 }

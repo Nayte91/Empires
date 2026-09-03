@@ -1,13 +1,6 @@
 .cart {
     display: grid;
     gap: 1rem;
-    padding: 1rem;
-
-    .label {
-        margin: -1rem -1rem 0;
-        border-block-end: 1px solid var(--operator-border);
-        padding: 1rem;
-    }
 
     &[data-status] .hint {
         border: 1px solid transparent;
@@ -45,6 +38,11 @@
         gap: 0.75rem;
     }
 
+    .lines .line + .line {
+        border-block-start: 1px solid var(--rule);
+        padding-block-start: 0.5rem;
+    }
+
     .name {
         flex: 1;
         overflow: hidden;
@@ -80,6 +78,8 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
+
+        button { flex: 1 }
     }
 
     .submit {
