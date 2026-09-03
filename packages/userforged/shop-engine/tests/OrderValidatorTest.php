@@ -75,6 +75,7 @@ final class OrderValidatorTest extends TestCase
         $this->validatorFor()->validate($order);
 
         $this->assertSame([['pottery', 'agriculture']], $this->fulfillment->granted);
+        $this->assertSame([$order->window], $this->fulfillment->grantedWindows);
     }
 
     /**

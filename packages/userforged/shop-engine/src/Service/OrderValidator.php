@@ -55,7 +55,7 @@ final readonly class OrderValidator
         $this->transaction->transactional(static function () use ($order, $frozenLines, $total, $machine, $fulfillment): void {
             $machine->apply($order, 'validate');
             $order->freeze($frozenLines, $total);
-            $fulfillment->grant($order->buyerId, $order->keys());
+            $fulfillment->grant($order->buyerId, $order->keys(), $order->window);
         });
 
         // Published through afterCommit(), not right after transactional() returns:
