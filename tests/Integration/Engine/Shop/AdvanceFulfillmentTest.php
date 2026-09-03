@@ -37,17 +37,17 @@ final class AdvanceFulfillmentTest extends WebTestCase
     }
 
     #[Test]
-    public function grantingAnAdvancePostsEachOfItsCreditsAtThePlayersCurrentTurnWithATraceableReason(): void
+    public function grantingAnAdvancePostsEachOfItsCreditsAtTheWindowItWasBoughtInWithATraceableReason(): void
     {
         $player = PlayerBuilder::named('Alice')->in(GameBuilder::create()->withCurrentTurn(4)->build())->persist($this->entityManager);
 
-        $this->fulfillment->grant($player->id, ['pottery']);
+        $this->fulfillment->grant($player->id, ['pottery'], 2);
 
         $this->assertEquals(
             [
-                new CreditEntry(4, 'art', 5, CreditSource::Shop, 'advance:pottery'),
-                new CreditEntry(4, 'craft', 10, CreditSource::Shop, 'advance:pottery'),
-                new CreditEntry(4, 'agriculture', 10, CreditSource::Shop, 'advance:pottery'),
+                new CreditEntry(2, 'art', 5, CreditSource::Shop, 'advance:pottery'),
+                new CreditEntry(2, 'craft', 10, CreditSource::Shop, 'advance:pottery'),
+                new CreditEntry(2, 'agriculture', 10, CreditSource::Shop, 'advance:pottery'),
             ],
             $player->creditLedger,
         );
@@ -59,7 +59,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
 
-        $this->fulfillment->grant($player->id, ['pottery']);
+        $this->fulfillment->grant($player->id, ['pottery'], $player->game->currentTurn);
         $this->fulfillment->revoke($player->id, ['pottery']);
 
         $this->assertSame([], $player->creditLedger);
@@ -84,7 +84,7 @@ final class AdvanceFulfillmentTest extends WebTestCase
     public function revokingAGrantAfterARealLossInTheSameScopeNeverDrivesTheWalkedBalanceNegative(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->fulfillment->grant($player->id, ['pottery']);
+        $this->fulfillment->grant($player->id, ['pottery'], $player->game->currentTurn);
         $player->postCredit(new CreditEntry(2, 'craft', -10, CreditSource::Shop, 'real-loss'));
 
         $this->fulfillment->revoke($player->id, ['pottery']);

@@ -275,7 +275,7 @@ final class CatalogComponentTest extends WebTestCase
     private function discountedPlayer(): Player
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture']);
+        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture'], $player->game->currentTurn);
         $this->entityManager->flush();
 
         return $player;

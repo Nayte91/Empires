@@ -6,6 +6,8 @@ namespace App\Tests\Integration\ShopFlow;
 
 use App\Engine\Shop\AdvanceFulfillment;
 use App\Infrastructure\Repository\OrderRepository;
+use App\State\CreditEntry;
+use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\ShopFixtureTrait;
@@ -80,10 +82,23 @@ final class OrderFlowTest extends WebTestCase
     }
 
     #[Test]
+    public function validatingAnOrderLateStampsItsCreditsWithTheTurnItWasBoughtNotTheTurnItWasValidated(): void
+    {
+        $player = PlayerBuilder::named('JM')->in(GameBuilder::create()->withCurrentTurn(8)->build())->persist($this->entityManager);
+        $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['pottery']), 8));
+        $player->game->currentTurn = 11;
+        $this->entityManager->flush();
+
+        $this->orderValidator->validate($order);
+
+        $this->assertSame([8, 8, 8], array_map(static fn (CreditEntry $entry): int => $entry->turn, $player->creditLedger));
+    }
+
+    #[Test]
     public function validateFreezesLinesAndOwnsAdvances(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $this->fulfillment->grant($player->id, ['agriculture']);
+        $this->fulfillment->grant($player->id, ['agriculture'], $player->game->currentTurn);
         $this->entityManager->flush();
 
         $order = ($this->submitOrderHandler)(new SubmitOrder($player->id, $this->intents(['democracy']), $player->game->currentTurn));

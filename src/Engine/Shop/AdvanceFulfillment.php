@@ -17,6 +17,9 @@ use Userforged\ShopEngine\FulfillmentInterface;
  * posting their printed credits to the append-only ledger. The library never touches
  * App\State\Player.
  *
+ * Every entry is dated with the window the order was bought in, never with the game's
+ * clock: an operator validating late must not move the purchase in time.
+ *
  * revoke() removes every ledger entry reasoned by the advance's key
  * (Player::revokeCredits()) instead of posting a negative counterpart:
  * cancelling an order is a correction of a mis-entry, not a game fact, so the
@@ -39,14 +42,14 @@ final readonly class AdvanceFulfillment implements FulfillmentInterface
         private AdvanceRegistry $advanceRegistry,
     ) {}
 
-    public function grant(Uuid $buyerId, array $productKeys): void
+    public function grant(Uuid $buyerId, array $productKeys, int $window): void
     {
         $player = $this->resolve($buyerId);
         $player->ownAdvances($productKeys);
 
         foreach ($this->advanceRegistry->getAdvancesByNames($productKeys) as $advance) {
             foreach ($advance->credits as $scope => $value) {
-                $player->postCredit(new CreditEntry($player->game->currentTurn, $scope, $value, CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
+                $player->postCredit(new CreditEntry($window, $scope, $value, CreditSource::Shop, self::SOURCE_PREFIX.$advance->key));
             }
         }
     }
