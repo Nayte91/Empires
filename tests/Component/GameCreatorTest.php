@@ -27,10 +27,9 @@ final class GameCreatorTest extends WebTestCase
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
 
-    /** Spelled out rather than read from ScenarioRegistry, so a reordered or extended pool fails here instead of agreeing with itself. */
     private const array WEST_NINE_EMPIRE_OPTIONS = ['', 'assyria', 'carthage', 'celt', 'egypt', 'hatti', 'hellas', 'iberia', 'minoa', 'rome'];
 
-    private const string TRUNCATED_HAN_SLUG = 'han-han-han-han-han-han-han-ha';
+    private const string TRUNCATED_HAN_SLUG = 'han-han-han-han-han-';
 
     #[Test]
     public function mountProposesAUuidAsTheDefaultGameSlug(): void
@@ -361,7 +360,6 @@ final class GameCreatorTest extends WebTestCase
         $this->assertSame('hatti', $alice->empire);
     }
 
-    /** Eighteen is the largest roster the scenarios describe: a bound with the wrong operator refuses exactly this game and nothing else. */
     #[Test]
     #[DataProvider('provideAConformingRosterLaunchesCases')]
     public function aConformingRosterLaunches(int $playerCount, ?string $region, string $slug, ?string $firstPlayerName): void
@@ -390,13 +388,9 @@ final class GameCreatorTest extends WebTestCase
     public static function provideAConformingRosterLaunchesCases(): iterable
     {
         yield 'a three-player roster of plain names' => [3, 'west', 'usable-names-launch', null];
-
         yield 'a full eighteen-player roster' => [18, null, 'eighteen-player-launch', null];
-
-        yield 'a player name of thirty ascii characters' => [3, 'west', 'ascii-limit-name-launch', str_repeat('a', Player::MAX_NAME_LENGTH)];
-
-        yield 'a player name of thirty accented characters, sixty bytes' => [3, 'west', 'accented-limit-name-launch', str_repeat('é', Player::MAX_NAME_LENGTH)];
-
+        yield 'a player name of twenty ascii characters' => [3, 'west', 'ascii-limit-name-launch', str_repeat('a', Player::MAX_NAME_LENGTH)];
+        yield 'a player name of twenty accented characters, forty bytes' => [3, 'west', 'accented-limit-name-launch', str_repeat('é', Player::MAX_NAME_LENGTH)];
         yield 'a game name exactly at the length limit' => [3, 'west', str_repeat('a', Game::MAX_SLUG_LENGTH), null];
     }
 
@@ -423,21 +417,15 @@ final class GameCreatorTest extends WebTestCase
     public static function provideLaunchIsRefusedServerSideAndNothingIsCreatedCases(): iterable
     {
         yield 'two names folding to the same slug' => [self::westRosterNamed('Bob', 'BOB', 'Carol'), 3, 'colliding-names-launch', 'Bob and BOB share the name &quot;bob&quot;.'];
-
         yield 'a blank player name' => [self::westRosterNamed('', 'Bob', 'Carol'), 3, 'blank-name-launch', '1 player has no usable name.'];
-
         yield 'a player count no roster matches' => [[], 9, 'mismatch-launch', 'Add 9 more players.'];
-
         yield 'a player count of zero' => [[], 0, 'empty-roster-launch', null];
-
         yield 'a player without an empire' => [[
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => 'hellas'],
             ['name' => 'Carol', 'empire' => ''],
         ], 3, 'no-empire-launch', '1 player still needs an empire.'];
-
         yield 'an injected player name over the length limit' => [self::westRosterNamed(str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Bob', 'Carol'), 3, 'overlong-name-launch', null];
-
         yield 'an injected game name over the length limit' => [self::westRosterNamed('Alice', 'Bob', 'Carol'), 3, str_repeat('a', Game::MAX_SLUG_LENGTH + 1), 'The address this name builds is longer than 64 characters.'];
     }
 
@@ -909,17 +897,17 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function theSlugTheCreatorsGateComparesIsTheSlugTheColumnStores(): void
     {
-        $thirtyHan = str_repeat('漢', 30);
+        $limitHan = str_repeat('漢', Player::MAX_NAME_LENGTH);
 
-        $component = $this->creatorWith(self::westRosterNamed($thirtyHan, 'Bob', 'Carol'), slug: 'one-slugifier-launch');
+        $component = $this->creatorWith(self::westRosterNamed($limitHan, 'Bob', 'Carol'), slug: 'one-slugifier-launch');
         $component->call('launch');
 
         $this->assertSame(Response::HTTP_FOUND, $component->response()->getStatusCode(), (string) $component->response()->getContent());
 
-        $stored = $this->freshEntityManager()->getRepository(Player::class)->findOneBy(['name' => $thirtyHan]);
+        $stored = $this->freshEntityManager()->getRepository(Player::class)->findOneBy(['name' => $limitHan]);
 
         $this->assertInstanceOf(Player::class, $stored);
-        $this->assertSame(Player::slugify($thirtyHan), $stored->slug);
+        $this->assertSame(Player::slugify($limitHan), $stored->slug);
         $this->assertSame(self::TRUNCATED_HAN_SLUG, $stored->slug);
         $this->assertSame(Player::MAX_NAME_LENGTH, mb_strlen($stored->slug));
     }
@@ -1021,9 +1009,8 @@ final class GameCreatorTest extends WebTestCase
 
     public static function provideANameAtTheLengthLimitIsAcceptedByAddPlayerCases(): iterable
     {
-        yield 'thirty ascii characters' => [str_repeat('a', Player::MAX_NAME_LENGTH), 'A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1)];
-
-        yield 'thirty accented characters, sixty bytes' => [str_repeat('é', Player::MAX_NAME_LENGTH), str_repeat('é', Player::MAX_NAME_LENGTH)];
+        yield 'twenty ascii characters' => [str_repeat('a', Player::MAX_NAME_LENGTH), 'A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1)];
+        yield 'twenty accented characters, forty bytes' => [str_repeat('é', Player::MAX_NAME_LENGTH), str_repeat('é', Player::MAX_NAME_LENGTH)];
     }
 
     #[Test]
@@ -1036,7 +1023,7 @@ final class GameCreatorTest extends WebTestCase
 
         $rendered = $component->call('addPlayer')->render();
 
-        $this->assertStringContainsString('Name cannot be longer than 30 characters.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertStringContainsString('Name cannot be longer than 20 characters.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
         $this->assertSame([], $component->component()->players);
     }
 
@@ -1053,17 +1040,16 @@ final class GameCreatorTest extends WebTestCase
         $rendered = $component->call('addPlayer')->render();
 
         $errorText = $rendered->crawler()->filter('[data-error="newPlayerName"]')->text();
-        $this->assertStringContainsString('Name cannot be longer than 30 characters.', $errorText);
+        $this->assertStringContainsString('Name cannot be longer than 20 characters.', $errorText);
         $this->assertStringNotContainsString('Name already taken.', $errorText);
     }
 
     #[Test]
     public function anInjectedNameOverTheLengthLimitIsReportedAsAConformityIssue(): void
     {
-        $component = $this->creatorWith(
-            self::westRosterNamed(str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Bob', 'Carol'),
-            slug: 'overlong-injected-name',
-        );
+        $component = str_repeat('a', Player::MAX_NAME_LENGTH + 1)
+                |> (fn(string $x): array => self::westRosterNamed($x, 'Bob', 'Carol'))
+                |> (fn(array $x): \Symfony\UX\LiveComponent\Test\TestLiveComponent => $this->creatorWith($x, slug: 'overlong-injected-name',));
 
         $rendered = $component->render()->toString();
 

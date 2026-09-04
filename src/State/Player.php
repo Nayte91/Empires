@@ -14,7 +14,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\UniqueConstraint(name: 'uniq_player_game_slug', columns: ['game_id', 'slug'])]
 class Player
 {
-    public const int MAX_NAME_LENGTH = 30;
+    public const int MAX_NAME_LENGTH = 20;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
