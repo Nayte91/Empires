@@ -1,12 +1,5 @@
 {% props heading, qualifier = null, variant = 'page', back = null, backHref = null, renameFor = null %}
 
-{# A page title names the thing the reader is looking at, never the section they are looking at it
-   in — which is why the shop is titled with the player and the trade cards page with the game.
-
-   An absent qualifier is a screen with nothing to add; an empty string is a caller mistake, and
-   this is deliberately strict enough to let it show. The way back is read before the heading it
-   returns from, so it is written before it. #}
-
 <header id="page-title" data-title="{{ variant }}">
     {% if back is not null %}
         <a href="{{ backHref }}" class="button">{{ back }}</a>
