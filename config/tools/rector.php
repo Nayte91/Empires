@@ -18,9 +18,6 @@ return RectorConfig::configure()
         __DIR__.'/../../src/Kernel.php',
         __DIR__.'/../../var',
         __DIR__.'/../../vendor',
-        // Empty method bodies are the documented Symfony UX LiveComponent idiom
-        // for a #[LiveListener]: its only job is to trigger the component's
-        // own re-render, nothing to execute.
         RemoveEmptyClassMethodRector::class => [
             __DIR__.'/../../src/Presentation/Component/Shop.php',
             __DIR__.'/../../src/Presentation/Component/PlayerOrders.php',
@@ -30,7 +27,7 @@ return RectorConfig::configure()
     ->withCache(__DIR__.'/../../var/cache/rector')
     ->withComposerBased(symfony: true)
     ->withSets([
-        LevelSetList::UP_TO_PHP_84,
+        LevelSetList::UP_TO_PHP_85,
 
         PHPUnitSetList::PHPUNIT_CODE_QUALITY,
         PHPUnitSetList::ANNOTATIONS_TO_ATTRIBUTES,
@@ -39,10 +36,8 @@ return RectorConfig::configure()
 
         SetList::CODE_QUALITY,
         SetList::DEAD_CODE,
-        SetList::EARLY_RETURN,
         SetList::TYPE_DECLARATION,
         SetList::PRIVATIZATION,
-        SetList::INSTANCEOF,
     ])
     ->withParallel()
 ;
