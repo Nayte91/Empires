@@ -1,39 +1,37 @@
 #page-title {
-    padding: 1rem;
     border-block-end: 1px solid var(--rule);
+    padding: 1rem;
     display: flex;
-    justify-content: space-between;
-    align-items: start;
+    place-content: start space-between;
     gap: 1rem;
-    color: var(--ink-primary);
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
 
     hgroup {
-        flex: 1;
         font-family: var(--font-title);
-    }
-
-    h1, p { margin: 0 auto }
-
-    h1 {
         font-size: var(--size-title);
-        font-weight: var(--weight-answer);
+        text-align: center;
+        text-transform: uppercase;
+        color: var(--ink-primary);
+
+        h1, p {
+            margin: 0 auto;
+            font-weight: var(--weight-answer);
+        }
+
+        p {
+            font-size: var(--size-small);
+            color: var(--ink-muted);
+        }
     }
 
-    p {
-        font-size: var(--size-small);
-        font-weight: var(--weight-answer);
-        color: var(--ink-muted);
-    }
-
-    &[data-title="celebration"] { border-block-end: none }
-    &[data-title="celebration"] h1 {
-        font-size: var(--size-hero);
-        font-weight: var(--weight-hero);
-        line-height: 1;
-    }
-
+    &[data-title="page"] hgroup { flex: 1 }
+    &[data-title="player"] hgroup { text-align: start }
     &[data-title="drilldown"] hgroup { text-align: end }
+    &[data-title="celebration"] {
+        border-block-end: none;
+
+        h1 {
+            font-size: var(--size-hero);
+            font-weight: var(--weight-hero);
+        }
+    }
 }
