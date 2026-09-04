@@ -12,7 +12,7 @@ body {
     background: var(--ground);
     color: var(--ink-primary);
 
-    section {
+    > section {
         flex: 1;
         overflow-y: auto;
         overscroll-behavior-y: contain;
@@ -39,14 +39,21 @@ body {
         padding: 1rem;
 
         section > h2 { display: revert }
-        section { display: contents }
+
+        /* Stacked, the page is the one scroller: a panel kept as a contained scroll container would
+           swallow the wheel over its whole surface, even with nothing of its own to scroll. */
+        > section {
+            display: contents;
+            overflow: visible;
+            overscroll-behavior-y: auto;
+        }
     }
 
     @media (min-width: 112rem) {
         grid-template-columns: max-content max-content;
 
         :is(#panel-roster, #panel-nav) { max-inline-size: 46rem }
-        section { display: block }
+        > section { display: block }
     }
 }
 
@@ -58,5 +65,8 @@ body {
 }
 
 @media (min-width: 60rem) {
+    /* Pinned to the viewport for the tabbed layout only: stacked, the page must grow with its panels,
+       or the grid squeezes every row and an overflow-hidden panel collapses to nothing. */
+    body { block-size: auto }
     body > footer { display: none }
 }
