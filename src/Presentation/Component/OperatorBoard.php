@@ -7,6 +7,7 @@ namespace App\Presentation\Component;
 use App\Rules\Action\FinishGame;
 use App\Rules\Action\NextTurn;
 use App\Rules\Action\PreviousTurn;
+use App\Rules\Action\Stat;
 use App\State\Game;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -17,12 +18,6 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 /**
  * The operator screen is deliberately operational only, counters and commands: advisories live in
  * the Outlook block, which the board does not carry.
- *
- * It shares the player board's ControlBoard, but drives every player from one screen — a link into
- * a single player's shop belongs to that player's own board, so the board omits it. Its stat list
- * is intentionally shorter than the player's, and nothing else guards them against converging back:
- * this page tracks how far along each empire is, economy management belongs to the player's own
- * board.
  */
 #[AsLiveComponent(template: 'organisms/OperatorBoard.html.twig')]
 final class OperatorBoard
@@ -33,6 +28,16 @@ final class OperatorBoard
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
     public function __construct(private readonly MessageBusInterface $commandBus) {}
+
+    /**
+     * The board tracks how far along each empire is; economy stays on the player's own board.
+     *
+     * @return list<Stat>
+     */
+    public function getTrackedStats(): array
+    {
+        return [Stat::Census, Stat::Cities, Stat::AstPosition];
+    }
 
     #[LiveAction]
     public function nextTurn(): void

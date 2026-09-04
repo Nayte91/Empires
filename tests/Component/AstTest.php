@@ -64,7 +64,7 @@ final class AstTest extends WebTestCase
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
         $cells = $crawler->filter('tbody tr td');
         $anchor = array_keys(array_filter($cells->each(static fn (Crawler $cell): bool => null !== $cell->attr('data-anchor'))))[0];
-        $marker = $crawler->filter('tbody tr .marker');
+        $marker = $crawler->filter('tbody tr span[data-empire]');
 
         $this->assertCount(1, $marker, 'One pawn per row, wherever the player stands.');
         $this->assertNotNull($marker->closest('td')?->attr('data-anchor'), 'It is parked on the anchor column.');
@@ -79,7 +79,7 @@ final class AstTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->withAstPosition(0)->build();
 
         $crawler = new Crawler($this->renderTwigComponent('Ast', ['game' => $game])->toString());
-        $marker = $crawler->filter('tbody tr .marker');
+        $marker = $crawler->filter('tbody tr span[data-empire]');
 
         $this->assertCount(1, $marker);
         $this->assertMatchesRegularExpression('/--marker-pos: -\d+/', (string) $marker->attr('style'));

@@ -26,18 +26,22 @@
         transition: border-color 0.4s linear;
     }
 
-    td { inline-size: var(--ast-cell-size) }
-
-    td[data-current-turn] { border-inline: var(--turn-edge) }
-    tbody tr:first-child td[data-current-turn] { border-block-start: var(--turn-edge) }
-    tfoot td[data-current-turn] { border-block-end: var(--turn-edge) }
-
-    [data-band] { background: var(--ast-band-tint) }
-
     th {
         padding-inline: 1em;
         text-align: start;
         text-shadow: 0 0 2px black, 0 0 2px black;
+    }
+
+    td { inline-size: var(--ast-cell-size) }
+    td[data-current-turn] { border-inline: var(--turn-edge) }
+    [data-band] { background: var(--ast-band-tint) }
+
+    td[data-score] {
+        color: var(--ink-primary);
+
+        &[data-medal="gold"] { color: gold }
+        &[data-medal="silver"] { color: silver }
+        &[data-medal="bronze"] { color: peru }
     }
 
     thead th {
@@ -55,34 +59,34 @@
         &[colspan="1"] { padding: 0 }
     }
 
-    tbody th {
-        inline-size: 10rem;
-        overflow: hidden;
-        background-color: var(--player-color, dimgray);
+    tbody {
+        tr { block-size: var(--ast-cell-size) }
+        tr:first-child td[data-current-turn] { border-block-start: var(--turn-edge) }
+
+        th {
+            inline-size: 10rem;
+            overflow: hidden;
+            background-color: var(--player-color, dimgray);
+        }
+
+        td:has(.marker) { position: relative }
     }
 
-    tbody td:has(.marker) { position: relative }
-    tbody tr, tfoot tr { block-size: var(--ast-cell-size) }
+    tfoot {
+        color: var(--ink-muted);
+
+        tr { block-size: var(--ast-cell-size) }
+        td[data-current-turn] { border-block-end: var(--turn-edge) }
+    }
 
     .marker {
         position: absolute;
         z-index: 1;
         inset-block-start: 50%;
         inset-inline-start: calc(50% + var(--marker-pos, 0) * (100% + var(--ast-rule-width)));
-        inline-size: 1.5rem;
         translate: -50% -50%;
         transition: inset-inline-start 0.4s linear;
     }
-
-    td[data-score] {
-        color: var(--ink-primary);
-
-        &[data-medal="gold"] { color: gold }
-        &[data-medal="silver"] { color: silver }
-        &[data-medal="bronze"] { color: peru }
-    }
-
-    tfoot { color: var(--ink-muted) }
 
     @media (width < 60rem) {
         --ast-cell-size: 1.5rem;
@@ -90,6 +94,7 @@
 
         thead, tfoot, [data-opening] { display: none }
         tr:has([data-opening][data-current-turn]) [data-anchor] { border-inline-start: var(--turn-edge) }
+        td[data-score] { inline-size: 1.75rem }
 
         tbody {
             th {
@@ -104,15 +109,8 @@
             tr:last-child td[data-current-turn] { border-block-end: var(--turn-edge) }
         }
 
-        td[data-score] { inline-size: 1.75rem }
-
-        .marker {
-            inline-size: 1rem;
-            inset-inline-start: calc(50% + max(0, var(--marker-pos, 0)) * (100% + var(--ast-rule-width)));
-        }
+        .marker { inset-inline-start: calc(50% + max(0, var(--marker-pos, 0)) * (100% + var(--ast-rule-width))) }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        .marker { transition: none }
-    }
+    @media (prefers-reduced-motion: reduce) { .marker { transition: none } }
 }

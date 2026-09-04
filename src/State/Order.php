@@ -63,13 +63,7 @@ class Order implements OrderInterface
         $this->lines = $lines;
     }
 
-    /**
-     * @param list<OrderLine> $lines
-     *
-     * Defense in depth: the `validate` transition only ever reaches a pending order
-     * (enforced by the workflow), so `validatedAt` — not `status`, already flipped by
-     * the state machine by the time this runs — is what detects a re-entrant freeze
-     */
+    /** @param list<OrderLine> $lines */
     public function freeze(array $lines, int $total): void
     {
         if ($this->validatedAt instanceof \DateTimeImmutable) {
@@ -81,17 +75,12 @@ class Order implements OrderInterface
         $this->validatedAt = new \DateTimeImmutable();
     }
 
-    /** Workflow marking store access — status writes go through the shop_order state machine. */
     public function getMarking(): string
     {
         return $this->status->value;
     }
 
-    /**
-     * Workflow marking store access — status writes go through the shop_order state machine.
-     *
-     * @param array<string, mixed> $context
-     */
+    /** @param array<string, mixed> $context */
     public function setMarking(string $marking, array $context = []): void
     {
         $this->status = OrderStatus::from($marking);

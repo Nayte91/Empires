@@ -2,7 +2,7 @@
     <summary class="label">Controls</summary>
 
     <div class="controls">
-        {% for stat in stats %}
+        {% for stat in ['cities', 'ships', 'census', 'treasury', 'cards'] %}
             <twig:molecules:StatPicker :player="player" :stat="stat" :value="attribute(player, stat)" />
         {% endfor %}
 

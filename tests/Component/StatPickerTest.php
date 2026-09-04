@@ -21,8 +21,8 @@ final class StatPickerTest extends WebTestCase
     use ShopFixtureTrait;
 
     #[Test]
-    #[DataProvider('provideSavePersistsTheChosenValueForEachStatCases')]
-    public function savePersistsTheChosenValueForEachStat(string $stat, int $chosen, int $expectedStored): void
+    #[DataProvider('providePickingATilePersistsTheChosenValueForEachStatCases')]
+    public function pickingATilePersistsTheChosenValueForEachStat(string $stat, int $chosen, int $expectedStored): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
@@ -30,33 +30,26 @@ final class StatPickerTest extends WebTestCase
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => $stat,
-        ])->set('value', $chosen)->call('save');
+        ])->call('pick', ['value' => $chosen]);
 
         $this->assertSame($expectedStored, $this->reloadPlayer($player)->{$stat});
     }
 
     /** @return iterable<string, array{string, int, int}> */
-    public static function provideSavePersistsTheChosenValueForEachStatCases(): iterable
+    public static function providePickingATilePersistsTheChosenValueForEachStatCases(): iterable
     {
         yield 'cities' => ['cities', 7, 7];
-
         yield 'cities above the nine-city ceiling clamps' => ['cities', 42, 9];
-
         yield 'census' => ['census', 30, 30];
-
         yield 'treasury' => ['treasury', 20, 20];
-
         yield 'ships' => ['ships', 2, 2];
-
         yield 'cards' => ['cards', 5, 5];
-
         yield 'ast position at the top of the track' => ['astPosition', 15, 15];
-
         yield 'ast position mid-range' => ['astPosition', 4, 4];
     }
 
     #[Test]
-    public function saveWithUnchangedValueIsNoOp(): void
+    public function pickingTheCurrentValueIsANoOp(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->withCities(5)->persist($this->entityManager);
@@ -64,7 +57,7 @@ final class StatPickerTest extends WebTestCase
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'cities',
-        ])->set('value', 5)->call('save');
+        ])->call('pick', ['value' => 5]);
 
         $this->assertSame(5, $this->reloadPlayer($player)->cities);
     }
@@ -110,12 +103,50 @@ final class StatPickerTest extends WebTestCase
         ]);
         $tile = $component->render()->crawler()->filter('fieldset button[data-value="5"]');
 
-        $component->set('value', (int) $tile->attr('data-value'))->call('save');
+        $component->call('pick', ['value' => (int) $tile->attr('data-value')]);
 
         $this->assertSame('submit', $tile->attr('type'));
-        $this->assertSame('live#update', $tile->attr('data-action'));
-        $this->assertSame('norender|value', $tile->attr('data-model'));
+        $this->assertSame('live#action', $tile->attr('data-action'));
+        $this->assertSame('pick', $tile->attr('data-live-action-param'));
+        $this->assertSame($tile->attr('data-value'), $tile->attr('data-live-value-param'));
+        $this->assertNull($tile->attr('data-model'));
         $this->assertSame(5, $this->reloadPlayer($player)->cities);
+    }
+
+    /**
+     * The Live runtime mirrors the bound model into every `data-model` element it finds, and re-sends any
+     * action bound on the dialog each time it is dismissed: either would write a value nobody tapped.
+     */
+    #[Test]
+    public function nothingButAValueTileCommitsFromInsideTheDialog(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+
+        $dialog = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'cities',
+        ])->render()->crawler()->filter('dialog');
+
+        $this->assertCount(0, $dialog->filter('[data-model]'));
+        $this->assertNull($dialog->attr('data-action'));
+        $this->assertNull($dialog->attr('data-live-action-param'));
+    }
+
+    /** `action` is a reserved LiveArg name, so an action button names itself through `name` instead. */
+    #[Test]
+    public function anActionButtonCarriesItsOwnNameAsTheActionArgument(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
+
+        $button = $this->createLiveComponent('molecules:StatPicker', [
+            'player' => $player,
+            'stat' => 'ships',
+        ])->render()->crawler()->filter('menu button[data-value="buildShip"]');
+
+        $this->assertSame('run', $button->attr('data-live-action-param'));
+        $this->assertSame($button->attr('data-value'), $button->attr('data-live-name-param'));
     }
 
     #[Test]
@@ -169,7 +200,9 @@ final class StatPickerTest extends WebTestCase
         $selected = $rendered->crawler()->filter('fieldset button[data-selected]');
 
         $this->assertSame('4', $selected->attr('data-value'));
-        $this->assertSame('5', trim($selected->text()));
+        $selected->text()
+            |> trim(...)
+            |> (fn($x) => $this->assertSame('5', $x));
     }
 
     #[Test]
@@ -198,7 +231,7 @@ final class StatPickerTest extends WebTestCase
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'ships',
-        ])->set('pendingAction', 'buildShip')->call('save');
+        ])->call('run', ['name' => 'buildShip']);
 
         $reloaded = $this->reloadPlayer($player);
 
@@ -215,7 +248,7 @@ final class StatPickerTest extends WebTestCase
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'cards',
-        ])->set('pendingAction', 'cutToLimit')->call('save');
+        ])->call('run', ['name' => 'cutToLimit']);
 
         $this->assertSame(9, $this->reloadPlayer($player)->cards);
     }
@@ -229,7 +262,7 @@ final class StatPickerTest extends WebTestCase
         $this->createLiveComponent('molecules:StatPicker', [
             'player' => $player,
             'stat' => 'census',
-        ])->set('pendingAction', 'buildShip')->call('save');
+        ])->call('run', ['name' => 'buildShip']);
 
         $reloaded = $this->reloadPlayer($player);
 
@@ -252,10 +285,6 @@ final class StatPickerTest extends WebTestCase
         $this->assertCount(1, $rendered->crawler()->filter('fieldset button[data-value="36"][disabled]'));
     }
 
-    /**
-     * Three players rather than one mutated in place: rendering a live component resets the
-     * EntityManager, detaching the entity and swallowing any later flush.
-     */
     #[Test]
     public function theTreasuryPickerOffersOnlyTheTaxRatesThePlayerUnlocked(): void
     {

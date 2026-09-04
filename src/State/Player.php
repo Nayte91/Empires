@@ -49,12 +49,6 @@ class Player
     #[ORM\Column(type: Types::SMALLINT, options: ['default' => 0])]
     public int $astPosition = 0;
 
-    /**
-     * A player has one limit, and the slug is a derived writing of the name rather than a second
-     * field with a bound of its own. Transliteration expands — thirty CJK characters are inside the
-     * bound yet slugify to 119 of pinyin — and this hook is the only place a slug is produced, so it
-     * is the only place that can hold the single limit for both.
-     */
     #[ORM\Column(length: self::MAX_NAME_LENGTH)]
     public string $name {
         set {
@@ -88,21 +82,11 @@ class Player
         $this->advances = array_values(array_diff($this->advances, $keys));
     }
 
-    /**
-     * The ledger receives additions for game facts — a grant, and a genuine loss posted as a
-     * negative value. Removal is reserved for the cancellation of an order, which is not a game
-     * fact but a correction of a mis-entry. A forfeit is never a removal.
-     */
     public function postCredit(CreditEntry $entry): void
     {
         $this->creditLedger = [...$this->creditLedger, $entry];
     }
 
-    /**
-     * The counterpart to postCredit() for order cancellation: removes every entry whose reason
-     * matches, rather than offsetting them. array_values() keeps the property serializing as a
-     * JSON list rather than an object once entries have been filtered out.
-     */
     public function revokeCredits(string $reason): void
     {
         $this->creditLedger = array_values(array_filter(
@@ -111,16 +95,6 @@ class Player
         ));
     }
 
-    /**
-     * The single derivation of a player's slug, truncation included — callable without an instance
-     * because a validator normalizer (GameCreator, PlayerBoard) has no Player to hand. Truncating
-     * here, not just at persistence, is what makes those callers' duplicate/blank checks agree with
-     * what actually gets stored: transliteration expands rather than shortens (30 characters of CJK
-     * slugify to 119 of pinyin), so a name honouring the one limit players are told about can still
-     * produce a longer slug, cut back to that same limit. A collision this causes is the collision
-     * two names slugifying alike already produce, which this game treats as genuine, not an
-     * accident.
-     */
     public static function slugify(string $name): string
     {
         return mb_substr(strtolower((string) new AsciiSlugger()->slug($name)), 0, self::MAX_NAME_LENGTH);

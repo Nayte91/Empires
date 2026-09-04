@@ -4,42 +4,37 @@
     overflow: hidden;
 
     ul {
-        display: grid;
         margin: 0;
         padding: 0;
+        display: grid;
         list-style: none;
 
         li {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            align-items: center;
             min-block-size: 3.5rem;
-            padding-inline: 0.5rem;
-            border-block-start: 1px solid var(--rule);
-            border-inline-start: 0.2rem solid var(--player-color, white);
+            padding: 0;
+            display: flex;
+            align-items: stretch;
 
-            &:not([data-empire]) { background: rgb(70 130 180 / 0.1) }
+            &:not(:first-child) { border-block-start: 1px solid var(--rule) }
+            &:not([data-empire]) { --player-color: var(--operator-accent) }
 
             a {
-                display: grid;
-                align-content: center;
-                align-self: stretch;
-                min-inline-size: 0;
+                flex: 1;
                 border-inline-end: 1px solid var(--rule);
-                padding-block: 0.5rem;
-                padding-inline-start: 0.75rem;
-                color: inherit;
+                padding-inline-start: 0.5rem;
+                display: block;
+                align-content: center;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
                 text-decoration: none;
+                color: inherit;
 
-                b {
-                    overflow: hidden;
-                    font-size: var(--size-body);
-                    text-overflow: ellipsis;
-                    white-space: nowrap;
-                }
+                &:hover { text-decoration: underline }
+                .marker { margin-inline-end: 0.5rem }
+                b { text-transform: capitalize }
 
                 small {
-                    margin-block-start: 0.125rem;
                     color: var(--ink-muted);
                     font-size: var(--size-small);
                 }
@@ -48,10 +43,10 @@
     }
 
     figure {
+        margin: 0;
         display: grid;
         justify-items: center;
         gap: 1rem;
-        margin: 0;
 
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }
@@ -64,27 +59,7 @@
             grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
             gap: 1px;
 
-            li {
-                grid-template-columns: 1fr auto;
-                min-block-size: auto;
-                padding: 0;
-                border-inline-start: 4px solid var(--player-color, var(--operator-accent));
-                box-shadow: 0 0 0 1px dimgray;
-
-                &:not([data-empire]) { background: none }
-
-                a {
-                    display: flex;
-                    align-items: baseline;
-                    gap: 0.5rem;
-                    border-inline-end-color: dimgray;
-                    padding: 1rem;
-
-                    b { font-weight: inherit }
-                    small { margin-block-start: 0 }
-                    &:hover { text-decoration: underline }
-                }
-            }
+            li { box-shadow: 0 0 0 1px dimgray }
         }
     }
 }

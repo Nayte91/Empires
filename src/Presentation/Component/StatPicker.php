@@ -15,6 +15,7 @@ use App\State\Player;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -29,11 +30,12 @@ final class StatPicker
     #[LiveProp]
     public Stat $stat; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    #[LiveProp(writable: true, updateFromParent: true)]
+    #[LiveProp(updateFromParent: true)]
     public int $value; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    #[LiveProp(writable: true)]
-    public ?string $pendingAction = null;
+    /** Off inside a grid, where the column header already names the stat. */
+    #[LiveProp]
+    public bool $caption = true;
 
     public function __construct(
         private readonly MessageBusInterface $commandBus,
@@ -42,11 +44,12 @@ final class StatPicker
         private readonly TaxCalculator $taxCalculator,
     ) {}
 
-    public function mount(Player $player, string $stat): void
+    public function mount(Player $player, string $stat, bool $caption = true): void
     {
         $this->player = $player;
         $this->stat = Stat::from($stat);
         $this->value = $this->stat->read($player);
+        $this->caption = $caption;
     }
 
     /** @return list<StatAction> */
@@ -82,33 +85,35 @@ final class StatPicker
 
     /**
      * Every button inside the dialog commits the value it carries: one gesture, no confirmation
-     * step. Save is driven from the tile's own `data-value`, which ties the markup the player taps
-     * to the number that gets stored.
+     * step.
      */
     #[LiveAction]
-    public function save(): void
+    public function pick(#[LiveArg] int $value): void
     {
-        $action = StatAction::tryFrom($this->pendingAction ?? '');
-        $this->pendingAction = null;
-
-        if (null !== $action) {
-            $this->runAction($action);
-
+        if ($this->stat->read($this->player) === $value) {
             return;
         }
 
-        if ($this->stat->read($this->player) === $this->value) {
-            return;
-        }
-
-        $this->commandBus->dispatch(new SetStat($this->player->id, $this->stat, $this->value));
+        $this->commandBus->dispatch(new SetStat($this->player->id, $this->stat, $value));
         $this->value = $this->stat->read($this->player);
+    }
+
+    #[LiveAction]
+    public function run(#[LiveArg] string $name): void
+    {
+        $action = StatAction::tryFrom($name);
+
+        if (null === $action) {
+            return;
+        }
+
+        $this->runAction($action);
     }
 
     /**
      * Only dispatches an action that belongs to this picker's own stat and is on the player's
-     * menu (StatAction::forStat() + isOffered(), via getActions()) — pendingAction is a
-     * client-writable LiveProp, so a foreign or unlisted action must never reach the bus. Whether
+     * menu (StatAction::forStat() + isOffered(), via getActions()) — the action name is a
+     * client-supplied argument, so a foreign or unlisted action must never reach the bus. Whether
      * the action is actually available right now is the handler's call, not this guard's: the
      * handler is the one both a legitimate click and a crafted request go through alike.
      *

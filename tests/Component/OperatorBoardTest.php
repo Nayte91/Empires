@@ -5,10 +5,8 @@ declare(strict_types=1);
 namespace App\Tests\Component;
 
 use App\State\Game;
-use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
-use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -51,10 +49,8 @@ final class OperatorBoardTest extends WebTestCase
     /** @return iterable<string, array{string}> */
     public static function provideTheBoardCarriesOneControlPerTurnCommandCases(): iterable
     {
-        yield 'going back a turn' => ['Previous turn'];
-
-        yield 'advancing a turn' => ['Next turn'];
-
+        yield 'going back a turn' => ['Previous'];
+        yield 'advancing a turn' => ['Next'];
         yield 'closing the game' => ['Finish game'];
     }
 
@@ -65,7 +61,7 @@ final class OperatorBoardTest extends WebTestCase
         $game = GameBuilder::create()->withCurrentTurn($currentTurn)->persist($this->entityManager);
 
         $button = $this->renderBoard($game)->filter('button')->reduce(
-            static fn (Crawler $node): bool => str_contains($node->text(), 'Previous turn'),
+            static fn (Crawler $node): bool => str_contains($node->text(), 'Previous'),
         );
 
         $this->assertSame($expectedDisabled, null !== $button->attr('disabled'));
@@ -75,43 +71,11 @@ final class OperatorBoardTest extends WebTestCase
     public static function providePreviousTurnButtonIsDisabledOnlyOnTheFirstTurnCases(): iterable
     {
         yield 'first turn has nothing to go back to' => [1, true];
-
         yield 'second turn can go back' => [2, false];
     }
 
     #[Test]
-    public function everyPlayerAtTheTableGetsATrackingRowInSeatingOrder(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $rows = $this->renderBoard($game)->filter('[data-player-id]');
-
-        $this->assertSame(
-            $this->seatedValues($game, static fn (Player $player): string => (string) $player->id),
-            $rows->each(static fn (Crawler $row): string => (string) $row->attr('data-player-id')),
-        );
-        $this->assertSame(
-            $this->seatedValues($game, static fn (Player $player): string => $player->empire),
-            $rows->each(static fn (Crawler $row): string => (string) $row->attr('data-empire')),
-        );
-    }
-
-    #[Test]
-    public function aTrackingRowFollowsTheCensusTheCitiesAndTheAstPositionInThatOrder(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-
-        $crawler = $this->renderBoard($game);
-
-        $this->assertSame(
-            ['census', 'cities', 'astPosition'],
-            $this->statsOffered($crawler->filter("[data-player-id=\"{$player->id}\"]")),
-        );
-    }
-
-    #[Test]
-    public function theBoardOffersOneStatPickerPerTrackedStatOfEveryPlayer(): void
+    public function theBoardEmbedsAControlTableHoldingOnePickerPerTrackedStatOfEveryPlayer(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
@@ -119,21 +83,18 @@ final class OperatorBoardTest extends WebTestCase
 
         $crawler = $this->renderBoard($game);
 
-        $trackedStatsPerPlayer = 3;
-
-        $this->assertCount(2 * $trackedStatsPerPlayer, $crawler->filter('button[command="show-modal"]'));
+        $this->assertCount(6, $crawler->filter('dialog[id^="stat-picker-"]'));
     }
 
     #[Test]
-    public function aFinishedGameOffersNoTrackingRow(): void
+    public function aFinishedGameOffersNoControlTable(): void
     {
         $game = GameBuilder::create()->finished()->persist($this->entityManager);
         PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager);
-        PlayerBuilder::named('Bob')->in($game)->withEmpire('rome')->persist($this->entityManager);
 
         $crawler = $this->renderBoard($game);
 
-        $this->assertCount(0, $crawler->filter('button[command="show-modal"]'));
+        $this->assertCount(0, $crawler->filter('table'));
     }
 
     #[Test]
@@ -172,10 +133,6 @@ final class OperatorBoardTest extends WebTestCase
         ));
     }
 
-    /**
-     * `commandfor` resolves by id, so a duplicate opens whichever dialog comes first in the
-     * document — one player's button then edits another player's stat.
-     */
     #[Test]
     public function theBoardRendersNoDuplicatedElementId(): void
     {
@@ -187,7 +144,12 @@ final class OperatorBoardTest extends WebTestCase
 
         $ids = $crawler->filter('[id]')->each(static fn (Crawler $node): string => (string) $node->attr('id'));
 
-        $this->assertSame([], array_values(array_unique(array_diff_assoc($ids, array_unique($ids)))));
+        $ids
+            |> array_unique(...)
+            |> (fn($x): array => array_diff_assoc($ids, $x))
+            |> array_unique(...)
+            |> array_values(...)
+            |> (fn($x) => $this->assertSame([], $x));
     }
 
     #[Test]
@@ -242,24 +204,6 @@ final class OperatorBoardTest extends WebTestCase
     private function renderBoard(Game $game): Crawler
     {
         return $this->createLiveComponent('OperatorBoard', ['game' => $game])->render()->crawler();
-    }
-
-    /** @return list<string> */
-    private function statsOffered(Crawler $scope): array
-    {
-        return $scope->filter('dialog[id^="stat-picker-"]')->each(
-            static fn (Crawler $picker): string => explode('-', (string) $picker->attr('id'))[2],
-        );
-    }
-
-    /**
-     * @param callable(Player): string $read
-     *
-     * @return list<string>
-     */
-    private function seatedValues(Game $game, callable $read): array
-    {
-        return array_map($read, array_values($game->players->toArray()));
     }
 
     private function freshEntityManager(): EntityManagerInterface
