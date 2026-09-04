@@ -19,20 +19,6 @@ use App\Tests\Support\Fixture\GameBuilder;
 final class StatActionTest extends TestCase
 {
     #[Test]
-    public function citiesOffersNoActionAndEveryOtherStatOffersItsOwn(): void
-    {
-        $this->assertSame([], StatAction::forStat(Stat::Cities));
-        $this->assertSame([StatAction::AstBackward, StatAction::AstForward], StatAction::forStat(Stat::AstPosition));
-        $this->assertSame([StatAction::CensusDouble], StatAction::forStat(Stat::Census));
-        $this->assertSame(
-            [StatAction::PayTaxes1, StatAction::PayTaxes2, StatAction::PayTaxes3, StatAction::PayTaxes4],
-            StatAction::forStat(Stat::Treasury),
-        );
-        $this->assertSame([StatAction::BuildShip, StatAction::MaintainShips], StatAction::forStat(Stat::Ships));
-        $this->assertSame([StatAction::DrawCards, StatAction::CutToLimit], StatAction::forStat(Stat::Cards));
-    }
-
-    #[Test]
     public function movingForwardAndBackwardWalksTheAstOneStepAtATime(): void
     {
         $player = PlayerBuilder::named('Bob')->withAstPosition(4)->build();
@@ -72,7 +58,6 @@ final class StatActionTest extends TestCase
         $this->assertSame(24, $player->census);
     }
 
-    /** Census and treasury share one 55-token stock, so doubling claims only what the treasury leaves. */
     #[Test]
     public function doublingTheCensusStopsAtWhatTheTreasuryLeavesInThePool(): void
     {

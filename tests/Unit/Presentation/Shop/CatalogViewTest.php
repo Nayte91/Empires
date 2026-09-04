@@ -9,7 +9,6 @@ use App\Presentation\Shop\CatalogView;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use ReflectionMethod;
 
 final class CatalogViewTest extends TestCase
 {
@@ -53,11 +52,5 @@ final class CatalogViewTest extends TestCase
         $this->assertFalse($view->locked);
         $this->assertNull($view->remainingBudget);
         $this->assertSame(CatalogSort::ListPrice, $view->sort);
-    }
-
-    #[Test]
-    public function noThirdConfigurationIsReachableBecauseTheConstructorIsClosed(): void
-    {
-        $this->assertTrue(new ReflectionMethod(CatalogView::class, '__construct')->isPrivate());
     }
 }

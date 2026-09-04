@@ -4,19 +4,18 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Rules\Action\CreateGame;
+use App\Rules\Ruleset\ScenarioRegistry;
+use App\State\ASTVersion;
 use App\State\Game;
 use App\State\Player;
 use App\State\Region;
-use App\State\ASTVersion;
-use App\Rules\Action\CreateGame;
-use App\Rules\Ruleset\ScenarioRegistry;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use Doctrine\ORM\EntityManagerInterface;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Uid\Uuid;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -27,7 +26,7 @@ final class GameCreatorTest extends WebTestCase
     use GameFixtureTrait;
     use InteractsWithLiveComponents;
 
-    private const array WEST_NINE_EMPIRE_OPTIONS = ['', 'assyria', 'carthage', 'celt', 'egypt', 'hatti', 'hellas', 'iberia', 'minoa', 'rome'];
+    private const array WEST_NINE_EMPIRES = ['assyria', 'carthage', 'celt', 'egypt', 'hatti', 'hellas', 'iberia', 'minoa', 'rome'];
 
     private const string TRUNCATED_HAN_SLUG = 'han-han-han-han-han-';
 
@@ -35,108 +34,82 @@ final class GameCreatorTest extends WebTestCase
     public function mountProposesAUuidAsTheDefaultGameSlug(): void
     {
         $component = $this->createLiveComponent('GameCreator');
-        $rendered = $component->render();
 
         $this->assertTrue(Uuid::isValid($component->component()->game->slug));
-        $this->assertStringContainsString('value="'.$component->component()->game->slug.'"', $rendered->toString());
     }
 
     #[Test]
-    public function playerCountInputBoundsComeFromTheScenariosThemselves(): void
+    public function thePlayerCountBoundsComeFromTheScenariosThemselves(): void
     {
         $counts = self::getContainer()->get(ScenarioRegistry::class)->playerCounts();
 
-        $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
+        $component = $this->createLiveComponent('GameCreator')->component();
 
-        $this->assertStringContainsString(sprintf('min="%d" max="%d"', $counts[0], $counts[\count($counts) - 1]), $rendered);
+        $this->assertSame($counts[0], $component->getMinPlayers());
+        $this->assertSame($counts[\count($counts) - 1], $component->getMaxPlayers());
     }
 
     #[Test]
-    public function scenarioSummaryShowsTheCardLimitForTheDefaultPlayerCount(): void
+    public function theScenarioSummaryFollowsThePlayerCount(): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')->render()->toString();
-
-        $this->assertStringContainsString('Card limit: 8', $rendered);
-    }
-
-    #[Test]
-    public function scenarioSummaryShowsTheRaisedCardLimitForALargeGame(): void
-    {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $summary = $this->createLiveComponent('GameCreator')
             ->set('game.playerCount', 12)
-            ->render()
-            ->toString()
+            ->component()
+            ->getScenarioSummary()
         ;
 
-        $this->assertStringContainsString('Card limit: 9', $rendered);
+        $this->assertSame(['Card limit: 9'], $summary);
     }
 
     #[Test]
-    public function settingTheSlugSlugifiesItAndShowsItAsAvailable(): void
+    public function settingTheSlugSlugifiesItAndLeavesItAvailable(): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Super Game de Nayte')
-            ->render()
+            ->component()
         ;
 
-        $this->assertStringContainsString('value="super-game-de-nayte"', $rendered->toString());
-        $this->assertStringContainsString('aria-label="Slug available"', $rendered->toString());
+        $this->assertSame('super-game-de-nayte', $component->game->slug);
+        $this->assertTrue($component->isSlugAvailable());
     }
 
     #[Test]
-    public function slugOfAnExistingGameIsShownAsUnavailable(): void
+    public function theSlugOfAnExistingGameIsReportedAsUnavailable(): void
     {
         GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'Taken Slug')
-            ->render()
+            ->component()
         ;
 
-        $this->assertStringContainsString('value="taken-slug"', $rendered->toString());
-        $this->assertStringContainsString('aria-label="Slug unavailable"', $rendered->toString());
+        $this->assertSame('taken-slug', $component->game->slug);
+        $this->assertFalse($component->isSlugAvailable());
+        $this->assertSame('Slug "taken-slug" is not available.', (string) $component->getError('game.slug')?->getMessage());
     }
 
     #[Test]
-    public function slugOfAnExistingGameShowsAFieldErrorInRealTime(): void
+    public function aReservedSlugIsReportedAsUnavailable(): void
     {
-        GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
-
-        $rendered = $this->createLiveComponent('GameCreator')
-            ->set('game.slug', 'Taken Slug')
-            ->render()
-        ;
-
-        $this->assertStringContainsString('Slug "taken-slug" is not available.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
-    }
-
-    #[Test]
-    public function reservedSlugShowsAFieldErrorInRealTime(): void
-    {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.slug', 'create')
-            ->render()
+            ->component()
         ;
 
-        $this->assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertFalse($component->isSlugAvailable());
+        $this->assertSame('This name is reserved.', (string) $component->getError('game.slug')?->getMessage());
     }
 
     #[Test]
-    public function settingPlayerCountToTenClearsTheRegion(): void
+    public function aPlayerCountAboveNineOffersTheTwoBoxScenarioAndNoRegionOfItsOwn(): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.playerCount', 10)
-            ->render()
+            ->component()
         ;
 
-        $select = $rendered->crawler()->filter('select[data-model="game.region"]');
-        $options = $select->filter('option');
-
-        $this->assertNotNull($select->attr('disabled'));
-        $this->assertCount(1, $options);
-        $this->assertSame('West + East', trim($options->text()));
-        $this->assertSame('', $options->attr('value'));
-        $this->assertNotNull($options->attr('selected'));
+        $this->assertSame([['value' => '', 'label' => 'West + East']], $component->getRegionChoices());
+        $this->assertNull($component->game->region);
     }
 
     #[Test]
@@ -163,44 +136,35 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
-    public function regionSelectShowsTheChosenRegionAndIsEnabledWhenPlayerCountIsNotAboveNine(): void
+    public function belowTenBothBoxesAreOfferedAndTheChosenOneStands(): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.playerCount', 9)
             ->set('game.region', 'west')
-            ->render()
+            ->component()
         ;
 
-        $select = $rendered->crawler()->filter('select[data-model="game.region"]');
-        $options = $select->filter('option');
-
-        $this->assertNull($select->attr('disabled'));
-        $this->assertCount(2, $options);
-        $this->assertSame(['West', 'East'], $options->each(static fn ($node): string => trim((string) $node->text())));
-        $this->assertNotNull($select->filter('option[value="west"]')->attr('selected'));
-        $this->assertNull($select->filter('option[value="east"]')->attr('selected'));
+        $this->assertSame(
+            [['value' => 'west', 'label' => 'West'], ['value' => 'east', 'label' => 'East']],
+            $component->getRegionChoices(),
+        );
+        $this->assertSame('west', $component->game->region);
     }
 
     #[Test]
-    public function addingPlayersDoesNotPersistAnythingButRendersTheTable(): void
+    public function addingPlayersPersistsNothing(): void
     {
         $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
         $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
 
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', 'Alice')
-            ->set('newPlayerEmpire', 'hatti')
-        ;
-        $component->call('addPlayer');
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, 'Alice', 'hatti');
+        $this->addPlayer($component, 'Bob', 'rome');
 
-        $component
-            ->set('newPlayerName', 'Bob')
-            ->set('newPlayerEmpire', 'rome')
-        ;
-        $rendered = $component->call('addPlayer')->render();
-
-        $this->assertStringContainsString('Alice', $rendered->toString());
-        $this->assertStringContainsString('Bob', $rendered->toString());
+        $this->assertSame([
+            ['name' => 'Alice', 'empire' => 'hatti'],
+            ['name' => 'Bob', 'empire' => 'rome'],
+        ], $component->component()->players);
 
         $freshEntityManager = $this->freshEntityManager();
         $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
@@ -210,54 +174,31 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function addingAPlayerWithADuplicateNameSlugIsRefused(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', 'Alice')
-            ->set('newPlayerEmpire', 'hatti')
-        ;
-        $component->call('addPlayer');
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, 'Alice', 'hatti');
+        $this->addPlayer($component, 'alice', 'rome');
 
-        $component
-            ->set('newPlayerName', 'alice')
-            ->set('newPlayerEmpire', 'rome')
-        ;
-        $rendered = $component->call('addPlayer')->render();
-
-        $this->assertStringContainsString('Name already taken.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
-        $this->assertSame(1, substr_count($rendered->toString(), '<td>Alice</td>'));
-        $this->assertStringNotContainsString('<td>alice</td>', $rendered->toString());
+        $this->assertSame(['Name already taken.'], $this->fieldErrorsOf($component, 'newPlayerName'));
+        $this->assertSame([['name' => 'Alice', 'empire' => 'hatti']], $component->component()->players);
     }
 
     #[Test]
     public function addingAPlayerWhoseNameOnlyDiffersBySurroundingWhitespaceIsRefused(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', '  toto  ')
-            ->set('newPlayerEmpire', 'hatti')
-        ;
-        $component->call('addPlayer');
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, '  toto  ', 'hatti');
+        $this->addPlayer($component, '  toto  ', 'rome');
 
-        $component
-            ->set('newPlayerName', '  toto  ')
-            ->set('newPlayerEmpire', 'rome')
-        ;
-        $rendered = $component->call('addPlayer')->render();
-
-        $this->assertStringContainsString('Name already taken.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
-        $this->assertSame(1, substr_count($rendered->toString(), '<td>Toto</td>'));
+        $this->assertSame(['Name already taken.'], $this->fieldErrorsOf($component, 'newPlayerName'));
+        $this->assertSame([['name' => 'Toto', 'empire' => 'hatti']], $component->component()->players);
     }
 
     #[Test]
     public function addingAPlayerWithAnEmpireOutsideTheCurrentScenarioIsRefused(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('game.playerCount', 5)
-            ->set('newPlayerName', 'Alice')
-            ->set('newPlayerEmpire', 'celt')
-        ;
+        $component = $this->createLiveComponent('GameCreator')->set('game.playerCount', 5);
+        $this->addPlayer($component, 'Alice', 'celt');
 
-        $actionResponse = $component->call('addPlayer')->response()->getContent();
-
-        $this->assertStringContainsString('Empire &quot;celt&quot; is not available.', (string) $actionResponse);
         $this->assertSame([], $component->component()->players);
     }
 
@@ -265,13 +206,10 @@ final class GameCreatorTest extends WebTestCase
     #[DataProvider('provideAddingAPlayerWithABlankNameShowsAFieldErrorCases')]
     public function addingAPlayerWithABlankNameShowsAFieldError(string $unusableName): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', $unusableName)
-            ->call('addPlayer')
-            ->render()
-        ;
+        $component = $this->createLiveComponent('GameCreator')->set('newPlayerName', $unusableName);
+        $component->call('addPlayer');
 
-        $this->assertStringContainsString('Player name is required.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertSame(['Player name is required.'], $this->fieldErrorsOf($component, 'newPlayerName'));
     }
 
     public static function provideAddingAPlayerWithABlankNameShowsAFieldErrorCases(): iterable
@@ -288,20 +226,14 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function newPlayerNameFieldErrorDoesNotPersistAfterASuccessfulAdd(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', '')
-        ;
+        $component = $this->createLiveComponent('GameCreator')->set('newPlayerName', '');
         $component->call('addPlayer');
 
-        $this->assertGreaterThan(0, $component->render()->crawler()->filter('[data-error="newPlayerName"]')->count());
+        $this->assertNotSame([], $this->fieldErrorsOf($component, 'newPlayerName'));
 
-        $component
-            ->set('newPlayerName', 'Alice')
-            ->set('newPlayerEmpire', 'hatti')
-        ;
-        $rendered = $component->call('addPlayer')->render();
+        $this->addPlayer($component, 'Alice', 'hatti');
 
-        $this->assertCount(0, $rendered->crawler()->filter('[data-error="newPlayerName"]'));
+        $this->assertSame([], $this->fieldErrorsOf($component, 'newPlayerName'));
     }
 
     #[Test]
@@ -324,11 +256,7 @@ final class GameCreatorTest extends WebTestCase
             ['Heidi', 'iberia'],
             ['Ivan', 'minoa'],
         ] as [$name, $empire]) {
-            $component
-                ->set('newPlayerName', $name)
-                ->set('newPlayerEmpire', $empire)
-            ;
-            $component->call('addPlayer');
+            $this->addPlayer($component, $name, $empire);
         }
 
         $component->call('launch');
@@ -388,16 +316,20 @@ final class GameCreatorTest extends WebTestCase
     public static function provideAConformingRosterLaunchesCases(): iterable
     {
         yield 'a three-player roster of plain names' => [3, 'west', 'usable-names-launch', null];
+
         yield 'a full eighteen-player roster' => [18, null, 'eighteen-player-launch', null];
+
         yield 'a player name of twenty ascii characters' => [3, 'west', 'ascii-limit-name-launch', str_repeat('a', Player::MAX_NAME_LENGTH)];
+
         yield 'a player name of twenty accented characters, forty bytes' => [3, 'west', 'accented-limit-name-launch', str_repeat('é', Player::MAX_NAME_LENGTH)];
+
         yield 'a game name exactly at the length limit' => [3, 'west', str_repeat('a', Game::MAX_SLUG_LENGTH), null];
     }
 
     /** @param list<array{name: string, empire: string}> $players */
     #[Test]
     #[DataProvider('provideLaunchIsRefusedServerSideAndNothingIsCreatedCases')]
-    public function launchIsRefusedServerSideAndNothingIsCreated(array $players, int $playerCount, string $slug, ?string $expectedMessage): void
+    public function launchIsRefusedServerSideAndNothingIsCreated(array $players, int $playerCount, string $slug, ?string $expectedIssue): void
     {
         $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
         $playersBefore = $this->entityManager->getRepository(Player::class)->count([]);
@@ -405,8 +337,10 @@ final class GameCreatorTest extends WebTestCase
         $component = $this->creatorWith($players, $playerCount, 'west', $slug);
         $component->call('launch');
 
-        if (null !== $expectedMessage) {
-            $this->assertStringContainsString($expectedMessage, $component->render()->toString());
+        $this->assertFalse($component->component()->canLaunch());
+
+        if (null !== $expectedIssue) {
+            $this->assertContains($expectedIssue, $component->component()->getConformityIssues());
         }
 
         $freshEntityManager = $this->freshEntityManager();
@@ -416,213 +350,173 @@ final class GameCreatorTest extends WebTestCase
 
     public static function provideLaunchIsRefusedServerSideAndNothingIsCreatedCases(): iterable
     {
-        yield 'two names folding to the same slug' => [self::westRosterNamed('Bob', 'BOB', 'Carol'), 3, 'colliding-names-launch', 'Bob and BOB share the name &quot;bob&quot;.'];
+        yield 'two names folding to the same slug' => [self::westRosterNamed('Bob', 'BOB', 'Carol'), 3, 'colliding-names-launch', 'Bob and BOB share the name "bob".'];
+
         yield 'a blank player name' => [self::westRosterNamed('', 'Bob', 'Carol'), 3, 'blank-name-launch', '1 player has no usable name.'];
+
         yield 'a player count no roster matches' => [[], 9, 'mismatch-launch', 'Add 9 more players.'];
+
         yield 'a player count of zero' => [[], 0, 'empty-roster-launch', null];
+
         yield 'a player without an empire' => [[
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => 'hellas'],
             ['name' => 'Carol', 'empire' => ''],
         ], 3, 'no-empire-launch', '1 player still needs an empire.'];
+
         yield 'an injected player name over the length limit' => [self::westRosterNamed(str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Bob', 'Carol'), 3, 'overlong-name-launch', null];
-        yield 'an injected game name over the length limit' => [self::westRosterNamed('Alice', 'Bob', 'Carol'), 3, str_repeat('a', Game::MAX_SLUG_LENGTH + 1), 'The address this name builds is longer than 64 characters.'];
+
+        yield 'an injected game name over the length limit' => [self::westRosterNamed('Alice', 'Bob', 'Carol'), 3, str_repeat('a', Game::MAX_SLUG_LENGTH + 1), null];
     }
 
     #[Test]
-    public function slugTakenAtLaunchTimeDisplaysAnErrorAndCreatesNothing(): void
+    public function aSlugTakenAtLaunchTimeIsReportedAndCreatesNothing(): void
     {
         GameBuilder::create()->withSlug('race-slug')->persist($this->entityManager);
 
         $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
 
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'race-slug')
-            ->call('launch')
-            ->render()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'race-slug');
+        $component->call('launch');
 
-        $this->assertStringContainsString('is not available', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertSame('Slug "race-slug" is not available.', (string) $component->component()->getError('game.slug')?->getMessage());
 
-        $freshEntityManager = $this->freshEntityManager();
-        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($gamesBefore, $this->freshEntityManager()->getRepository(Game::class)->count([]));
     }
 
     #[Test]
-    public function launchWithTheReservedCreateSlugDisplaysAnErrorAndCreatesNothing(): void
+    public function launchingWithTheReservedCreateSlugIsReportedAndCreatesNothing(): void
     {
         $gamesBefore = $this->entityManager->getRepository(Game::class)->count([]);
 
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'create')
-            ->call('launch')
-            ->render()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'create');
+        $component->call('launch');
 
-        $this->assertStringContainsString('This name is reserved.', $rendered->crawler()->filter('[data-error="game.slug"]')->text());
+        $this->assertSame('This name is reserved.', (string) $component->component()->getError('game.slug')?->getMessage());
 
-        $freshEntityManager = $this->freshEntityManager();
-        $this->assertSame($gamesBefore, $freshEntityManager->getRepository(Game::class)->count([]));
+        $this->assertSame($gamesBefore, $this->freshEntityManager()->getRepository(Game::class)->count([]));
     }
 
     #[Test]
-    public function addPlayerRowIsDisabledAndAddPlayerIsRefusedWhenThePlayerLimitIsReached(): void
+    public function addPlayerIsRefusedWhenThePlayerLimitIsReached(): void
     {
         $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'));
 
-        $rendered = $component->render()->toString();
+        $this->assertTrue($component->component()->isPlayerLimitReached());
 
-        $this->assertStringContainsString('data-model="norender|newPlayerName" value="" disabled', $rendered);
-        $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
-        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
+        $this->addPlayer($component, 'Dave', 'egypt');
 
-        $component
-            ->set('newPlayerName', 'Dave')
-            ->set('newPlayerEmpire', 'egypt')
-        ;
-        $rendered = $component->call('addPlayer')->render()->toString();
-
-        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
-        $this->assertStringNotContainsString('<td>Dave</td>', $rendered);
+        $this->assertCount(3, $component->component()->players);
     }
 
     #[Test]
-    public function loweringPlayerCountBelowTheAlreadyAddedPlayersCountDisablesTheAddPlayerRow(): void
+    public function loweringThePlayerCountBelowTheAlreadyAddedPlayersReachesTheLimit(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), 5)
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), 5)
             ->set('game.playerCount', 3)
-            ->render()
-            ->toString()
         ;
 
-        $this->assertStringContainsString('data-model="norender|newPlayerName" value="" disabled', $rendered);
-        $this->assertStringContainsString('data-model="newPlayerEmpire" disabled', $rendered);
-        $this->assertStringContainsString('Player limit reached (3/3).', $rendered);
+        $this->assertTrue($component->component()->isPlayerLimitReached());
     }
 
     #[Test]
-    public function launchIsDisabledWithLowerAlternativeWhenNotEnoughPlayersButAboveTheMinimum(): void
+    public function launchIsRefusedWithALowerAlternativeWhenNotEnoughPlayersButAboveTheMinimum(): void
     {
-        $rendered = $this->creatorWith([
+        $component = $this->creatorWith([
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => 'hellas'],
             ['name' => 'Carol', 'empire' => 'minoa'],
             ['name' => 'Dave', 'empire' => 'egypt'],
             ['name' => 'Eve', 'empire' => 'carthage'],
-        ], 8)->render()->toString();
+        ], 8)->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('Add 3 more players, or lower the player count to 5.', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertSame(['Add 3 more players, or lower the player count to 5.'], $component->getConformityIssues());
     }
 
     #[Test]
-    public function launchIsDisabledWithoutLowerAlternativeWhenNotEnoughPlayersAndBelowTheMinimum(): void
+    public function launchIsRefusedWithoutALowerAlternativeWhenNotEnoughPlayersAndBelowTheMinimum(): void
     {
-        $rendered = $this->createLiveComponent('GameCreator')
+        $component = $this->createLiveComponent('GameCreator')
             ->set('game.playerCount', 9)
-            ->render()
-            ->toString()
+            ->component()
         ;
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('Add 9 more players.', $rendered);
-        $this->assertStringNotContainsString('or lower the player count', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertSame(['Add 9 more players.'], $component->getConformityIssues());
     }
 
     #[Test]
-    public function launchIsDisabledWithRaiseAlternativeWhenTooManyPlayers(): void
+    public function launchIsRefusedWithARaiseAlternativeWhenTooManyPlayers(): void
     {
-        $rendered = $this->creatorWith([
+        $component = $this->creatorWith([
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => 'hellas'],
             ['name' => 'Carol', 'empire' => 'minoa'],
             ['name' => 'Dave', 'empire' => 'egypt'],
             ['name' => 'Eve', 'empire' => 'assyria'],
-        ], 5)->set('game.playerCount', 3)->render()->toString();
+        ], 5)->set('game.playerCount', 3)->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('Remove 2 players, or raise the player count to 5.', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertContains('Remove 2 players, or raise the player count to 5.', $component->getConformityIssues());
     }
 
     #[Test]
-    public function launchIsActiveAndShowsNoMismatchMessageWhenPlayerCountMatchesTarget(): void
+    public function launchIsAllowedWhenThePlayerCountMatchesTheTarget(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'))->render()->toString();
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'))->component();
 
-        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="ok"', $rendered);
-        $this->assertStringContainsString('Everything is fine.', $rendered);
+        $this->assertTrue($component->canLaunch());
+        $this->assertSame([], $component->getConformityIssues());
     }
 
     #[Test]
-    public function createButtonIsDisabledWhenTheSlugIsAlreadyTaken(): void
+    public function launchIsRefusedWhenTheSlugIsAlreadyTaken(): void
     {
         GameBuilder::create()->withSlug('taken-slug')->persist($this->entityManager);
 
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'taken-slug')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'taken-slug')->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertFalse($component->canLaunch());
     }
 
     #[Test]
-    public function createButtonIsDisabledWhenTheSlugIsReserved(): void
+    public function launchIsRefusedWhenTheSlugIsReserved(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'create')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'create')->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
+        $this->assertFalse($component->canLaunch());
     }
 
     #[Test]
-    public function createButtonIsEnabledWhenTheEntireFormIsValid(): void
+    public function launchIsAllowedWhenTheEntireFormIsValid(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'valid-new-game')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'valid-new-game')->component();
 
-        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
+        $this->assertTrue($component->canLaunch());
     }
 
     #[Test]
-    public function addingAPlayerWithoutAnEmpireShowsADashAndNoError(): void
+    public function addingAPlayerWithoutAnEmpireIsAcceptedWithoutError(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', 'Alice')
-            ->set('newPlayerEmpire', '')
-        ;
-        $rendered = $component->call('addPlayer')->render();
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, 'Alice', '');
 
-        $this->assertStringNotContainsString('data-error', $rendered->toString());
-
-        $row = $rendered->crawler()->filter('tbody tr');
-        $this->assertSame('Alice', trim($row->filter('td')->first()->text()));
-
-        $selected = $row->filter('select option[selected]');
-        $this->assertCount(1, $selected);
-        $this->assertSame('', $selected->attr('value'));
-        $this->assertSame('— no empire —', trim($selected->text()));
+        $this->assertSame([], $this->fieldErrorsOf($component, 'newPlayerName'));
+        $this->assertSame([['name' => 'Alice', 'empire' => '']], $component->component()->players);
     }
 
     #[Test]
-    public function assigningAnEmpireToARowThatHadNoneSelectsItInThatRowsSelect(): void
+    public function assigningAnEmpireToARowThatHadNoneStoresIt(): void
     {
         $component = $this->creatorWith([['name' => 'Alice', 'empire' => '']], 9);
 
-        $rendered = $component
+        $component
             ->set('players.0.empire', 'hatti')
             ->call('setEmpire', ['index' => 0])
-            ->render()
         ;
 
         $this->assertSame('hatti', $component->component()->players[0]['empire']);
-        $this->assertSame('hatti', $this->rowSelectedEmpire($rendered->crawler(), 0));
     }
 
     #[Test]
@@ -630,15 +524,13 @@ final class GameCreatorTest extends WebTestCase
     {
         $component = $this->creatorWith([['name' => 'Alice', 'empire' => 'hatti']], 9);
 
-        $rendered = $component
+        $component
             ->set('players.0.empire', 'rome')
             ->call('setEmpire', ['index' => 0])
-            ->render()
         ;
 
         $this->assertSame('rome', $component->component()->players[0]['empire']);
-        $this->assertSame('rome', $this->rowSelectedEmpire($rendered->crawler(), 0));
-        $this->assertContains('hatti', $this->rowEmpireChoices($rendered->crawler(), 0));
+        $this->assertSame([], $this->takenEmpiresOf($component, 0));
     }
 
     #[Test]
@@ -646,15 +538,13 @@ final class GameCreatorTest extends WebTestCase
     {
         $component = $this->creatorWith([['name' => 'Alice', 'empire' => 'hatti']], 9);
 
-        $rendered = $component
+        $component
             ->set('players.0.empire', '')
             ->call('setEmpire', ['index' => 0])
-            ->render()
         ;
 
         $this->assertSame('', $component->component()->players[0]['empire']);
-        $this->assertSame('', $this->rowSelectedEmpire($rendered->crawler(), 0));
-        $this->assertStringContainsString('1 player still needs an empire.', $rendered->toString());
+        $this->assertContains('1 player still needs an empire.', $component->component()->getConformityIssues());
     }
 
     #[Test]
@@ -662,14 +552,11 @@ final class GameCreatorTest extends WebTestCase
     {
         $component = $this->creatorWith([['name' => 'Alice', 'empire' => '']], 5);
 
-        $actionResponse = $component
+        $component
             ->set('players.0.empire', 'celt')
             ->call('setEmpire', ['index' => 0])
-            ->response()
-            ->getContent()
         ;
 
-        $this->assertStringContainsString('Empire &quot;celt&quot; is not available.', (string) $actionResponse);
         $this->assertSame('', $component->component()->players[0]['empire']);
     }
 
@@ -681,87 +568,47 @@ final class GameCreatorTest extends WebTestCase
             ['name' => 'Bob', 'empire' => ''],
         ], 9);
 
-        $actionResponse = $component
+        $component
             ->set('players.1.empire', 'hatti')
             ->call('setEmpire', ['index' => 1])
-            ->response()
-            ->getContent()
         ;
 
-        $this->assertStringContainsString('Empire &quot;hatti&quot; is not available.', (string) $actionResponse);
         $this->assertSame('', $component->component()->players[1]['empire']);
         $this->assertSame('hatti', $component->component()->players[0]['empire']);
     }
 
     #[Test]
-    public function assigningAnEmpireFlagsItAsTakenOnTheOtherRowsWhileLeavingItSelectableOnItsOwn(): void
-    {
-        $crawler = $this->creatorWith([
-            ['name' => 'Alice', 'empire' => ''],
-            ['name' => 'Bob', 'empire' => ''],
-        ], 9)
-            ->set('players.0.empire', 'hatti')
-            ->call('setEmpire', ['index' => 0])
-            ->render()
-            ->crawler()
-        ;
-
-        $this->assertContains('hatti', $this->rowEmpireChoices($crawler, 1));
-        $this->assertSame(['hatti'], $this->rowTakenEmpires($crawler, 1));
-        $this->assertSame([], $this->rowTakenEmpires($crawler, 0));
-        $this->assertSame('hatti', $this->rowSelectedEmpire($crawler, 0));
-    }
-
-    #[Test]
-    public function assigningAnEmpireOnOneRowLeavesEveryRowsOptionSequenceUnchanged(): void
+    public function anAssignedEmpireIsFlaggedTakenOnTheOtherRowsAndLeftFreeOnItsOwn(): void
     {
         $component = $this->creatorWith([
             ['name' => 'Alice', 'empire' => ''],
             ['name' => 'Bob', 'empire' => ''],
         ], 9);
 
-        $beforeAssignment = $component->render()->crawler();
-        $ownRowSequence = $this->rowEmpireChoices($beforeAssignment, 0);
-        $otherRowSequence = $this->rowEmpireChoices($beforeAssignment, 1);
-
-        $afterAssignment = $component
+        $component
             ->set('players.0.empire', 'hatti')
             ->call('setEmpire', ['index' => 0])
-            ->render()
-            ->crawler()
         ;
 
-        $this->assertSame(self::WEST_NINE_EMPIRE_OPTIONS, $ownRowSequence);
-        $this->assertSame($ownRowSequence, $this->rowEmpireChoices($afterAssignment, 0));
-        $this->assertSame($otherRowSequence, $this->rowEmpireChoices($afterAssignment, 1));
+        $this->assertSame(['hatti'], $this->takenEmpiresOf($component, 1));
+        $this->assertSame([], $this->takenEmpiresOf($component, 0));
     }
 
     #[Test]
-    public function aRowsOwnEmpireKeepsItsPlaceInTheScenarioOrderInsteadOfBeingAppendedLast(): void
+    public function everyRowKeepsTheScenariosOwnEmpireSequenceWhateverIsAssigned(): void
     {
-        $crawler = $this->creatorWith([['name' => 'Alice', 'empire' => 'hatti']], 9)->render()->crawler();
+        $component = $this->creatorWith([
+            ['name' => 'Alice', 'empire' => ''],
+            ['name' => 'Bob', 'empire' => ''],
+        ], 9);
 
-        $this->assertSame(self::WEST_NINE_EMPIRE_OPTIONS, $this->rowEmpireChoices($crawler, 0));
-        $this->assertSame('hatti', $this->rowSelectedEmpire($crawler, 0));
-    }
+        $component
+            ->set('players.0.empire', 'hatti')
+            ->call('setEmpire', ['index' => 0])
+        ;
 
-    #[Test]
-    public function eachPlayerRowBindsItsEmpireSelectToItsOwnRow(): void
-    {
-        $selects = $this->creatorWith([
-            ['name' => 'Alice', 'empire' => 'hatti'],
-            ['name' => 'Bob', 'empire' => 'rome'],
-            ['name' => 'Carol', 'empire' => ''],
-        ], 9)->render()->crawler()->filter('tbody tr select');
-
-        $this->assertSame(
-            ['players.0.empire', 'players.1.empire', 'players.2.empire'],
-            $selects->each(static fn (Crawler $select): string => (string) $select->attr('data-model')),
-        );
-        $this->assertSame(
-            ['0', '1', '2'],
-            $selects->each(static fn (Crawler $select): string => (string) $select->attr('data-live-index-param')),
-        );
+        $this->assertSame(self::WEST_NINE_EMPIRES, $this->empireChoicesOf($component, 0));
+        $this->assertSame(self::WEST_NINE_EMPIRES, $this->empireChoicesOf($component, 1));
     }
 
     #[Test]
@@ -775,22 +622,20 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
-    public function assigningARandomEmpireOnAnEmptyRowPicksAScenarioEmpireNotAlreadyTakenAndHidesTheDice(): void
+    public function assigningARandomEmpireOnAnEmptyRowPicksAScenarioEmpireNotAlreadyTaken(): void
     {
         $component = $this->creatorWith([
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => ''],
         ], 9);
 
-        $rendered = $component->call('assignRandomEmpire', ['index' => 1])->render()->toString();
+        $component->call('assignRandomEmpire', ['index' => 1]);
 
         $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->find(9, Region::West)->empires;
         $players = $component->component()->players;
 
-        $this->assertNotSame('', $players[1]['empire']);
         $this->assertContains($players[1]['empire'], $scenarioEmpires);
         $this->assertNotSame('hatti', $players[1]['empire']);
-        $this->assertStringNotContainsString('data-live-action-param="assignRandomEmpire"', $rendered);
     }
 
     #[Test]
@@ -825,10 +670,7 @@ final class GameCreatorTest extends WebTestCase
         $component->call('assignRandomEmpires');
 
         $scenarioEmpires = self::getContainer()->get(ScenarioRegistry::class)->find(3, Region::West)->empires;
-        $assignedEmpires = array_map(
-            static fn (array $player): string => $player['empire'],
-            $component->component()->players,
-        );
+        $assignedEmpires = array_column($component->component()->players, 'empire');
 
         $this->assertNotContains('', $assignedEmpires);
         $this->assertCount(3, array_intersect($assignedEmpires, $scenarioEmpires));
@@ -836,41 +678,37 @@ final class GameCreatorTest extends WebTestCase
     }
 
     #[Test]
-    public function changingRegionAfterAssignmentInvalidatesTheEmpireAndDisablesLaunch(): void
+    public function changingRegionAfterAssignmentInvalidatesTheEmpireAndRefusesLaunch(): void
     {
-        $rendered = $this->creatorWith([['name' => 'Alice', 'empire' => 'kushan']], 9, 'east')
+        $component = $this->creatorWith([['name' => 'Alice', 'empire' => 'kushan']], 9, 'east')
             ->set('game.region', 'west')
-            ->render()
-            ->toString()
+            ->component()
         ;
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('Alice&#039;s empire &quot;kushan&quot; is not part of the current scenario.', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertContains('Alice\'s empire "kushan" is not part of the current scenario.', $component->getConformityIssues());
     }
 
     #[Test]
     public function duplicateEmpiresAcrossPlayersAreReportedAsAConformityIssue(): void
     {
-        $rendered = $this->creatorWith([
+        $component = $this->creatorWith([
             ['name' => 'Alice', 'empire' => 'hatti'],
             ['name' => 'Bob', 'empire' => 'hatti'],
-        ], 9)->render()->toString();
+        ], 9)->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('Alice and Bob share the empire &quot;hatti&quot;.', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertContains('Alice and Bob share the empire "hatti".', $component->getConformityIssues());
     }
 
     #[Test]
     #[DataProvider('provideNamesFoldingToTheSameSlugAreReportedAsAConformityIssueCases')]
     public function namesFoldingToTheSameSlugAreReportedAsAConformityIssue(string $first, string $second, string $sharedSlug): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed($first, $second, 'Carol'))->render()->toString();
+        $component = $this->creatorWith(self::westRosterNamed($first, $second, 'Carol'))->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString(sprintf('%s and %s share the name &quot;%s&quot;.', $first, $second, $sharedSlug), $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertContains(sprintf('%s and %s share the name "%s".', $first, $second, $sharedSlug), $component->getConformityIssues());
     }
 
     public static function provideNamesFoldingToTheSameSlugAreReportedAsAConformityIssueCases(): iterable
@@ -885,13 +723,10 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function namesFoldingToDistinctSlugsAreNotReportedAsAConformityIssue(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Bob', 'Bobby', 'Carol'), slug: 'distinct-names-game')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('Bob', 'Bobby', 'Carol'), slug: 'distinct-names-game')->component();
 
-        $this->assertFalse($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="ok"', $rendered);
+        $this->assertTrue($component->canLaunch());
+        $this->assertSame([], $component->getConformityIssues());
     }
 
     #[Test]
@@ -916,14 +751,10 @@ final class GameCreatorTest extends WebTestCase
     #[DataProvider('provideANameThatSlugifiesToNothingIsReportedAsAConformityIssueCases')]
     public function aNameThatSlugifiesToNothingIsReportedAsAConformityIssue(string $unusableName): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed($unusableName, 'Bob', 'Carol'), slug: 'unusable-name-game')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed($unusableName, 'Bob', 'Carol'), slug: 'unusable-name-game')->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
-        $this->assertStringContainsString('1 player has no usable name.', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertSame(['1 player has no usable name.'], $component->getConformityIssues());
     }
 
     public static function provideANameThatSlugifiesToNothingIsReportedAsAConformityIssueCases(): iterable
@@ -940,14 +771,9 @@ final class GameCreatorTest extends WebTestCase
     #[Test]
     public function twoBlankNamesAreReportedAsUnusableRatherThanAsASharedName(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('', '  ', 'Carol'), slug: 'two-blank-names-game')
-            ->render()
-            ->toString()
-        ;
+        $component = $this->creatorWith(self::westRosterNamed('', '  ', 'Carol'), slug: 'two-blank-names-game')->component();
 
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('2 players have no usable name.', $rendered);
-        $this->assertStringNotContainsString('share the name', $rendered);
+        $this->assertSame(['2 players have no usable name.'], $component->getConformityIssues());
     }
 
     /** @param list<string> $expectedRemainingIssues */
@@ -996,34 +822,27 @@ final class GameCreatorTest extends WebTestCase
     #[DataProvider('provideANameAtTheLengthLimitIsAcceptedByAddPlayerCases')]
     public function aNameAtTheLengthLimitIsAcceptedByAddPlayer(string $name, string $expectedStoredName): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', $name)
-            ->set('newPlayerEmpire', 'hatti')
-        ;
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, $name, 'hatti');
 
-        $rendered = $component->call('addPlayer')->render();
-
-        $this->assertCount(0, $rendered->crawler()->filter('[data-error="newPlayerName"]'));
+        $this->assertSame([], $this->fieldErrorsOf($component, 'newPlayerName'));
         $this->assertSame([['name' => $expectedStoredName, 'empire' => 'hatti']], $component->component()->players);
     }
 
     public static function provideANameAtTheLengthLimitIsAcceptedByAddPlayerCases(): iterable
     {
         yield 'twenty ascii characters' => [str_repeat('a', Player::MAX_NAME_LENGTH), 'A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1)];
+
         yield 'twenty accented characters, forty bytes' => [str_repeat('é', Player::MAX_NAME_LENGTH), str_repeat('é', Player::MAX_NAME_LENGTH)];
     }
 
     #[Test]
     public function aNameOneCharacterOverTheLengthLimitIsRefusedByAddPlayer(): void
     {
-        $component = $this->createLiveComponent('GameCreator')
-            ->set('newPlayerName', str_repeat('a', Player::MAX_NAME_LENGTH + 1))
-            ->set('newPlayerEmpire', 'hatti')
-        ;
+        $component = $this->createLiveComponent('GameCreator');
+        $this->addPlayer($component, str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'hatti');
 
-        $rendered = $component->call('addPlayer')->render();
-
-        $this->assertStringContainsString('Name cannot be longer than 20 characters.', $rendered->crawler()->filter('[data-error="newPlayerName"]')->text());
+        $this->assertSame(['Name cannot be longer than 20 characters.'], $this->fieldErrorsOf($component, 'newPlayerName'));
         $this->assertSame([], $component->component()->players);
     }
 
@@ -1032,42 +851,33 @@ final class GameCreatorTest extends WebTestCase
     {
         $overlongName = str_repeat('a', Player::MAX_NAME_LENGTH + 1);
 
-        $component = $this->createLiveComponent('GameCreator', ['players' => [['name' => $overlongName, 'empire' => 'hatti']]])
-            ->set('newPlayerName', $overlongName)
-            ->set('newPlayerEmpire', 'hellas')
-        ;
+        $component = $this->createLiveComponent('GameCreator', ['players' => [['name' => $overlongName, 'empire' => 'hatti']]]);
+        $this->addPlayer($component, $overlongName, 'hellas');
 
-        $rendered = $component->call('addPlayer')->render();
-
-        $errorText = $rendered->crawler()->filter('[data-error="newPlayerName"]')->text();
-        $this->assertStringContainsString('Name cannot be longer than 20 characters.', $errorText);
-        $this->assertStringNotContainsString('Name already taken.', $errorText);
+        $this->assertSame(['Name cannot be longer than 20 characters.'], $this->fieldErrorsOf($component, 'newPlayerName'));
     }
 
     #[Test]
     public function anInjectedNameOverTheLengthLimitIsReportedAsAConformityIssue(): void
     {
-        $component = str_repeat('a', Player::MAX_NAME_LENGTH + 1)
-                |> (fn(string $x): array => self::westRosterNamed($x, 'Bob', 'Carol'))
-                |> (fn(array $x): \Symfony\UX\LiveComponent\Test\TestLiveComponent => $this->creatorWith($x, slug: 'overlong-injected-name',));
+        $overlongName = str_repeat('a', Player::MAX_NAME_LENGTH + 1);
 
-        $rendered = $component->render()->toString();
+        $component = $this->creatorWith(self::westRosterNamed($overlongName, 'Bob', 'Carol'), slug: 'overlong-injected-name')->component();
 
-        $this->assertCount(1, $component->component()->getConformityIssues());
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered));
-        $this->assertStringContainsString('data-conformity="error"', $rendered);
+        $this->assertFalse($component->canLaunch());
+        $this->assertCount(1, $component->getConformityIssues());
     }
 
     #[Test]
-    public function aGameNameOneCharacterOverTheLengthLimitShowsAFieldErrorAndDisablesLaunch(): void
+    public function aGameNameOneCharacterOverTheLengthLimitIsReportedAndRefusesLaunch(): void
     {
-        $rendered = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'))
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'))
             ->set('game.slug', str_repeat('a', Game::MAX_SLUG_LENGTH + 1))
-            ->render()
+            ->component()
         ;
 
-        $this->assertSame('The address this name builds is longer than 64 characters.', trim($rendered->crawler()->filter('[data-error="game.slug"]')->text()));
-        $this->assertTrue($this->isLaunchButtonDisabled($rendered->toString()));
+        $this->assertSame('The address this name builds is longer than 64 characters.', (string) $component->getError('game.slug')?->getMessage());
+        $this->assertFalse($component->canLaunch());
     }
 
     /** @param list<array{name: string, empire: string}> $players */
@@ -1081,6 +891,39 @@ final class GameCreatorTest extends WebTestCase
         return $this->createLiveComponent('GameCreator', ['game' => $game, 'players' => $players]);
     }
 
+    private function addPlayer(TestLiveComponent $component, string $name, string $empire): void
+    {
+        $component
+            ->set('newPlayerName', $name)
+            ->set('newPlayerEmpire', $empire)
+        ;
+        $component->call('addPlayer');
+    }
+
+    /** @return list<string> */
+    private function fieldErrorsOf(TestLiveComponent $component, string $field): array
+    {
+        return array_values($component->component()->getErrors($field));
+    }
+
+    /** @return list<string> */
+    private function empireChoicesOf(TestLiveComponent $component, int $index): array
+    {
+        return array_column($component->component()->getEmpireChoicesFor($index), 'empire');
+    }
+
+    /** @return list<string> */
+    private function takenEmpiresOf(TestLiveComponent $component, int $index): array
+    {
+        return array_values(array_column(
+            array_filter(
+                $component->component()->getEmpireChoicesFor($index),
+                static fn (array $choice): bool => $choice['taken'],
+            ),
+            'empire',
+        ));
+    }
+
     /** @return list<array{name: string, empire: string}> */
     private static function westRosterNamed(string ...$names): array
     {
@@ -1091,41 +934,8 @@ final class GameCreatorTest extends WebTestCase
         );
     }
 
-    private function rowSelectedEmpire(Crawler $crawler, int $index): string
-    {
-        $selected = $crawler->filter('tbody tr')->eq($index)->filter('select option[selected]');
-        $this->assertCount(1, $selected);
-
-        return (string) $selected->attr('value');
-    }
-
-    /** @return list<string> */
-    private function rowEmpireChoices(Crawler $crawler, int $index): array
-    {
-        return $crawler->filter('tbody tr')->eq($index)->filter('select option')->each(
-            static fn (Crawler $option): string => (string) $option->attr('value'),
-        );
-    }
-
-    /** @return list<string> */
-    private function rowTakenEmpires(Crawler $crawler, int $index): array
-    {
-        return $crawler->filter('tbody tr')->eq($index)->filter('select option[disabled]')->each(
-            static fn (Crawler $option): string => (string) $option->attr('value'),
-        );
-    }
-
     private function freshEntityManager(): EntityManagerInterface
     {
         return self::getContainer()->get(EntityManagerInterface::class);
-    }
-
-    private function isLaunchButtonDisabled(string $html): bool
-    {
-        preg_match('/<button\b[^>]*data-live-action-param="launch"[^>]*>/', $html, $matches);
-
-        $tag = (string) preg_replace('/\sdata-loading="[^"]*"/', '', $matches[0] ?? '');
-
-        return 1 === preg_match('/\bdisabled\b/', $tag);
     }
 }

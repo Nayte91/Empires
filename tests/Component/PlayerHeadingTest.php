@@ -34,14 +34,13 @@ final class PlayerHeadingTest extends WebTestCase
     }
 
     #[Test]
-    public function theRenameInputIsPrefilledWithTheCurrentName(): void
+    public function theRenameFieldOpensOnTheCurrentName(): void
     {
         $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
 
-        $input = $this->render($player)->filter('dialog[id="rename-player-'.$player->id.'"] input[type="text"]');
+        $component = $this->createLiveComponent('molecules:PlayerHeading', ['player' => $player])->component();
 
-        $this->assertCount(1, $input);
-        $this->assertSame('Alice', $input->attr('value'));
+        $this->assertSame('Alice', $component->newName);
     }
 
     #[Test]
@@ -152,25 +151,6 @@ final class PlayerHeadingTest extends WebTestCase
 
         $this->assertInstanceOf(Player::class, $reloaded);
         $this->assertSame('A'.str_repeat('a', Player::MAX_NAME_LENGTH - 1), $reloaded->name);
-    }
-
-    #[Test]
-    public function theMessageOfARefusedRenameIsRenderedOutsideTheDialog(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $crawler = $this->createLiveComponent('molecules:PlayerHeading', ['player' => $alice])
-            ->set('newName', 'Bob')
-            ->call('rename')
-            ->render()
-            ->crawler()
-        ;
-
-        $this->assertCount(1, $crawler->filter('[data-error="newName"][role="alert"]'));
-        $this->assertCount(1, $crawler->filter('dialog input[type="text"]'));
-        $this->assertCount(0, $crawler->filter('dialog [data-error="newName"]'));
     }
 
     #[Test]

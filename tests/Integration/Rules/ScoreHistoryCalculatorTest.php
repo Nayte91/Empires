@@ -15,8 +15,7 @@ use App\Tests\Support\Fixture\OrderBuilder;
 /**
  * Every test pinning the *advance* half of a score parks the player on A.S.T. position 0 — the
  * ceiling then holds the whole replayed run at zero, so the numbers are advance points and nothing
- * else. Fixtures hold no cities, which is what lets the last point carry the same number as the one
- * before it.
+ * else.
  */
 final class ScoreHistoryCalculatorTest extends WebTestCase
 {

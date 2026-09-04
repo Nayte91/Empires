@@ -17,10 +17,11 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\LineIntent;
 use Userforged\ShopEngine\Dto\OrderLine;
 use Userforged\ShopEngine\OrderStatus;
 use Userforged\ShopEngine\Promotion\AppliedPromotion;
@@ -44,8 +45,6 @@ final class PosPageTest extends WebTestCase
         $this->assertNull($component->component()->getPlayer());
         $this->assertCount(1, $crawler->filter('select[data-model="playerSlug"]'));
         $this->assertCount(0, $crawler->filter('[data-live-action-param="checkout"]'));
-        $this->assertCount(0, $crawler->filter('button[id^="product-"]'));
-        $this->assertCount(0, $crawler->filter('table'));
     }
 
     #[Test]
@@ -129,12 +128,14 @@ final class PosPageTest extends WebTestCase
         [, , $bob] = Tables::aliceAndBob($this->entityManager);
         $order = $this->validateOrderFor($bob, ['pottery']);
 
-        $crawler = $this->createPos($bob->game)->set('playerSlug', $bob->slug)->render()->crawler();
+        $component = $this->createPos($bob->game)->set('playerSlug', $bob->slug);
+        $crawler = $component->render()->crawler();
 
-        $this->assertStringContainsString('validated', $crawler->filter('.hint')->text());
-        $this->assertStringContainsString('Pottery', $crawler->filter('.lines')->text());
-        $this->assertSame('Total: '.$order->total, trim($crawler->filter('.total')->text()));
-
+        $this->assertSame(['pottery'], array_map(
+            static fn (array $row): string => $row['line']->key,
+            $component->component()->getTicketLines(),
+        ));
+        $this->assertSame($order->total, $component->component()->getTicketTotal());
         $this->assertCount(0, $crawler->filter('[data-live-action-param="checkout"]'));
         $this->assertCount(0, $crawler->filter('button[id^="product-"]'));
     }
@@ -271,19 +272,18 @@ final class PosPageTest extends WebTestCase
     public function choosingABuyerWithAKioskSubmittedMonumentOrderReloadsTheAllocationIntoTheTill(): void
     {
         [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
+        $client = $this->browser();
 
         OrderBuilder::for($bob)
             ->withLine(new OrderLine('monument', 180, new AppliedPromotion(PromotionType::Option, 'monument', allocation: ['craft' => 10, 'science' => 10])))
             ->persist($this->entityManager)
         ;
 
-        $crawler = $this->createPos($game)->set('playerSlug', $bob->slug)->render()->crawler();
+        $this->createPos($game, client: $client)->set('playerSlug', $bob->slug);
 
-        $picker = $crawler->filter('.allocation-picker');
-        $this->assertStringContainsString('Remaining: 0', $picker->text());
         $this->assertSame(
-            ['craft' => '10', 'science' => '10'],
-            array_filter($this->allocationOf($picker), static fn (string $points): bool => '0' !== $points),
+            ['craft' => 10, 'science' => 10],
+            $this->tillIntentOf($client, $bob, $game->currentTurn, 'monument')->allocation,
         );
     }
 
@@ -352,16 +352,17 @@ final class PosPageTest extends WebTestCase
         ], $client);
     }
 
-    /** @return array<string, string> */
-    private function allocationOf(Crawler $picker): array
+    private function tillIntentOf(KernelBrowser $client, Player $player, int $turn, string $key): LineIntent
     {
-        $allocation = [];
+        $items = $this->reopening($client, fn (): array => self::getContainer()
+            ->get(CartStorageInterface::class)
+            ->load(CartKey::pos($player, $turn))
+            ->items);
+        $intent = array_find($items, static fn (LineIntent $item): bool => $item->key === $key);
 
-        foreach ($picker->filter('li[data-advance-category]') as $row) {
-            $allocation[(string) $row->getAttribute('data-advance-category')] = trim(new Crawler($row)->filter('.value')->text());
-        }
+        $this->assertInstanceOf(LineIntent::class, $intent);
 
-        return $allocation;
+        return $intent;
     }
 
     /** @param list<string> $slugs */

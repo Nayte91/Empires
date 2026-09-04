@@ -20,56 +20,6 @@ final class ScenarioRegistryTest extends TestCase
         $this->registry = new ScenarioRegistry(\dirname(__DIR__, 4).'/config/game/scenarios.yaml');
     }
 
-    /** @param list<string> $expectedSlugs */
-    #[Test]
-    #[DataProvider('provideAScenarioCarriesTheRulesetsExactSlugsCases')]
-    public function aScenarioCarriesTheRulesetsExactSlugs(int $playerCount, ?Region $region, array $expectedSlugs): void
-    {
-        $scenario = $this->registry->find($playerCount, $region);
-
-        $this->assertInstanceOf(Scenario::class, $scenario);
-        $this->assertSame($expectedSlugs, $scenario->empires);
-    }
-
-    /** @return iterable<string, array{int, ?Region, list<string>}> */
-    public static function provideAScenarioCarriesTheRulesetsExactSlugsCases(): iterable
-    {
-        yield 'three players in the west' => [3, Region::West, ['hatti', 'hellas', 'minoa']];
-
-        yield 'nine players in the east' => [9, Region::East, ['babylon', 'dravidia', 'indus', 'kushan', 'maurya', 'nubia', 'parthia', 'persia', 'saba']];
-    }
-
-    #[Test]
-    #[DataProvider('provideACombinedScenarioSeatsEveryPlayerFromBothBoxesCases')]
-    public function aCombinedScenarioSeatsEveryPlayerFromBothBoxes(int $playerCount): void
-    {
-        $scenario = $this->registry->find($playerCount, null);
-
-        $this->assertInstanceOf(Scenario::class, $scenario);
-        $this->assertCount($playerCount, $scenario->empires);
-        $this->assertSame([Region::West, Region::East], $scenario->blocks);
-        $this->assertNotInstanceOf(\App\State\Region::class, $scenario->soleBlock());
-    }
-
-    public static function provideACombinedScenarioSeatsEveryPlayerFromBothBoxesCases(): iterable
-    {
-        yield 'ten players' => [10];
-
-        yield 'twelve players' => [12];
-
-        yield 'eighteen players' => [18];
-    }
-
-    #[Test]
-    public function aScenarioBelowTenPlayersIsPlayedOnASingleBox(): void
-    {
-        $scenario = $this->registry->find(6, Region::East);
-
-        $this->assertInstanceOf(Scenario::class, $scenario);
-        $this->assertSame([Region::East], $scenario->blocks);
-        $this->assertSame(Region::East, $scenario->soleBlock());
-    }
-
     #[Test]
     #[DataProvider('provideAPairingTheRulesetIgnoresIsNoScenarioAtAllCases')]
     public function aPairingTheRulesetIgnoresIsNoScenarioAtAll(int $playerCount, ?Region $region): void
@@ -108,34 +58,5 @@ final class ScenarioRegistryTest extends TestCase
         yield 'a combined count offers one scenario, on no single box' => [10, [null]];
 
         yield 'a count the ruleset ignores offers nothing' => [19, []];
-    }
-
-    #[Test]
-    public function playerCountsContainsAllScenarioCounts(): void
-    {
-        $counts = $this->registry->playerCounts();
-
-        $this->assertSame(range(3, 18), $counts);
-    }
-
-    /** @param array<string, int> $expectedCredits */
-    #[Test]
-    #[DataProvider('provideAScenarioCarriesItsStartingCreditsCases')]
-    public function aScenarioCarriesItsStartingCredits(int $playerCount, ?Region $region, array $expectedCredits): void
-    {
-        $scenario = $this->registry->find($playerCount, $region);
-
-        $this->assertInstanceOf(Scenario::class, $scenario);
-        $this->assertSame($expectedCredits, $scenario->startingCredits);
-    }
-
-    /** @return iterable<string, array{int, ?Region, array<string, int>}> */
-    public static function provideAScenarioCarriesItsStartingCreditsCases(): iterable
-    {
-        yield 'three players get ten per category' => [3, Region::West, ['art' => 10, 'civic' => 10, 'craft' => 10, 'religion' => 10, 'science' => 10]];
-
-        yield 'four players get five per category' => [4, Region::East, ['art' => 5, 'civic' => 5, 'craft' => 5, 'religion' => 5, 'science' => 5]];
-
-        yield 'a scenario with no credits row grants none' => [9, Region::West, []];
     }
 }

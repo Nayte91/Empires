@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Presentation\Component\Navigation;
 use App\State\Game;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
@@ -20,48 +21,18 @@ final class NavigationTest extends WebTestCase
     use InteractsWithTwigComponents;
 
     #[Test]
-    public function theSeatsAreAFlatListOfLinksRatherThanADisclosure(): void
+    public function theOperatorBoardLeadsTheWaysInAndThePlayerBoardsFollowInSeatOrder(): void
     {
         $game = Tables::westTable($this->entityManager);
 
-        $crawler = $this->render($game);
+        $targets = $this->mount($game)->getTargets();
 
-        $this->assertCount(0, $crawler->filter('details'));
-        $this->assertCount(1, $crawler->filter('nav > ul'));
-        $this->assertSame('nav', $crawler->filter('nav')->nodeName());
-    }
-
-    #[Test]
-    public function theOperatorBoardLeadsTheList(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $crawler = $this->render($game);
-
-        $this->assertStringEndsWith('/'.$game->slug.'/operator/board', (string) $crawler->filter('li a')->eq(0)->attr('href'));
-    }
-
-    #[Test]
-    public function aPlayerRowLinksToTheirBoardRatherThanTheirShop(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $link = $this->render($game)->filter('li a')->eq(1);
-
-        $this->assertStringEndsWith('/'.$game->slug.'/player/alice', (string) $link->attr('href'));
-        $this->assertStringContainsString('Alice', $link->text());
-    }
-
-    #[Test]
-    public function eachRowNamesItsEmpireSoTheListCanBeColoured(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $rows = $this->render($game)->filter('li');
-
-        $this->assertNull($rows->eq(0)->attr('data-empire'), 'The operator plays no empire.');
-        $this->assertSame('minoa', $rows->eq(1)->attr('data-empire'));
-        $this->assertStringContainsString('minoan', $rows->eq(1)->text());
+        $this->assertSame(
+            ['operator', 'alice', 'bob', 'carol', 'dave', 'eve'],
+            array_column($targets, 'key'),
+        );
+        $this->assertStringEndsWith('/'.$game->slug.'/operator/board', $targets[0]['url']);
+        $this->assertStringEndsWith('/'.$game->slug.'/player/alice', $targets[1]['url']);
     }
 
     #[Test]
@@ -71,18 +42,13 @@ final class NavigationTest extends WebTestCase
         PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
         PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
-        $crawler = $this->render($game);
-        $dialogs = $crawler->filter('dialog');
+        $dialogs = $this->render($game)->filter('dialog');
 
-        $this->assertCount(3, $dialogs);
         $this->assertSame(
             ['qr-operator', 'qr-alice', 'qr-bob'],
             $dialogs->each(static fn (Crawler $dialog): ?string => $dialog->attr('id')),
         );
-
-        foreach ($dialogs as $dialog) {
-            $this->assertCount(1, new Crawler($dialog)->filter('img[loading="lazy"]'), 'One code per dialog, and it waits to be asked for.');
-        }
+        $this->assertCount(3, $dialogs->filter('img'));
     }
 
     #[Test]
@@ -102,30 +68,15 @@ final class NavigationTest extends WebTestCase
             ['show-modal', 'show-modal'],
             $triggers->each(static fn (Crawler $button): ?string => $button->attr('command')),
         );
-        $this->assertCount(0, $crawler->filter('[data-controller]'), 'The panel drives no Stimulus controller any more.');
+        $this->assertCount(0, $crawler->filter('[data-controller]'));
     }
 
-    #[Test]
-    public function aPanelCarriesItsNameAndItsQrCodeWithoutSpellingTheUrlOut(): void
+    private function mount(Game $game): Navigation
     {
-        $game = Tables::westTable($this->entityManager);
+        $component = $this->mountTwigComponent('Navigation', ['game' => $game]);
+        $this->assertInstanceOf(Navigation::class, $component);
 
-        $panel = $this->render($game)->filter('dialog figure[data-key="operator"]');
-
-        $this->assertSame('Operator', $panel->filter('h2')->text());
-        $this->assertCount(1, $panel->filter('img[loading="lazy"]'));
-        $this->assertCount(0, $panel->filter('a'));
-    }
-
-    #[Test]
-    public function aPlayerPanelNamesItsEmpire(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $panels = $this->render($game)->filter('dialog figure');
-
-        $this->assertNull($panels->eq(0)->attr('data-empire'), 'The operator plays no empire.');
-        $this->assertSame('minoa', $panels->eq(1)->attr('data-empire'));
+        return $component;
     }
 
     private function render(Game $game): Crawler

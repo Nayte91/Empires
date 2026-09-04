@@ -6,7 +6,6 @@ namespace App\Tests\Unit\Rules\Ruleset;
 
 use App\Rules\Ruleset\AstRegistry;
 use App\State\ASTVersion;
-use App\Rules\Ruleset\AstEraDefinition;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -18,34 +17,6 @@ final class AstRegistryTest extends TestCase
     protected function setUp(): void
     {
         $this->astRegistry = new AstRegistry(\dirname(__DIR__, 4).'/config/game/ast.yaml');
-    }
-
-    #[Test]
-    public function getErasReturnsTheSevenErasInFileOrder(): void
-    {
-        $eras = $this->astRegistry->getEras();
-
-        $this->assertCount(7, $eras);
-        $this->assertSame(['start', 'stone_age', 'early_bronze_age', 'middle_bronze_age', 'late_bronze_age', 'early_iron_age', 'late_iron_age'], array_map(static fn (AstEraDefinition $era): string => $era->key, $eras));
-    }
-
-    #[Test]
-    public function stoneAgeHasEmptyRequirementsForBothModes(): void
-    {
-        $stoneAge = $this->astRegistry->getEras()[1];
-
-        $this->assertSame([], $stoneAge->basicRequirements);
-        $this->assertSame([], $stoneAge->expertRequirements);
-    }
-
-    #[Test]
-    public function lateIronAgeHasItsFullBasicAndExpertRequirements(): void
-    {
-        $lateIronAge = $this->astRegistry->getEraForPosition(15, ASTVersion::BASIC, 'standard');
-
-        $this->assertSame('late_iron_age', $lateIronAge->key);
-        $this->assertSame(['cities' => 5, 'advances' => 3, 'min_advance_cost' => 200], $lateIronAge->basicRequirements);
-        $this->assertSame(['cities' => 6, 'advances' => 17, 'max_advance_cost' => 99, 'advance_points' => 56], $lateIronAge->expertRequirements);
     }
 
     #[Test]

@@ -30,7 +30,7 @@ final class KioskOperatorFlowTest extends WebTestCase
     use ShopFixtureTrait;
 
     #[Test]
-    public function validatingFreezesLinesGrantsAdvancesAndValidatesTheOrderAndTheCardShowsItsTotalAndVictoryPoints(): void
+    public function validatingFreezesTheLinesGrantsTheAdvancesAndValidatesTheOrder(): void
     {
         [$game, $alice] = $this->aliceAndBobWithHerCreditsPosted();
 
@@ -49,15 +49,6 @@ final class KioskOperatorFlowTest extends WebTestCase
         ], $reloadedOrder->lines);
         $this->assertSame(250, $reloadedOrder->total);
         $this->assertSame(['agriculture', 'democracy', 'pottery'], $this->reloadPlayer($alice)->advances);
-
-        $rendered = $this->createLiveComponent('PlayerOrders', [
-            'player' => $alice,
-            'ordersStamp' => '',
-        ])->render()->toString();
-
-        $this->assertStringContainsString('Total: 250', $rendered);
-        $this->assertStringContainsString('VP: 7', $rendered);
-        $this->assertStringContainsString('data-status="validated"', $rendered);
     }
 
     #[Test]
@@ -67,19 +58,12 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $this->submitAndValidateAliceOrder($alice, $game);
 
-        $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);
-        $this->assertTrue($aliceShop->component()->isLockedForTurn());
-
-        $aliceRendered = $aliceShop->render()->toString();
-        $this->assertStringContainsString('data-status="validated"', $aliceRendered);
-        $this->assertStringNotContainsString('id="product-democracy"', $aliceRendered);
-        $this->assertStringContainsString('Democracy', $aliceRendered);
+        $this->assertTrue($this->createLiveComponent('Shop', ['player' => $alice])->component()->isLockedForTurn());
 
         $bobShop = $this->createLiveComponent('Shop', ['player' => $bob]);
-        $this->assertFalse($bobShop->component()->isLockedForTurn());
 
-        $bobRendered = $bobShop->render()->toString();
-        $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>220</s', $bobRendered);
+        $this->assertFalse($bobShop->component()->isLockedForTurn());
+        $this->assertMatchesRegularExpression('/id="product-democracy".*?data-price-net>220</s', $bobShop->render()->toString());
     }
 
     #[Test]

@@ -47,108 +47,65 @@ final class PlayerOrdersTest extends WebTestCase
     }
 
     #[Test]
-    public function cardsRunFromCurrentTurnDownToOneAndAKioskPendingOrderFillsItsTurnCard(): void
+    public function cardsRunFromTheCurrentTurnDownToTheFirstAndOnlyPastTurnsWithNoOrderReadEmpty(): void
     {
         [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;
         $this->entityManager->flush();
         OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
-        $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
+        $cards = $this->cardsOf($bob);
 
-        $this->assertCount(3, $cards);
-        $this->assertStringContainsString('Turn 3', $cards->eq(0)->text());
-        $this->assertSame('pending', $cards->eq(0)->attr('data-status'));
-        $this->assertStringContainsString('Turn 2', $cards->eq(1)->text());
-        $this->assertStringContainsString('Turn 1', $cards->eq(2)->text());
+        $this->assertSame([3, 2, 1], array_column($cards, 'turn'));
+        $this->assertSame(['pending', 'empty', 'empty'], array_column($cards, 'status'));
     }
 
     #[Test]
-    public function aMissingCurrentTurnRendersAMissingStatusCardLinkingToTheTill(): void
+    public function theCurrentTurnWithNothingSubmittedIsMissingAndWorthNothing(): void
     {
-        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
+        [, , $bob] = Tables::aliceAndBob($this->entityManager);
 
-        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
-        $card = $crawler->filter('article')->first();
+        $card = $this->cardsOf($bob)[0];
 
-        $this->assertSame('missing', $card->attr('data-status'));
-        $this->assertStringContainsString('Empty', $card->text());
-        $this->assertStringContainsString('Total: 0', $card->text());
-        $this->assertStringContainsString('VP: 0', $card->text());
-        $this->assertSame('Buy', trim($card->filter('a')->first()->text()));
-
-        $this->assertSame(
-            '/'.$game->slug.'/operator/pos?player='.$bob->slug.'&turn='.$game->currentTurn,
-            $card->filter('a')->first()->attr('href'),
-        );
+        $this->assertSame('missing', $card['status']);
+        $this->assertSame(0, $card['total']);
+        $this->assertSame(0, $card['vp']);
     }
 
     #[Test]
-    public function aPendingOrderCardShowsRecomputedNetCostsAndAVerifyLink(): void
+    public function aPendingCardCarriesTheRecomputedNetCostOfItsLines(): void
     {
         [, , $bob] = Tables::aliceAndBob($this->entityManager);
         OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
 
-        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
-        $card = $crawler->filter('article')->first();
+        $card = $this->cardsOf($bob)[0];
 
-        $this->assertSame('pending', $card->attr('data-status'));
-        $this->assertStringContainsString('Pottery', $card->text());
-        $this->assertStringContainsString('Total: 60', $card->text());
-        $this->assertStringContainsString('VP: 1', $card->text());
-        $this->assertSame('Verify', trim($card->filter('a')->first()->text()));
+        $this->assertSame('pending', $card['status']);
+        $this->assertSame(['pottery'], $card['slugs']);
+        $this->assertSame(60, $card['total']);
+        $this->assertSame(1, $card['vp']);
     }
 
     #[Test]
-    public function pastTurnsWithNoOrderStayEmptyWhileTheCurrentTurnIsPending(): void
-    {
-        [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
-        $game->currentTurn = 3;
-        $this->entityManager->flush();
-        OrderBuilder::for($bob)->withKeys('pottery')->persist($this->entityManager);
-
-        $cards = $this->createPlayerOrders($bob)->render()->crawler()->filter('article');
-
-        $this->assertSame('pending', $cards->eq(0)->attr('data-status'));
-
-        $this->assertSame('empty', $cards->eq(1)->attr('data-status'));
-        $this->assertSame('Edit', trim($cards->eq(1)->filter('a')->first()->text()));
-
-        $this->assertSame('empty', $cards->eq(2)->attr('data-status'));
-        $this->assertSame('Edit', trim($cards->eq(2)->filter('a')->first()->text()));
-    }
-
-    #[Test]
-    public function aValidatedOrderCardShowsFrozenNetCostsAndSwapsTheTillLinkForTheEraseModal(): void
+    public function aValidatedCardCarriesItsFrozenTotalAndSwapsTheTillLinkForTheEraseModal(): void
     {
         [, , $bob] = Tables::aliceAndBob($this->entityManager);
         $this->validateOrderFor($bob, ['democracy', 'pottery']);
 
-        $crawler = $this->createPlayerOrders($bob)->render()->crawler();
-        $card = $crawler->filter('article')->first();
+        $card = $this->cardsOf($bob)[0];
+        $rendered = $this->createPlayerOrders($bob)->render()->crawler();
 
-        $this->assertSame('validated', $card->attr('data-status'));
-        $this->assertStringContainsString('Democracy', $card->text());
-        $this->assertStringContainsString('Pottery', $card->text());
-        $this->assertStringContainsString('Total: 280', $card->text());
-        $this->assertStringContainsString('VP: 7', $card->text());
-        $this->assertSame('Empty', trim($card->filter('button')->first()->text()));
-        $this->assertCount(1, $card->filter('button[commandfor]'));
-        $this->assertCount(0, $card->filter('a[href$="/operator/pos"]'));
+        $this->assertSame('validated', $card['status']);
+        $this->assertSame(280, $card['total']);
+        $this->assertSame(7, $card['vp']);
+        $this->assertCount(1, $rendered->filter('article button[commandfor]'));
+        $this->assertCount(0, $rendered->filter('article a[href$="/operator/pos"]'));
     }
 
-    #[Test]
-    public function eraseConfirmForTheCurrentTurnHasNoCascadeMention(): void
+    /** @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int}> */
+    private function cardsOf(Player $player): array
     {
-        [$game, $alice] = Tables::aliceAndBob($this->entityManager);
-        $game->currentTurn = 1;
-        $this->entityManager->flush();
-        $this->validateOrderFor($alice, ['democracy']);
-
-        $rendered = $this->createPlayerOrders($alice)->render()->toString();
-
-        $this->assertStringContainsString('Empty turn 1?', $rendered);
-        $this->assertStringNotContainsString('also empty turn', $rendered);
+        return $this->createPlayerOrders($player)->component()->getCards();
     }
 
     private function createPlayerOrders(Player $player): TestLiveComponent

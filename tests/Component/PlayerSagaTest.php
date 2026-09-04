@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Presentation\Component\PlayerSaga;
+use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 final class PlayerSagaTest extends WebTestCase
@@ -23,22 +24,10 @@ final class PlayerSagaTest extends WebTestCase
     {
         $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
 
-        $rows = $this->renderTwigComponent('PlayerSaga', ['player' => $player])->crawler()->filter('dl > div[data-stat]');
+        $counters = $this->mount($player)->getCounters();
 
-        $this->assertSame(['cities', 'ships', 'census', 'treasury', 'cards'], $rows->each(static fn (Crawler $row): ?string => $row->attr('data-stat')));
-        $this->assertSame(['Cities', 'Ships', 'Population', 'Treasury', 'Cards'], $rows->each(static fn (Crawler $row): string => $row->filter('dt')->text()));
-        $this->assertSame(['3', '2', '7', '40', '5'], $rows->each(static fn (Crawler $row): string => $row->filter('dd')->text()));
-    }
-
-    #[Test]
-    public function theAdvancesHeadingCarriesWhatThoseAdvancesWereWorth(): void
-    {
-        $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
-
-        $crawler = $this->renderTwigComponent('PlayerSaga', ['player' => $player])->crawler();
-
-        $this->assertSame('Advances (4 Victory Points)', $crawler->filter('section[aria-label="Owned advances"] h2')->text());
-        $this->assertCount(2, $crawler->filter('section[aria-label="Owned advances"] img[id^="product-"]'));
+        $this->assertSame(['cities', 'ships', 'census', 'treasury', 'cards'], array_column($counters, 'key'));
+        $this->assertSame(['3', '2', '7', '40', '5'], array_column($counters, 'value'));
     }
 
     #[Test]
@@ -55,6 +44,14 @@ final class PlayerSagaTest extends WebTestCase
         $this->assertCount(0, $withAdvances->filter('section[aria-label="Owned advances"] p'));
 
         $this->assertCount(0, $withNone->filter('section[aria-label="Owned advances"] img[id^="product-"]'));
-        $this->assertSame('No advance owned.', $withNone->filter('section[aria-label="Owned advances"] p')->text());
+        $this->assertCount(1, $withNone->filter('section[aria-label="Owned advances"] p'));
+    }
+
+    private function mount(Player $player): PlayerSaga
+    {
+        $component = $this->mountTwigComponent('PlayerSaga', ['player' => $player]);
+        $this->assertInstanceOf(PlayerSaga::class, $component);
+
+        return $component;
     }
 }

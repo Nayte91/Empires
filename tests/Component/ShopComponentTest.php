@@ -4,26 +4,27 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
-use App\Engine\Shop\AdvanceFulfillment;
+use App\Infrastructure\Repository\OrderRepository;
 use App\Presentation\Shop\CartKey;
 use App\Presentation\Shop\CatalogSort;
+use App\Presentation\Shop\CatalogView;
 use App\State\Order;
 use App\State\Player;
-use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\OrderBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\ShopFixtureTrait;
-use Symfony\Component\DomCrawler\Crawler;
-use Userforged\ShopEngine\Cart;
-use Userforged\ShopEngine\Dto\OrderLine;
-use Userforged\ShopEngine\OrderStatus;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
+use Userforged\ShopEngine\Dto\LineIntent;
+use Userforged\ShopEngine\Dto\OrderLine;
+use Userforged\ShopEngine\OrderStatus;
 
 final class ShopComponentTest extends WebTestCase
 {
@@ -32,29 +33,14 @@ final class ShopComponentTest extends WebTestCase
     use ShopFixtureTrait;
 
     #[Test]
-    public function discountsAreRenderedInTheKioskWithTheOwnedCategoryColors(): void
+    public function addPutsTheProductInTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $player->ownAdvances(['agriculture']);
-        $this->entityManager->flush();
+        $client = $this->browser();
 
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+        $this->createLiveComponent('Shop', ['player' => $player], $client)->call('add', ['key' => 'pottery']);
 
-        $this->assertStringContainsString('data-advance-category="craft"', $rendered);
-        $this->assertStringContainsString('data-advance-category="science"', $rendered);
-    }
-
-    #[Test]
-    public function addTakesTheProductOutOfTheCatalogueAndUpdatesTheCartTotal(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
-
-        $this->assertStringNotContainsString('id="product-pottery"', $rendered);
-        $this->assertStringContainsString('id="product-democracy"', $rendered);
-        $this->assertStringContainsString('Total: 60', $rendered);
+        $this->assertSame(['pottery'], $this->cartKeysOf($client, $player));
     }
 
     #[Test]
@@ -62,13 +48,14 @@ final class ShopComponentTest extends WebTestCase
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
+        $client = $this->browser();
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $crawler = $component->call('add', ['key' => 'democracy'])->render()->crawler();
 
         $this->assertCount(1, $crawler->filter('[role="alert"]'));
-        $this->assertCount(1, $crawler->filter('.cart[data-status="validated"]'));
-        $this->assertCount(0, $crawler->filter('[data-live-action-param="remove"]'));
+        $this->assertTrue($component->component()->isLockedForTurn());
+        $this->assertSame([], $this->cartKeysOf($client, $player));
     }
 
     #[Test]
@@ -77,32 +64,36 @@ final class ShopComponentTest extends WebTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         $player->ownAdvances(['agriculture']);
         $this->entityManager->flush();
+        $client = $this->browser();
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $crawler = $component->call('add', ['key' => 'agriculture'])->render()->crawler();
+        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)
+            ->call('add', ['key' => 'agriculture'])
+            ->render()
+            ->crawler()
+        ;
 
         $this->assertCount(1, $crawler->filter('[role="alert"]'));
-        $this->assertCount(1, $crawler->filter('li[data-empty]'));
+        $this->assertSame([], $this->cartKeysOf($client, $player));
     }
 
     #[Test]
     public function addingTheSameAdvanceTwiceIsDeduped(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = $this->browser();
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $component->call('add', ['key' => 'pottery']);
-        $rendered = $component->call('add', ['key' => 'pottery'])->render()->toString();
+        $component->call('add', ['key' => 'pottery']);
 
-        $this->assertSame(1, substr_count($rendered, 'class="line"'));
-        $this->assertStringContainsString('Total: 60', $rendered);
+        $this->assertSame(['pottery'], $this->cartKeysOf($client, $player));
     }
 
     #[Test]
     public function submitOrderCreatesAPendingOrderAndEmptiesTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
         $this->createCart($player, $client)->call('checkout');
@@ -110,44 +101,37 @@ final class ShopComponentTest extends WebTestCase
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
         $this->assertInstanceOf(Order::class, $order);
         $this->assertSame(['pottery'], $order->keys());
+        $this->assertSame([], $this->cartKeysOf($client, $player));
 
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
-        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
-        $this->assertStringContainsString('data-status="pending"', $rendered);
-        $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $this->assertSame('pending', $component->component()->getOrderStatusHook());
     }
 
     #[Test]
-    public function aPendingOrderTurnsTheCartIntoAReadOnlyTicketCarryingModify(): void
+    public function aPendingOrderTurnsTheCartIntoAReadOnlyTicketThatStaysEditable(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+        $component = $this->createLiveComponent('Shop', ['player' => $player])->component();
 
-        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
-        $this->assertStringContainsString('data-status="pending"', $rendered);
-        $this->assertStringContainsString('Pottery', $rendered);
-        $this->assertStringContainsString('data-live-action-param="editPendingOrder"', $rendered);
+        $this->assertSame('pending', $component->getOrderStatusHook());
+        $this->assertInstanceOf(Order::class, $component->getPendingOrder());
+        $this->assertFalse($component->isLockedForTurn());
     }
 
     #[Test]
-    public function editPendingOrderReloadsItsLinesIntoTheCartAndHidesTheOrderBlock(): void
+    public function editPendingOrderReloadsItsLinesIntoTheCartAndWithdrawsTheOrder(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $order = OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
+        OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
+        $client = $this->browser();
 
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
         $component->call('editPendingOrder');
 
-        $rendered = $component->render()->toString();
-
-        $this->assertStringContainsString('class="lines"', $rendered);
-        $this->assertStringNotContainsString('id="product-pottery"', $rendered);
-        $this->assertSame(2, substr_count($rendered, 'data-live-action-param="remove"'));
-        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
-        $this->assertNotNull($order->id);
+        $this->assertSame(['pottery', 'agriculture'], $this->cartKeysOf($client, $player));
+        $this->assertNull($component->component()->getPendingOrder());
     }
 
     #[Test]
@@ -160,10 +144,10 @@ final class ShopComponentTest extends WebTestCase
             OrderBuilder::for($player)->withKeys('pottery')->persist($this->entityManager);
         }
 
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $component = $this->createLiveComponent('Shop', ['player' => $player])->component();
 
-        $this->assertSame($status, $crawler->filter('.cart')->attr('data-status'));
-        $this->assertStringContainsString($wording, $crawler->filter('.cart .hint')->text());
+        $this->assertSame($status, $component->getOrderStatusHook());
+        $this->assertStringContainsString($wording, (string) $component->getOrderHint());
     }
 
     /** @return iterable<string, array{bool, string, string}> */
@@ -197,7 +181,7 @@ final class ShopComponentTest extends WebTestCase
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         OrderBuilder::for($player)->withKeys('pottery', 'agriculture')->persist($this->entityManager);
 
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $this->createLiveComponent('Shop', ['player' => $player], $client)->call('editPendingOrder');
         $this->createCart($player, $client)->call('checkout');
 
@@ -211,231 +195,140 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function aValidatedOrderLocksTheKioskForTheTurn(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $this->assertTrue($component->component()->isLockedForTurn());
-
-        $rendered = $component->render()->toString();
-        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
-        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
-        $this->assertStringContainsString('data-status="validated"', $rendered);
-        $this->assertStringContainsString('Pottery', $rendered);
-    }
-
-    #[Test]
-    public function aValidatedOrderWithLeftoverCartItemsKeepsSubmitDisabled(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
-
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['democracy']));
-
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player], $client)->render()->crawler();
-
-        $this->assertStringContainsString('Democracy', $crawler->filter('.lines')->text());
-        $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    #[Test]
-    public function validatedOrderShowsFrozenPricesRatherThanRecomputedOnes(): void
+    public function aValidatedOrderLocksTheKioskForTheTurnAtItsFrozenTotal(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
         OrderBuilder::for($player)->withLine(new OrderLine('pottery', 999))->validated(999)->persist($this->entityManager);
 
-        $rendered = $this->createLiveComponent('Shop', ['player' => $player])->render()->toString();
+        $component = $this->createLiveComponent('Shop', ['player' => $player])->component();
 
-        $this->assertStringContainsString('999', $rendered);
-        $this->assertStringNotContainsString('data-live-action-param="editPendingOrder"', $rendered);
-        $this->assertStringNotContainsString('data-live-action-param="remove"', $rendered);
+        $this->assertTrue($component->isLockedForTurn());
+        $this->assertSame('validated', $component->getOrderStatusHook());
+        $this->assertNull($component->getPendingOrder());
+        $this->assertSame(999, $component->getOrderTotal());
+    }
+
+    #[Test]
+    public function aValidatedOrderKeepsTheKioskLockedEvenWithLeftoverCartItems(): void
+    {
+        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
+
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['democracy']));
+
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client)->component();
+
+        $this->assertSame(['democracy'], $this->cartKeysOf($client, $player));
+        $this->assertTrue($component->isLockedForTurn());
     }
 
     #[Test]
     public function anEmptiedBudgetFieldIsNoConstraintWhereABudgetOfZeroIsOne(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $emptiedClient = $this->browser();
+        $zeroedClient = $this->browser();
+        $mountedClient = $this->browser();
 
-        $emptied = $this->createLiveComponent('Shop', ['player' => $player])->set('budget', '');
-        $zeroed = $this->createLiveComponent('Shop', ['player' => $player])->set('budget', 0);
+        $emptied = $this->createLiveComponent('Shop', ['player' => $player], $emptiedClient)->set('budget', '');
+        $zeroed = $this->createLiveComponent('Shop', ['player' => $player], $zeroedClient)->set('budget', 0);
+        $mounted = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $mountedClient);
 
         $this->assertNull($emptied->component()->budget);
-        $this->assertSame('', $emptied->render()->crawler()->filter('output[for="shop-budget"]')->text());
-        $this->assertFalse($emptied->render()->crawler()->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
-
+        $this->assertNull($this->remainingBudgetOf($emptiedClient, $emptied));
         $this->assertSame(0, $zeroed->component()->budget);
-        $this->assertSame('Remaining: 0', $zeroed->render()->crawler()->filter('output[for="shop-budget"]')->text());
-        $this->assertTrue($zeroed->render()->crawler()->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
+        $this->assertSame(0, $this->remainingBudgetOf($zeroedClient, $zeroed));
+        $this->assertSame(110, $this->remainingBudgetOf($mountedClient, $mounted));
     }
 
     #[Test]
-    public function theBandStaysBlankUntilABudgetIsEnteredAndThenShowsWhatIsLeft(): void
+    public function addingToTheCartDrawsTheRemainderDown(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = $this->browser();
 
-        $withoutBudget = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
-        $withBudget = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110])->render()->crawler();
+        $component = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client);
 
-        $this->assertCount(1, $withoutBudget->filter('input#shop-budget'));
-        $this->assertSame('', $withoutBudget->filter('output[for="shop-budget"]')->text());
-        $this->assertSame('Remaining: 110', $withBudget->filter('output[for="shop-budget"]')->text());
+        $this->assertSame(110, $this->remainingBudgetOf($client, $component));
+
+        $component->call('add', ['key' => 'pottery']);
+
+        $this->assertSame(50, $this->remainingBudgetOf($client, $component));
     }
 
     #[Test]
-    public function addingToTheCartDrawsTheRemainderDownAndDisablesWhatItNoLongerAffords(): void
+    public function removingFromTheCartRestoresTheRemainder(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110]);
-        $beforeTheAdd = $component->render()->crawler();
-        $afterTheAdd = $component->call('add', ['key' => 'pottery'])->render()->crawler();
-
-        $this->assertFalse($beforeTheAdd->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
-        $this->assertSame('Remaining: 50', $afterTheAdd->filter('output[for="shop-budget"]')->text());
-        $this->assertTrue($afterTheAdd->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
-        $this->assertFalse($afterTheAdd->filter('#product-mysticism')->getNode(0)->hasAttribute('disabled'));
-    }
-
-    #[Test]
-    public function removingFromTheCartRestoresTheRemainderAndReEnablesTheTilesItHadDisabled(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
-        $withPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client)->render()->crawler();
+        $withPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client);
+        $this->assertSame(50, $this->remainingBudgetOf($client, $withPottery));
+
         $this->createCart($player, $client)->call('remove', ['key' => 'pottery']);
-        $withoutPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client)->render()->crawler();
 
-        $this->assertTrue($withPottery->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
-        $this->assertSame('Remaining: 110', $withoutPottery->filter('output[for="shop-budget"]')->text());
-        $this->assertFalse($withoutPottery->filter('#product-empiricism')->getNode(0)->hasAttribute('disabled'));
+        $withoutPottery = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 110], $client);
+        $this->assertSame(110, $this->remainingBudgetOf($client, $withoutPottery));
     }
 
     #[Test]
-    public function aRemainderGoneNegativeIsShownAsZeroWhileEveryTileStaysDisabled(): void
+    public function aBudgetSmallerThanTheCartLeavesTheRemainderNegative(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
+        $component = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client);
 
-        $this->assertSame('Remaining: 0', $crawler->filter('output[for="shop-budget"]')->text());
-        $this->assertCount(50, $crawler->filter('button[id^="product-"]'));
-        $this->assertCount(50, $crawler->filter('button[id^="product-"][disabled]'));
+        $this->assertSame(-55, $this->remainingBudgetOf($client, $component));
     }
 
     #[Test]
     public function aBudgetFarSmallerThanTheOrderStillLetsThePlayerSubmitIt(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery', 'democracy']));
-
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $client)->render()->crawler();
-        $this->assertSame('Remaining: 0', $crawler->filter('output[for="shop-budget"]')->text());
-        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
 
         $this->createCart($player, $client)->call('checkout');
 
         $order = $this->freshOrderRepository()->findOneByPlayerAndWindow($player, $player->game->currentTurn);
+
         $this->assertInstanceOf(Order::class, $order);
         $this->assertSame(['pottery', 'democracy'], $order->keys());
         $this->assertSame(OrderStatus::Pending, $order->status);
     }
 
     #[Test]
-    public function theBudgetBandIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
+    public function theBudgetAndTheSortAreTheKiosksAloneAndNeverReachTheOperatorsPos(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $kioskClient = $this->browser();
+        $posClient = $this->browser();
 
-        $kiosk = $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5])->render()->crawler();
-        $pos = $this->openPos($player);
+        $kiosk = $this->catalogViewOf($kioskClient, $this->createLiveComponent('Shop', ['player' => $player, 'budget' => 5], $kioskClient));
+        $pos = $this->catalogViewOf($posClient, $this->openPos($player, $posClient));
 
-        $this->assertCount(1, $kiosk->filter('input#shop-budget'));
-        $this->assertCount(0, $pos->filter('input#shop-budget'));
-        $this->assertCount(0, $pos->filter('output[for="shop-budget"]'));
-
-        $this->assertTrue($kiosk->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
-        $this->assertFalse($pos->filter('#product-pottery')->getNode(0)->hasAttribute('disabled'));
+        $this->assertSame(5, $kiosk->remainingBudget);
+        $this->assertSame(CatalogSort::NetPrice, $kiosk->sort);
+        $this->assertNull($pos->remainingBudget);
+        $this->assertSame(CatalogSort::ListPrice, $pos->sort);
     }
 
     #[Test]
-    public function theKioskOffersThreeSortsWithBestValuePreselected(): void
+    public function choosingASortCarriesItIntoTheCatalogView(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
+        $client = $this->browser();
 
-        $crawler = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
+        $component = $this->createLiveComponent('Shop', ['player' => $player], $client);
+        $this->assertSame(CatalogSort::NetPrice, $this->catalogViewOf($client, $component)->sort);
 
-        $this->assertCount(3, $crawler->filter('input[name="sort"]'));
-        $this->assertCount(1, $crawler->filter('input[name="sort"][checked]'));
-        $this->assertCount(1, $crawler->filter('input[name="sort"][value="net_price"][checked]'));
-    }
+        $component->set('sort', 'name');
 
-    #[Test]
-    public function aShopMountedSortedByNameShelvesTheAdvancesAlphabetically(): void
-    {
-        $player = $this->discountedPlayer();
-
-        $byBestValue = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
-        $byName = $this->createLiveComponent('Shop', ['player' => $player, 'sort' => CatalogSort::Name])->render()->crawler();
-
-        $names = $this->shelfNames($byName);
-        $alphabetical = $names;
-        sort($alphabetical);
-
-        $this->assertCount(1, $byName->filter('input[name="sort"][value="name"][checked]'));
-        $this->assertSame($alphabetical, $names);
-        $this->assertNotSame($this->shelfKeys($byBestValue), $this->shelfKeys($byName));
-    }
-
-    #[Test]
-    public function choosingNameOnTheShelfReordersItAlphabetically(): void
-    {
-        $player = $this->discountedPlayer();
-
-        $component = $this->createLiveComponent('Shop', ['player' => $player]);
-        $byBestValue = $component->render()->crawler();
-        $byName = $component->set('sort', 'name')->render()->crawler();
-
-        $names = $this->shelfNames($byName);
-        $alphabetical = $names;
-        sort($alphabetical);
-
-        $this->assertCount(1, $byName->filter('input[name="sort"][value="name"][checked]'));
-        $this->assertSame($alphabetical, $names);
-        $this->assertNotSame($this->shelfKeys($byBestValue), $this->shelfKeys($byName));
-    }
-
-    #[Test]
-    public function theSortIsTheKiosksAloneAndNeverReachesTheOperatorsPos(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $pos = $this->openPos($player);
-
-        $this->assertCount(0, $pos->filter('input[name="sort"]'));
-    }
-
-    #[Test]
-    public function validatingTheTurnsOrderShutsTheKioskShelfThatWasOpenBefore(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $open = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
-
-        OrderBuilder::for($player)->withLine(new OrderLine('pottery', 60))->validated(60)->persist($this->entityManager);
-
-        $shut = $this->createLiveComponent('Shop', ['player' => $player])->render()->crawler();
-
-        $this->assertCount(51, $open->filter('button[id^="product-"]'));
-        $this->assertCount(0, $open->filter('button[id^="product-"][disabled]'));
-        $this->assertCount(50, $shut->filter('button[id^="product-"]'));
-        $this->assertCount(50, $shut->filter('button[id^="product-"][disabled]'));
+        $this->assertSame(CatalogSort::Name, $this->catalogViewOf($client, $component)->sort);
     }
 
     #[Test]
@@ -452,44 +345,26 @@ final class ShopComponentTest extends WebTestCase
     }
 
     #[Test]
-    public function getPlayerShopReturnsTwoHundredWithLiveAndMercureWiring(): void
-    {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-
-        $client = self::getClient(self::getContainer()->get('test.client'));
-        $client->request('GET', '/'.$player->game->slug.'/player/'.$player->slug.'/shop');
-
-        $this->assertResponseIsSuccessful();
-        $this->assertSelectorExists('[data-controller~="live"]');
-
-        $html = (string) $client->getResponse()->getContent();
-        $this->assertStringContainsString('empires/game/'.$player->game->id, $html);
-    }
-
-    #[Test]
     public function editPendingOrderReloadsTheGiftChoiceIntoTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $cart = Cart::fromKeys(['anatomy']);
         $cart->withGift('anatomy', 'astronavigation');
         $this->seedCart($client, CartKey::shop($player), $cart);
 
         $this->createCart($player, $client)->call('checkout');
 
-        $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
-        $freshComponent->call('editPendingOrder');
+        $this->createLiveComponent('Shop', ['player' => $player], $client)->call('editPendingOrder');
 
-        $rendered = $freshComponent->render()->toString();
-
-        $this->assertStringContainsString('Free gift: Astronavigation', $rendered);
+        $this->assertSame('astronavigation', $this->cartIntentOf($client, $player, 'anatomy')->gift);
     }
 
     #[Test]
     public function editPendingOrderReloadsTheAllocationIntoTheCart(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'craft', 10);
         $cart->withAllocation('monument', 'science', 10);
@@ -497,14 +372,9 @@ final class ShopComponentTest extends WebTestCase
 
         $this->createCart($player, $client)->call('checkout');
 
-        $freshComponent = $this->createLiveComponent('Shop', ['player' => $player]);
-        $freshComponent->call('editPendingOrder');
+        $this->createLiveComponent('Shop', ['player' => $player], $client)->call('editPendingOrder');
 
-        $crawler = $freshComponent->render()->crawler();
-
-        $this->assertStringContainsString('Remaining: 0', $crawler->filter('.allocation-picker')->text());
-        $this->assertSame(['0', '0', '10', '0', '10'], $crawler->filter('.allocation-picker .value')->each(static fn ($node) => $node->text()));
-        $this->assertFalse($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
+        $this->assertSame(['craft' => 10, 'science' => 10], $this->cartIntentOf($client, $player, 'monument')->allocation);
     }
 
     private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
@@ -516,36 +386,49 @@ final class ShopComponentTest extends WebTestCase
     }
 
     /** The till reads its cart at mount, so unlike the kiosk it cannot be built outside a request with a session. */
-    private function openPos(Player $player): Crawler
+    private function openPos(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('CashierTerminal', [
             'game' => $player->game,
             'turn' => $player->game->currentTurn,
             'playerSlug' => $player->slug,
-        ], self::getContainer()->get('test.client'))->render()->crawler();
+        ], $client);
     }
 
     /** @return list<string> */
-    private function shelfKeys(Crawler $crawler): array
+    private function cartKeysOf(KernelBrowser $client, Player $player): array
     {
-        return $crawler->filter('button[id^="product-"]')->each(
-            static fn (Crawler $node): string => substr((string) $node->attr('id'), \strlen('product-')),
-        );
+        return $this->reopening($client, fn (): array => self::getContainer()
+            ->get(CartStorageInterface::class)
+            ->load(CartKey::shop($player))
+            ->keys());
     }
 
-    /** @return list<string> */
-    private function shelfNames(Crawler $crawler): array
+    private function cartIntentOf(KernelBrowser $client, Player $player, string $key): LineIntent
     {
-        return $crawler->filter('.product-tile .name')->each(static fn (Crawler $node): string => $node->text());
+        $items = $this->reopening($client, fn (): array => self::getContainer()
+            ->get(CartStorageInterface::class)
+            ->load(CartKey::shop($player))
+            ->items);
+        $intent = array_find($items, static fn (LineIntent $item): bool => $item->key === $key);
+
+        $this->assertInstanceOf(LineIntent::class, $intent);
+
+        return $intent;
     }
 
-    private function discountedPlayer(): Player
+    private function remainingBudgetOf(KernelBrowser $client, TestLiveComponent $component): ?int
     {
-        $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        self::getContainer()->get(AdvanceFulfillment::class)->grant($player->id, ['agriculture'], $player->game->currentTurn);
-        $this->entityManager->flush();
+        $mounted = $component->component();
 
-        return $player;
+        return $this->reopening($client, static fn (): ?int => $mounted->getRemainingBudget());
+    }
+
+    private function catalogViewOf(KernelBrowser $client, TestLiveComponent $component): CatalogView
+    {
+        $mounted = $component->component();
+
+        return $this->reopening($client, static fn (): CatalogView => $mounted->getCatalogView());
     }
 
     private function freshOrderRepository(): OrderRepository

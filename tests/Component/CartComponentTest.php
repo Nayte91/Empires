@@ -4,19 +4,22 @@ declare(strict_types=1);
 
 namespace App\Tests\Component;
 
+use App\Infrastructure\Repository\OrderRepository;
+use App\Presentation\Component\Cart as CartComponent;
 use App\Presentation\Shop\CartKey;
+use App\Rules\Ruleset\Advance;
 use App\State\Order;
 use App\State\Player;
-use App\Infrastructure\Repository\OrderRepository;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\GameFixtureTrait;
 use App\Tests\Support\ShopFixtureTrait;
-use Userforged\ShopEngine\Cart;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
+use Userforged\ShopEngine\Cart;
+use Userforged\ShopEngine\CartStorageInterface;
 
 /**
  * Both storage-key spellings live in CartKey — never retype one here: a self-consistent test keeps
@@ -32,66 +35,59 @@ final class CartComponentTest extends WebTestCase
     public function removeRemovesTheGivenKey(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['pottery', 'democracy']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery', 'democracy']));
 
-        $component = $this->createCart($player, client: $client);
-        $rendered = $component->call('remove', ['key' => 'pottery'])->render()->toString();
+        $this->createCart($player, $client)->call('remove', ['key' => 'pottery']);
 
-        $cartLines = $this->extractCartLinesSection($rendered);
-        $this->assertSame(1, substr_count($cartLines, 'class="line"'));
-        $this->assertStringNotContainsString('Pottery', $cartLines);
-        $this->assertStringContainsString('Democracy', $cartLines);
+        $this->assertSame(['democracy'], $this->cartKeysOf($client, $player));
     }
 
     #[Test]
-    public function cartShowsTheDiscountBadgeAndStruckThroughOriginalPriceWhenLibraryIsAdded(): void
+    public function anOwnedFacetCreditIsSpentOnTheCartTotal(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['library', 'democracy']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['library', 'democracy']));
 
-        $rendered = $this->createCart($player, client: $client)->render()->toString();
+        $cart = $this->createCart($player, $client);
 
-        $this->assertStringContainsString('badge', $rendered);
-        $this->assertStringContainsString('−40 library', $rendered);
-        $this->assertStringContainsString('original', $rendered);
-        $this->assertStringContainsString('Total: 400', $rendered);
+        $this->assertSame(400, $this->reading($client, $cart, static fn (CartComponent $mounted): int => $mounted->getTotal()));
     }
 
     #[Test]
     public function addingAnatomyShowsTheGiftPickerForAnEligibleScienceCandidate(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['anatomy']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['anatomy']));
 
-        $rendered = $this->createCart($player, client: $client)->render()->toString();
+        $cart = $this->createCart($player, $client);
+        $candidates = $this->reading($client, $cart, static fn (CartComponent $mounted): array => $mounted->getGiftCandidates('anatomy'));
 
-        $this->assertStringContainsString('gift-picker', $rendered);
-        $this->assertStringContainsString('Astronavigation', $rendered);
+        $this->assertContains('astronavigation', array_map(static fn (Advance $advance): string => $advance->key, $candidates));
     }
 
     #[Test]
-    public function addingMonumentShowsTheAllocationPickerWithTheFullRemainingPool(): void
+    public function addingMonumentOffersItsFullPoolStillToAllocate(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['monument']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['monument']));
 
-        $crawler = $this->createCart($player, client: $client)->render()->crawler();
+        $cart = $this->createCart($player, $client);
 
-        $this->assertStringContainsString('Remaining: 20', $crawler->filter('.allocation-picker')->text());
+        $this->assertSame(20, $this->reading($client, $cart, static fn (CartComponent $mounted): int => $mounted->getAllocationRemaining('monument')));
     }
 
     #[Test]
     public function anIncompleteOptionAllocationDisablesCheckout(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['monument']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['monument']));
 
-        $crawler = $this->createCart($player, client: $client)->render()->crawler();
+        $crawler = $this->createCart($player, $client)->render()->crawler();
 
         $this->assertTrue($crawler->filter('[data-live-action-param="checkout"]')->getNode(0)->hasAttribute('disabled'));
     }
@@ -104,10 +100,10 @@ final class CartComponentTest extends WebTestCase
     public function checkoutWithACompleteCartCreatesTheOrderAndEmitsOrderPlaced(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
-        $this->seedCart($client, (string) $player->id, Cart::fromKeys(['pottery']));
+        $client = $this->browser();
+        $this->seedCart($client, CartKey::shop($player), Cart::fromKeys(['pottery']));
 
-        $component = $this->createCart($player, client: $client);
+        $component = $this->createCart($player, $client);
         $component->call('checkout');
 
         $order = self::getContainer()->get(OrderRepository::class)
@@ -122,37 +118,47 @@ final class CartComponentTest extends WebTestCase
     public function checkoutWithAnIncompleteAllocationIsBlockedAndShowsTheGuardMessage(): void
     {
         $player = PlayerBuilder::named('Alice')->persist($this->entityManager);
-        $client = self::getContainer()->get('test.client');
+        $client = $this->browser();
         $cart = Cart::fromKeys(['monument']);
         $cart->withAllocation('monument', 'science', 5);
-        $this->seedCart($client, (string) $player->id, $cart);
+        $this->seedCart($client, CartKey::shop($player), $cart);
 
-        $component = $this->createCart($player, client: $client);
-        $rendered = $component->call('checkout')->render()->toString();
+        $rendered = $this->createCart($player, $client)->call('checkout')->render()->toString();
 
         $this->assertNull(self::getContainer()->get(OrderRepository::class)
             ->findOneByPlayerAndWindow($player, $player->game->currentTurn));
         $this->assertStringContainsString('Finish allocating the bonus for', $rendered);
-        $this->assertStringContainsString('monument', $rendered);
     }
 
-    private function createCart(Player $player, ?string $storageKey = null, ?KernelBrowser $client = null): TestLiveComponent
+    private function createCart(Player $player, KernelBrowser $client): TestLiveComponent
     {
         return $this->createLiveComponent('Cart', [
             'player' => $player,
-            'storageKey' => $storageKey ?? CartKey::shop($player),
+            'storageKey' => CartKey::shop($player),
         ], $client);
     }
 
-    /** The catalog repeats advance names, so assertions must be scoped to the cart's lines. */
-    private function extractCartLinesSection(string $html): string
+    /**
+     * @template TRead
+     *
+     * @param callable(CartComponent): TRead $read
+     *
+     * @return TRead
+     */
+    private function reading(KernelBrowser $client, TestLiveComponent $component, callable $read): mixed
     {
-        $start = strpos($html, '<ul class="lines">');
-        $this->assertNotFalse($start, 'lines not found in rendered output.');
+        $mounted = $component->component();
+        $this->assertInstanceOf(CartComponent::class, $mounted);
 
-        $end = strpos($html, '</ul>', $start);
-        $this->assertNotFalse($end, 'Closing </ul> for lines not found in rendered output.');
+        return $this->reopening($client, static fn (): mixed => $read($mounted));
+    }
 
-        return substr($html, $start, $end - $start);
+    /** @return list<string> */
+    private function cartKeysOf(KernelBrowser $client, Player $player): array
+    {
+        return $this->reopening($client, fn (): array => self::getContainer()
+            ->get(CartStorageInterface::class)
+            ->load(CartKey::shop($player))
+            ->keys());
     }
 }

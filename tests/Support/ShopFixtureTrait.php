@@ -46,6 +46,41 @@ trait ShopFixtureTrait
     }
 
     /**
+     * A component handed back by component() keeps the services of the container that built it, and
+     * the browser rebuilds that container on every request unless the reboot is disabled: without
+     * this, a session-backed read made from the test body reaches a request stack nobody filled.
+     */
+    private function browser(): KernelBrowser
+    {
+        $client = self::getContainer()->get('test.client');
+        $client->disableReboot();
+
+        return $client;
+    }
+
+    /**
+     * The cart lives in the browser's session and the request stack is empty once a Live request is
+     * over, so a session-backed read made from the test body has to put that request back first.
+     *
+     * @template TRead
+     *
+     * @param callable(): TRead $read
+     *
+     * @return TRead
+     */
+    private function reopening(KernelBrowser $client, callable $read): mixed
+    {
+        $requestStack = self::getContainer()->get(RequestStack::class);
+        $requestStack->push($client->getRequest());
+
+        try {
+            return $read();
+        } finally {
+            $requestStack->pop();
+        }
+    }
+
+    /**
      * Clears the identity map first: without it Doctrine hands back the in-memory instance.
      */
     private function reloadPlayer(Player $player): Player

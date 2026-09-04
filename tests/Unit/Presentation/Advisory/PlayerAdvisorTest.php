@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace App\Tests\Unit\Presentation\Advisory;
 
+use App\Presentation\Advisory\Advisory;
+use App\Presentation\Advisory\AdvisoryLevel;
+use App\Presentation\Advisory\CitySupportMarginRule;
 use App\Presentation\Advisory\CitySupportRule;
+use App\Presentation\Advisory\TaxStockRule;
 use App\Presentation\Advisory\HandLimitRule;
 use App\Presentation\Advisory\TaxPaymentRule;
 use App\Rules\CitySupportCalculator;
@@ -53,6 +57,19 @@ final class PlayerAdvisorTest extends TestCase
 
         $this->assertCount(1, $advisories);
         $this->assertSame('You must discard 1 card!', $advisories[0]->message);
+    }
+
+    #[Test]
+    public function advisoriesAreOrderedByUrgencyWhateverTheOrderOfTheRules(): void
+    {
+        $player = PlayerBuilder::named('Bob')->withCities(2)->withCensus(4)->withCards(9)->build();
+
+        $advisor = new PlayerAdvisor([new TaxStockRule($this->tax()), new CitySupportMarginRule(new CitySupportCalculator()), new HandLimitRule($this->hand())]);
+
+        $this->assertSame(
+            [AdvisoryLevel::Danger, AdvisoryLevel::Caution, AdvisoryLevel::Neutral],
+            array_map(static fn (Advisory $advisory): AdvisoryLevel => $advisory->level, $advisor->advisoriesFor($player)),
+        );
     }
 
     private function tax(): TaxCalculator
