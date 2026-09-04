@@ -28,7 +28,7 @@ final class QrCodeSchemeTest extends WebTestCase
         $content = (string) $client->getResponse()->getContent();
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('https://localhost/'.$game->slug.'/operator', $content);
+        $this->assertStringContainsString('https://localhost/'.$game->slug.'/operator/board', $content);
         $this->assertStringNotContainsString('http://localhost/'.$game->slug, $content);
     }
 
@@ -44,7 +44,7 @@ final class QrCodeSchemeTest extends WebTestCase
         $content = (string) $client->getResponse()->getContent();
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('http://localhost/'.$game->slug.'/operator', $content);
+        $this->assertStringContainsString('http://localhost/'.$game->slug.'/operator/board', $content);
         $this->assertStringNotContainsString('https://localhost/'.$game->slug, $content);
     }
 

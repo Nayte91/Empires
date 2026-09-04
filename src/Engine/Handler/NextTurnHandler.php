@@ -14,8 +14,8 @@ use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * Bounds the turn counter at the game's own `max_turns` limit and refuses to advance a finished
- * game — guards that used to live in OperatorConsole, moved here so a raw dispatch on the bus can
- * never push a game past legality, whatever component (or lack of one) asked for it.
+ * game — guards that used to live in the operator component, moved here so a raw dispatch on the bus
+ * can never push a game past legality, whatever component (or lack of one) asked for it.
  */
 #[AsMessageHandler]
 final readonly class NextTurnHandler

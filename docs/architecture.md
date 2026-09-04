@@ -86,7 +86,7 @@ paint, never a round trip — and nothing is rendered twice. The bar carries no 
 
 ## Nothing links to a player's kiosk
 
-The dashboard and the operator console link to a player's board, never to their shop: the board is
+The dashboard and the operator board link to a player's board, never to their shop: the board is
 the player's home, and the kiosk is reached from there. The shop route stays directly reachable all
 the same, because a QR code hands it out.
 

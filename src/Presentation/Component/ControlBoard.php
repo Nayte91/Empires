@@ -14,8 +14,9 @@ final class ControlBoard
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
 
     /**
-     * The player's own board takes this default. The operator console drives the same component with
-     * its own list, AST position included — a stat the player must never move on their own board.
+     * The player's own board takes this default. The operator's board page drives the same component
+     * with its own list, AST position included — a stat the player must never move on their own
+     * board.
      *
      * Advisories belong to the Outlook block; this one is controls only.
      *
@@ -25,9 +26,6 @@ final class ControlBoard
 
     /** Off by default: a link to a player's own shop only makes sense on that player's own board. */
     public bool $withShopLink = false;
-
-    /** Passed through to each StatPicker to keep dialog ids apart when one page renders two boards for the same player. */
-    public string $scope = '';
 
     public function __construct(private readonly UrlGeneratorInterface $urlGenerator) {}
 

@@ -1,0 +1,53 @@
+<main
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}
+    class="operator-board"
+>
+    <div class="operator-board__turn-controls">
+        {% if game.finished %}
+            <span class="operator-board__finished-badge">Finished</span>
+        {% else %}
+            <button
+    class="button"
+                type="button"
+                {{ live_action('previousTurn') }}
+                {{ game.currentTurn == 1 ? 'disabled' }}
+            >
+                « Previous turn
+            </button>
+            <button
+    class="button"
+                type="button"
+                {{ live_action('nextTurn') }}
+                data-loading="addAttribute(disabled)"
+            >
+                Next turn »
+            </button>
+            <button
+    class="button"
+                type="button"
+                {{ live_action('finishGame') }}
+                data-loading="addAttribute(disabled)"
+            >
+                Finish game
+            </button>
+        {% endif %}
+    </div>
+
+    {% if not game.finished %}
+        <div class="operator-batch">
+            {% for player in game.players %}
+                <div data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
+                    <p><b>{{ player.empire|capitalize }}</b> <small>({{ player.name }})</small></p>
+
+                    {# The game-tracking overview — how far along is each empire — while economy
+                       management stays on the player's own board. Do not "fix" the divergence
+                       from ControlBoard's default list back. #}
+                    <twig:molecules:ControlBoard
+                        :player="player"
+                        :stats="['census', 'cities', 'astPosition']"
+                    />
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</main>

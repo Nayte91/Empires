@@ -10,7 +10,7 @@
 
     li { display: contents }
 
-    label {
+    :is(label, a) {
         position: relative;
         display: grid;
         justify-items: center;
@@ -19,6 +19,7 @@
         min-block-size: 3.75rem;
         color: var(--ink-muted);
         font-size: var(--size-small);
+        text-decoration: none;
         cursor: pointer;
 
         &:hover { background: var(--tint) }
@@ -29,7 +30,7 @@
         }
     }
 
-    :checked + label {
+    :is(:checked + label, a[aria-current="page"]) {
         color: var(--operator-accent);
 
         &::before {

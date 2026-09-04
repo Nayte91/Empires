@@ -11,15 +11,15 @@
     <link rel="stylesheet" href="{{ asset('styles/organisms/catalog.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/organisms/cart.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/organisms/pos.css') }}" data-turbo-track="dynamic">
-    <link rel="stylesheet" href="{{ asset('styles/shop.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block header %}
     <twig:atoms:PageTitle
         :heading="game.slug"
         :qualifier="'Turn ' ~ game.currentTurn"
+        variant="drilldown"
         back="Orders"
-        :backHref="path('app_game_operator', {slug: game.slug})"
+        :backHref="path('app_operator_orders', {slug: game.slug})"
     />
 {% endblock %}
 

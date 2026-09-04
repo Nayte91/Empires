@@ -35,15 +35,6 @@ final class StatPicker
     #[LiveProp(writable: true)]
     public ?string $pendingAction = null;
 
-    /**
-     * Distinguishes two pickers rendered for the same player and stat — the operator console shows
-     * both an overview row and a per-player tab. Their dialog ids must differ, or `commandfor`
-     * resolves to whichever comes first in the document and opens a dialog the tabs just hid.
-     * A LiveProp, so a re-render cannot silently drop the scope and collapse the ids back together.
-     */
-    #[LiveProp]
-    public string $scope = '';
-
     public function __construct(
         private readonly MessageBusInterface $commandBus,
         private readonly HandSizeCalculator $handSizeCalculator,
@@ -51,11 +42,10 @@ final class StatPicker
         private readonly TaxCalculator $taxCalculator,
     ) {}
 
-    public function mount(Player $player, string $stat, string $scope = ''): void
+    public function mount(Player $player, string $stat): void
     {
         $this->player = $player;
         $this->stat = Stat::from($stat);
-        $this->scope = $scope;
         $this->value = $this->stat->read($player);
     }
 

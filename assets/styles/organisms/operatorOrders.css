@@ -1,0 +1,6 @@
+.operator-orders {
+    display: grid;
+    gap: 1.5rem;
+
+    h3 { margin: 0 }
+}

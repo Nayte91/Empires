@@ -1,0 +1,26 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}Empires - Operator{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/operator/layout.css') }}" data-turbo-track="dynamic">
+{% endblock %}
+
+{% block header %}
+    <twig:molecules:GameHeading :game="game" />
+{% endblock %}
+
+{% block section %}{% endblock %}
+
+{% block footer %}
+    {% set section = block('section') %}
+    <twig:molecules:SectionSwitcher :active="section" :tabs="[
+        {value: 'board',      label: 'Board',  icon: 'lucide:layout-grid',    href: path('app_operator_board',      {slug: game.slug})},
+        {value: 'orders',     label: 'Orders', icon: 'lucide:receipt',        href: path('app_operator_orders',     {slug: game.slug})},
+        {value: 'calamities', label: 'Calam.', icon: 'lucide:triangle-alert', href: path('app_operator_calamities', {slug: game.slug})},
+        {value: 'trade',      label: 'Trade',  icon: 'lucide:copy',           href: path('app_operator_trade',      {slug: game.slug})},
+        {value: 'abilities',  label: 'Abil.',  icon: 'lucide:zap',            href: path('app_operator_abilities',  {slug: game.slug})},
+    ]" />
+{% endblock %}

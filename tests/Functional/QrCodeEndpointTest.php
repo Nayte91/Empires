@@ -59,7 +59,7 @@ final class QrCodeEndpointTest extends WebTestCase
 
         $images = $crawler->filter('nav.navigation dialog img');
 
-        $this->assertCount(2, $images, 'One code per target: the operator console and Alice.');
+        $this->assertCount(2, $images, 'One code per target: the operator board and Alice.');
         $this->assertSame(
             ['/'.$game->slug.'/qr/operator', '/'.$game->slug.'/qr/'.$player->slug],
             $images->each(static fn ($image): ?string => $image->attr('src')),

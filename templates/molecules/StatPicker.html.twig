@@ -1,4 +1,4 @@
-{% set dialogId = 'stat-picker-' ~ stat.value ~ '-' ~ player.id ~ (this.scope ? '-' ~ this.scope : '') %}
+{% set dialogId = 'stat-picker-' ~ stat.value ~ '-' ~ player.id %}
 {# Inside a component's slot `this` is rebound to that component — here the Modal — while ordinary
    variables pass through untouched. Hence the alias: it is this picker the slot needs to read. #}
 {% set picker = this %}

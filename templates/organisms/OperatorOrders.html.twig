@@ -1,0 +1,12 @@
+<main
+    {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}
+    class="operator-orders"
+>
+    {% for player in game.players %}
+        <section data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
+            <h3>{{ player.empire|empire_demonym|capitalize }} <small>({{ player.name }})</small></h3>
+
+            <twig:PlayerOrders :player="player" :ordersStamp="this.ordersStampFor(player)" />
+        </section>
+    {% endfor %}
+</main>

@@ -20,7 +20,6 @@ return RectorConfig::configure()
         __DIR__.'/../../vendor',
         RemoveEmptyClassMethodRector::class => [
             __DIR__.'/../../src/Presentation/Component/Shop.php',
-            __DIR__.'/../../src/Presentation/Component/PlayerOrders.php',
             __DIR__.'/../../src/Presentation/Component/CashierTerminal.php',
         ],
     ])

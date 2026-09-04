@@ -123,7 +123,7 @@ for the right one:
 | `page` (default) | — | home, creation, dashboard, operator, trade cards |
 | `player` | a rename trigger (`renameFor`) | player board, shop |
 | `celebration` | — | chronicle and saga, once a game is over |
-| `drilldown` | a way back (`back`, `backHref`) | none yet — for the dead-end screens the operator drills into |
+| `drilldown` | a way back (`back`, `backHref`) | point of sale |
 
 Two rules hold across all four:
 

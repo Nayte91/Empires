@@ -61,14 +61,14 @@ final class ChronicleViewTest extends WebTestCase
     }
 
     #[Test]
-    public function theChronicleDropsTheWayInToTheOperatorConsoleThatTheDashboardOffers(): void
+    public function theChronicleDropsTheWayInToTheOperatorBoardThatTheDashboardOffers(): void
     {
         $running = Tables::westTable($this->entityManager);
 
         $finished = $this->finishedGame();
 
-        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('a[href$="/operator"]')->count();
-        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('a[href$="/operator"]')->count();
+        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('a[href$="/operator/board"]')->count();
+        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('a[href$="/operator/board"]')->count();
 
         $this->assertGreaterThan(0, $onDashboard);
         $this->assertSame(0, $onChronicle);

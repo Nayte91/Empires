@@ -30,9 +30,9 @@ final class GameDashboardTest extends WebTestCase
         $this->assertSame(
             2,
             substr_count($html, '<dialog'),
-            'The only dialogs the dashboard carries are Navigation’s, one QR code per target — here the operator console and Alice.',
+            'The only dialogs the dashboard carries are Navigation’s, one QR code per target — here the operator board and Alice.',
         );
-        $this->assertStringContainsString('/'.$game->slug.'/operator', $html);
+        $this->assertStringContainsString('/'.$game->slug.'/operator/board', $html);
     }
 
     #[Test]
