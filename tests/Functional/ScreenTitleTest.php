@@ -50,9 +50,35 @@ final class ScreenTitleTest extends WebTestCase
     {
         yield 'the dashboard' => [''];
 
-        yield 'the operator console' => ['/operator'];
+        yield 'the operator board' => ['/operator/board'];
+
+        yield 'the operator orders' => ['/operator/orders'];
+
+        yield 'the operator calamities' => ['/operator/calamities'];
+
+        yield 'the operator trade' => ['/operator/trade'];
+
+        yield 'the operator abilities' => ['/operator/abilities'];
 
         yield 'the trade cards' => ['/trade-cards'];
+    }
+
+    #[Test]
+    public function thePointOfSaleIsADrillDownTitledWithTheGameAndItsTurn(): void
+    {
+        $game = GameBuilder::create()->withCurrentTurn(4)->persist($this->entityManager);
+
+        $crawler = $this->visit('/'.$game->slug.'/operator/pos');
+        $wayBack = $crawler->filter('#page-title > *')->first();
+
+        $this->assertResponseIsSuccessful();
+        $this->assertCount(1, $crawler->filter('#page-title'));
+        $this->assertCount(1, $crawler->filter('#page-title[data-title="drilldown"]'));
+        $this->assertSame($game->slug, trim($crawler->filter('#page-title h1')->text()));
+        $this->assertSame('Turn 4', trim($crawler->filter('#page-title p')->text()));
+        $this->assertSame('a', $wayBack->nodeName());
+        $this->assertSame('Orders', trim($wayBack->text()));
+        $this->assertSame('/'.$game->slug.'/operator/orders', $wayBack->attr('href'));
     }
 
     #[Test]
@@ -124,13 +150,13 @@ final class ScreenTitleTest extends WebTestCase
     }
 
     #[Test]
-    public function theOperatorConsoleMarksAFinishedGameInItsQualifier(): void
+    public function theOperatorBoardMarksAFinishedGameInItsQualifier(): void
     {
         $running = GameBuilder::create()->withCurrentTurn(4)->persist($this->entityManager);
         $finished = GameBuilder::create()->withCurrentTurn(4)->finished()->persist($this->entityManager);
 
-        $onRunning = $this->visit('/'.$running->slug.'/operator')->filter('#page-title p');
-        $onFinished = $this->visit('/'.$finished->slug.'/operator')->filter('#page-title p');
+        $onRunning = $this->visit('/'.$running->slug.'/operator/board')->filter('#page-title p');
+        $onFinished = $this->visit('/'.$finished->slug.'/operator/board')->filter('#page-title p');
 
         $this->assertSame('Turn 4', trim($onRunning->text()));
         $this->assertSame('Turn 4 — finished', trim($onFinished->text()));

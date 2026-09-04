@@ -28,14 +28,6 @@
         }
     }
 
-    [role="status"] {
-        margin: 0;
-        border-radius: var(--operator-radius);
-        padding: 0.75em 1em;
-        background: var(--operator-success-bg);
-        color: var(--operator-success);
-    }
-
     .summary {
         display: grid;
         align-items: start;

@@ -104,8 +104,9 @@ packages/userforged/shop-engine/   # the ordering engine — own CLAUDE.md, read
   buying nothing has no order.
 - **Mercure**: topic `empires/game/{id}` (`mercure-refresh` controller); publish on state change.
 - **Routes**, no prefix: `/`, `/create`, `/{slug}` (dashboard, chronicle once finished),
-  `/{slug}/operator`, `/{slug}/trade-cards` (unlinked, deliberately), `/{gameSlug}/player/{playerSlug}`
-  (board, saga once finished), `…/shop`.
+  `/{slug}/operator/board`, `/{slug}/operator/{orders,calamities,trade,abilities}`,
+  `/{slug}/operator/pos`, `/{slug}/trade-cards` (unlinked, deliberately),
+  `/{gameSlug}/player/{playerSlug}` (board, saga once finished), `…/shop`.
 
 # 🧪 Testing
 
@@ -148,7 +149,7 @@ tests/            # tier first, layer second
      mount; a positive control whose removal would leave the test green and meaningless (say what
      the weakened test would pass on). Stays as one docblock, as short as it can be, **stated once
      per suite** at its first occurrence.
-  2. **Product decision** — describes what the app does or why ("the console is deliberately
+  2. **Product decision** — describes what the app does or why ("the operator screen is deliberately
      operational only"): moves to the component or rule it describes, or to `docs/architecture.md`
      when no single class owns it, then is deleted here. If `src/` already says it, it is pile 3.
   3. **Delete** — restates the name, narrates history, points at another test, describes the class

@@ -45,7 +45,7 @@
                         </form>
                     </twig:molecules:Modal>
                 {% else %}
-                    <a class="button" href="{{ path('app_game_pos', {slug: player.game.slug, player: player.slug, turn: card.turn}) }}">
+                    <a class="button" href="{{ path('app_operator_pos', {slug: player.game.slug, player: player.slug, turn: card.turn}) }}">
                         {{ card.status == 'pending' ? 'Verify' : (card.status == 'missing' ? 'Buy' : 'Edit') }}
                     </a>
                 {% endif %}

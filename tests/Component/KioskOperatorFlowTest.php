@@ -89,7 +89,7 @@ final class KioskOperatorFlowTest extends WebTestCase
 
         $this->submitAndValidateAliceOrder($alice, $game);
 
-        $this->createLiveComponent('OperatorConsole', ['game' => $game])->call('nextTurn');
+        $this->createLiveComponent('OperatorBoard', ['game' => $game])->call('nextTurn');
         $this->assertSame(2, $this->reloadGame($game)->currentTurn);
 
         $aliceShop = $this->createLiveComponent('Shop', ['player' => $alice]);

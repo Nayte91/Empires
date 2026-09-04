@@ -2,17 +2,6 @@
     display: grid;
     gap: 0.75rem;
 
-    [role="alert"] {
-        border: 1px solid var(--operator-error);
-        border-radius: var(--operator-radius);
-        margin: 0;
-        padding: 0.75em 1em;
-        background: var(--operator-error-bg);
-        color: var(--operator-error);
-    }
-
-    /* Direct child only: the POS dialog is a sibling of this section, and its own sections
-       (the catalog) must keep the layout their component gives them. */
     > section {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(14rem, 100%), 18rem));

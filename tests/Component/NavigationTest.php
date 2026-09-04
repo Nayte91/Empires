@@ -32,13 +32,13 @@ final class NavigationTest extends WebTestCase
     }
 
     #[Test]
-    public function theOperatorConsoleLeadsTheList(): void
+    public function theOperatorBoardLeadsTheList(): void
     {
         $game = Tables::westTable($this->entityManager);
 
         $crawler = $this->render($game);
 
-        $this->assertStringEndsWith('/'.$game->slug.'/operator', (string) $crawler->filter('li a')->eq(0)->attr('href'));
+        $this->assertStringEndsWith('/'.$game->slug.'/operator/board', (string) $crawler->filter('li a')->eq(0)->attr('href'));
     }
 
     #[Test]

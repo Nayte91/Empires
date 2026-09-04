@@ -1,0 +1,15 @@
+{% extends 'skeletons/operator/layout.html.twig' %}
+
+{% block section %}orders{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+
+    <link rel="stylesheet" href="{{ asset('styles/molecules/orderCard.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/organisms/playerOrders.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/organisms/operatorOrders.css') }}" data-turbo-track="dynamic">
+{% endblock %}
+
+{% block main %}
+    {{ component('OperatorOrders', {game}) }}
+{% endblock %}

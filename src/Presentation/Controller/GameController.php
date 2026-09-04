@@ -32,18 +32,6 @@ final class GameController extends AbstractController
         return $this->render('skeletons/game/dashboard.html.twig', ['game' => $game]);
     }
 
-    #[Route('/{slug}/operator', name: 'app_game_operator', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function operator(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
-    {
-        return $this->render('skeletons/game/operator.html.twig', ['game' => $game]);
-    }
-
-    #[Route('/{slug}/operator/pos', name: 'app_game_pos', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
-    public function pos(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
-    {
-        return $this->render('skeletons/game/pos.html.twig', ['game' => $game]);
-    }
-
     #[Route('/{slug}/trade-cards', name: 'app_game_trade_cards', requirements: ['slug' => '[a-z0-9-]+'], methods: ['GET'])]
     public function tradeCards(#[MapEntity(mapping: ['slug' => 'slug'])] Game $game): Response
     {
@@ -74,7 +62,7 @@ final class GameController extends AbstractController
     private function qrTargetUrl(Game $game, string $key): string
     {
         if ('operator' === $key) {
-            return $this->generateUrl('app_game_operator', ['slug' => $game->slug], UrlGeneratorInterface::ABSOLUTE_URL);
+            return $this->generateUrl('app_operator_board', ['slug' => $game->slug], UrlGeneratorInterface::ABSOLUTE_URL);
         }
 
         foreach ($game->players as $player) {

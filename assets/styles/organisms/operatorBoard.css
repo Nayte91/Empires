@@ -1,9 +1,16 @@
-.tab-group {
+.operator-board__turn-controls {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 0.5rem;
+}
 
-    > details { display: contents }
+.operator-board__finished-badge {
+    border-radius: var(--operator-radius);
+    display: inline-block;
+    padding: 0.4em 0.9em;
+    font-weight: var(--weight-answer);
+    color: var(--operator-success);
+    background: var(--operator-success-bg);
 }
 
 .operator-batch {

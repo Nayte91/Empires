@@ -49,7 +49,15 @@ final class ScreenLandmarksTest extends WebTestCase
 
         yield 'the dashboard' => ['dashboard'];
 
-        yield 'the operator console' => ['operator'];
+        yield 'the operator board' => ['operator'];
+
+        yield 'the operator orders' => ['orders'];
+
+        yield 'the operator calamities' => ['calamities'];
+
+        yield 'the operator trade' => ['trade'];
+
+        yield 'the operator abilities' => ['abilities'];
 
         yield 'the point of sale' => ['pos'];
 
@@ -77,9 +85,19 @@ final class ScreenLandmarksTest extends WebTestCase
     public static function provideOnlyTheScreensWithASectionSwitcherEndWithAFooterCases(): iterable
     {
         yield 'the dashboard switches between its sections' => ['dashboard', 1];
+
         yield 'the chronicle switches between its sections' => ['chronicle', 1];
-        yield 'the operator console is one long page' => ['operator', 0];
+
+        yield 'the operator board switches between its sections' => ['operator', 1];
+
+        yield 'the operator orders switches between its sections' => ['orders', 1];
+
+        yield 'an operator section still to be built switches too' => ['calamities', 1];
+
+        yield 'the point of sale is opened from a section, not one of them' => ['pos', 0];
+
         yield 'the player board is one long page' => ['board', 0];
+
         yield 'the home page lists games' => ['home', 0];
     }
 
@@ -94,7 +112,11 @@ final class ScreenLandmarksTest extends WebTestCase
             'home' => '/',
             'creation' => '/create',
             'dashboard' => '/'.$this->runningGame()->slug,
-            'operator' => '/'.$this->runningGame()->slug.'/operator',
+            'operator' => '/'.$this->runningGame()->slug.'/operator/board',
+            'orders' => '/'.$this->runningGame()->slug.'/operator/orders',
+            'calamities' => '/'.$this->runningGame()->slug.'/operator/calamities',
+            'trade' => '/'.$this->runningGame()->slug.'/operator/trade',
+            'abilities' => '/'.$this->runningGame()->slug.'/operator/abilities',
             'pos' => '/'.$this->runningGame()->slug.'/operator/pos',
             'trade cards' => '/'.$this->runningGame()->slug.'/trade-cards',
             'board' => $this->playerPathOf($this->runningGame()),

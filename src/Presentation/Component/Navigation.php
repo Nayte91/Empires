@@ -10,7 +10,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 /**
- * The way in to every view of a game — the operator console, then one board per player.
+ * The way in to every view of a game — the operator board, then one board per player.
  * Each target names its own QR code so a phone reaches the view without typing the URL.
  *
  * The codes are addresses, not markup: inlining nineteen 320px SVGs made them 60% of the
@@ -54,7 +54,7 @@ final class Navigation
     }
 
     /**
-     * Dropped once the game is finished: the console still answers, but every one of its controls
+     * Dropped once the game is finished: the operator board still answers, but every one of its controls
      * refuses a finished game, so offering the way in would only promise something.
      *
      * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}
@@ -62,7 +62,7 @@ final class Navigation
     private function operatorTarget(): array
     {
         $url = $this->urlGenerator->generate(
-            'app_game_operator',
+            'app_operator_board',
             ['slug' => $this->game->slug],
             UrlGeneratorInterface::ABSOLUTE_URL,
         );
@@ -70,7 +70,7 @@ final class Navigation
         return [
             'key' => 'operator',
             'label' => 'Operator',
-            'caption' => 'console',
+            'caption' => 'board',
             'empire' => null,
             'url' => $url,
             'qrUrl' => $this->qrUrl('operator'),
@@ -80,7 +80,7 @@ final class Navigation
     /**
      * No caption: a player's subtitle is their empire's adjective, which the template reads off the
      * slug through the `empire_adjective` filter. Only a target that has no empire — the operator
-     * console — carries a caption of its own.
+     * board — carries a caption of its own.
      *
      * @return array{key: string, label: string, caption: ?string, empire: ?string, url: string, qrUrl: string}
      */

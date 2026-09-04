@@ -34,4 +34,6 @@
         font-weight: var(--weight-hero);
         line-height: 1;
     }
+
+    &[data-title="drilldown"] hgroup { text-align: end }
 }

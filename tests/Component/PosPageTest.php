@@ -140,7 +140,7 @@ final class PosPageTest extends WebTestCase
     }
 
     #[Test]
-    public function aValidatedTurnOffersTheConsolesCascadingEraseBehindItsConfirmation(): void
+    public function aValidatedTurnOffersTheCascadingEraseBehindItsConfirmation(): void
     {
         [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
         $game->currentTurn = 3;

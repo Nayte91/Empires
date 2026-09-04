@@ -14,7 +14,6 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
-use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Userforged\ShopEngine\BuyerInterface;
@@ -51,12 +50,6 @@ final class PlayerOrders
             $this->commandBus->dispatch(new EraseOrders($this->player->id, $windows));
         }
     }
-
-    #[LiveListener('orderPlaced')]
-    public function onOrderPlaced(): void {}
-
-    #[LiveListener('cartChanged')]
-    public function onCartChanged(): void {}
 
     /** @return list<array{turn: int, status: string, slugs: list<string>, total: int, vp: int}> */
     public function getCards(): array
