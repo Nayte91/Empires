@@ -1,0 +1,19 @@
+{% props players, stats %}
+<table class="control-table">
+    <thead>
+        <tr>
+            <th scope="col">Empire</th>
+            {% for stat in stats %}<th scope="col">{{ stat.shortLabel }}</th>{% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for player in players %}
+            <tr data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
+                <th scope="row"><twig:atoms:Marker empire="{{ player.empire }}" /> <b>{{ player.empire|empire_adjective }}</b> <small>({{ player.name }})</small></th>
+                {% for stat in stats %}
+                    <td><twig:molecules:StatPicker :player="player" :stat="stat.value" :value="attribute(player, stat.value)" :caption="false" /></td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

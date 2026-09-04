@@ -8,11 +8,10 @@
         <label>
             Buyer
             <select data-model="playerSlug">
+                <button><selectedcontent></selectedcontent></button>
                 <option value="">Choose a buyer…</option>
                 {% for buyer in game.players %}
-                    <option value="{{ buyer.slug }}">
-                        {{ buyer.empire|empire_demonym|capitalize }} ({{ buyer.name }})
-                    </option>
+                    <option value="{{ buyer.slug }}"><twig:atoms:Marker empire="{{ buyer.empire }}" /> <b>{{ buyer.empire|empire_adjective }}</b> <small>({{ buyer.name }})</small></option>
                 {% endfor %}
             </select>
         </label>

@@ -177,3 +177,11 @@ tests/            # tier first, layer second
 - **Selectors**: semantic tag → `id` → `data-*` → ARIA role. No new CSS-class selectors; the ~28
   remaining (`.allocation-picker`, `table.ast`…) are debt — migrate when you touch the template.
   Consequence: a Twig `class` change can break tests, so the CSS-only test-skip rule does not apply.
+- **Logic, not layout.** A test proves what the code decides (a rule, a handler, a Live action's
+  effect on state), never where or how something is drawn. Ceiling on the DOM: *this block is there*
+  (one row per player, the dialog exists, no grid on a finished game). Forbidden: an element's
+  position or order, a label or an attribute with no consequence for the user, and re-asserting in
+  an organism what its molecule already asserts. Live actions are exercised through
+  `createLiveComponent()->call()`; the assertion reads the state, the render is the means. Rendering
+  is proven in the browser (the smoke test), not by a crawler. An anonymous component (no PHP
+  class) gets no suite of its own: the page that embeds it proves it is there, in one test.

@@ -9,14 +9,6 @@ use App\Rules\StatBoundsCalculator;
 use App\Rules\TaxCalculator;
 use App\State\Player;
 
-/**
- * One-click game operations offered inside a stat's picker dialog, on top of the raw value grid.
- *
- * Every arithmetic rule lives here rather than in the template: the "disabled" state and the
- * applied result are two readings of the same rule, and computing them in two places is how they
- * drift apart. Taxation is the exception — it is the game's own rule, owned by {@see TaxCalculator}
- * and handed in, so this control can never disagree with the advisory or the outlook board.
- */
 enum StatAction: string
 {
     case AstForward = 'astForward';
@@ -63,10 +55,6 @@ enum StatAction: string
         };
     }
 
-    /**
-     * Whether the action belongs on this player's menu at all — distinct from being clickable.
-     * A tax rate their advances do not unlock is absent, not greyed out.
-     */
     public function isOffered(Player $player, TaxCalculator $taxCalculator): bool
     {
         $rate = match ($this) {
@@ -80,10 +68,6 @@ enum StatAction: string
         return null === $rate || \in_array($rate, $taxCalculator->rates($player), true);
     }
 
-    /**
-     * The action name reaches the server as a client-writable prop, so this guards apply(): an
-     * action foreign to the stat, or a hand already under the limit, must change nothing.
-     */
     public function isAvailable(Player $player, HandSizeCalculator $handSizeCalculator, StatBoundsCalculator $statBoundsCalculator, TaxCalculator $taxCalculator): bool
     {
         return match ($this) {
@@ -101,11 +85,6 @@ enum StatAction: string
         };
     }
 
-    /**
-     * Every target is clamped rather than trusted: the action name travels as a client-writable
-     * prop, so an unavailable action can still reach us and must degrade to a no-op, never to a
-     * gain the player did not earn.
-     */
     public function apply(Player $player, HandSizeCalculator $handSizeCalculator, StatBoundsCalculator $statBoundsCalculator, TaxCalculator $taxCalculator): void
     {
         match ($this) {
@@ -123,7 +102,6 @@ enum StatAction: string
         };
     }
 
-    /** The only action moving two stats, hence the helper: a match arm holds one expression. */
     private function buildShip(Player $player, StatBoundsCalculator $statBoundsCalculator): int
     {
         $player->treasury = max($statBoundsCalculator->floorFor($player, Stat::Treasury), $player->treasury - self::SHIP_COST);
@@ -131,7 +109,6 @@ enum StatAction: string
         return $player->ships = min($player->ships + 1, $statBoundsCalculator->ceilingFor($player, Stat::Ships));
     }
 
-    /** Census and treasury draw from one stock, so doubling stops at what is left of it. */
     private function doubledCensus(Player $player, StatBoundsCalculator $statBoundsCalculator): int
     {
         return max($player->census, min($player->census * 2, $statBoundsCalculator->ceilingFor($player, Stat::Census)));

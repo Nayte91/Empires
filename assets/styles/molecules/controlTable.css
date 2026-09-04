@@ -1,0 +1,58 @@
+.control-table {
+    inline-size: 100%;
+    border: 1px solid var(--ink-primary);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: white;
+
+    thead th {
+        inline-size: 3.25rem;
+        padding: 0.5rem 0.25rem;
+        font-size: var(--size-small);
+        font-weight: var(--weight-answer);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-muted);
+        background: var(--tint);
+
+        &:first-child {
+            inline-size: auto;
+            padding-inline-start: 0.75rem;
+            text-align: start;
+        }
+    }
+
+    tbody tr:nth-child(even) { background: var(--tint) }
+
+    :is(tbody th, td) {
+        border-block-start: 1px solid var(--rule);
+        vertical-align: middle;
+    }
+
+    th[scope="row"] {
+        overflow: hidden;
+        padding: 0.5rem 0.25rem 0.5rem 0.75rem;
+        font-weight: var(--weight-body);
+        text-align: start;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+
+        .marker { margin-inline-end: 0.5rem }
+
+        b { text-transform: capitalize }
+        small { color: var(--ink-muted) }
+    }
+
+    td {
+        inline-size: 3.25rem;
+        padding: 0.5rem 0.25rem;
+
+        .button {
+            inline-size: 100%;
+            padding-inline: 0;
+        }
+    }
+}

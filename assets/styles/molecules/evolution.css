@@ -34,7 +34,5 @@
 
             &[data-hidden] { opacity: 0.4 }
         }
-
-        .marker { inline-size: 1rem }
     }
 }

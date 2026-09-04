@@ -1,11 +1,11 @@
 <nav class="navigation" {{ attributes }}>
     <ul>
         {% for target in this.targets %}
-            {% set caption = target.empire ? target.empire|empire_adjective : target.caption %}
             <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                 <a href="{{ target.url }}">
-                    <b>{{ target.label }}</b>
-                    <small>{{ caption }}</small>
+                    <twig:atoms:Marker :empire="target.empire ?? ''" />
+                    <b>{{ target.empire ? target.empire|empire_adjective : target.label }}</b>
+                    <small>{{ target.empire ? '(' ~ target.label ~ ')' : target.caption }}</small>
                 </a>
                 <button type="button" class="button quiet" title="QR code — {{ target.label }}" commandfor="qr-{{ target.key }}" command="show-modal">
                     <twig:ux:icon name="lucide:qr-code" />

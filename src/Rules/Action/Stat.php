@@ -51,6 +51,14 @@ enum Stat: string
         };
     }
 
+    public function shortLabel(): string
+    {
+        return match ($this) {
+            self::Census => 'Pop',
+            default => $this->label(),
+        };
+    }
+
     public function format(int $value): string
     {
         return match ($this) {

@@ -1,8 +1,11 @@
 .marker {
     display: inline-block;
+    /* Sits the dot on the text baseline: every host renders the trio as plain inline flow, so the
+       line box does the alignment and no flex or grid is needed around it. */
+    vertical-align: -0.125rem;
     aspect-ratio: 1;
-    inline-size: 1.5rem;
+    inline-size: 1rem;
     border-radius: 50%;
-    box-shadow: 0 1px 2px rgb(0 0 0 / 0.4);
-    background-color: var(--player-color);
+    box-shadow: 0 0 0 1px black;
+    background-color: var(--player-color, dimgray);
 }

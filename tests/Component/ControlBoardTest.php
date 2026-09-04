@@ -17,29 +17,21 @@ final class ControlBoardTest extends WebTestCase
     use InteractsWithTwigComponents;
 
     #[Test]
-    public function renderShowsAllFiveStatControls(): void
+    public function renderShowsAllFiveStatControlsInOrder(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
-        $this->assertCount(5, $crawler->filter('button[commandfor]'));
-    }
-
-    #[Test]
-    public function anExplicitStatListRendersExactlyThoseControlsInOrder(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', [
-            'player' => $player,
-            'stats' => ['cities', 'astPosition', 'treasury'],
-        ])->crawler();
-
         $this->assertSame(
-            ['stat-picker-cities-'.$player->id, 'stat-picker-astPosition-'.$player->id, 'stat-picker-treasury-'.$player->id],
+            [
+                'stat-picker-cities-'.$player->id,
+                'stat-picker-ships-'.$player->id,
+                'stat-picker-census-'.$player->id,
+                'stat-picker-treasury-'.$player->id,
+                'stat-picker-cards-'.$player->id,
+            ],
             $crawler->filter('button[commandfor]')->each(static fn ($node): string => (string) $node->attr('commandfor')),
         );
     }

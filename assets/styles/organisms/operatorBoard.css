@@ -1,49 +1,45 @@
-.operator-board__turn-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.operator-board {
+    inline-size: 100%;
+    max-inline-size: 36rem;
+    margin-inline: auto;
+    display: grid;
+    place-content: start stretch;
+    gap: 1rem;
+
+    .turn-row {
+        display: flex;
+        align-items: stretch;
+        gap: 0.75rem;
+
+        .button { flex: 1 }
+
+        /* A displayed value is not a button: flat bold text between the two moves. */
+        b {
+            flex: none;
+            inline-size: 6rem;
+            display: grid;
+            place-items: center;
+            font-size: var(--size-title);
+            font-weight: var(--weight-hero);
+            font-variant-numeric: tabular-nums;
+        }
+    }
+
+    footer {
+        border-block-start: 1px solid var(--rule);
+        display: flex;
+        justify-content: end;
+        padding-block-start: 0.75rem;
+    }
 }
 
 .operator-board__finished-badge {
     border-radius: var(--operator-radius);
+    /* The panel is a grid: without this the badge would blockify to the full row. */
+    justify-self: start;
     display: inline-block;
     padding: 0.4em 0.9em;
     font-weight: var(--weight-answer);
     color: var(--operator-success);
     background: var(--operator-success-bg);
-}
-
-.operator-batch {
-    display: grid;
-    gap: 0.75rem;
-
-    > div {
-        border-inline-start: 0.1875rem solid var(--player-color, dimgray);
-        display: grid;
-        gap: 0.5rem;
-        padding-inline-start: 0.75rem;
-    }
-
-    p {
-        margin: 0;
-        display: flex;
-        align-items: baseline;
-        gap: 0.375rem;
-
-        small { color: var(--ink-muted) }
-    }
-
-    @container (width < 60rem) {
-        small { display: none }
-    }
-
-    @container (min-width: 60rem) {
-        > div {
-            display: flex;
-            align-items: start;
-            gap: 1rem;
-        }
-
-        p { flex: 0 0 10rem }
-    }
 }

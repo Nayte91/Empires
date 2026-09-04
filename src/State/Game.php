@@ -41,12 +41,7 @@ class Game
 
     public bool $finished { get => $this->finishedAt instanceof \DateTimeImmutable; }
 
-    /**
-     * The cascade is one-directional: deleting a game sweeps its players, deleting a player leaves
-     * the game standing. orphanRemoval is deliberately not used.
-     *
-     * @var Collection<int, Player>
-     */
+    /** @var Collection<int, Player> */
     #[ORM\OneToMany(targetEntity: Player::class, mappedBy: 'game', cascade: ['persist', 'remove'])]
     public Collection $players;
 

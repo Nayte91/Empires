@@ -25,6 +25,68 @@
             border-radius: var(--operator-radius);
             font-size: var(--size-body);
             color: var(--ink-primary);
+            background: white;
+        }
+
+        /* The buyer select opts into the customizable control so its options can hold a marker;
+           engines without `base-select` fall back to the native control and the option text. */
+        select[data-model="playerSlug"] {
+            /* `base-select` turns the select into a flex box: without this the button and the arrow
+               stretch to full height and the arrow glyph draws against the top edge. */
+            align-items: center;
+            /* The start padding moves onto `selectedcontent`, so the ellipsis clip starts a padding
+               width before the dot instead of flush against it, where it shaves off its 1px ring. */
+            padding-inline-start: 0;
+
+            &, &::picker(select) { appearance: base-select }
+
+            &::picker(select) {
+                border: 1px solid var(--ink-primary);
+                border-radius: var(--operator-radius);
+                padding: 0;
+                background: white;
+            }
+
+            button {
+                flex: 1;
+                min-inline-size: 0;
+                border: none;
+                display: block;
+                padding: 0;
+                font: inherit;
+                color: inherit;
+                background: none;
+            }
+
+            /* Closed and open both render the trio as plain inline flow, as the stat grid does: the
+               line box aligns the dot, and the ellipsis eats the end of the line — the player name,
+               never the empire. */
+            selectedcontent {
+                display: block;
+                overflow: hidden;
+                padding-inline-start: 0.75em;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }
+
+            option {
+                min-block-size: 2.75rem;
+                overflow: hidden;
+                display: block;
+                align-content: center;
+                padding-inline: 0.75rem;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+
+                &:checked { background: var(--tint) }
+                &::checkmark { display: none }
+            }
+
+            .marker { margin-inline-end: 0.5rem }
+
+            b { text-transform: capitalize }
+
+            small { color: var(--ink-muted) }
         }
     }
 
