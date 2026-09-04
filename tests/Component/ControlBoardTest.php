@@ -50,7 +50,7 @@ final class ControlBoardTest extends WebTestCase
         ])->crawler();
 
         $this->assertSame(
-            '/'.$game->slug.'/player/'.$player->slug.'/shop',
+            '/game/'.$game->slug.'/player/'.$player->slug.'/shop',
             $crawler->filter('a')->attr('href'),
         );
     }

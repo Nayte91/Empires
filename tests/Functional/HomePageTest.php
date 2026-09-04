@@ -24,7 +24,7 @@ final class HomePageTest extends WebTestCase
         $crawler = $client->request(Request::METHOD_GET, '/');
 
         $this->assertResponseIsSuccessful();
-        $this->assertCount(1, $crawler->filter('a[href="/in-progress-game"]'));
-        $this->assertCount(0, $crawler->filter('a[href="/finished-game"]'));
+        $this->assertCount(1, $crawler->filter('a[href="/game/in-progress-game"]'));
+        $this->assertCount(0, $crawler->filter('a[href="/game/finished-game"]'));
     }
 }

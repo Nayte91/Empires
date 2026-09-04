@@ -23,13 +23,13 @@ final class QrCodeSchemeTest extends WebTestCase
         $client = self::createClient();
         $game = $this->persistGame();
 
-        $client->request(Request::METHOD_GET, '/'.$game->slug, server: ['HTTP_X_FORWARDED_PROTO' => 'https']);
+        $client->request(Request::METHOD_GET, '/game/'.$game->slug, server: ['HTTP_X_FORWARDED_PROTO' => 'https']);
 
         $content = (string) $client->getResponse()->getContent();
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('https://localhost/'.$game->slug.'/operator/board', $content);
-        $this->assertStringNotContainsString('http://localhost/'.$game->slug, $content);
+        $this->assertStringContainsString('https://localhost/game/'.$game->slug.'/operator/board', $content);
+        $this->assertStringNotContainsString('http://localhost/game/'.$game->slug, $content);
     }
 
     /** A fix that hardcoded the scheme would pass the test above and fail this one. */
@@ -39,13 +39,13 @@ final class QrCodeSchemeTest extends WebTestCase
         $client = self::createClient();
         $game = $this->persistGame();
 
-        $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $content = (string) $client->getResponse()->getContent();
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('http://localhost/'.$game->slug.'/operator/board', $content);
-        $this->assertStringNotContainsString('https://localhost/'.$game->slug, $content);
+        $this->assertStringContainsString('http://localhost/game/'.$game->slug.'/operator/board', $content);
+        $this->assertStringNotContainsString('https://localhost/game/'.$game->slug, $content);
     }
 
     private function persistGame(): Game

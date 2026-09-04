@@ -139,6 +139,6 @@ final class PlayerSagaViewTest extends WebTestCase
 
     private function pathOf(Player $player): string
     {
-        return '/'.$player->game->slug.'/player/'.$player->slug;
+        return '/game/'.$player->game->slug.'/player/'.$player->slug;
     }
 }

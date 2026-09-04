@@ -48,6 +48,6 @@ final class TradeCardsViewTest extends WebTestCase
 
     private function goToTradeCards(Game $game): Crawler
     {
-        return $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/trade-cards');
+        return $this->client->request(Request::METHOD_GET, '/game/'.$game->slug.'/trade-cards');
     }
 }

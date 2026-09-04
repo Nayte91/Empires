@@ -102,10 +102,15 @@ packages/userforged/shop-engine/   # the ordering engine — own CLAUDE.md, read
   in the package vocabulary but **this app never reaches it** — do not build for it. A player
   buying nothing has no order.
 - **Mercure**: topic `empires/game/{id}` (`mercure-refresh` controller); publish on state change.
-- **Routes**, no prefix: `/`, `/create`, `/{slug}` (dashboard, chronicle once finished),
-  `/{slug}/operator/board`, `/{slug}/operator/{orders,calamities,trade,abilities}`,
-  `/{slug}/operator/pos`, `/{slug}/trade-cards` (unlinked, deliberately),
-  `/{gameSlug}/player/{playerSlug}` (board, saga once finished), `…/shop`.
+- **Routes**: `/` and `/create` at the root, every game URL under `/game/`:
+  `/game/{slug}` (dashboard, chronicle once finished), `/game/{slug}/operator/board`,
+  `/game/{slug}/operator/{orders,calamities,trade,abilities}`, `/game/{slug}/operator/pos`,
+  `/game/{slug}/trade-cards` (unlinked, deliberately), `/game/{slug}/qr/{key}`,
+  `/game/{gameSlug}/player/{playerSlug}` (board, saga once finished), `…/shop`.
+  Two hubs redirect 301 (`config/routes.yaml`, `RedirectController`): `/game` → `app_home`,
+  `/game/{slug}/operator` → `app_operator_board`. One invokable controller per action under
+  `Controller/{Operator,Player}/`; the player lookup is `Player/PlayerResolver`, targeted with
+  `#[ValueResolver('player')]`.
 
 # 🧪 Testing
 

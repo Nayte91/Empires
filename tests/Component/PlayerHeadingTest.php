@@ -57,7 +57,7 @@ final class PlayerHeadingTest extends WebTestCase
 
         $response = $component->response();
         $this->assertSame(Response::HTTP_FOUND, $response->getStatusCode(), (string) $response->getContent());
-        $this->assertSame('/'.$gameSlug.'/player/alice-the-great', $response->headers->get('Location'));
+        $this->assertSame('/game/'.$gameSlug.'/player/alice-the-great', $response->headers->get('Location'));
 
         $this->entityManager->clear();
         $reloaded = $this->entityManager->getRepository(Player::class)->find($playerId);

@@ -107,17 +107,17 @@ final class ScreenLandmarksTest extends WebTestCase
         return match ($screen) {
             'home' => '/',
             'creation' => '/create',
-            'dashboard' => '/'.$this->runningGame()->slug,
-            'operator' => '/'.$this->runningGame()->slug.'/operator/board',
-            'orders' => '/'.$this->runningGame()->slug.'/operator/orders',
-            'calamities' => '/'.$this->runningGame()->slug.'/operator/calamities',
-            'trade' => '/'.$this->runningGame()->slug.'/operator/trade',
-            'abilities' => '/'.$this->runningGame()->slug.'/operator/abilities',
-            'pos' => '/'.$this->runningGame()->slug.'/operator/pos',
-            'trade cards' => '/'.$this->runningGame()->slug.'/trade-cards',
+            'dashboard' => '/game/'.$this->runningGame()->slug,
+            'operator' => '/game/'.$this->runningGame()->slug.'/operator/board',
+            'orders' => '/game/'.$this->runningGame()->slug.'/operator/orders',
+            'calamities' => '/game/'.$this->runningGame()->slug.'/operator/calamities',
+            'trade' => '/game/'.$this->runningGame()->slug.'/operator/trade',
+            'abilities' => '/game/'.$this->runningGame()->slug.'/operator/abilities',
+            'pos' => '/game/'.$this->runningGame()->slug.'/operator/pos',
+            'trade cards' => '/game/'.$this->runningGame()->slug.'/trade-cards',
             'board' => $this->playerPathOf($this->runningGame()),
             'shop' => $this->playerPathOf($this->runningGame()).'/shop',
-            'chronicle' => '/'.$this->finishedGame()->slug,
+            'chronicle' => '/game/'.$this->finishedGame()->slug,
             'saga' => $this->playerPathOf($this->finishedGame()),
         };
     }
@@ -138,6 +138,6 @@ final class ScreenLandmarksTest extends WebTestCase
             ? PlayerBuilder::named('Alice')->in($game)->withEmpire('minoa')->persist($this->entityManager)
             : Tables::seat($game, 'Alice');
 
-        return '/'.$game->slug.'/player/'.$player->slug;
+        return '/game/'.$game->slug.'/player/'.$player->slug;
     }
 }

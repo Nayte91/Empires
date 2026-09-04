@@ -57,7 +57,7 @@ final class PlayerBoardViewTest extends WebTestCase
     {
         $game = Tables::westTable($this->entityManager);
 
-        $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/player/does-not-exist');
+        $this->client->request(Request::METHOD_GET, '/game/'.$game->slug.'/player/does-not-exist');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -69,6 +69,6 @@ final class PlayerBoardViewTest extends WebTestCase
 
     private function pathOf(Player $player): string
     {
-        return '/'.$player->game->slug.'/player/'.$player->slug;
+        return '/game/'.$player->game->slug.'/player/'.$player->slug;
     }
 }

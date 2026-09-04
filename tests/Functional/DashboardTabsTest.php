@@ -22,7 +22,7 @@ final class DashboardTabsTest extends WebTestCase
         $client = self::createClient();
         $game = $this->game();
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug.$query);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug.$query);
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('menu input[checked]'));
@@ -47,7 +47,7 @@ final class DashboardTabsTest extends WebTestCase
         $client = self::createClient();
         $game = $this->game();
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertNull($crawler->filter('main')->attr('data-controller'));
         $this->assertCount(4, $crawler->filter('menu input[type="radio"]'));
@@ -59,7 +59,7 @@ final class DashboardTabsTest extends WebTestCase
         $client = self::createClient();
         $game = $this->game();
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertCount(1, $crawler->filter('#panel-nav'));
         $this->assertCount(1, $crawler->filter('#panel-roster'));
@@ -73,9 +73,9 @@ final class DashboardTabsTest extends WebTestCase
         $client = self::createClient();
         $game = $this->game();
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
-        $this->assertCount(1, $crawler->filter('#panel-help a[href="/'.$game->slug.'/trade-cards"]'));
+        $this->assertCount(1, $crawler->filter('#panel-help a[href="/game/'.$game->slug.'/trade-cards"]'));
     }
 
     /**
@@ -88,7 +88,7 @@ final class DashboardTabsTest extends WebTestCase
         $client = self::createClient();
         $game = GameBuilder::create()->persist(self::getContainer()->get(EntityManagerInterface::class));
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertCount(1, $crawler->filter('#panel-nav nav'));
         $this->assertCount(1, $crawler->filter('#panel-roster table'));
