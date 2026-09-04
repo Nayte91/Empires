@@ -40,6 +40,13 @@ body {
         padding: 1rem;
 
         > section > h2 { display: revert }
+
+        /* Stacked, the page is the one scroller: a panel kept as a contained scroll container would
+           swallow the wheel over its whole surface, even with nothing of its own to scroll. */
+        > section {
+            overflow: visible;
+            overscroll-behavior-y: auto;
+        }
     }
 }
 
@@ -49,5 +56,8 @@ body:has(> footer [value="nav"]:checked) .game-chronicle :is(#panel-ast, #panel-
 
 @media (min-width: 60rem) {
     body:has(> footer [value]:checked) .game-chronicle :is(#panel-ast, #panel-evolution, #panel-nav) { display: contents }
+    /* Pinned to the viewport for the tabbed layout only: stacked, the page must grow with its panels,
+       or the grid squeezes every row and an overflow-hidden panel collapses to nothing. */
+    body { block-size: auto }
     body > footer { display: none }
 }
