@@ -46,7 +46,7 @@ final class AdvanceRegistry
         $advancesData = $this->getAdvancesData();
 
         $advances = array_map(
-            fn (string $name, array $data): Advance => $this->hydrateAdvance($name, $data),
+            $this->hydrateAdvance(...),
             array_keys($advancesData),
             $advancesData
         );

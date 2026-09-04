@@ -66,9 +66,7 @@ final readonly class GameRegistry
     {
         static $cache = null;
 
-        if (null === $cache) {
-            $cache = yaml_parse_file($this->gameDataPath);
-        }
+        $cache ??= yaml_parse_file($this->gameDataPath);
 
         return $cache;
     }
