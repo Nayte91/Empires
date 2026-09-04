@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace System\database\migrations;
+
+use Doctrine\DBAL\Schema\Schema;
+use Doctrine\Migrations\AbstractMigration;
+
+final class Version20260904_player_name_length extends AbstractMigration
+{
+    public function getDescription(): string
+    {
+        return 'Narrow player name and slug to 20 characters, so the column follows the limit the entry screens enforce';
+    }
+
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
+    public function up(Schema $schema): void
+    {
+        $this->addSql('PRAGMA foreign_keys = OFF');
+        $this->addSql('CREATE TEMPORARY TABLE __temp__player AS SELECT id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id FROM player');
+        $this->addSql('DROP TABLE player');
+        $this->addSql('CREATE TABLE player (id BLOB NOT NULL, slug VARCHAR(20) NOT NULL, empire VARCHAR(30) NOT NULL, advances CLOB NOT NULL, credit_ledger CLOB DEFAULT \'[]\' NOT NULL, cities SMALLINT DEFAULT 0 NOT NULL, census SMALLINT DEFAULT 1 NOT NULL, treasury SMALLINT DEFAULT 0 NOT NULL, ships SMALLINT DEFAULT 0 NOT NULL, cards SMALLINT DEFAULT 0 NOT NULL, ast_position SMALLINT DEFAULT 0 NOT NULL, name VARCHAR(20) NOT NULL, game_id BLOB NOT NULL, PRIMARY KEY (id), CONSTRAINT FK_98197A65E48FD905 FOREIGN KEY (game_id) REFERENCES game (id) ON UPDATE NO ACTION ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE)');
+        $this->addSql('INSERT INTO player (id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id) SELECT id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id FROM __temp__player');
+        $this->addSql('DROP TABLE __temp__player');
+        $this->addSql('CREATE INDEX IDX_98197A65E48FD905 ON player (game_id)');
+        $this->addSql('CREATE UNIQUE INDEX uniq_player_game_slug ON player (game_id, slug)');
+        $this->addSql('PRAGMA foreign_keys = ON');
+    }
+
+    public function down(Schema $schema): void
+    {
+        $this->addSql('PRAGMA foreign_keys = OFF');
+        $this->addSql('CREATE TEMPORARY TABLE __temp__player AS SELECT id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id FROM player');
+        $this->addSql('DROP TABLE player');
+        $this->addSql('CREATE TABLE player (id BLOB NOT NULL, slug VARCHAR(30) NOT NULL, empire VARCHAR(30) NOT NULL, advances CLOB NOT NULL, credit_ledger CLOB DEFAULT \'[]\' NOT NULL, cities SMALLINT DEFAULT 0 NOT NULL, census SMALLINT DEFAULT 1 NOT NULL, treasury SMALLINT DEFAULT 0 NOT NULL, ships SMALLINT DEFAULT 0 NOT NULL, cards SMALLINT DEFAULT 0 NOT NULL, ast_position SMALLINT DEFAULT 0 NOT NULL, name VARCHAR(30) NOT NULL, game_id BLOB NOT NULL, PRIMARY KEY (id), CONSTRAINT FK_98197A65E48FD905 FOREIGN KEY (game_id) REFERENCES game (id) ON UPDATE NO ACTION ON DELETE CASCADE NOT DEFERRABLE INITIALLY IMMEDIATE)');
+        $this->addSql('INSERT INTO player (id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id) SELECT id, slug, empire, advances, credit_ledger, cities, census, treasury, ships, cards, ast_position, name, game_id FROM __temp__player');
+        $this->addSql('DROP TABLE __temp__player');
+        $this->addSql('CREATE INDEX IDX_98197A65E48FD905 ON player (game_id)');
+        $this->addSql('CREATE UNIQUE INDEX uniq_player_game_slug ON player (game_id, slug)');
+        $this->addSql('PRAGMA foreign_keys = ON');
+    }
+}

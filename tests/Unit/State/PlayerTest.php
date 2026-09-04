@@ -65,10 +65,8 @@ final class PlayerTest extends TestCase
 
     public static function provideANameWhoseSlugOverflowsTheLimitIsTruncatedToExactlyItCases(): iterable
     {
-        yield 'thirty CJK characters slugify to 119 and are cut back to 30' => [str_repeat('漢', 30), str_repeat('han-', 7).'ha'];
-
-        // Unreachable through the form, which caps at the same 30 — kept as the guard's own N+1 boundary.
-        yield 'one character past the limit loses exactly that character' => [str_repeat('a', 31), str_repeat('a', 30)];
+        yield 'twenty CJK characters slugify to 79 and are cut back to 20' => [str_repeat('漢', Player::MAX_NAME_LENGTH), str_repeat('han-', 5)];
+        yield 'one character past the limit loses exactly that character' => [str_repeat('a', Player::MAX_NAME_LENGTH + 1), str_repeat('a', Player::MAX_NAME_LENGTH)];
     }
 
     #[Test]
@@ -84,15 +82,11 @@ final class PlayerTest extends TestCase
     {
         yield 'an ordinary name is slugified and nothing else' => ['Peter Parker', 'peter-parker'];
 
-        yield 'thirty accented characters weigh sixty bytes and pass through whole' => [str_repeat('é', 30), str_repeat('e', 30)];
+        yield 'twenty accented characters weigh forty bytes and pass through whole' => [str_repeat('é', Player::MAX_NAME_LENGTH), str_repeat('e', Player::MAX_NAME_LENGTH)];
 
-        yield 'a slug landing exactly on the limit is untouched' => [str_repeat('a', 30), str_repeat('a', 30)];
+        yield 'a slug landing exactly on the limit is untouched' => [str_repeat('a', Player::MAX_NAME_LENGTH), str_repeat('a', Player::MAX_NAME_LENGTH)];
     }
 
-    /**
-     * Does not pin mb_substr() over substr(): the cut runs after AsciiSlugger, on pure ASCII, where
-     * the two are identical. It pins the property, not the function.
-     */
     #[Test]
     public function theTruncatedSlugNeverEndsOnABrokenCharacter(): void
     {

@@ -1,4 +1,3 @@
-{# A turn change reaches a player through the shop topic, not the board one — GameMercurePublisher. #}
 <div {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: shop_topic(player)})) }}>
     <twig:atoms:PageTitle variant="player" :heading="player.name" :qualifier="player.empire|capitalize ~ ' · Turn ' ~ player.game.currentTurn" :renameFor="'rename-player-' ~ player.id" />
 
@@ -12,7 +11,7 @@
 
             <label>
                 Name
-                <input type="text" data-model="norender|newName" value="{{ newName }}" maxlength="50">
+                <input type="text" data-model="norender|newName" value="{{ newName }}" maxlength="{{ constant('App\\State\\Player::MAX_NAME_LENGTH') }}">
             </label>
 
             <menu>

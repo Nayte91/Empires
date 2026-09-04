@@ -130,7 +130,7 @@ final class PlayerHeadingTest extends WebTestCase
 
         yield 'a name that slugifies onto another players' => ['BOB', 'Name already taken.'];
 
-        yield 'a name one character over the shared name limit' => [str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Name cannot be longer than 30 characters.'];
+        yield 'a name one character over the shared name limit' => [str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Name cannot be longer than 20 characters.'];
     }
 
     #[Test]
