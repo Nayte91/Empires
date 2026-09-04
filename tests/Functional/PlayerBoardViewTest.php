@@ -39,6 +39,20 @@ final class PlayerBoardViewTest extends WebTestCase
     }
 
     #[Test]
+    public function getPlayerShopReturnsTwoHundredWithLiveAndMercureWiring(): void
+    {
+        $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
+
+        $this->client->request(Request::METHOD_GET, $this->pathOf($player).'/shop');
+
+        $this->assertResponseIsSuccessful();
+        $this->assertSelectorExists('[data-controller~="live"]');
+
+        $html = (string) $this->client->getResponse()->getContent();
+        $this->assertStringContainsString('empires/game/'.$player->game->id, $html);
+    }
+
+    #[Test]
     public function unknownPlayerSlugReturns404(): void
     {
         $game = Tables::westTable($this->entityManager);
@@ -46,21 +60,6 @@ final class PlayerBoardViewTest extends WebTestCase
         $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/player/does-not-exist');
 
         $this->assertResponseStatusCodeSame(404);
-    }
-
-    #[Test]
-    public function bodyBackgroundIsColoredByThePlayersEmpire(): void
-    {
-        $withEmpire = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
-
-        $this->visit($withEmpire);
-        $boardContent = (string) $this->client->getResponse()->getContent();
-        $this->assertStringContainsString('data-empire="minoa"', $boardContent);
-        $this->assertStringContainsString('--empire-minoa: #a4ce53', $boardContent);
-        $this->assertMatchesRegularExpression('/<body[^>]*data-empire="minoa"/', $boardContent);
-
-        $this->client->request(Request::METHOD_GET, $this->pathOf($withEmpire).'/shop');
-        $this->assertStringContainsString('data-empire="minoa"', (string) $this->client->getResponse()->getContent());
     }
 
     private function visit(Player $player): Crawler

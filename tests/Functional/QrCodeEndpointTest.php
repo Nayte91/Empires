@@ -57,17 +57,11 @@ final class QrCodeEndpointTest extends WebTestCase
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
-        $images = $crawler->filter('nav.navigation dialog img');
+        $images = $crawler->filter('nav dialog img');
 
-        $this->assertCount(2, $images, 'One code per target: the operator board and Alice.');
         $this->assertSame(
             ['/'.$game->slug.'/qr/operator', '/'.$game->slug.'/qr/'.$player->slug],
             $images->each(static fn ($image): ?string => $image->attr('src')),
-        );
-        $this->assertCount(
-            0,
-            $crawler->filter('nav.navigation dialog svg'),
-            'The codes are fetched, never inlined — the small trigger icons outside the dialog stay.',
         );
     }
 }

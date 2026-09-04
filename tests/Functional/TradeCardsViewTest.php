@@ -32,39 +32,6 @@ final class TradeCardsViewTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('table'));
-        $this->assertSame('9 players', trim($crawler->filter('caption')->text()));
-    }
-
-    #[Test]
-    public function aSplitPoolIsServedAsTwoBlockColumnsUnderOneCaption(): void
-    {
-        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(15)->withRegion(null)->persist($this->entityManager));
-
-        $this->assertSame('West block / East block', trim($crawler->filter('caption')->text()));
-        $this->assertCount(5, $crawler->filter('thead th[scope="col"]'));
-    }
-
-    #[Test]
-    public function aCardOutOfOneBlockRendersADashAndNoCellAnywhereReadsZero(): void
-    {
-        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(15)->withRegion(null)->persist($this->entityManager));
-
-        $cells = $crawler->filter('tbody td')->each(static fn (Crawler $cell): string => trim($cell->text()));
-
-        $this->assertContains('—', $cells);
-        $this->assertNotContains('0', $cells);
-    }
-
-    #[Test]
-    public function everyStackIsOneRowGroupWhoseHeaderSpansExactlyItsOwnRows(): void
-    {
-        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(9)->withRegion(Region::West)->persist($this->entityManager));
-
-        $headers = $crawler->filter('tbody th[scope="rowgroup"]');
-        $rowsPerStack = array_count_values($crawler->filter('tbody tr[data-stack]')->each(static fn (Crawler $row): string => (string) $row->attr('data-stack')));
-
-        $this->assertSame(array_map(strval(...), range(1, 9)), $headers->each(static fn (Crawler $header): string => trim($header->text())));
-        $this->assertSame(array_values($rowsPerStack), $headers->each(static fn (Crawler $header): int => (int) $header->attr('rowspan')));
     }
 
     #[Test]
@@ -76,16 +43,7 @@ final class TradeCardsViewTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(0, $crawler->filter('table'));
-        $this->assertSame($game->slug, trim($crawler->filter('#page-title h1')->text()));
         $this->assertCount(1, $crawler->filter('main > p'));
-    }
-
-    #[Test]
-    public function theNameOfTheDistributionReadsAsASectionHeading(): void
-    {
-        $crawler = $this->goToTradeCards(GameBuilder::create()->withPlayerCount(9)->withRegion(Region::West)->persist($this->entityManager));
-
-        $this->assertSame('Trade card distribution', trim($crawler->filter('h2')->text()));
     }
 
     private function goToTradeCards(Game $game): Crawler

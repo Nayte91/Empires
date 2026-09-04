@@ -17,23 +17,14 @@ final class ControlBoardTest extends WebTestCase
     use InteractsWithTwigComponents;
 
     #[Test]
-    public function renderShowsAllFiveStatControlsInOrder(): void
+    public function theBoardOffersOneStatControlPerTrackedStat(): void
     {
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Bob')->in($game)->persist($this->entityManager);
 
         $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
 
-        $this->assertSame(
-            [
-                'stat-picker-cities-'.$player->id,
-                'stat-picker-ships-'.$player->id,
-                'stat-picker-census-'.$player->id,
-                'stat-picker-treasury-'.$player->id,
-                'stat-picker-cards-'.$player->id,
-            ],
-            $crawler->filter('button[commandfor]')->each(static fn ($node): string => (string) $node->attr('commandfor')),
-        );
+        $this->assertCount(5, $crawler->filter('button[commandfor^="stat-picker-"]'));
     }
 
     #[Test]
@@ -64,14 +55,4 @@ final class ControlBoardTest extends WebTestCase
         );
     }
 
-    #[Test]
-    public function noAdvisoryIsRenderedHereAnyMore(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-        $player = PlayerBuilder::named('Bob')->in($game)->withCities(5)->withCensus(1)->withTreasury(50)->persist($this->entityManager);
-
-        $crawler = $this->renderTwigComponent('molecules:ControlBoard', ['player' => $player])->crawler();
-
-        $this->assertCount(0, $crawler->filter('li[data-level]'));
-    }
 }

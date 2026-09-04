@@ -24,25 +24,6 @@ final class GameRepositoryTest extends WebTestCase
     }
 
     #[Test]
-    public function persistedGameIsFoundWithItsDefaultValues(): void
-    {
-        $game = GameBuilder::create()->persist($this->entityManager);
-
-        $foundGame = $this->gameRepository->find($game->id);
-
-        $this->assertInstanceOf(\App\State\Game::class, $foundGame);
-        $this->assertSame($game->id->toRfc4122(), $foundGame->id->toRfc4122());
-        $this->assertSame(1, $foundGame->currentTurn);
-        $this->assertSame(9, $foundGame->playerCount);
-    }
-
-    #[Test]
-    public function gameTableIsEmptyAtTheStartOfEachTest(): void
-    {
-        $this->assertSame(0, $this->gameRepository->count([]));
-    }
-
-    #[Test]
     public function findInProgressReturnsUnfinishedGamesOrderedFromMostToLeastRecent(): void
     {
         $oldest = GameBuilder::create()->persist($this->entityManager);

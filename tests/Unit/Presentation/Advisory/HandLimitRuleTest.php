@@ -12,10 +12,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use App\Tests\Support\Fixture\PlayerBuilder;
 
-/**
- * The limit itself is {@see HandSizeCalculator}'s; restating its bracket table here would break two
- * files for one change.
- */
 final class HandLimitRuleTest extends TestCase
 {
     #[Test]

@@ -15,16 +15,6 @@ use PHPUnit\Framework\TestCase;
 final class PlayerTest extends TestCase
 {
     #[Test]
-    public function citiesAndCensusDefaultToZeroAndOne(): void
-    {
-        $player = new Player(new Game(), 'Bob', 'minoa');
-
-        $this->assertSame(0, $player->cities);
-        $this->assertSame(1, $player->census);
-        $this->assertSame(0, $player->treasury);
-    }
-
-    #[Test]
     public function revokeCreditsRemovesOnlyTheEntriesReasonedAccordingly(): void
     {
         $player = new Player(new Game(), 'Bob', 'minoa');

@@ -76,7 +76,7 @@ final class HandSizeCalculatorTest extends TestCase
 
         yield 'one card over owes one' => [10, 1];
 
-        yield 'the reported case: eleven cards against a limit of nine owes two' => [11, 2];
+        yield 'two cards over owes two' => [11, 2];
     }
 
     #[Test]

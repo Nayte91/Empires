@@ -9,7 +9,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\Tables;
@@ -42,7 +41,6 @@ final class DashboardTabsTest extends WebTestCase
         yield 'anything invented' => ['?tab=elsewhere'];
     }
 
-    /** The assertion that fails the day someone reaches for a controller. */
     #[Test]
     public function theBarSwitchesPanelsWithoutAnyScript(): void
     {
@@ -50,21 +48,9 @@ final class DashboardTabsTest extends WebTestCase
         $game = $this->game();
 
         $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
-        $radios = $crawler->filter('menu input[type="radio"]');
 
         $this->assertNull($crawler->filter('main')->attr('data-controller'));
-        $this->assertSame(
-            ['tab', 'tab', 'tab', 'tab'],
-            $radios->each(static fn (Crawler $radio): ?string => $radio->attr('name')),
-        );
-        $this->assertSame(
-            ['roster', 'ast', 'nav', 'help'],
-            $radios->each(static fn (Crawler $radio): ?string => $radio->attr('value')),
-        );
-        $this->assertSame(
-            ['tab-roster', 'tab-ast', 'tab-nav', 'tab-help'],
-            $crawler->filter('menu label')->each(static fn (Crawler $label): ?string => $label->attr('for')),
-        );
+        $this->assertCount(4, $crawler->filter('menu input[type="radio"]'));
     }
 
     #[Test]

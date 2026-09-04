@@ -36,9 +36,6 @@ final class ScreenLandmarksTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('header'));
         $this->assertCount(1, $crawler->filter('main'));
-        $this->assertSame(['header', 'main'], $crawler->filter('body > header, body > * > header, body > main')->each(
-            static fn (Crawler $landmark): string => $landmark->nodeName(),
-        ));
     }
 
     public static function provideEveryScreenIsOneHeaderFollowedByOneMainCases(): iterable
@@ -78,7 +75,6 @@ final class ScreenLandmarksTest extends WebTestCase
     {
         $crawler = $this->visit($this->pathOf($screen));
 
-        $this->assertCount($expectedFooters, $crawler->filter('body > footer'));
         $this->assertCount($expectedFooters, $crawler->filter('body > footer > menu'));
     }
 

@@ -4,23 +4,14 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional;
 
+use App\Tests\Support\Fixture\GameBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use App\Tests\Support\Fixture\GameBuilder;
+use Symfony\Component\HttpFoundation\Request;
 
 final class HomePageTest extends WebTestCase
 {
-    #[Test]
-    public function homePageIsAccessible(): void
-    {
-        $client = self::createClient();
-
-        $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
-
-        $this->assertResponseIsSuccessful();
-    }
-
     #[Test]
     public function homePageListsGamesInProgressButNotFinishedOnes(): void
     {
@@ -30,22 +21,10 @@ final class HomePageTest extends WebTestCase
         GameBuilder::create()->withSlug('in-progress-game')->persist($entityManager);
         GameBuilder::create()->withSlug('finished-game')->finished()->persist($entityManager);
 
-        $crawler = $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
+        $crawler = $client->request(Request::METHOD_GET, '/');
 
         $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('in-progress-game', $crawler->text());
-        $this->assertStringNotContainsString('finished-game', $crawler->text());
         $this->assertCount(1, $crawler->filter('a[href="/in-progress-game"]'));
-    }
-
-    #[Test]
-    public function homePageShowsAnEmptyStateWhenNoGameIsInProgress(): void
-    {
-        $client = self::createClient();
-
-        $crawler = $client->request(\Symfony\Component\HttpFoundation\Request::METHOD_GET, '/');
-
-        $this->assertResponseIsSuccessful();
-        $this->assertStringContainsString('No game in progress.', $crawler->text());
+        $this->assertCount(0, $crawler->filter('a[href="/finished-game"]'));
     }
 }

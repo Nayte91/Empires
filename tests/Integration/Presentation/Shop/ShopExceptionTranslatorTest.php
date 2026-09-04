@@ -35,7 +35,7 @@ final class ShopExceptionTranslatorTest extends WebTestCase
 
             $this->assertNotNull($message, sprintf('No translation resolved for reason "%s".', $exception->reason()->value));
             $this->assertNotSame('', $message);
-            $this->assertStringNotContainsString('error.'.$exception->reason()->value, $message, 'The raw translation key leaked into the rendered message.');
+            $this->assertStringNotContainsString('error.'.$exception->reason()->value, $message);
         }
     }
 

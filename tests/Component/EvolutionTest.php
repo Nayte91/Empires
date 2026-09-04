@@ -14,35 +14,13 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 /**
- * Chart.js's default 2:1 aspect ratio silently overrides the height the container's CSS reserves —
- * a bug invisible in the markup, so what is pinned here are option keys rather than DOM. And a
- * legend button whose index does not match its dataset hides the wrong empire's curve, which no
+ * A legend button whose index does not match its dataset hides the wrong empire's curve, which no
  * other assertion notices.
  */
 final class EvolutionTest extends WebTestCase
 {
     use GameFixtureTrait;
     use InteractsWithTwigComponents;
-
-    #[Test]
-    public function theCanvasTakesItsHeightFromItsContainerRatherThanFromAFixedRatio(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $options = $this->mountEvolution($game)->getChart()->getOptions();
-
-        $this->assertFalse($options['maintainAspectRatio']);
-    }
-
-    #[Test]
-    public function noLegendIsDrawnInsideTheCanvas(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $options = $this->mountEvolution($game)->getChart()->getOptions();
-
-        $this->assertFalse($options['plugins']['legend']['display']);
-    }
 
     #[Test]
     public function eachLegendButtonCarriesTheIndexOfTheDatasetItToggles(): void

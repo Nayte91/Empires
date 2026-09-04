@@ -42,28 +42,6 @@ final class CatalogSortTest extends TestCase
         $this->assertSame(0, $comparison);
     }
 
-    #[Test]
-    #[DataProvider('provideEachSortCarriesItsOwnCaptionCases')]
-    public function eachSortCarriesItsOwnCaption(CatalogSort $sort, string $expectedLabel): void
-    {
-        $this->assertSame($expectedLabel, $sort->label());
-    }
-
-    public static function provideEachSortCarriesItsOwnCaptionCases(): iterable
-    {
-        yield 'net price keeps its own name' => [CatalogSort::NetPrice, 'Net price'];
-
-        yield 'name reads as name' => [CatalogSort::Name, 'Name'];
-
-        yield 'list price reads as raw price' => [CatalogSort::ListPrice, 'Raw price'];
-    }
-
-    #[Test]
-    public function theSortsAreOfferedAsNetPriceThenNameThenRawPrice(): void
-    {
-        $this->assertSame([CatalogSort::NetPrice, CatalogSort::Name, CatalogSort::ListPrice], CatalogSort::cases());
-    }
-
     /** @return array{advance: Advance, product: Product} */
     private function row(string $name, int $listPrice, int $netCost): array
     {

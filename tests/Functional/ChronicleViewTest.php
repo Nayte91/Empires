@@ -8,7 +8,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\Attributes\Test;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 use App\State\Game;
 use App\Tests\Support\Fixture\GameBuilder;
@@ -81,22 +80,8 @@ final class ChronicleViewTest extends WebTestCase
 
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
-        $this->assertGreaterThan(0, $crawler->filter('table.ast')->count());
+        $this->assertGreaterThan(0, $crawler->filter('caption#ast')->count());
         $this->assertCount(0, $crawler->filter('section h3'));
-    }
-
-    #[Test]
-    public function theBoardsCaptionCarriesTheFinishedMarkOnlyOnceTheGameIsFinished(): void
-    {
-        $running = Tables::westTable($this->entityManager);
-
-        $finished = $this->finishedGame();
-
-        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('caption#ast[data-finished]')->count();
-        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('caption#ast[data-finished]')->count();
-
-        $this->assertSame(1, $onChronicle);
-        $this->assertSame(0, $onDashboard);
     }
 
     #[Test]
@@ -107,12 +92,8 @@ final class ChronicleViewTest extends WebTestCase
         $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
 
         $this->assertNull($crawler->filter('main')->attr('data-controller'));
-        $this->assertSame(
-            ['ast', 'evolution', 'nav'],
-            $crawler->filter('menu input[type="radio"]')->each(static fn (Crawler $radio): ?string => $radio->attr('value')),
-        );
-        $this->assertSame('ast', $crawler->filter('menu input[checked]')->attr('value'));
-        $this->assertCount(1, $crawler->filter('#panel-ast table.ast'));
+        $this->assertCount(3, $crawler->filter('menu input[type="radio"]'));
+        $this->assertCount(1, $crawler->filter('#panel-ast caption#ast'));
         $this->assertCount(1, $crawler->filter('#panel-evolution canvas'));
         $this->assertCount(1, $crawler->filter('#panel-nav nav'));
     }

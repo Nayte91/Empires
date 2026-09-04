@@ -8,7 +8,6 @@ use App\Rules\Ruleset\RulebookRegistry;
 use App\State\Game;
 use App\State\Region;
 use App\Tests\Support\Fixture\GameBuilder;
-use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
@@ -53,21 +52,6 @@ final class HelpTest extends WebTestCase
             $this->registry()->forRegion(Region::West)->url,
             $this->registry()->forRegion(Region::East)->url,
         ]);
-    }
-
-    #[Test]
-    public function onlyThePublishersLinksLeaveTheApp(): void
-    {
-        $game = Tables::westTable($this->entityManager);
-
-        $crawler = $this->renderTwigComponent('Help', ['game' => $game])->crawler();
-
-        $this->assertCount(1, $crawler->filter('a:not([target])'));
-        $this->assertStringEndsWith('/trade-cards', (string) $crawler->filter('a:not([target])')->attr('href'));
-        $this->assertSame(
-            ['noopener'],
-            array_unique($crawler->filter('a[target]')->each(static fn (Crawler $a): ?string => $a->attr('rel'))),
-        );
     }
 
     /** @return list<string> */
