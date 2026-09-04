@@ -3,7 +3,7 @@ body {
     block-size: 100dvh;
 }
 
-.game-dashboard {
+:is(.game-dashboard, .game-chronicle) {
     container-type: inline-size;
     display: flex;
     flex-direction: column;
@@ -17,8 +17,6 @@ body {
         overflow-y: auto;
         overscroll-behavior-y: contain;
         padding: 1rem;
-
-        h2 { display: none }
     }
 
     caption { scroll-margin-block-start: 1rem }
@@ -28,6 +26,17 @@ body {
 
         a { color: inherit }
     }
+}
+
+@media (min-width: 60rem) {
+    /* Pinned to the viewport for the tabbed layout only: stacked, the page must grow with its panels,
+       or the grid squeezes every row and an overflow-hidden panel collapses to nothing. */
+    body { block-size: auto }
+    body > footer { display: none }
+}
+
+.game-dashboard {
+    > section h2 { display: none }
 
     @media (min-width: 60rem) {
         display: grid;
@@ -62,11 +71,4 @@ body {
     body:has(> footer [value="ast"]:checked) .game-dashboard > section:not(#panel-ast),
     body:has(> footer [value="nav"]:checked) .game-dashboard > section:not(#panel-nav),
     body:has(> footer [value="help"]:checked) .game-dashboard > section:not(#panel-help) { display: none }
-}
-
-@media (min-width: 60rem) {
-    /* Pinned to the viewport for the tabbed layout only: stacked, the page must grow with its panels,
-       or the grid squeezes every row and an overflow-hidden panel collapses to nothing. */
-    body { block-size: auto }
-    body > footer { display: none }
 }

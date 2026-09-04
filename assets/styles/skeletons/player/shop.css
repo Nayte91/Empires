@@ -3,15 +3,6 @@
     max-inline-size: 75rem;
     gap: var(--operator-gap);
 
-    .shop__error {
-        border: 1px solid var(--operator-error);
-        border-radius: var(--operator-radius);
-        margin: 0;
-        padding: 0.75em 1em;
-        background: var(--operator-error-bg);
-        color: var(--operator-error);
-    }
-
     > div {
         display: grid;
         align-items: start;

@@ -1,4 +1,4 @@
-{% props row, locked = false, remainingBudget = null, action = 'addToCart' %}
+{% props row, locked = false, remainingBudget = null, action = 'add' %}
 {% set cat1 = row.advance.facets[0] %}
 {% set cat2 = row.advance.facets[1] ?? cat1 %}
 {% set isOverBudget = remainingBudget is not null and row.product.netCost > remainingBudget %}
@@ -17,8 +17,6 @@
     <span class="bar"></span>
     <span class="name">{{ row.advance.name|capitalize }}</span>
     <span class="prices">
-        {# The tile shows only the net cost, so without the struck-through original the discount is
-           invisible at the point of choice — and an equal struck-through price would read as one. #}
         {% if row.product.netCost < row.advance.cost %}
             <s class="original">{{ row.advance.cost }}</s>
         {% endif %}

@@ -4,13 +4,6 @@
     margin-inline: auto;
     gap: var(--operator-gap);
 
-    .panels {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
-        align-items: start;
-        gap: var(--operator-gap);
-    }
-
     .counters dl {
         display: grid;
         gap: 0.25rem;
@@ -24,18 +17,5 @@
 
         dt { color: var(--ink-muted) }
         dd { margin: 0; font-weight: var(--weight-answer) }
-    }
-
-    .advances-grid {
-        display: grid;
-        align-content: start;
-        grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
-        gap: var(--operator-gap);
-
-        img {
-            inline-size: 100%;
-            aspect-ratio: 5 / 7;
-            object-fit: cover;
-        }
     }
 }

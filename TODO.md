@@ -22,7 +22,7 @@
 
 - [ ] **AST — plus de scroll horizontal sur mobile.** Depuis la suppression des wrappers (`<table class="ast">` racine du composant), la table rétrécit sous les 2,5 rem par case au lieu de scroller sur viewport étroit. Le mobile compte : trouver un compromis (conteneur de scroll réintroduit autrement, media query, autre approche) **sans** réintroduire les 2 div wrappers refusés.
 
-- [ ] **Shop — le layout rend le bouton de commande inatteignable.** Mesuré sur `/{game}/player/{player}/shop`, viewport 1280×900 : la page fait **7647 px** et le bouton est à **7538 px**, après les 51 cartes produit. `position: sticky` sur `.shop__cart` (`assets/styles/shop.css`) est **inopérant** — l'élément collant fait lui-même 7214 px, plus haut que le viewport, donc rien ne se fige. Et `.shop__layout` déclare `grid-template-columns: 856px 320px` alors qu'il n'a **qu'un seul enfant** : la colonne de 320 px est morte, vestige d'un design à deux colonnes. Piste : deux vrais enfants de grille — catalogue d'un côté, sidebar panier réellement collante et scrollable indépendamment.
+- [ ] **Shop — mesurer à nouveau le layout de la boutique.** La mesure précédente (page de 7647 px, bouton de commande à 7538 px) portait sur `.shop__cart` / `.shop__layout`, qui n'existent plus depuis la reconstruction de la boutique (`11115d6`) : refaire la mesure sur `/{game}/player/{player}/shop` avant de conclure.
 
 ---
 
@@ -32,7 +32,7 @@
 |:--------:|:------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:--------:|:------------:|
 | **i18n** | Étendre la traduction à l'UI                    | Seules les exceptions sont traduites (10 clés, domaine `shop`). Tout le reste de l'interface est de l'anglais en dur dans les templates (`Submit my order`, `Clear cart`, `Free gift:`…). Décider si on veut une vraie UI traduisible, et si oui quelles locales — le catalogue actuel est `en` seul, délibérément.                                                    | Moyenne  | ta décision |
 | **Hist** | Historique des crédits sur la page Orders de l'opérateur | Chaque `CreditEntry` porte son tour, sa portée, sa valeur signée, sa **source** (`shop`, `scenario`, `special ability`) et sa raison. La vue peut donc distinguer « acheté » de « mise en place ». **C'est cet usage qui justifie le JSON plutôt qu'une entité.** ⚠️ Elle ne montrera **rien des commandes annulées** — leurs écritures sont retirées, pas compensées : ne pas la présenter comme un journal d'audit. | Petite   | rien |
-| **Tech** | Micro-reliquats                                 | `REFACTOR-WHEN` : split du moteur de promotions en classes d'action — **toujours sous son seuil** (3 familles, se déclenche à la 4ᵉ). · `src/Component/` est à **15 fichiers**, borne basse du seuil de mirroring atomic design : à surveiller, pas encore à agir.                                                                                    | Micro    | rien |
+| **Tech** | Micro-reliquats                                 | `REFACTOR-WHEN` : split du moteur de promotions en classes d'action — **toujours sous son seuil** (3 familles, se déclenche à la 4ᵉ). · `src/Presentation/Component/` est à **26 fichiers**, borne basse du seuil de mirroring atomic design : à surveiller, pas encore à agir.                                                                                    | Micro    | rien |
 
 ---
 
@@ -61,7 +61,7 @@
 Rien de tout ceci n'est nécessaire tant qu'Empires est le seul consommateur.
 
 - `LICENSE`, `CHANGELOG`, un `.gitattributes` excluant `config/tools/` de la distribution (mais **gardant** `config/{services,workflow,messenger}.yaml`, chargés à l'exécution), et un job CI faisant un `composer install` **dans** le package puis lançant sa suite.
-- **Dette résiduelle** : la lib ne nomme plus l'hôte ni en code ni en config, mais **5 docblocks de `src/` citent encore des classes hôtes en exemple** (`BuyerInterface`, `BuyerProviderInterface`, `FacetProviderInterface`, `Promotion/OptionCredits`, `Exception/ShopExceptionReason`), plus `Service/OrderValidator.php:37` qui cite `$player->advances`. Références pendantes pour tout consommateur qui n'est pas Empires. Le README a le droit : c'est un document de conception qui assume de documenter le cas Empires.
+- **Dette résiduelle** : la lib ne nomme plus l'hôte ni en code ni en config, mais `Service/OrderValidator.php:37` cite encore `$player->advances`. Référence pendante pour tout consommateur qui n'est pas Empires. Le README a le droit : c'est un document de conception qui assume de documenter le cas Empires.
 - L'extraction vers un repo Git séparé (`git subtree split`) reste optionnelle — l'historique la supporte déjà, git ayant détecté les renommages du déménagement.
 
 ---

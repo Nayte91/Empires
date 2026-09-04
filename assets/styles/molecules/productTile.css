@@ -12,11 +12,6 @@
     overflow: hidden;
     cursor: copy;
 
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
     img {
         display: none;
         grid-column: 1 / -1;

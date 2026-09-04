@@ -1,9 +1,10 @@
 .player-board {
     display: grid;
     max-inline-size: 75rem;
-    margin-inline: auto;
     gap: var(--operator-gap);
+}
 
+:is(.player-board, .player-saga) {
     .panels {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));

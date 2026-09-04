@@ -18,12 +18,7 @@
     }
 
     menu {
-        display: flex;
         flex-wrap: wrap;
-        gap: 0.5rem;
-        margin: 0;
-        padding: 0;
-        list-style: none;
 
         li { display: contents }
     }
