@@ -31,8 +31,8 @@ final class NavigationTest extends WebTestCase
             ['operator', 'alice', 'bob', 'carol', 'dave', 'eve'],
             array_column($targets, 'key'),
         );
-        $this->assertStringEndsWith('/'.$game->slug.'/operator/board', $targets[0]['url']);
-        $this->assertStringEndsWith('/'.$game->slug.'/player/alice', $targets[1]['url']);
+        $this->assertStringEndsWith('/game/'.$game->slug.'/operator/board', $targets[0]['url']);
+        $this->assertStringEndsWith('/game/'.$game->slug.'/player/alice', $targets[1]['url']);
     }
 
     #[Test]

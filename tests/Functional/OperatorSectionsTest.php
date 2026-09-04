@@ -52,7 +52,7 @@ final class OperatorSectionsTest extends WebTestCase
         $current = $crawler->filter('body > footer > menu a[aria-current="page"]');
 
         $this->assertCount(1, $current);
-        $this->assertSame('/'.$game->slug.'/operator'.$pathSuffix, $current->attr('href'));
+        $this->assertSame('/game/'.$game->slug.'/operator'.$pathSuffix, $current->attr('href'));
     }
 
     /** @return iterable<string, array{string}> */
@@ -87,19 +87,19 @@ final class OperatorSectionsTest extends WebTestCase
 
         $crawler = $this->visitSection($game, '/pos');
 
-        $this->assertSame('/'.$game->slug.'/operator/orders', $crawler->filter('#page-title > a')->attr('href'));
+        $this->assertSame('/game/'.$game->slug.'/operator/orders', $crawler->filter('#page-title > a')->attr('href'));
     }
 
     private function visitSection(Game $game, string $pathSuffix): Crawler
     {
-        return $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/operator'.$pathSuffix);
+        return $this->client->request(Request::METHOD_GET, '/game/'.$game->slug.'/operator'.$pathSuffix);
     }
 
     /** @return list<string> */
     private function sectionPathsOf(Game $game): array
     {
         return array_map(
-            static fn (string $suffix): string => '/'.$game->slug.'/operator'.$suffix,
+            static fn (string $suffix): string => '/game/'.$game->slug.'/operator'.$suffix,
             ['/board', '/orders', '/calamities', '/trade', '/abilities'],
         );
     }

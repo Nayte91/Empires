@@ -20,7 +20,7 @@ final class DashboardViewTest extends WebTestCase
 
         $game = Tables::westTable($entityManager);
 
-        $crawler = $client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('caption#ast'));
@@ -31,7 +31,7 @@ final class DashboardViewTest extends WebTestCase
     public function unknownGameSlugReturnsNotFound(): void
     {
         $client = self::createClient();
-        $client->request(Request::METHOD_GET, '/does-not-exist');
+        $client->request(Request::METHOD_GET, '/game/does-not-exist');
 
         $this->assertResponseStatusCodeSame(404);
     }

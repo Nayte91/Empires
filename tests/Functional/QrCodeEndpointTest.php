@@ -31,7 +31,7 @@ final class QrCodeEndpointTest extends WebTestCase
         $player = Tables::seat($game, 'Alice');
 
         foreach (['operator', $player->slug] as $key) {
-            $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/qr/'.$key);
+            $this->client->request(Request::METHOD_GET, '/game/'.$game->slug.'/qr/'.$key);
 
             $this->assertResponseIsSuccessful($key);
             $this->assertResponseHeaderSame('Content-Type', 'image/svg+xml');
@@ -44,7 +44,7 @@ final class QrCodeEndpointTest extends WebTestCase
     {
         $game = Tables::westTable($this->entityManager);
 
-        $this->client->request(Request::METHOD_GET, '/'.$game->slug.'/qr/nobody');
+        $this->client->request(Request::METHOD_GET, '/game/'.$game->slug.'/qr/nobody');
 
         $this->assertResponseStatusCodeSame(404);
     }
@@ -55,12 +55,12 @@ final class QrCodeEndpointTest extends WebTestCase
         $game = GameBuilder::create()->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $images = $crawler->filter('nav dialog img');
 
         $this->assertSame(
-            ['/'.$game->slug.'/qr/operator', '/'.$game->slug.'/qr/'.$player->slug],
+            ['/game/'.$game->slug.'/qr/operator', '/game/'.$game->slug.'/qr/'.$player->slug],
             $images->each(static fn ($image): ?string => $image->attr('src')),
         );
     }

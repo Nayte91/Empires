@@ -30,7 +30,7 @@ final class ChronicleViewTest extends WebTestCase
     {
         $game = Tables::westTable($this->entityManager);
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertResponseIsSuccessful();
         $this->assertGreaterThan(0, $crawler->filter('caption#roster')->count());
@@ -41,11 +41,11 @@ final class ChronicleViewTest extends WebTestCase
     {
         $game = $this->finishedGame();
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertResponseIsSuccessful();
         $this->assertFalse($this->client->getResponse()->isRedirect());
-        $this->assertSame('/'.$game->slug, $this->client->getRequest()->getPathInfo());
+        $this->assertSame('/game/'.$game->slug, $this->client->getRequest()->getPathInfo());
         $this->assertGreaterThan(0, $crawler->filter('canvas[data-controller~="symfony--ux-chartjs--chart"]')->count());
     }
 
@@ -54,7 +54,7 @@ final class ChronicleViewTest extends WebTestCase
     {
         $game = $this->finishedGame();
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertCount(0, $crawler->filter('caption#roster'));
     }
@@ -66,8 +66,8 @@ final class ChronicleViewTest extends WebTestCase
 
         $finished = $this->finishedGame();
 
-        $onDashboard = $this->client->request(Request::METHOD_GET, '/'.$running->slug)->filter('a[href$="/operator/board"]')->count();
-        $onChronicle = $this->client->request(Request::METHOD_GET, '/'.$finished->slug)->filter('a[href$="/operator/board"]')->count();
+        $onDashboard = $this->client->request(Request::METHOD_GET, '/game/'.$running->slug)->filter('a[href$="/operator/board"]')->count();
+        $onChronicle = $this->client->request(Request::METHOD_GET, '/game/'.$finished->slug)->filter('a[href$="/operator/board"]')->count();
 
         $this->assertGreaterThan(0, $onDashboard);
         $this->assertSame(0, $onChronicle);
@@ -78,7 +78,7 @@ final class ChronicleViewTest extends WebTestCase
     {
         $game = $this->finishedGame();
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertGreaterThan(0, $crawler->filter('caption#ast')->count());
         $this->assertCount(0, $crawler->filter('section h3'));
@@ -89,7 +89,7 @@ final class ChronicleViewTest extends WebTestCase
     {
         $game = $this->finishedGame();
 
-        $crawler = $this->client->request(Request::METHOD_GET, '/'.$game->slug);
+        $crawler = $this->client->request(Request::METHOD_GET, '/game/'.$game->slug);
 
         $this->assertNull($crawler->filter('main')->attr('data-controller'));
         $this->assertCount(3, $crawler->filter('menu input[type="radio"]'));

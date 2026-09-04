@@ -34,7 +34,7 @@ final class ScreenTitleTest extends WebTestCase
     {
         $game = GameBuilder::create()->withCurrentTurn(4)->persist($this->entityManager);
 
-        $crawler = $this->visit('/'.$game->slug.$pathSuffix);
+        $crawler = $this->visit('/game/'.$game->slug.$pathSuffix);
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('#page-title'));
@@ -83,7 +83,7 @@ final class ScreenTitleTest extends WebTestCase
     {
         $game = GameBuilder::create()->withCurrentTurn(4)->finished()->persist($this->entityManager);
 
-        $crawler = $this->visit('/'.$game->slug);
+        $crawler = $this->visit('/game/'.$game->slug);
 
         $this->assertCount(1, $crawler->filter('#page-title'));
     }
@@ -106,6 +106,6 @@ final class ScreenTitleTest extends WebTestCase
 
     private function pathOf(Player $player): string
     {
-        return '/'.$player->game->slug.'/player/'.$player->slug;
+        return '/game/'.$player->game->slug.'/player/'.$player->slug;
     }
 }
