@@ -30,8 +30,9 @@ from it, so no screen ever declares a text colour for a light theme and another 
 `background` reads that token.** A `background:` holding a literal colour is the grep-able symptom
 of a surface lying about its ground — the text inside it will be inked for the wrong backdrop.
 Surfaces that declare one today: the page (`body`, and `body[data-empire]` from the empire colour),
-the dashboard and chronicle (`#111`), the operator's canvas, panels, modals, order cards, game
-tiles, buttons. `.panel.dark` returns its ground to the page, because it paints nothing.
+the dashboard and chronicle (`#111`), panels, modals, order cards, game tiles, buttons. The
+operator's canvas declares none: it keeps the page's. `.panel.dark` returns its ground to the page,
+because it paints nothing.
 
 The two formulas are declared on `*` rather than `:root`: a custom property containing `var()` is
 resolved where it is **declared**, so an ink declared once at the root would keep the root's ground
@@ -43,18 +44,18 @@ lets a white panel on an empire-coloured page hold dark text.
 | Token | Value | Role |
 |---|---|---|
 | `--size-hero` | `2.5rem` | the celebrated title: chronicle and saga, when a game is over |
-| `--size-title` | `2rem` | the page title on every other screen |
+| `--size-title` | `1.5rem` | the page title on every other screen |
 | `--size-body` | `1rem` | running text |
 | `--size-small` | `0.75rem` | hard floor: qualifiers, labels, hints |
 
-`--size-body` is declared once, on `body`. Everywhere else the rule is **no `font-size` means body
-size**; the token exists for the one case that needs it, coming back up to body size from inside a
-smaller context. Nothing sits between 16 and 12: a text the eye runs along is 16, a text the eye
-lands on is 12.
+`--size-body` is declared on `*` with the other tokens, and `body` applies it once. Everywhere else
+the rule is **no `font-size` means body size**; the token exists for the one case that needs it,
+coming back up to body size from inside a smaller context. Nothing sits between 16 and 12: a text
+the eye runs along is 16, a text the eye lands on is 12.
 
 The page title carries the identity — the game or the player — and the section it belongs to is
 named by the navigation, never by the header. The canvas draws that title at `1.125rem`, deliberately
-modest; the app currently runs it at `2rem`, closer to the celebrated one.
+modest; the app runs it at `1.5rem`, a step above running text without reaching the celebrated one.
 
 ## Weights — three, and what each claims
 
@@ -141,11 +142,6 @@ queue), the `<summary>` of a fold-out panel, and key/value labels. They are name
 
 ## What is deliberately not here yet
 
-- The canvas grounds — parchment `#fdf5e6` for meta and operator screens, `#141110` for the
-  in-game ones — are not applied; the app still opens on `#aaa`. Only the ink rule that will serve
-  them is in place.
 - The canvas' absolute ink tokens (`--ink-primary-dark`, `--ink-muted-dark`, `--ink-inverse`) have
   no equivalent: the first two are what the formula computes, and the third belongs to the fill it
   sits on, not to the page.
-- The box treatment — white boxes with an ink hairline and no shadow — is decided on the canvas but
-  not wired.

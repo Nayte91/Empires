@@ -38,11 +38,6 @@
         font-weight: var(--weight-answer);
     }
 
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
     &.quiet {
         --ground: inherit;
         --button-border: transparent;

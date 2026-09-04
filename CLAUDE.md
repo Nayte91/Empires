@@ -16,7 +16,7 @@ lineage, **not** Sid Meier's). **Mega Empires (2024) is the canonical ruleset**;
 # 🛠 Stack & commands
 
 PHP 8.5 · Symfony 8.1 · Twig + UX Twig/Live Components · Stimulus (`assets/controllers/`:
-`mercure-refresh`, `modal`, `evolution`) · Asset Mapper (no build) · Mercure (hub in Caddy) ·
+`mercure-refresh`, `evolution`) · Asset Mapper (no build) · Mercure (hub in Caddy) ·
 Docker Compose, single service `app` (FrankenPHP), port 8020, `compose.yml` + `compose.dev|prod.yml`
 · infra in `system/` (Containerfile, webserver, migrations).
 
@@ -79,8 +79,7 @@ packages/userforged/shop-engine/   # the ordering engine — own CLAUDE.md, read
   skeleton, `{% include %}` partial, Turbo stream → `snake_case`. Directories lowercase.
 - **Every `<dialog>` goes through `molecules/Modal`**: it owns the element, `class="modal"` and
   `closedby="any"` (opt out with `:closedby="false"`, never `null`). It does not render the opening
-  button: the caller's `<button command="show-modal" commandfor="<id>">` points at it. A
-  server-opened `<dialog open>` is non-modal — `modal_controller.js` re-opens it with `showModal()`.
+  button: the caller's `<button command="show-modal" commandfor="<id>">` points at it.
 - **Colors** come from the `ThemeColors` atom as `--empire-<slug>` / `--advance-<category>` CSS vars.
   Never resolve a color in PHP: `var(--empire-{{ slug }}, dimgray)`.
 - **`this` is rebound inside a `<twig:X>` slot**: alias before the tag (`{% set picker = this %}`),
@@ -116,7 +115,7 @@ tests/            # tier first, layer second
 ├── Integration/  # container + DB, no rendering    ┤ (Unit/State/, Integration/Engine/Handler/, …)
 ├── Component/    # Twig / Live component render    ┘
 ├── Functional/   # HTTP client + routes — crosses every layer, mirrors none (so does Integration/ShopFlow/)
-├── Support/      # doubles (RecordingHub, NullHub) + fixtures (Fixture/: Game|Player|OrderBuilder, Tables)
+├── Support/      # doubles (RecordingHub, ThrowingHub) + fixtures (Fixture/: Game|Player|OrderBuilder, Tables)
 └── bootstrap.php # drops+recreates the SQLite schema per run; DAMA rolls back each test
 ```
 

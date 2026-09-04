@@ -1,6 +1,6 @@
 <main {{ attributes }} class="game-creator">
     {% if error %}
-        <p class="game-creator__error" data-error role="alert">{{ error }}</p>
+        <p data-error role="alert">{{ error }}</p>
     {% endif %}
 
     <fieldset class="game-creator__scenario">
@@ -65,7 +65,7 @@
 
             {% set isAddPlayerDisabled = computed.isPlayerLimitReached %}
             <button
-    class="button"
+                class="button"
                 type="button"
                 {{ live_action('addPlayer') }}
                 {{ isAddPlayerDisabled ? 'disabled' }}

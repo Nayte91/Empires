@@ -9,18 +9,12 @@ use Symfony\Component\Yaml\Yaml;
 
 final class EmpireRegistry
 {
-    public const string SORT_BY_POSITION = 'position';
-    public const string SORT_BY_NAME = 'name';
-
     /**
      * @var null|array<string, array{
      *     position: int,
      *     name: string,
      *     demonym: string,
      *     adjective: string,
-     *     people_icon: ?string,
-     *     ship_icon: ?string,
-     *     city_icon: ?string,
      *     color: string,
      * }>
      */
@@ -32,31 +26,12 @@ final class EmpireRegistry
     ) {}
 
     /** @return array<string, Empire> */
-    public function findAll(string $sortBy = self::SORT_BY_POSITION): array
+    public function findAll(): array
     {
-        $empiresArray = $this->getEmpiresData();
-
-        if ('name' === $sortBy) {
-            uasort($empiresArray, static fn ($a, $b): int => $a['name'] <=> $b['name']);
-        }
-
         return array_map(
             $this->hydrateEmpire(...),
-            $empiresArray
+            $this->getEmpiresData()
         );
-    }
-
-    public function findByPosition(int $position): ?Empire
-    {
-        $empiresArray = $this->getEmpiresData();
-
-        foreach ($empiresArray as $empireData) {
-            if ($empireData['position'] === $position) {
-                return $this->hydrateEmpire($empireData);
-            }
-        }
-
-        return null;
     }
 
     public function findByName(string $name): ?Empire
@@ -83,9 +58,6 @@ final class EmpireRegistry
      *     name: string,
      *     demonym: string,
      *     adjective: string,
-     *     people_icon: ?string,
-     *     ship_icon: ?string,
-     *     city_icon: ?string,
      *     color: string,
      * }>
      */
@@ -104,9 +76,6 @@ final class EmpireRegistry
              *     name: string,
              *     demonym: string,
              *     adjective: string,
-             *     people_icon: ?string,
-             *     ship_icon: ?string,
-             *     city_icon: ?string,
              *     color: string,
              * }> $empires
              */
@@ -123,9 +92,6 @@ final class EmpireRegistry
      *     name: string,
      *     demonym: string,
      *     adjective: string,
-     *     people_icon: ?string,
-     *     ship_icon: ?string,
-     *     city_icon: ?string,
      *     color: string,
      * } $data
      */
@@ -136,9 +102,6 @@ final class EmpireRegistry
             name: $data['name'],
             demonym: $data['demonym'],
             adjective: $data['adjective'],
-            peopleIcon: $data['people_icon'],
-            shipIcon: $data['ship_icon'],
-            cityIcon: $data['city_icon'],
             color: $data['color'],
         );
     }

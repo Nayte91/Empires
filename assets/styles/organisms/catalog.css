@@ -14,10 +14,6 @@
             place-content: center;
             min-block-size: 2.75rem;
             border-radius: 0.25rem;
-            color: var(--ink-muted);
-            font-size: var(--size-small);
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
             cursor: pointer;
         }
 

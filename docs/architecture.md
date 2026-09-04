@@ -63,11 +63,9 @@ question (`Rules/`) or reaches outside (`Infrastructure/`).
 
 `molecules/Modal` owns the `<dialog>`, `class="modal"` and the `closedby="any"` light dismiss, and
 nothing else. No two callers put the opening button in the same place: `atoms/PageTitle` owns
-Rename's, `Navigation` emits its QR buttons in a different loop than its dialogs, the POS has none
-and is rendered `open` by the server. The link is the `id` the caller's own
+Rename's, `Navigation` emits its QR buttons in a different loop than its dialogs, the POS puts its
+`erase-confirm-*` button inside the row it erases. The link is the `id` the caller's own
 `<button command="show-modal" commandfor="…">` points at — native HTML, no JavaScript.
-`assets/controllers/modal_controller.js` exists only for the server-opened case: a `<dialog open>`
-written in markup is non-modal, so it re-opens it with `showModal()`.
 
 ## Why `assertEquals` is right on value-object graphs
 
@@ -94,5 +92,6 @@ the same, because a QR code hands it out.
 
 Every screen titles itself with what the reader is looking at, never with the section they are
 looking at it in — which is why the shop is titled with the player sitting at it and the trade cards
-page with the game's slug. Four components share the `h1` rank and the `#page-title` anchor; each
-signs its own output with `data-title`, so which one serves a screen is read off that signature.
+page with the game's slug. One atom, `atoms/PageTitle`, holds the `h1` rank and the `#page-title`
+anchor; its `variant` prop signs the output with `data-title`, so which kind of title serves a
+screen is read off that signature.

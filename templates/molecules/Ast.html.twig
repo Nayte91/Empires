@@ -1,6 +1,6 @@
 {% set openingSpan = this.openingSpan %}
 <table {{ attributes.defaults({'data-region': 'ast'}) }} class="ast">
-    <caption id="ast"{{ game.finished ? ' data-finished' }}>{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
+    <caption class="label" id="ast"{{ game.finished ? ' data-finished' }}>{{ game.astVersion.value|capitalize }} version — Turn {{ game.currentTurn }}{{ game.finished ? ' — finished' }}</caption>
     <thead>
         <tr>
             <th scope="col"></th>

@@ -52,14 +52,6 @@
     }
 
     @container (min-width: 40rem) {
-        border: 1px solid dimgray;
-        border-radius: var(--operator-radius);
-
-        ul {
-            grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
-            gap: 1px;
-
-            li { box-shadow: 0 0 0 1px dimgray }
-        }
+        ul { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)) }
     }
 }

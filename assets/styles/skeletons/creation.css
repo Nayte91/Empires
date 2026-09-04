@@ -59,15 +59,6 @@
         tbody tr[data-empire] { background-color: color-mix(in oklab, var(--player-color) 50%, white) }
     }
 
-    .game-creator__error {
-        border: 1px solid var(--operator-error);
-        border-radius: var(--operator-radius);
-        margin: 0;
-        padding: 0.75em 1em;
-        background: var(--operator-error-bg);
-        color: var(--operator-error);
-    }
-
     .game-creator__field-error {
         margin: 0;
         padding: 0.25em 0.5em;

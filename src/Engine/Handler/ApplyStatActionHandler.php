@@ -14,14 +14,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-/**
- * The action name travels as a client-writable LiveProp (StatPicker::$pendingAction), so this is
- * where legality is actually enforced: an action must be both offered (isOffered — on the
- * player's menu at all) and available (isAvailable — clickable right now), or it silently no-ops.
- * StatPicker::runAction() used to check only isOffered() via getActions(); an offered-but-
- * unavailable action (e.g. building a ship with less than its cost in treasury) would still
- * apply(), clamped but not refused.
- */
 #[AsMessageHandler]
 final readonly class ApplyStatActionHandler
 {

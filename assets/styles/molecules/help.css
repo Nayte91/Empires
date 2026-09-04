@@ -40,16 +40,10 @@
     }
 
     @container (min-width: 40rem) {
-        border: 1px solid dimgray;
-        border-radius: var(--operator-radius);
-
         ul {
-            gap: 1px;
-
             li {
                 min-block-size: auto;
                 border-inline-start-width: 4px;
-                box-shadow: 0 0 0 1px dimgray;
 
                 a {
                     display: flex;

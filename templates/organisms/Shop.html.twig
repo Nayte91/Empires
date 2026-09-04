@@ -3,7 +3,7 @@
     class="shop"
 >
     {% if error %}
-        <p class="shop__error" role="alert">{{ error }}</p>
+        <p role="alert">{{ error }}</p>
     {% endif %}
 
     <twig:molecules:Discounts :player="player" :open="true" />
@@ -16,7 +16,7 @@
                 <fieldset>
                     {% for case in enum_cases('App\\Presentation\\Shop\\CatalogSort') %}
                         <input type="radio" name="sort" id="sort-{{ case.value }}" value="{{ case.value }}" data-model="sort" {{ case == sort ? 'checked' }} hidden>
-                        <label for="sort-{{ case.value }}">{{ case.label }}</label>
+                        <label class="label" for="sort-{{ case.value }}">{{ case.label }}</label>
                     {% endfor %}
                 </fieldset>
 

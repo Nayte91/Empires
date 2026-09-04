@@ -44,7 +44,7 @@
         <p class="total">Total: {{ this.total }}</p>
 
         {% if error %}
-            <p class="shop__error" role="alert">{{ error }}</p>
+            <p role="alert">{{ error }}</p>
         {% endif %}
 
         {% set isDisabled = locked or this.isEmpty or this.hasIncompleteAllocations %}

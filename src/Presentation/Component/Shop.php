@@ -39,16 +39,9 @@ final class Shop
     #[LiveProp]
     public Player $player; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    /**
-     * Planning aid only — never persisted, never reaching Engine/ or the command bus, never
-     * affecting checkout. Null means no constraint, distinct from a budget of 0 (see
-     * {@see getRemainingBudget()}); LiveComponent itself coerces an emptied number input to null
-     * for a nullable int prop, so no extra handling is needed here.
-     */
     #[LiveProp(writable: true)]
     public ?int $budget = null;
 
-    /** Planning aid only — never persisted, never reaching Engine/ or the command bus. */
     #[LiveProp(writable: true)]
     public CatalogSort $sort = CatalogSort::NetPrice;
 
@@ -67,11 +60,9 @@ final class Shop
         private readonly ShopExceptionTranslator $shopExceptionTranslator,
     ) {}
 
-    /** Re-renders Shop so the order block reflects the order Cart::checkout() just placed. */
     #[LiveListener('orderPlaced')]
     public function onOrderPlaced(): void {}
 
-    /** Re-renders Shop so the catalogue puts back what Cart::remove() or Cart::clear() released. */
     #[LiveListener('cartChanged')]
     public function onCartChanged(): void {}
 
@@ -117,13 +108,6 @@ final class Shop
         return $editable ? $order : null;
     }
 
-    public function isCartEmpty(): bool
-    {
-        $cart = $this->cartStorage->load($this->getCartKey());
-
-        return $cart->isEmpty();
-    }
-
     /** @return list<array{advance: Advance, line: OrderLine}> */
     public function getOrderLines(): array
     {
@@ -156,11 +140,6 @@ final class Shop
         return OrderStatus::Validated === $this->getCurrentTurnOrder()?->status;
     }
 
-    public function getOrderStatus(): ?string
-    {
-        return $this->getCurrentTurnOrder()?->status->value;
-    }
-
     public function getOrderStatusHook(): string
     {
         return $this->getCurrentTurnOrder()?->status->value ?? 'missing';
@@ -175,11 +154,6 @@ final class Shop
             $this->player->game->currentTurn,
             'pending' === $status ? 'submitted' : $status,
         );
-    }
-
-    public function isCartVisible(): bool
-    {
-        return !$this->getCurrentTurnOrder() instanceof Order || !$this->isCartEmpty();
     }
 
     public function isOrderVisible(): bool
@@ -205,6 +179,18 @@ final class Shop
     public function getCartKey(): string
     {
         return CartKey::shop($this->player);
+    }
+
+    private function isCartEmpty(): bool
+    {
+        $cart = $this->cartStorage->load($this->getCartKey());
+
+        return $cart->isEmpty();
+    }
+
+    private function isCartVisible(): bool
+    {
+        return !$this->getCurrentTurnOrder() instanceof Order || !$this->isCartEmpty();
     }
 
     private function getCartTotal(): int
