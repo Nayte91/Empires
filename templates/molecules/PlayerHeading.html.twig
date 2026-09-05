@@ -15,7 +15,9 @@
             </label>
 
             <menu>
-                <li><button class="button" type="submit">Cancel</button></li>
+                {# A `method="dialog"` form's implicit submission (Enter in the field) fires its FIRST
+                   submit button, so Cancel must close through the invoker command, never as a submit. #}
+                <li><button class="button" type="button" command="close" commandfor="rename-player-{{ player.id }}">Cancel</button></li>
                 <li><button class="button" type="submit" {{ live_action('rename') }}>Confirm</button></li>
             </menu>
         </form>

@@ -29,7 +29,7 @@
                     {% for n in picker.floor..picker.displayCeiling %}
                         <button class="button" type="submit" data-action="live#action" data-live-action-param="pick"
                                 data-live-value-param="{{ n }}" data-value="{{ n }}"
-                                {{ value == n ? 'data-selected' }} {{ n > ceiling ? 'disabled' }}>
+                                {{ value == n ? 'data-selected autofocus' }} {{ n > ceiling ? 'disabled' }}>
                             {{ stat.format(n) }}
                         </button>
                     {% endfor %}

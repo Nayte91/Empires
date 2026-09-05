@@ -98,7 +98,7 @@ final class PlayerOrdersTest extends WebTestCase
         $this->assertSame('validated', $card['status']);
         $this->assertSame(280, $card['total']);
         $this->assertSame(7, $card['vp']);
-        $this->assertCount(1, $rendered->filter('article button[commandfor]'));
+        $this->assertCount(1, $rendered->filter('article button[command="show-modal"][commandfor]'));
         $this->assertCount(0, $rendered->filter('article a[href$="/operator/pos"]'));
     }
 

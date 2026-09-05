@@ -150,7 +150,7 @@ final class PosPageTest extends WebTestCase
 
         $crawler = $this->createPos($game, turn: 3)->set('playerSlug', $bob->slug)->render()->crawler();
 
-        $this->assertCount(1, $crawler->filter('button[commandfor^="erase-confirm-"]'));
+        $this->assertCount(1, $crawler->filter('button[command="show-modal"][commandfor^="erase-confirm-"]'));
         $this->assertCount(1, $crawler->filter('dialog[id^="erase-confirm-"] [data-live-action-param="eraseOrder"]'));
     }
 

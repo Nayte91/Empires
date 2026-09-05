@@ -99,7 +99,7 @@
                         </p>
                     {% endif %}
                     <menu>
-                        <li><button class="button" type="submit">Cancel</button></li>
+                        <li><button class="button" type="button" command="close" commandfor="erase-confirm-{{ player.id }}-{{ pos.turn }}">Cancel</button></li>
                         <li><button class="button" type="submit" {{ live_action('eraseOrder') }}>Confirm</button></li>
                     </menu>
                 </form>
