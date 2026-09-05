@@ -2,11 +2,101 @@
     {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: operator_topic(game)})) }}
     class="operator-orders"
 >
-    {% for player in game.players %}
-        <section data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
-            <h3>{{ player.empire|empire_demonym|capitalize }} <small>({{ player.name }})</small></h3>
+    <div>
+        <section class="panel">
+            {% set counts = this.counts %}
 
-            <twig:PlayerOrders :player="player" :ordersStamp="this.ordersStampFor(player)" />
+            <span data-pending><b>{{ counts.pending }}</b> pending</span>
+            <span data-missing><b>{{ counts.missing }}</b> empty</span>
+            <span data-valid><b>{{ counts.validated }}</b> valid</span>
         </section>
-    {% endfor %}
+
+        <a class="button" href="{{ path('app_operator_pos', {slug: game.slug}) }}" title="New sale">+</a>
+    </div>
+
+    <section class="orders panel">
+        <twig:atoms:Label>Orders</twig:atoms:Label>
+
+        <fieldset>
+            {% for case in enum_cases('App\\Presentation\\Shop\\OrderCardFilter') %}
+                <input type="radio" name="filter" id="filter-{{ case.value }}" value="{{ case.value }}" data-model="filter" {{ case == filter ? 'checked' }} hidden>
+                <label class="label" for="filter-{{ case.value }}">{{ case.label }}</label>
+            {% endfor %}
+        </fieldset>
+
+        <div>
+            {% set cards = this.cards %}
+            {% set previousTurn = null %}
+
+            {% if cards is empty %}
+                <twig:atoms:Hint>All turns</twig:atoms:Hint>
+
+                <article class="order-card" data-status="none">
+                    <p><strong>0</strong></p>
+                    <twig:atoms:Hint>No {{ filter.label|lower }} order</twig:atoms:Hint>
+                </article>
+            {% endif %}
+
+            {% for card in cards %}
+                {% if card.turn != previousTurn %}
+                    <twig:atoms:Hint>Turn {{ card.turn }}</twig:atoms:Hint>
+                    {% set previousTurn = card.turn %}
+                {% endif %}
+
+                {% set player = card.player %}
+
+                <twig:molecules:OrderCard
+                    :status="card.status"
+                    :turn="card.turn"
+                    :slugs="card.slugs"
+                    :total="card.total"
+                    :vp="card.vp"
+                    :empire="player.empire"
+                    :name="player.name"
+                    :playerId="player.id"
+                >
+                    {% if card.status == 'validated' %}
+                        <button
+                            class="button"
+                            type="button"
+                            commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}"
+                            command="show-modal"
+                        >
+                            Empty
+                        </button>
+
+                        <twig:molecules:Modal :id="'erase-confirm-' ~ player.id ~ '-' ~ card.turn">
+                            <form method="dialog">
+                                {% if card.alsoErases is empty %}
+                                    <p>Empty turn {{ card.turn }}?</p>
+                                {% else %}
+                                    <p>
+                                        Emptying turn {{ card.turn }} will also empty
+                                        turn{{ card.alsoErases|length > 1 ? 's' }} {{ card.alsoErases|join(', ') }}.
+                                    </p>
+                                {% endif %}
+
+                                <menu>
+                                    <li>
+                                        <button class="button" type="button" command="close" commandfor="erase-confirm-{{ player.id }}-{{ card.turn }}">
+                                            Cancel
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button class="button" type="submit" {{ live_action('eraseOrder', {playerId: player.id, turn: card.turn}) }}>
+                                            Confirm
+                                        </button>
+                                    </li>
+                                </menu>
+                            </form>
+                        </twig:molecules:Modal>
+                    {% else %}
+                        <a class="button" href="{{ path('app_operator_pos', {slug: player.game.slug, player: player.slug, turn: card.turn}) }}">
+                            {{ card.status == 'pending' ? 'Verify' : (card.status == 'missing' ? 'Buy' : 'Edit') }}
+                        </a>
+                    {% endif %}
+                </twig:molecules:OrderCard>
+            {% endfor %}
+        </div>
+    </section>
 </main>

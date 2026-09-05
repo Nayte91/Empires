@@ -5,8 +5,9 @@
 {% block stylesheets %}
     {{ parent() }}
 
+    <link rel="stylesheet" href="{{ asset('styles/atoms/marker.css') }}" data-turbo-track="dynamic">
+    <link rel="stylesheet" href="{{ asset('styles/atoms/playerIdentity.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/molecules/orderCard.css') }}" data-turbo-track="dynamic">
-    <link rel="stylesheet" href="{{ asset('styles/organisms/playerOrders.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/organisms/operatorOrders.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 

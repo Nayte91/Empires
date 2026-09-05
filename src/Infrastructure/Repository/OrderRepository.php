@@ -69,6 +69,19 @@ final class OrderRepository extends ServiceEntityRepository implements OrderRepo
         ;
     }
 
+    /** @return list<Order> */
+    public function findByGame(Game $game): array
+    {
+        return $this->createQueryBuilder('o')
+            ->join('o.player', 'p')
+            ->andWhere('p.game = :game')
+            ->setParameter('game', $game->id, 'uuid')
+            ->addOrderBy('o.turn', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     /**
      * Every validated basket of a whole game, in turn order — the raw material of the
      * post-game advance history. Pending baskets are excluded: they were never delivered.

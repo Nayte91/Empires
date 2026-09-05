@@ -22,8 +22,16 @@
         background: var(--operator-error-bg);
     }
 
+    &[data-status="none"] {
+        place-content: center;
+        text-align: center;
+        color: var(--ink-muted);
+
+        strong { font-size: var(--size-title) }
+    }
+
     p { margin: 0 }
-    &[data-status="empty"] > p:first-of-type { color: var(--ink-muted) }
+    > p:first-of-type { color: var(--ink-muted) }
 
     > div:first-of-type {
         border-block-start: 1px solid var(--operator-border);

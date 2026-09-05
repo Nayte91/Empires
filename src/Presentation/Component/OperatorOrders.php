@@ -4,14 +4,23 @@ declare(strict_types=1);
 
 namespace App\Presentation\Component;
 
+use App\Presentation\Shop\OrderCardFilter;
+use App\Presentation\Shop\OrderCardProvider;
+use App\Presentation\Shop\OrderCardSort;
+use App\Rules\Shop\ShopConnector;
 use App\State\Game;
-use App\State\Order;
 use App\State\Player;
-use App\State\Repository\OrderRepositoryInterface;
+use App\State\Repository\PlayerRepositoryInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Uid\Uuid;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Userforged\ShopEngine\Command\EraseOrders;
 
+/** @phpstan-import-type OrderCard from OrderCardProvider */
 #[AsLiveComponent(template: 'organisms/OperatorOrders.html.twig')]
 final class OperatorOrders
 {
@@ -20,26 +29,58 @@ final class OperatorOrders
     #[LiveProp]
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by LiveComponent via reflection before use)
 
-    public function __construct(private readonly OrderRepositoryInterface $orderRepository) {}
+    #[LiveProp(writable: true, url: true)]
+    public OrderCardFilter $filter = OrderCardFilter::Pending;
 
-    /**
-     * Fingerprint of a player's orders, used as the `ordersStamp` prop of its
-     * PlayerOrders child: any turn/status/validation-time change yields a new
-     * string, forcing the child to remount fresh (see organisms/playerOrders).
-     *
-     * Prefixed with the game's current turn so that advancing/rewinding turns
-     * always changes the stamp — even with zero orders — since PlayerOrders'
-     * card list (one per turn down to 1) depends on currentTurn too.
-     */
-    public function ordersStampFor(Player $player): string
+    public function __construct(
+        private readonly OrderCardProvider $orderCardProvider,
+        private readonly PlayerRepositoryInterface $playerRepository,
+        private readonly ShopConnector $shopConnector,
+        private readonly MessageBusInterface $commandBus,
+    ) {}
+
+    /** @return list<OrderCard> */
+    public function getCards(): array
     {
-        $orders = $this->orderRepository->findByPlayer($player);
+        return array_values(array_filter(
+            $this->orderCardProvider->cardsFor($this->game, OrderCardSort::Urgency),
+            $this->filter->accepts(...),
+        ));
+    }
 
-        $ordersStamp = implode('|', array_map(
-            static fn (Order $order): string => $order->turn.':'.$order->status->value.':'.($order->validatedAt?->format('c') ?? ''),
-            $orders,
+    /** @return array{pending: int, validated: int, missing: int} */
+    public function getCounts(): array
+    {
+        $currentTurn = $this->game->currentTurn;
+
+        $counts = array_count_values(array_column(
+            array_filter(
+                $this->orderCardProvider->cardsFor($this->game, OrderCardSort::Urgency),
+                static fn (array $card): bool => $card['turn'] === $currentTurn,
+            ),
+            'status',
         ));
 
-        return 'T'.$player->game->currentTurn.('' === $ordersStamp ? '' : '|'.$ordersStamp);
+        return [
+            'pending' => $counts['pending'] ?? 0,
+            'validated' => $counts['validated'] ?? 0,
+            'missing' => $counts['missing'] ?? 0,
+        ];
+    }
+
+    #[LiveAction]
+    public function eraseOrder(#[LiveArg] string $playerId, #[LiveArg] int $turn): void
+    {
+        $player = $this->playerRepository->findById(Uuid::fromString($playerId));
+
+        if (!$player instanceof Player || !$player->game->id->equals($this->game->id)) {
+            return;
+        }
+
+        $windows = $this->shopConnector->windowsToErase($player, $turn);
+
+        if ([] !== $windows) {
+            $this->commandBus->dispatch(new EraseOrders($player->id, $windows));
+        }
     }
 }

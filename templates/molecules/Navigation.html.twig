@@ -3,9 +3,13 @@
         {% for target in this.targets %}
             <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
                 <a href="{{ target.url }}">
-                    <twig:atoms:Marker :empire="target.empire ?? ''" />
-                    <b>{{ target.empire ? target.empire|empire_adjective : target.label }}</b>
-                    <small>{{ target.empire ? '(' ~ target.label ~ ')' : target.caption }}</small>
+                    {% if target.empire %}
+                        <twig:atoms:PlayerIdentity :empire="target.empire" :name="target.label" />
+                    {% else %}
+                        <twig:atoms:Marker empire="" />
+                        <b>{{ target.label }}</b>
+                        <small>{{ target.caption }}</small>
+                    {% endif %}
                 </a>
                 <button type="button" class="button quiet" title="QR code — {{ target.label }}" commandfor="qr-{{ target.key }}" command="show-modal">
                     <twig:ux:icon name="lucide:qr-code" />

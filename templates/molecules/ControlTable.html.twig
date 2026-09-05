@@ -9,7 +9,7 @@
     <tbody>
         {% for player in players %}
             <tr data-player-id="{{ player.id }}" data-empire="{{ player.empire }}">
-                <th scope="row"><twig:atoms:Marker empire="{{ player.empire }}" /> <b>{{ player.empire|empire_adjective }}</b> <small>({{ player.name }})</small></th>
+                <th scope="row"><twig:atoms:PlayerIdentity :empire="player.empire" :name="player.name" /></th>
                 {% for stat in stats %}
                     <td><twig:molecules:StatPicker :player="player" :stat="stat.value" :value="attribute(player, stat.value)" :caption="false" /></td>
                 {% endfor %}

@@ -19,6 +19,9 @@ interface OrderRepositoryInterface
     public function findByPlayerFromTurn(Player $player, int $turn): array;
 
     /** @return list<Order> */
+    public function findByGame(Game $game): array;
+
+    /** @return list<Order> */
     public function findValidatedByGame(Game $game): array;
 
     /** @return list<Order> */
