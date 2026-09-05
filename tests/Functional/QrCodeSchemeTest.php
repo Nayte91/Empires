@@ -11,10 +11,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use App\Tests\Support\Fixture\Tables;
 
-/**
- * Behind Traefik the app is reached over HTTPS but served plain HTTP, so absolute URLs generated
- * from the request scheme point at port 80 and the QR scan fails to connect.
- */
 final class QrCodeSchemeTest extends WebTestCase
 {
     #[Test]
@@ -32,7 +28,6 @@ final class QrCodeSchemeTest extends WebTestCase
         $this->assertStringNotContainsString('http://localhost/game/'.$game->slug, $content);
     }
 
-    /** A fix that hardcoded the scheme would pass the test above and fail this one. */
     #[Test]
     public function absoluteUrlsStayHttpWhenNoProtocolIsForwarded(): void
     {

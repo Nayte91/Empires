@@ -59,13 +59,9 @@ final class OperatorSectionsTest extends WebTestCase
     public static function provideTheVisitedSectionIsTheOnlyOneMarkedAsCurrentCases(): iterable
     {
         yield 'the board' => ['/board'];
-
         yield 'the orders' => ['/orders'];
-
         yield 'the calamities' => ['/calamities'];
-
         yield 'the trade' => ['/trade'];
-
         yield 'the abilities' => ['/abilities'];
     }
 

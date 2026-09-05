@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Presentation\Controller\Player;
+namespace App\Presentation\ValueResolver;
 
 use App\State\Player;
 use App\State\Repository\PlayerRepositoryInterface;

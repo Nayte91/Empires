@@ -120,15 +120,10 @@ final class PlayerHeadingTest extends WebTestCase
     public static function provideARefusedRenameKeepsTheOldNameCases(): iterable
     {
         yield 'an empty name' => ['', 'Player name is required.'];
-
         yield 'whitespace only' => ['   ', 'Player name is required.'];
-
         yield 'punctuation that slugifies to nothing' => ['---', 'Player name is required.'];
-
         yield 'a name another player of the game already holds' => ['Bob', 'Name already taken.'];
-
         yield 'a name that slugifies onto another players' => ['BOB', 'Name already taken.'];
-
         yield 'a name one character over the shared name limit' => [str_repeat('a', Player::MAX_NAME_LENGTH + 1), 'Name cannot be longer than 20 characters.'];
     }
 

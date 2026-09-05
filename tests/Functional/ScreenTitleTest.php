@@ -16,7 +16,6 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\HttpFoundation\Request;
 
-/** The anchor is counted, not merely found: a screen rendering two titles reads as one. */
 final class ScreenTitleTest extends WebTestCase
 {
     private KernelBrowser $client; // @phpstan-ignore property.uninitialized (initialized in setUp)
@@ -43,19 +42,12 @@ final class ScreenTitleTest extends WebTestCase
     public static function provideAScreenOfARunningGameCarriesExactlyOneTitleCases(): iterable
     {
         yield 'the dashboard' => [''];
-
         yield 'the operator board' => ['/operator/board'];
-
         yield 'the operator orders' => ['/operator/orders'];
-
         yield 'the operator calamities' => ['/operator/calamities'];
-
         yield 'the operator trade' => ['/operator/trade'];
-
         yield 'the operator abilities' => ['/operator/abilities'];
-
         yield 'the point of sale' => ['/operator/pos'];
-
         yield 'the trade cards' => ['/trade-cards'];
     }
 
@@ -74,7 +66,6 @@ final class ScreenTitleTest extends WebTestCase
     public static function provideALiveScreenOfAPlayerCarriesExactlyOneTitleCases(): iterable
     {
         yield 'the board' => [''];
-
         yield 'the shop' => ['/shop'];
     }
 
