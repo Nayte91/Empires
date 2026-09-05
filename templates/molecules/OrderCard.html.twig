@@ -1,11 +1,13 @@
-{% props status, turn, slugs, total, vp %}
-<article class="order-card" data-status="{{ status }}">
-    <h4>Turn {{ turn }}</h4>
+{% props status, turn, slugs, total, vp, empire, name, playerId %}
+{% set statusLabels = {pending: 'Pending', validated: 'Validated', missing: 'Empty', empty: 'Empty'} %}
+<article class="order-card" data-status="{{ status }}" data-player-id="{{ playerId }}" data-turn="{{ turn }}">
+    <h4><twig:atoms:PlayerIdentity :empire="empire" :name="name" /></h4>
 
-    <p>{{ slugs is empty
-        ? 'Empty'
-        : slugs|map(slug => slug|replace({'_': ' '})|capitalize)|join(', ') }}
-    </p>
+    <p><small>Turn {{ turn }} · {{ statusLabels[status] }}</small></p>
+
+    {% if slugs is not empty %}
+        <p>{{ slugs|map(slug => slug|replace({'_': ' '})|capitalize)|join(', ') }}</p>
+    {% endif %}
 
     <div>
         <p><strong>Total: {{ total }}</strong></p>

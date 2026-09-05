@@ -1,0 +1,3 @@
+.marker:has(+ b) { margin-inline-end: 0.5rem }
+.marker + b { text-transform: capitalize }
+.marker + b + small { color: var(--ink-muted) }

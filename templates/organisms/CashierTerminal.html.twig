@@ -11,7 +11,7 @@
                 <button><selectedcontent></selectedcontent></button>
                 <option value="">Choose a buyer…</option>
                 {% for buyer in game.players %}
-                    <option value="{{ buyer.slug }}"><twig:atoms:Marker empire="{{ buyer.empire }}" /> <b>{{ buyer.empire|empire_adjective }}</b> <small>({{ buyer.name }})</small></option>
+                    <option value="{{ buyer.slug }}"><twig:atoms:PlayerIdentity :empire="buyer.empire" :name="buyer.name" /></option>
                 {% endfor %}
             </select>
         </label>
