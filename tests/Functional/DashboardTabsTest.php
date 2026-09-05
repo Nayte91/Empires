@@ -33,11 +33,8 @@ final class DashboardTabsTest extends WebTestCase
     public static function provideTheBarOpensOnTheRosterWhateverTheQueryStringSaysCases(): iterable
     {
         yield 'no query at all' => [''];
-
         yield 'a tab the bar knows' => ['?tab=nav'];
-
         yield 'another one' => ['?tab=ast'];
-
         yield 'anything invented' => ['?tab=elsewhere'];
     }
 
@@ -78,10 +75,6 @@ final class DashboardTabsTest extends WebTestCase
         $this->assertCount(1, $crawler->filter('#panel-help a[href="/game/'.$game->slug.'/trade-cards"]'));
     }
 
-    /**
-     * A game with nobody at it, so the single dialog is Navigation's operator code: a seated table
-     * adds one per seat and the count stops meaning anything.
-     */
     #[Test]
     public function thePanelsRegroupTheStackWithoutDuplicatingIt(): void
     {
