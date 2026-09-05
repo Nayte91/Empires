@@ -1,22 +1,27 @@
 .shop {
     display: grid;
-    max-inline-size: 75rem;
     gap: var(--operator-gap);
 
     > div {
         display: grid;
         align-items: start;
         gap: var(--operator-gap);
-
-        @media (min-width: 48em) { grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem) }
     }
 
     aside {
         order: -1;
         display: grid;
         gap: var(--operator-gap);
+    }
 
-        @media (min-width: 48em) {
+    @media (min-width: 60rem) {
+        inline-size: 100%;
+        max-inline-size: 75rem;
+        margin-inline: auto;
+
+        > div { grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem) }
+
+        aside {
             order: 0;
             position: sticky;
             inset-block-start: 1rem;
