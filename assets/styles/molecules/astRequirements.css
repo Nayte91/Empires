@@ -1,4 +1,6 @@
 .ast-requirements {
+    display: grid;
+    gap: 0.75rem;
 
     ul {
         margin: 0;
