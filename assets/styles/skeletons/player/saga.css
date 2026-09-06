@@ -1,5 +1,6 @@
 .player-saga {
     display: grid;
+    align-content: start;
     gap: var(--operator-gap);
 
     .counters dl {
