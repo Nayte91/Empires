@@ -23,9 +23,11 @@ final class EvolutionTest extends WebTestCase
     use InteractsWithTwigComponents;
 
     #[Test]
-    public function eachLegendButtonCarriesTheIndexOfTheDatasetItToggles(): void
+    public function theCurvesAndTheirLegendFollowTheStandingsLeaderFirst(): void
     {
         $game = Tables::westTable($this->entityManager);
+        Tables::seat($game, 'Eve')->astPosition = 15;
+        $this->entityManager->flush();
 
         $datasetLabels = array_column($this->mountEvolution($game)->getChart()->getData()['datasets'], 'label');
         $buttons = $this->renderTwigComponent('Evolution', ['game' => $game])
@@ -33,9 +35,9 @@ final class EvolutionTest extends WebTestCase
             ->filter('#evolution-legend > li > button[data-evolution-index-param]')
         ;
 
-        $this->assertSame(['Alice', 'Bob', 'Carol', 'Dave', 'Eve'], $datasetLabels);
+        $this->assertSame(['Eve', 'Alice', 'Bob', 'Carol', 'Dave'], $datasetLabels);
         $this->assertSame(['0', '1', '2', '3', '4'], $buttons->each(static fn (Crawler $button): ?string => $button->attr('data-evolution-index-param')));
-        $this->assertSame($datasetLabels, $buttons->each(static fn (Crawler $button): string => trim($button->text())));
+        $this->assertSame($datasetLabels, $buttons->each(static fn (Crawler $button): string => trim($button->filter('small')->text(), '() ')));
     }
 
     private function mountEvolution(Game $game): Evolution

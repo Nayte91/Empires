@@ -2,8 +2,9 @@
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    justify-self: center;
     inline-size: 100%;
-    max-inline-size: 40rem;
+    contain: inline-size;
 
     .plot {
         position: relative;
@@ -12,7 +13,12 @@
         canvas { display: block }
     }
 
-    @media (min-width: 60rem) { .plot { aspect-ratio: 3 / 2 } }
+    @media (min-width: 60rem) {
+        .plot {
+            aspect-ratio: auto;
+            block-size: 30rem;
+        }
+    }
 
     #evolution-legend {
         display: flex;
