@@ -12,13 +12,11 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
-use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 #[AsLiveComponent(template: 'organisms/OperatorUnlock.html.twig')]
 final class OperatorUnlock
 {
-    use ComponentToolsTrait;
     use DefaultActionTrait;
 
     #[LiveProp]
@@ -43,7 +41,6 @@ final class OperatorUnlock
         if (!$this->operatorAccessRule->unlocks($this->game, $this->pin)) {
             $this->error = 'Wrong PIN — ask whoever created the game.';
             $this->pin = '';
-            $this->dispatchBrowserEvent('pin:rejected');
 
             return null;
         }
