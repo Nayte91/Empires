@@ -1,5 +1,6 @@
 .player-board {
     display: grid;
+    align-content: start;
     gap: var(--operator-gap);
 }
 
