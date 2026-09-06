@@ -15,23 +15,16 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 #[AsTwigComponent(template: 'molecules/Ast.html.twig')]
 final class Ast
 {
-    // Shared board layout is deliberately approximated to the 'standard' track — genuinely
-    // correct per-empire column widths (each empire's own era boundaries) is a separate,
-    // larger redesign. Per-player marker info (getEraNameFor()) stays fully accurate though.
     private const string SHARED_LAYOUT_GROUP = 'standard';
 
     public Game $game; // @phpstan-ignore property.uninitialized (hydrated by TwigComponent via reflection before use)
+    public ?Player $player = null;
 
     public function __construct(
         private readonly AstRegistry $astRegistry,
         private readonly StandingsCalculator $standingsCalculator,
     ) {}
 
-    /**
-     * Start and the Stone Age ask nothing of anybody, so the compact board drops those columns. The
-     * span is read off the requirements rather than counted in, and the expert track opens the same
-     * way.
-     */
     public function getOpeningSpan(): int
     {
         $span = 0;
@@ -107,6 +100,10 @@ final class Ast
     /** @return list<Player> the leader first, so the board is read top-down as the standings */
     public function getRankedPlayers(): array
     {
+        if ($this->player instanceof Player) {
+            return [$this->player];
+        }
+
         return $this->standingsCalculator->standings($this->game);
     }
 }

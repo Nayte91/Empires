@@ -95,6 +95,17 @@ final class PurchaseHistoryCalculatorTest extends WebTestCase
     }
 
     #[Test]
+    public function theTableAverageIsTheMeanOfEveryPlayersAverage(): void
+    {
+        $game = GameBuilder::create()->withCurrentTurn(10)->build();
+        $alice = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
+        PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->persist($this->entityManager);
+        OrderBuilder::for($alice)->onTurn(6)->withLine(new OrderLine('pottery', 100))->validated(100)->persist($this->entityManager);
+
+        $this->assertEqualsWithDelta(10.0, $this->purchaseHistoryCalculator->tableAverageFromTurnSix($game), PHP_FLOAT_EPSILON);
+    }
+
+    #[Test]
     #[DataProvider('provideNothingToAverageIsNeverReportedAsAnAverageOfZeroCases')]
     public function nothingToAverageIsNeverReportedAsAnAverageOfZero(int $currentTurn, ?float $expected): void
     {
