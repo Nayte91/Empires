@@ -42,7 +42,6 @@ final class PlayerHeading
     public function mount(Player $player): void
     {
         $this->player = $player;
-        $this->newName = $player->name;
     }
 
     public function isNameTaken(string $name): bool
