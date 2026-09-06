@@ -15,10 +15,6 @@
     }
 
     @media (min-width: 60rem) {
-        inline-size: 100%;
-        max-inline-size: 75rem;
-        margin-inline: auto;
-
         > div { grid-template-columns: minmax(0, 1fr) minmax(16rem, 20rem) }
 
         aside {

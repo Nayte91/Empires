@@ -16,10 +16,4 @@
         dt { color: var(--ink-muted) }
         dd { margin: 0; font-weight: var(--weight-answer) }
     }
-
-    @media (min-width: 60rem) {
-        inline-size: 100%;
-        max-inline-size: 75rem;
-        margin-inline: auto;
-    }
 }

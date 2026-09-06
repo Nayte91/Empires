@@ -1,12 +1,6 @@
 .player-board {
     display: grid;
     gap: var(--operator-gap);
-
-    @media (min-width: 60rem) {
-        inline-size: 100%;
-        max-inline-size: 75rem;
-        margin-inline: auto;
-    }
 }
 
 :is(.player-board, .player-saga) {

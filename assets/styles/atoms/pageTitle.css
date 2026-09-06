@@ -1,6 +1,6 @@
 #page-title {
     border-block-end: 1px solid var(--rule);
-    padding: 1rem;
+    padding: 1rem var(--page-gutter);
     display: flex;
     justify-content: space-between;
     align-items: center;
