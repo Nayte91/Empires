@@ -328,19 +328,16 @@ final class GameCreator
         );
     }
 
-    /**
-     * A scenario on both boxes names no single region, so it carries the empty value the model
-     * reads back as null.
-     *
-     * @return list<array{value: string, label: string}>
-     */
+    /** @return list<array{value: string, label: string}> */
     public function getRegionChoices(): array
     {
         return array_map(
-            static fn (Scenario $scenario): array => [
-                'value' => $scenario->soleBlock()->value ?? '',
-                'label' => implode(' + ', array_map(static fn (Region $block): string => ucfirst($block->value), $scenario->blocks)),
-            ],
+            static function (Scenario $scenario): array {
+                $names = array_map(static fn (Region $block): string => ucfirst($block->value), $scenario->blocks);
+                sort($names);
+
+                return ['value' => $scenario->soleBlock()->value ?? '', 'label' => implode(' & ', $names)];
+            },
             $this->scenarioRegistry->forPlayerCount($this->game->playerCount),
         );
     }
@@ -351,12 +348,6 @@ final class GameCreator
         return $this->creationSummarizer->summarize($this->game);
     }
 
-    /**
-     * The one place the client's string becomes a region. It stays a string on CreateGame because a
-     * writable LiveComponent path may only carry a scalar (LiveComponentHydrator), so a crafted
-     * value arrives here intact: tryFrom() turns it into no region at all, which addresses no
-     * scenario, which leaves every player outside it and the launch refused.
-     */
     private function selectedRegion(): ?Region
     {
         return null === $this->game->region ? null : Region::tryFrom($this->game->region);

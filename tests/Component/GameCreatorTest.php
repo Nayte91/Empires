@@ -108,7 +108,7 @@ final class GameCreatorTest extends WebTestCase
             ->component()
         ;
 
-        $this->assertSame([['value' => '', 'label' => 'West + East']], $component->getRegionChoices());
+        $this->assertSame([['value' => '', 'label' => 'East & West']], $component->getRegionChoices());
         $this->assertNull($component->game->region);
     }
 

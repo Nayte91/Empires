@@ -68,5 +68,7 @@
         tbody th { color: var(--player-color) }
         tbody tr:nth-child(even) { background: var(--tint) }
         td { text-align: center }
+        caption { font-size: var(--size-body) }
+        :is(thead, tbody) tr { block-size: var(--board-row-size, 3rem) }
     }
 }

@@ -5,6 +5,8 @@ body {
 }
 
 :is(.game-dashboard, .game-chronicle) {
+    /* One row rhythm for the roster and the AST: side by side, a player sits on the same line in both. */
+    --board-row-size: 3rem;
     container-type: inline-size;
     display: flex;
     flex-direction: column;
