@@ -3,6 +3,49 @@
     align-content: start;
     gap: var(--operator-gap);
 
+    .hero {
+        display: grid;
+        gap: 1rem;
+        text-align: center;
+
+        > div {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+
+            p {
+                display: grid;
+                justify-items: center;
+                gap: 0.25rem;
+                margin: 0;
+                font-size: var(--size-small);
+                letter-spacing: 0.06em;
+                text-transform: uppercase;
+                color: var(--ink-muted);
+
+                b {
+                    font-family: var(--font-title);
+                    font-size: var(--size-hero);
+                    line-height: 1;
+                    color: var(--ink-primary);
+                    -webkit-text-stroke: 1px color-mix(in oklab, currentColor 50%, black);
+                    paint-order: stroke fill;
+
+                    sup { font-size: 0.5em }
+
+                    &[data-medal="gold"] { color: var(--medal-gold) }
+                    &[data-medal="silver"] { color: var(--medal-silver) }
+                    &[data-medal="bronze"] { color: var(--medal-bronze) }
+                }
+
+                + p {
+                    border-inline-start: 1px solid var(--rule);
+                    padding-inline-start: 2rem;
+                }
+            }
+        }
+    }
+
     .counters dl {
         display: grid;
         gap: 0.25rem;

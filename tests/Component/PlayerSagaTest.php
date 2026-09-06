@@ -47,6 +47,21 @@ final class PlayerSagaTest extends WebTestCase
         $this->assertCount(1, $withNone->filter('section[aria-label="Owned advances"] p'));
     }
 
+    #[Test]
+    public function theHeroStatesTheRankAndTheScoreFromTheFullStandings(): void
+    {
+        $game = GameBuilder::create()->persist($this->entityManager);
+        PlayerBuilder::named('Alice')->in($game)->withCities(5)->persist($this->entityManager);
+        $runnerUp = PlayerBuilder::named('Bob')->in($game)->withEmpire('hellas')->withCities(3)->persist($this->entityManager);
+
+        $saga = $this->mount($runnerUp);
+
+        $this->assertSame(2, $saga->getRank());
+        $this->assertSame('nd', $saga->getRankSuffix());
+        $this->assertSame('silver', $saga->getMedal());
+        $this->assertSame(3, $saga->getScore());
+    }
+
     private function mount(Player $player): PlayerSaga
     {
         $component = $this->mountTwigComponent('PlayerSaga', ['player' => $player]);

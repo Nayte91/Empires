@@ -45,6 +45,21 @@ final readonly class StandingsCalculator
         return $players;
     }
 
+    /** The podium's colour for the three leaders — none for a scoreless player, whatever their place. */
+    public function medalOf(Player $player): ?string
+    {
+        if (0 === $this->scoreOf($player)) {
+            return null;
+        }
+
+        return match ($this->rankOf($player)) {
+            1 => 'gold',
+            2 => 'silver',
+            3 => 'bronze',
+            default => null,
+        };
+    }
+
     /** 1-based place in the standings, counting from the leader. */
     public function rankOf(Player $player): int
     {

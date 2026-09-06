@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - Trade cards{% endblock %}
+{% block title %}{{ game.slug|capitalize }} - Trade cards{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
