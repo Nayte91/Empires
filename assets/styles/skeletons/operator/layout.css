@@ -2,8 +2,6 @@ main {
     display: grid;
     place-content: start center;
     gap: 1rem;
-    padding: 1rem;
-    container-type: inline-size;
 }
 
 body > footer {

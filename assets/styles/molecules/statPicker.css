@@ -18,7 +18,6 @@
     }
 
     menu {
-        flex-wrap: wrap;
 
         li { display: contents }
     }

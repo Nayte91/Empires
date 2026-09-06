@@ -5,14 +5,11 @@
     margin-inline: auto;
     gap: var(--operator-gap);
 
-    input, select, button:not(.game-creator__launch) {
+    input, select {
         block-size: var(--control-size);
         padding-block: 0;
-        font-size: var(--size-body);
-    }
-
-    input, select {
         padding-inline: 0.5em;
+        font-size: var(--size-body);
         border: 1px solid var(--operator-border);
         border-radius: var(--operator-radius);
 
@@ -151,8 +148,6 @@
             color: var(--ink-muted);
         }
     }
-
-    .hint { flex-basis: 100% }
 
     .game-creator__players { overflow-x: auto }
 

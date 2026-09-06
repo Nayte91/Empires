@@ -11,18 +11,15 @@
 
         li {
             min-block-size: 3.5rem;
-            padding: 0;
             display: flex;
-            align-items: stretch;
-            button { align-self: center }
 
             &:not(:first-child) { border-block-start: 1px solid var(--rule) }
+            button { align-self: center }
 
             a {
                 flex: 1;
                 border-inline-end: 1px solid var(--rule);
                 padding-inline-start: 0.5rem;
-                display: block;
                 align-content: center;
                 white-space: nowrap;
                 overflow: hidden;
@@ -31,18 +28,17 @@
                 color: inherit;
 
                 &:hover :is(b, small) { text-decoration: underline }
-                /* The operator's gear sits where the empires' dot does, at the dot's size. */
+                b { text-transform: capitalize }
+
                 svg {
                     inline-size: 1rem;
                     block-size: 1rem;
                     vertical-align: -0.125rem;
                     margin-inline-end: 0.5rem;
                 }
-                b { text-transform: capitalize }
 
                 small {
                     color: var(--ink-muted);
-                    font-size: var(--size-small);
                 }
             }
         }
@@ -57,7 +53,5 @@
         h2 { color: color-mix(in oklab, var(--player-color, var(--operator-accent)) 60%, black) }
     }
 
-    @container (min-width: 40rem) {
-        ul { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)) }
-    }
+    @container (min-width: 40rem) { ul { grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)) } }
 }

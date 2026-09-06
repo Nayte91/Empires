@@ -1,12 +1,9 @@
 .operator-board {
     --page-width: 36rem;
-    display: grid;
     place-content: start stretch;
-    gap: 1rem;
 
     .turn-row {
         display: flex;
-        align-items: stretch;
         gap: 0.75rem;
 
         .button { flex: 1 }
@@ -35,7 +32,6 @@
     border-radius: var(--operator-radius);
     /* The panel is a grid: without this the badge would blockify to the full row. */
     justify-self: start;
-    display: inline-block;
     padding: 0.4em 0.9em;
     font-weight: var(--weight-answer);
     color: var(--operator-success);

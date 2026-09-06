@@ -1,5 +1,4 @@
 .cart {
-    display: grid;
     gap: 1rem;
 
     &[data-status] .hint {

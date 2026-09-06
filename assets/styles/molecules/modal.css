@@ -17,7 +17,6 @@
         p { margin: 0 }
 
         img {
-            justify-self: center;
             max-inline-size: 100%;
             block-size: auto;
         }
@@ -30,7 +29,6 @@
         label {
             display: grid;
             gap: 0.25rem;
-            font-size: var(--size-body);
         }
 
         input {
@@ -38,7 +36,6 @@
             padding-inline: 0.75em;
             border: 1px solid var(--operator-border);
             border-radius: var(--operator-radius);
-            font-size: var(--size-body);
 
             &:focus-visible { outline: 2px solid var(--operator-accent) }
         }

@@ -20,7 +20,6 @@
     }
 
     .cost {
-        color: var(--ink-muted);
         text-decoration: line-through;
     }
 
