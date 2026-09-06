@@ -6,13 +6,11 @@ main {
 
 .game-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
     gap: var(--operator-gap);
     margin: 0;
     padding: 0;
     list-style: none;
-
-    @media (min-width: 48rem) { grid-template-columns: repeat(3, 1fr) }
 }
 
 .game-tile {
