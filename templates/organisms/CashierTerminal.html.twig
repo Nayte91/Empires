@@ -19,7 +19,8 @@
         <label>
             Turn
             <select data-model="turn">
-                {% for candidate in 1..game.currentTurn %}
+                <button><selectedcontent></selectedcontent></button>
+                {% for candidate in game.currentTurn..1 %}
                     <option value="{{ candidate }}">{{ candidate }}</option>
                 {% endfor %}
             </select>
