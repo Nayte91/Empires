@@ -42,7 +42,7 @@ final class OperatorOrdersTest extends WebTestCase
     #[Test]
     public function everyPlayerAtTheTableGetsACardForTheCurrentTurn(): void
     {
-        $game = Tables::westTable($this->entityManager);
+        $game = $this->westTableOnTurn(8);
 
         $cards = $this->createOrders($game)->set('filter', 'all')->component()->getCards();
 
@@ -55,7 +55,7 @@ final class OperatorOrdersTest extends WebTestCase
     #[Test]
     public function theFilterTheOperatorLandsOnShowsOnlyWhatAwaitsThem(): void
     {
-        $game = Tables::westTable($this->entityManager);
+        $game = $this->westTableOnTurn(8);
         OrderBuilder::for(Tables::seat($game, 'Alice'))->withKeys('democracy')->validated()->persist($this->entityManager);
 
         $cards = $this->createOrders($game)->component()->getCards();
@@ -76,7 +76,7 @@ final class OperatorOrdersTest extends WebTestCase
     #[Test]
     public function theMissingFilterKeepsEveryPlayerWhoHasNotOrderedThisTurn(): void
     {
-        $game = Tables::westTable($this->entityManager);
+        $game = $this->westTableOnTurn(8);
         OrderBuilder::for(Tables::seat($game, 'Alice'))->withKeys('democracy')->validated()->persist($this->entityManager);
 
         $cards = $this->createOrders($game)->set('filter', 'missing')->component()->getCards();
@@ -88,10 +88,10 @@ final class OperatorOrdersTest extends WebTestCase
     public function theCountsReadTheCurrentTurnOnly(): void
     {
         [$game, $alice, $bob] = Tables::aliceAndBob($this->entityManager);
-        OrderBuilder::for($alice)->onTurn(1)->withKeys('democracy')->validated()->persist($this->entityManager);
-        $game->currentTurn = 2;
+        OrderBuilder::for($alice)->onTurn(6)->withKeys('democracy')->validated()->persist($this->entityManager);
+        $game->currentTurn = 7;
         $this->entityManager->flush();
-        OrderBuilder::for($bob)->onTurn(2)->withKeys('pottery')->persist($this->entityManager);
+        OrderBuilder::for($bob)->onTurn(7)->withKeys('pottery')->persist($this->entityManager);
 
         $counts = $this->createOrders($game)->component()->getCounts();
 
@@ -130,6 +130,15 @@ final class OperatorOrdersTest extends WebTestCase
         $card = \sprintf('article[data-player-id="%s"][data-turn="1"]', $bob->id);
         $this->assertCount(1, $rendered->filter($card.' button[command="show-modal"]'));
         $this->assertCount(0, $rendered->filter($card.' a[href*="/operator/pos"]'));
+    }
+
+    private function westTableOnTurn(int $turn): Game
+    {
+        $game = Tables::westTable($this->entityManager);
+        $game->currentTurn = $turn;
+        $this->entityManager->flush();
+
+        return $game;
     }
 
     private function createOrders(Game $game): TestLiveComponent
