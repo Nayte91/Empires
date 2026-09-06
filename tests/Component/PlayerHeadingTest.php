@@ -34,13 +34,13 @@ final class PlayerHeadingTest extends WebTestCase
     }
 
     #[Test]
-    public function theRenameFieldOpensOnTheCurrentName(): void
+    public function theRenameFieldOpensEmpty(): void
     {
         $player = Tables::seat(Tables::westTable($this->entityManager), 'Alice');
 
         $component = $this->createLiveComponent('molecules:PlayerHeading', ['player' => $player])->component();
 
-        $this->assertSame('Alice', $component->newName);
+        $this->assertSame('', $component->newName);
     }
 
     #[Test]
