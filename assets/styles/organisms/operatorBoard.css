@@ -1,7 +1,5 @@
 .operator-board {
-    inline-size: 100%;
-    max-inline-size: 36rem;
-    margin-inline: auto;
+    --page-width: 36rem;
     display: grid;
     place-content: start stretch;
     gap: 1rem;

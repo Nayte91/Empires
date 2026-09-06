@@ -1,4 +1,5 @@
 :root {
+    --page-width: 75rem;
     --operator-border: gainsboro;
     --operator-bg-subtle: whitesmoke;
     --operator-accent: royalblue;
@@ -47,8 +48,13 @@ body {
     background-color: var(--ground);
 
     &[data-empire] { --ground: var(--player-color) }
-    > main { padding: 1rem }
+    > main { padding: 1rem var(--page-gutter) }
 }
+
+/* Computed on each consumer, not once on body, so the --page-width it reads is the one it inherits
+   or sets itself: a fluid skeleton (`body { --page-width: 100% }`) or a narrower page
+   (`.operator-board { --page-width: 36rem }`). */
+:is(main, #page-title, .section-switcher) { --page-gutter: max(1rem, calc((100% - var(--page-width)) / 2)) }
 
 h1, h2, h3, h4, h5, h6 {
     margin: 0;
