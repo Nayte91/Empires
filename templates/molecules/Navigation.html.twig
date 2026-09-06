@@ -6,7 +6,7 @@
                     {% if target.empire %}
                         <twig:atoms:PlayerIdentity :empire="target.empire" :name="target.label" />
                     {% else %}
-                        <twig:atoms:Marker empire="" />
+                        <twig:ux:icon name="lucide:settings" />
                         <b>{{ target.label }}</b>
                         <small>{{ target.caption }}</small>
                     {% endif %}
