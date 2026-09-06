@@ -16,7 +16,6 @@
             align-items: stretch;
 
             &:not(:first-child) { border-block-start: 1px solid var(--rule) }
-            &:not([data-empire]) { --player-color: var(--operator-accent) }
 
             a {
                 flex: 1;
@@ -30,8 +29,14 @@
                 text-decoration: none;
                 color: inherit;
 
-                &:hover { text-decoration: underline }
-                .marker { margin-inline-end: 0.5rem }
+                &:hover :is(b, small) { text-decoration: underline }
+                /* The operator's gear sits where the empires' dot does, at the dot's size. */
+                svg {
+                    inline-size: 1rem;
+                    block-size: 1rem;
+                    vertical-align: -0.125rem;
+                    margin-inline-end: 0.5rem;
+                }
                 b { text-transform: capitalize }
 
                 small {
