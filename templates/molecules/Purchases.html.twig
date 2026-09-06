@@ -1,0 +1,22 @@
+<details id="purchases" class="purchases panel" open>
+    <summary class="label">Purchases</summary>
+
+    {% if this.hasPurchases %}
+        <div class="plot">
+            {{ render_chart(this.chart) }}
+        </div>
+
+        <div class="averages">
+            <p>
+                Average (since turn {{ constant('App\\Rules\\PurchaseHistoryCalculator::AVERAGE_FROM_TURN') }}):
+                {% if this.average is null %}not enough turns played{% else %}<b>{{ this.average|round(1) }}</b>{% endif %}
+            </p>
+
+            {% if this.tableAverage is not null %}
+                <p data-table>Average for all players: <b>{{ this.tableAverage|round(1) }}</b></p>
+            {% endif %}
+        </div>
+    {% else %}
+        <twig:atoms:Hint>No purchase recorded.</twig:atoms:Hint>
+    {% endif %}
+</details>

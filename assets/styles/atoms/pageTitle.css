@@ -24,7 +24,7 @@
         }
     }
 
-    &[data-title="page"] hgroup { flex: 1 }
+    &:is([data-title="page"], [data-title="celebration"]) hgroup { flex: 1 }
     &[data-title="player"] hgroup { text-align: start }
     &[data-title="drilldown"] hgroup { text-align: end }
     &[data-title="celebration"] {

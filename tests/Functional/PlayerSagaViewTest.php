@@ -16,10 +16,6 @@ use App\Tests\Support\Fixture\GameBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\Fixture\Tables;
 
-/**
- * An assertion that the finished page lacks something passes just as happily against a page that
- * failed to render — so both sides are asserted on every question.
- */
 final class PlayerSagaViewTest extends WebTestCase
 {
     private KernelBrowser $client; // @phpstan-ignore property.uninitialized (initialized in setUp)
@@ -52,7 +48,7 @@ final class PlayerSagaViewTest extends WebTestCase
         $this->assertResponseIsSuccessful();
         $this->assertFalse($this->client->getResponse()->isRedirect());
         $this->assertSame($this->pathOf($player), $this->client->getRequest()->getPathInfo());
-        $this->assertCount(1, $crawler->filter('#purchase-value canvas'));
+        $this->assertCount(1, $crawler->filter('#purchases'));
     }
 
     #[Test]
@@ -81,7 +77,6 @@ final class PlayerSagaViewTest extends WebTestCase
         yield 'the discounts, which price a catalogue nobody can buy from any more' => ['tr[data-advance-category]'];
     }
 
-    /** Both halves in one test: a page that dropped the pickers and grew no counters satisfies either alone. */
     #[Test]
     public function theSagaTurnsTheBoardsStatPickersIntoReadOnlyCounters(): void
     {

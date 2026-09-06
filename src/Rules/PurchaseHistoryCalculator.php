@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\State\Game;
 use App\State\Player;
 use App\State\Repository\OrderRepositoryInterface;
 
@@ -67,5 +68,27 @@ final readonly class PurchaseHistoryCalculator
         $consideredTotals = \array_slice($this->totalsPerTurn($player), self::AVERAGE_FROM_TURN - 1);
 
         return array_sum($consideredTotals) / \count($consideredTotals);
+    }
+
+    /**
+     * The table's average since turn six — the mean of every player's, which every player having
+     * played the same turns is also the mean spend per player-turn. Null when the game never
+     * reached that turn, like the player's own.
+     */
+    public function tableAverageFromTurnSix(Game $game): ?float
+    {
+        $averages = [];
+
+        foreach ($game->players as $player) {
+            $average = $this->averageFromTurnSix($player);
+
+            if (null === $average) {
+                return null;
+            }
+
+            $averages[] = $average;
+        }
+
+        return [] === $averages ? null : array_sum($averages) / \count($averages);
     }
 }

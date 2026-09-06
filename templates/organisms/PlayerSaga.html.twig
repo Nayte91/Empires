@@ -1,7 +1,9 @@
 <main class="player-saga">
-    <section aria-label="Final standing">
-        <twig:Ast :game="player.game" />
-    </section>
+    <details class="standing panel" open>
+        <summary class="label">Final standing</summary>
+
+        <twig:Ast :game="player.game" :player="player" />
+    </details>
 
     <div class="panels">
         <details class="counters panel" open>
@@ -16,7 +18,7 @@
             </dl>
         </details>
 
-        <twig:PurchaseValue :player="player" />
+        <twig:Purchases :player="player" />
     </div>
 
     <section aria-label="Owned advances">

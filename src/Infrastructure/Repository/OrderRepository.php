@@ -116,7 +116,7 @@ final class OrderRepository extends ServiceEntityRepository implements OrderRepo
 
     /**
      * Every validated basket a player placed, in turn order — the raw material of the
-     * saga's purchase-value chart. Pending or rejected baskets are excluded: they were
+     * saga's Purchases chart. Pending or rejected baskets are excluded: they were
      * never delivered, so they never cost anything.
      *
      * @return list<Order>

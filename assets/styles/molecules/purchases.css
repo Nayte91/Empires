@@ -1,0 +1,42 @@
+.purchases {
+    contain: inline-size;
+
+    .plot {
+        position: relative;
+        aspect-ratio: 4 / 5;
+
+        canvas { display: block }
+    }
+
+    @media (min-width: 60rem) {
+        .plot {
+            aspect-ratio: auto;
+            block-size: 30rem;
+        }
+    }
+
+    .averages {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.25rem 1rem;
+        font-style: italic;
+        color: var(--ink-muted);
+
+        p { margin: 0 }
+
+        /* The figure stands out of its label by posture and weight, never by a colour of its own:
+           an empire's colour (Iberia's silver) would not read on white. */
+        b {
+            font-style: normal;
+            color: var(--ink-primary);
+        }
+
+        /* The table's line is the blue one on the plot; the whole mention wears that colour. */
+        [data-table] {
+            color: var(--operator-accent);
+
+            b { color: inherit }
+        }
+    }
+}

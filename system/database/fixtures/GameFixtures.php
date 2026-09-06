@@ -9,6 +9,7 @@ use App\State\CreditEntry;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
+use App\State\Region;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -30,7 +31,8 @@ use Userforged\ShopEngine\OrderStatus;
 final class GameFixtures extends Fixture
 {
     public function __construct(
-        #[Autowire('%kernel.project_dir%/system/database/fixtures')] private readonly string $fixturesPath,
+        #[Autowire('%kernel.project_dir%/system/database/fixtures')]
+        private readonly string $fixturesPath,
     ) {}
 
     public function load(ObjectManager $manager): void
@@ -63,7 +65,7 @@ final class GameFixtures extends Fixture
         $game->currentTurn = $data['game']['current_turn'];
         $game->playerCount = $data['game']['player_count'];
         $game->astVersion = ASTVersion::from($data['game']['ast_version']);
-        $game->region = $data['game']['region'];
+        $game->region = null === $data['game']['region'] ? null : Region::from($data['game']['region']);
 
         // Assigned rather than derived: a game is finished because the file says so, and this is
         // what decides whether the app serves the chronicle or the dashboard.

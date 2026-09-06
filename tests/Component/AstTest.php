@@ -60,4 +60,18 @@ final class AstTest extends WebTestCase
         $this->assertSame('bronze', $component->medalOf($third));
         $this->assertNull($component->medalOf($scoreless));
     }
+
+
+    #[Test]
+    public function givenAPlayerTheBoardKeepsOnlyTheirRowAndStillMedalsThemFromTheFullStandings(): void
+    {
+        $game = GameBuilder::create()->build();
+        PlayerBuilder::named('Alice')->in($game)->withCities(5)->build();
+        $runnerUp = PlayerBuilder::named('Bob')->in($game)->withEmpire('saba')->withCities(3)->build();
+
+        $component = $this->mountTwigComponent('Ast', ['game' => $game, 'player' => $runnerUp]);
+
+        $this->assertSame([$runnerUp], $component->getRankedPlayers());
+        $this->assertSame('silver', $component->medalOf($runnerUp));
+    }
 }
