@@ -19,15 +19,14 @@ final class CreateGame
 
     public int $playerCount = 9;
 
-    /**
-     * A writable LiveComponent path may only carry a scalar, so the region travels as a raw string
-     * and the enum never sees a crafted value: it dies here instead.
-     */
     #[Assert\Choice(callback: [Region::class, 'values'], message: 'This region is not one this game offers.')]
     public ?string $region = 'west';
 
     #[Assert\Choice(choices: ['basic', 'expert'])]
     public string $astVersion = 'basic';
+
+    #[Assert\Regex('/^\d{4}$/', message: 'Four digits.')]
+    public ?string $operatorPin = null;
 
     /** @var list<array{name: string, empire: string}> */
     public array $players = [];

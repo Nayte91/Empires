@@ -1,0 +1,33 @@
+.operator-unlock {
+    display: grid;
+    grid-template-columns: min(100%, 20rem);
+    place-content: start center;
+
+    .panel {
+        display: grid;
+        gap: 0.75rem;
+        justify-items: center;
+        text-align: center;
+    }
+
+    input {
+        inline-size: 8rem;
+        block-size: 3rem;
+        text-align: center;
+        font-size: var(--size-title);
+        letter-spacing: 0.5em;
+        border: 1px solid var(--operator-border);
+        border-radius: var(--operator-radius);
+
+        &:focus-visible {
+            outline: 2px solid var(--operator-accent);
+            outline-offset: 1px;
+        }
+    }
+
+    [data-error] {
+        margin: 0;
+        color: var(--operator-error);
+        font-size: var(--size-small);
+    }
+}

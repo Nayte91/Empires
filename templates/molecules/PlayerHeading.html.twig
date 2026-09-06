@@ -1,5 +1,5 @@
 <div {{ attributes.defaults(stimulus_controller('mercure-refresh', {topic: shop_topic(player)})) }}>
-    <twig:atoms:PageTitle variant="player" :heading="player.name" :qualifier="player.empire|capitalize ~ ' · Turn ' ~ player.game.currentTurn" :renameFor="'rename-player-' ~ player.id" />
+    <twig:atoms:PageTitle :heading="player.name" :qualifier="player.empire|capitalize ~ ' · Turn ' ~ player.game.currentTurn" :renameFor="'rename-player-' ~ player.id" />
 
     {% if _errors.has('newName') %}
         <p data-error="newName" role="alert">{{ _errors.get('newName') }}</p>

@@ -1,0 +1,13 @@
+<main {{ attributes.defaults(stimulus_controller('refocus')|stimulus_action('refocus', 'field', 'pin:rejected')) }} class="operator-unlock">
+    <div class="panel">
+        <twig:atoms:Label>Operator</twig:atoms:Label>
+
+        <input type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" autofocus data-model="pin" value="{{ pin }}" {{ stimulus_target('refocus', 'field') }}>
+
+        {% if error %}
+            <p role="alert" data-error="pin">{{ error }}</p>
+        {% endif %}
+
+        <button class="button" type="button" {{ live_action('unlock') }} data-loading="addAttribute(disabled)">Unlock</button>
+    </div>
+</main>

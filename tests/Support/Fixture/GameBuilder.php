@@ -11,6 +11,9 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final class GameBuilder
 {
+    /** bcrypt at the production cost is a quarter of a second per fixture. */
+    private const int TEST_HASH_COST = 4;
+
     private ?string $slug = null;
     private ?int $playerCount = null;
     private ?int $currentTurn = null;
@@ -19,6 +22,7 @@ final class GameBuilder
     private ?ASTVersion $astVersion = null;
     private bool $finished = false;
     private ?\DateTimeImmutable $finishedAt = null;
+    private ?string $operatorPin = null;
 
     public static function create(): self
     {
@@ -76,6 +80,13 @@ final class GameBuilder
         return $this;
     }
 
+    public function withOperatorPin(string $pin): self
+    {
+        $this->operatorPin = $pin;
+
+        return $this;
+    }
+
     public function build(): Game
     {
         $game = new Game($this->slug);
@@ -100,6 +111,10 @@ final class GameBuilder
             $game->finishedAt = $this->finishedAt;
         } elseif ($this->finished) {
             $game->finishedAt = new \DateTimeImmutable();
+        }
+
+        if (null !== $this->operatorPin) {
+            $game->operatorPinHash = password_hash($this->operatorPin, PASSWORD_BCRYPT, ['cost' => self::TEST_HASH_COST]);
         }
 
         return $game;
