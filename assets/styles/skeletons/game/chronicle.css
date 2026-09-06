@@ -3,26 +3,40 @@
 
     @media (min-width: 60rem) {
         display: grid;
-        grid-template-columns: minmax(0, 1fr);
-        align-content: start;
-        justify-items: center;
+        place-content: start center;
         gap: 1rem;
         block-size: auto;
         min-block-size: 100vh;
         overflow: visible;
         padding: 1rem;
 
+        section > h2 { display: revert }
+
         > section {
+            display: contents;
             overflow: visible;
             overscroll-behavior-y: auto;
-
-            > h2 { display: revert }
         }
+    }
+
+    @media (min-width: 112rem) {
+        grid-template-columns: max-content max-content;
+
+        /* Same row as the AST: the plot absorbs the difference so both panels end level. */
+        #panel-evolution {
+            inline-size: 46rem;
+            display: flex;
+            flex-direction: column;
+
+            .evolution, .plot { flex: 1 }
+        }
+        #panel-nav { max-inline-size: 46rem }
+        > section { display: block }
     }
 }
 
-body:has(> footer [value="ast"]:checked) .game-chronicle :is(#panel-evolution, #panel-nav),
-body:has(> footer [value="evolution"]:checked) .game-chronicle :is(#panel-ast, #panel-nav),
-body:has(> footer [value="nav"]:checked) .game-chronicle :is(#panel-ast, #panel-evolution) { display: none }
-
-@media (min-width: 60rem) { body:has(> footer [value]:checked) .game-chronicle :is(#panel-ast, #panel-evolution, #panel-nav) { display: contents } }
+@media (width < 60rem) {
+    body:has(> footer [value="ast"]:checked) .game-chronicle :is(#panel-evolution, #panel-nav),
+    body:has(> footer [value="evolution"]:checked) .game-chronicle :is(#panel-ast, #panel-nav),
+    body:has(> footer [value="nav"]:checked) .game-chronicle :is(#panel-ast, #panel-evolution) { display: none }
+}

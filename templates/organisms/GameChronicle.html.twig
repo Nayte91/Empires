@@ -1,10 +1,6 @@
 {% props game %}
 
 <main class="game-chronicle">
-    <section id="panel-nav" aria-label="Navigation">
-        <twig:Navigation :game="game" />
-    </section>
-
     <section id="panel-ast" aria-label="Archaeological Succession Timeline">
         <twig:atoms:SectionTitle><a href="#ast">Archaeological Succession Timeline</a></twig:atoms:SectionTitle>
         <twig:Ast :game="game" />
@@ -13,5 +9,10 @@
     <section id="panel-evolution" aria-label="Evolution">
         <twig:atoms:SectionTitle><a href="#evolution">Evolution</a></twig:atoms:SectionTitle>
         <twig:Evolution :game="game" />
+    </section>
+
+    <section id="panel-nav" aria-label="Navigation">
+        <twig:atoms:SectionTitle><a href="#nav">Navigation</a></twig:atoms:SectionTitle>
+        <twig:Navigation :game="game" id="nav" />
     </section>
 </main>
