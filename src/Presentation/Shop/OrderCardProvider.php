@@ -56,7 +56,7 @@ final readonly class OrderCardProvider
     /** @param array<int, Order> $byTurn */
     private function buyerForQuoting(Player $player, array $byTurn): ?BuyerInterface
     {
-        if (array_any($byTurn, fn($order) => OrderStatus::Pending === $order->status)) {
+        if (array_any($byTurn, static fn (Order $order): bool => OrderStatus::Pending === $order->status)) {
             return $this->shopConnector->buyerFor($player);
         }
 
@@ -90,7 +90,7 @@ final readonly class OrderCardProvider
             'vp' => array_sum(array_map(static fn (Advance $advance): int => $advance->points, $advances)),
             'alsoErases' => $byTurn
                     |> array_keys(...)
-                    |> (fn($x) => array_filter($x, static fn(int $t): bool => $t > $turn))
+                    |> (static fn ($x): array => array_filter($x, static fn (int $t): bool => $t > $turn))
                     |> array_values(...),
         ];
     }
