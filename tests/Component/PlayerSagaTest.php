@@ -7,6 +7,7 @@ namespace App\Tests\Component;
 use App\Presentation\Component\PlayerSaga;
 use App\State\Player;
 use App\Tests\Support\Fixture\GameBuilder;
+use App\Tests\Support\Fixture\OrderBuilder;
 use App\Tests\Support\Fixture\PlayerBuilder;
 use App\Tests\Support\Fixture\Tables;
 use App\Tests\Support\GameFixtureTrait;
@@ -41,10 +42,27 @@ final class PlayerSagaTest extends WebTestCase
         $withNone = $this->renderTwigComponent('PlayerSaga', ['player' => $emptyHanded])->crawler();
 
         $this->assertCount(1, $withAdvances->filter('section[aria-label="Owned advances"] img[id^="product-"]'));
-        $this->assertCount(0, $withAdvances->filter('section[aria-label="Owned advances"] p'));
+        $this->assertCount(0, $withAdvances->filter('section[aria-label="Owned advances"] > p'));
 
         $this->assertCount(0, $withNone->filter('section[aria-label="Owned advances"] img[id^="product-"]'));
-        $this->assertCount(1, $withNone->filter('section[aria-label="Owned advances"] p'));
+        $this->assertCount(1, $withNone->filter('section[aria-label="Owned advances"] > p'));
+    }
+
+    #[Test]
+    public function theAdvancesAreGroupedByPurchaseTurnLatestFirstWithTheUndatedOnesLast(): void
+    {
+        $game = GameBuilder::create()->withCurrentTurn(4)->persist($this->entityManager);
+        $player = PlayerBuilder::named('Alice')->in($game)->withAdvances(['masonry', 'pottery', 'agriculture'])->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(2)->withKeys('pottery')->validated(60)->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(3)->withKeys('agriculture')->validated(100)->persist($this->entityManager);
+
+        $sections = $this->mount($player)->getAdvanceSections();
+
+        $this->assertSame([3, 2, null], array_column($sections, 'turn'));
+        $this->assertSame([['agriculture'], ['pottery'], ['masonry']], array_map(
+            static fn (array $section): array => array_column($section['advances'], 'key'),
+            $sections,
+        ));
     }
 
     #[Test]
