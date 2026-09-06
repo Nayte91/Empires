@@ -40,7 +40,7 @@ final readonly class OrderCardProvider
 
         foreach (array_values($game->players->toArray()) as $seat => $player) {
             $byTurn = $ordersByPlayer[$player->id->toRfc4122()] ?? [];
-            $turns = array_unique(array_merge(range($game->currentTurn, 1), array_keys($byTurn)));
+            $turns = array_unique(array_merge($this->shoppingTurns($game), array_keys($byTurn)));
             $buyer = $this->buyerForQuoting($player, $byTurn);
 
             foreach ($turns as $turn) {
@@ -51,6 +51,12 @@ final readonly class OrderCardProvider
         usort($cards, $sort->compare(...));
 
         return $cards;
+    }
+
+    /** @return list<int> the turns the shop has been open, latest first; none before it opens */
+    private function shoppingTurns(Game $game): array
+    {
+        return $game->currentTurn < ShopConnector::OPENING_TURN ? [] : range($game->currentTurn, ShopConnector::OPENING_TURN);
     }
 
     /** @param array<int, Order> $byTurn */

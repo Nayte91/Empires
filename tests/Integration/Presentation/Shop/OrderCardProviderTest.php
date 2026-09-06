@@ -6,6 +6,7 @@ namespace App\Tests\Integration\Presentation\Shop;
 
 use App\Presentation\Shop\OrderCardProvider;
 use App\Presentation\Shop\OrderCardSort;
+use App\Rules\Shop\ShopConnector;
 use App\State\Game;
 use App\State\Order;
 use App\State\Player;
@@ -34,36 +35,31 @@ final class OrderCardProviderTest extends WebTestCase
     #[Test]
     public function theDeckReadsAsTheOperatorsWorkQueue(): void
     {
-        $game = Tables::westTable($this->entityManager);
-        OrderBuilder::for(Tables::seat($game, 'Alice'))->onTurn(4)->withKeys('mysticism')->persist($this->entityManager);
-        OrderBuilder::for(Tables::seat($game, 'Bob'))->onTurn(4)->withKeys('pottery')->validated()->persist($this->entityManager);
-        OrderBuilder::for(Tables::seat($game, 'Dave'))->onTurn(5)->withKeys('pottery')->validated()->persist($this->entityManager);
-        OrderBuilder::for(Tables::seat($game, 'Eve'))->onTurn(3)->withKeys('pottery')->validated()->persist($this->entityManager);
+        $game = $this->westTableOnTurn(8);
+        OrderBuilder::for(Tables::seat($game, 'Alice'))->onTurn(8)->withKeys('mysticism')->persist($this->entityManager);
+        OrderBuilder::for(Tables::seat($game, 'Bob'))->onTurn(8)->withKeys('pottery')->validated()->persist($this->entityManager);
+        OrderBuilder::for(Tables::seat($game, 'Dave'))->onTurn(9)->withKeys('pottery')->validated()->persist($this->entityManager);
+        OrderBuilder::for(Tables::seat($game, 'Eve'))->onTurn(7)->withKeys('pottery')->validated()->persist($this->entityManager);
 
         $deck = $this->cardsFor($game);
 
         $this->assertSame([
-            [4, 'Alice', 'pending'],
-            [4, 'Carol', 'missing'],
-            [4, 'Dave', 'missing'],
-            [4, 'Eve', 'missing'],
-            [4, 'Bob', 'validated'],
-            [5, 'Dave', 'validated'],
-            [3, 'Eve', 'validated'],
-            [3, 'Alice', 'empty'],
-            [3, 'Bob', 'empty'],
-            [3, 'Carol', 'empty'],
-            [3, 'Dave', 'empty'],
-            [2, 'Alice', 'empty'],
-            [2, 'Bob', 'empty'],
-            [2, 'Carol', 'empty'],
-            [2, 'Dave', 'empty'],
-            [2, 'Eve', 'empty'],
-            [1, 'Alice', 'empty'],
-            [1, 'Bob', 'empty'],
-            [1, 'Carol', 'empty'],
-            [1, 'Dave', 'empty'],
-            [1, 'Eve', 'empty'],
+            [8, 'Alice', 'pending'],
+            [8, 'Carol', 'missing'],
+            [8, 'Dave', 'missing'],
+            [8, 'Eve', 'missing'],
+            [8, 'Bob', 'validated'],
+            [9, 'Dave', 'validated'],
+            [7, 'Eve', 'validated'],
+            [7, 'Alice', 'empty'],
+            [7, 'Bob', 'empty'],
+            [7, 'Carol', 'empty'],
+            [7, 'Dave', 'empty'],
+            [6, 'Alice', 'empty'],
+            [6, 'Bob', 'empty'],
+            [6, 'Carol', 'empty'],
+            [6, 'Dave', 'empty'],
+            [6, 'Eve', 'empty'],
         ], array_map(
             static fn (array $card): array => [$card['turn'], $card['player']->name, $card['status']],
             $deck,
@@ -71,13 +67,21 @@ final class OrderCardProviderTest extends WebTestCase
     }
 
     #[Test]
+    public function noCardIsDealtForTheTurnsBeforeTheShopOpens(): void
+    {
+        $game = $this->westTableOnTurn(ShopConnector::OPENING_TURN - 1);
+
+        $this->assertSame([], $this->cardsFor($game));
+    }
+
+    #[Test]
     public function anOrderOnATurnAfterTheCurrentOneStillGetsACard(): void
     {
-        $game = Tables::westTable($this->entityManager);
+        $game = $this->westTableOnTurn(8);
         $dave = Tables::seat($game, 'Dave');
-        OrderBuilder::for($dave)->onTurn(5)->withKeys('pottery')->persist($this->entityManager);
+        OrderBuilder::for($dave)->onTurn(9)->withKeys('pottery')->persist($this->entityManager);
 
-        $card = $this->cardOf($game, $dave, 5);
+        $card = $this->cardOf($game, $dave, 9);
 
         $this->assertSame('pending', $card['status']);
         $this->assertSame(['pottery'], $card['slugs']);
@@ -86,14 +90,14 @@ final class OrderCardProviderTest extends WebTestCase
     #[Test]
     public function aValidatedCardNamesTheLaterTurnsItsErasureWouldTakeWithIt(): void
     {
-        $game = GameBuilder::create()->withCurrentTurn(4)->persist($this->entityManager);
+        $game = GameBuilder::create()->withCurrentTurn(8)->persist($this->entityManager);
         $player = PlayerBuilder::named('Alice')->in($game)->persist($this->entityManager);
-        OrderBuilder::for($player)->onTurn(2)->withKeys('pottery')->validated()->persist($this->entityManager);
-        OrderBuilder::for($player)->onTurn(3)->withKeys('democracy')->validated()->persist($this->entityManager);
-        OrderBuilder::for($player)->onTurn(4)->withKeys('mysticism')->validated()->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(6)->withKeys('pottery')->validated()->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(7)->withKeys('democracy')->validated()->persist($this->entityManager);
+        OrderBuilder::for($player)->onTurn(8)->withKeys('mysticism')->validated()->persist($this->entityManager);
 
-        $this->assertSame([3, 4], $this->cardOf($game, $player, 2)['alsoErases']);
-        $this->assertSame([], $this->cardOf($game, $player, 4)['alsoErases']);
+        $this->assertSame([7, 8], $this->cardOf($game, $player, 6)['alsoErases']);
+        $this->assertSame([], $this->cardOf($game, $player, 8)['alsoErases']);
     }
 
     #[Test]
@@ -127,8 +131,10 @@ final class OrderCardProviderTest extends WebTestCase
     public function theCurrentTurnWithNothingSubmittedIsMissingAndWorthNothing(): void
     {
         [$game, , $bob] = Tables::aliceAndBob($this->entityManager);
+        $game->currentTurn = ShopConnector::OPENING_TURN;
+        $this->entityManager->flush();
 
-        $card = $this->cardOf($game, $bob, 1);
+        $card = $this->cardOf($game, $bob, ShopConnector::OPENING_TURN);
 
         $this->assertSame('missing', $card['status']);
         $this->assertSame([], $card['slugs']);
@@ -139,7 +145,7 @@ final class OrderCardProviderTest extends WebTestCase
     #[Test]
     public function theSeatOfACardIsThePlaceOfItsPlayerAtTheTable(): void
     {
-        $game = Tables::westTable($this->entityManager);
+        $game = $this->westTableOnTurn(ShopConnector::OPENING_TURN);
 
         $seatings = array_values(array_unique(array_map(
             static fn (array $card): string => $card['seat'].':'.$card['player']->name,
@@ -166,6 +172,15 @@ final class OrderCardProviderTest extends WebTestCase
         }
 
         $this->fail(\sprintf('The deck holds no card for %s on turn %d.', $player->name, $turn));
+    }
+
+    private function westTableOnTurn(int $turn): Game
+    {
+        $game = Tables::westTable($this->entityManager);
+        $game->currentTurn = $turn;
+        $this->entityManager->flush();
+
+        return $game;
     }
 
     /** @param list<string> $slugs */

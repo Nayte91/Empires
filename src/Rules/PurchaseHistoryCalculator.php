@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Rules\Shop\ShopConnector;
 use App\State\Game;
 use App\State\Player;
 use App\State\Repository\OrderRepositoryInterface;
 
 final readonly class PurchaseHistoryCalculator
 {
-    public const int AVERAGE_FROM_TURN = 6;
+    public const int AVERAGE_FROM_TURN = ShopConnector::OPENING_TURN;
 
     public function __construct(private OrderRepositoryInterface $orderRepository) {}
 
