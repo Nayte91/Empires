@@ -16,7 +16,7 @@ final class HomeController extends AbstractController
     #[Route('', name: 'app_home', methods: ['GET'])]
     public function __invoke(): Response
     {
-        return $this->render('skeletons/home.html.twig', ['games' => $this->gameRepository->findInProgress()]);
+        return $this->render('skeletons/home.html.twig', ['games' => $this->gameRepository->findAllInProgressFirst()]);
     }
 
     #[Route('/create', name: 'app_create', methods: ['GET'])]

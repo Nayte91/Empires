@@ -1,50 +1,129 @@
-main {
-    display: grid;
+body > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
-}
+    padding: 0.5rem var(--page-gutter);
+    border-block-end: 1px solid var(--rule);
 
-.game-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(20rem, 100%), 1fr));
-    gap: var(--operator-gap);
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.game-tile {
-    display: block;
-    border: 1px solid var(--operator-border);
-    border-radius: var(--operator-radius);
-    padding: 1rem;
-    --ground: white;
-    background: white;
-    text-decoration: none;
-    color: inherit;
-    transition: border-color 0.15s;
-
-    &:hover { border-color: var(--operator-accent) }
-
-    &:focus-visible {
-        outline: 2px solid var(--operator-accent);
-        outline-offset: 2px;
+    img {
+        display: block;
+        block-size: 2.5rem;
     }
 
-    & .game-tile__title {
-        display: block;
-        margin: 0 0 0.35rem;
+    menu {
+        gap: 1.5rem;
+
+        a {
+            display: block;
+            padding: 0.5rem 0;
+            font-family: var(--font-title);
+            font-weight: var(--weight-answer);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--ink-muted);
+
+            &:hover { color: var(--ink-primary) }
+        }
+    }
+}
+
+table {
+    inline-size: 100%;
+    border-collapse: collapse;
+
+    caption {
+        margin-block-end: 0.75rem;
+        text-align: start;
         font-weight: var(--weight-answer);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-primary);
     }
 
-    & .game-tile__turn {
-        display: block;
+    thead th, td::before {
         color: var(--ink-muted);
         font-size: var(--size-small);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
     }
 
-    & .game-tile__players {
+    tbody tr { position: relative }
+
+    tbody th {
+        font-weight: var(--weight-answer);
+        text-align: start;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+
+            &:hover { text-decoration: underline }
+
+            /* The whole row, card or line, is the link: the name's anchor stretches over its positioned row. */
+            &::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+            }
+        }
+    }
+
+    td {
+        font-variant-numeric: tabular-nums;
+
+        svg {
+            inline-size: 1rem;
+            block-size: 1rem;
+            vertical-align: -0.125rem;
+        }
+    }
+
+    @media (width < 40rem) {
         display: block;
-        color: var(--ink-muted);
-        font-size: var(--size-small);
+
+        caption { display: block }
+        thead { display: none }
+
+        tbody {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        tr {
+            --ground: white;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.25rem 0.75rem;
+            border: 1px solid var(--rule);
+            border-radius: var(--operator-radius);
+            padding: 0.75rem 1rem;
+            background: var(--ground);
+        }
+
+        tbody th { grid-column: 1 / -1 }
+
+        td {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+            font-size: var(--size-small);
+
+            &::before { content: attr(data-label) }
+        }
+    }
+
+    @media (width >= 40rem) {
+        th, td {
+            padding: 0.75em 1.5em;
+            border-block-end: 1px solid var(--rule);
+        }
+
+        thead th { border-block-end-width: 2px }
+        thead th:first-child { text-align: start }
+        tbody tr:nth-child(even) { background: var(--tint) }
+        tbody tr:hover { background: color-mix(in oklab, var(--ink-muted) 20%, transparent) }
+        td { text-align: center }
     }
 }

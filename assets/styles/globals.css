@@ -53,7 +53,7 @@ body {
     > main { padding: 1rem var(--page-gutter) }
 }
 
-:is(main, #page-title, .section-switcher) { --page-gutter: max(1rem, calc((100% - var(--page-width)) / 2)) }
+:is(main, body > header, .section-switcher) { --page-gutter: max(1rem, calc((100% - var(--page-width)) / 2)) }
 
 h1, h2, h3, h4, h5, h6 {
     margin: 0;
