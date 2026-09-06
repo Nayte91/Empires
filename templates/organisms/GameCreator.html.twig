@@ -165,6 +165,19 @@
             <p class="game-creator__slug-preview">{{ url('app_game_dashboard', {slug: game.slug}) }}</p>
         {% endif %}
 
+        <label>
+            Operator PIN
+            <input type="text" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off"
+                   data-model="debounce(300)|game.operatorPin" value="{{ game.operatorPin }}" data-loading="addAttribute(disabled)">
+        </label>
+        <twig:atoms:Hint>Four digits, or empty to leave the operator screens open.</twig:atoms:Hint>
+        {% if _errors.has('game.operatorPin') %}
+            <p class="game-creator__field-error" data-error="game.operatorPin" role="alert">{{ _errors.get('game.operatorPin') }}</p>
+        {% endif %}
+        {% if game.operatorPin matches '/^\\d{4}$/' %}
+            <p class="game-creator__pin-preview" data-pin-preview>Operator PIN: {{ game.operatorPin }}</p>
+        {% endif %}
+
         {% set isLaunchDisabled = not this.canLaunch %}
         <button
             type="button"

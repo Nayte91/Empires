@@ -58,6 +58,8 @@ final class ScreenLandmarksTest extends WebTestCase
 
         yield 'the point of sale' => ['pos'];
 
+        yield 'the operator unlock' => ['unlock'];
+
         yield 'the trade cards' => ['trade cards'];
 
         yield 'the player board' => ['board'];
@@ -114,6 +116,7 @@ final class ScreenLandmarksTest extends WebTestCase
             'trade' => '/game/'.$this->runningGame()->slug.'/operator/trade',
             'abilities' => '/game/'.$this->runningGame()->slug.'/operator/abilities',
             'pos' => '/game/'.$this->runningGame()->slug.'/operator/pos',
+            'unlock' => '/game/'.$this->lockedGame()->slug.'/operator/unlock',
             'trade cards' => '/game/'.$this->runningGame()->slug.'/trade-cards',
             'board' => $this->playerPathOf($this->runningGame()),
             'shop' => $this->playerPathOf($this->runningGame()).'/shop',
@@ -130,6 +133,11 @@ final class ScreenLandmarksTest extends WebTestCase
     private function finishedGame(): Game
     {
         return GameBuilder::create()->finished()->persist($this->entityManager);
+    }
+
+    private function lockedGame(): Game
+    {
+        return GameBuilder::create()->withOperatorPin('4821')->persist($this->entityManager);
     }
 
     private function playerPathOf(Game $game): string

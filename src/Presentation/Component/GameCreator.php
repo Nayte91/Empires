@@ -35,7 +35,7 @@ final class GameCreator
     use ValidatableComponentTrait;
 
     #[Assert\Valid]
-    #[LiveProp(writable: ['slug', 'playerCount', 'region', 'astVersion'], useSerializerForHydration: true, onUpdated: ['slug' => 'onSlugUpdated', 'playerCount' => 'onScenarioUpdated', 'region' => 'onScenarioUpdated'])]
+    #[LiveProp(writable: ['slug', 'playerCount', 'region', 'astVersion', 'operatorPin'], useSerializerForHydration: true, onUpdated: ['slug' => 'onSlugUpdated', 'playerCount' => 'onScenarioUpdated', 'region' => 'onScenarioUpdated', 'operatorPin' => 'onOperatorPinUpdated'])]
     public CreateGame $game; // @phpstan-ignore property.uninitialized (initialized in mount())
 
     #[LiveProp(writable: true)]
@@ -82,6 +82,12 @@ final class GameCreator
     {
         $this->game->slug = Game::slugify($this->game->slug);
         $this->validateField('game.slug', false);
+    }
+
+    public function onOperatorPinUpdated(): void
+    {
+        $this->game->operatorPin = '' === $this->game->operatorPin ? null : $this->game->operatorPin;
+        $this->validateField('game.operatorPin', false);
     }
 
     public function isSlugAvailable(): bool

@@ -1,0 +1,17 @@
+{% extends 'layout.html.twig' %}
+
+{% block title %}{{ game.slug|capitalize }} - Operator{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+
+    <link rel="stylesheet" href="{{ asset('styles/skeletons/operator/unlock.css') }}" data-turbo-track="dynamic">
+{% endblock %}
+
+{% block header %}
+    <twig:atoms:PageTitle :heading="game.slug" qualifier="Operator" />
+{% endblock %}
+
+{% block main %}
+    {{ component('OperatorUnlock', {game, next}) }}
+{% endblock %}

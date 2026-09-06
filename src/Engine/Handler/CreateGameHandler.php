@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Engine\Handler;
 
 use App\Rules\Action\CreateGame;
+use App\Rules\OperatorAccessRule;
 use App\Rules\Ruleset\ScenarioRegistry;
 use App\State\ASTVersion;
 use App\State\CreditEntry;
@@ -23,6 +24,7 @@ final readonly class CreateGameHandler
     public function __construct(
         private EntityManagerInterface $entityManager,
         private ScenarioRegistry $scenarioRegistry,
+        private OperatorAccessRule $operatorAccessRule,
     ) {}
 
     public function __invoke(CreateGame $command): void
@@ -34,6 +36,10 @@ final readonly class CreateGameHandler
             $game->playerCount = $command->playerCount;
             $game->region = $region;
             $game->astVersion = ASTVersion::from($command->astVersion);
+
+            if (null !== $command->operatorPin) {
+                $game->operatorPinHash = $this->operatorAccessRule->hash($command->operatorPin);
+            }
 
             $this->entityManager->persist($game);
 

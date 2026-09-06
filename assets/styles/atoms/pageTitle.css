@@ -2,16 +2,19 @@
     border-block-end: 1px solid var(--rule);
     padding: 1rem var(--page-gutter);
     display: flex;
-    justify-content: space-between;
     align-items: center;
     gap: 1rem;
 
     hgroup {
+        flex: 1;
         font-family: var(--font-title);
         font-size: var(--size-title);
         text-align: center;
         text-transform: uppercase;
         color: var(--ink-primary);
+
+        &:first-child:nth-last-child(2) { text-align: start }
+        &:nth-child(2):last-child { text-align: end }
 
         h1, p {
             margin: 0;
@@ -24,9 +27,6 @@
         }
     }
 
-    &:is([data-title="page"], [data-title="celebration"]) hgroup { flex: 1 }
-    &[data-title="player"] hgroup { text-align: start }
-    &[data-title="drilldown"] hgroup { text-align: end }
     &[data-title="celebration"] {
         border-block-end: none;
 

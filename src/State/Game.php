@@ -41,6 +41,11 @@ class Game
 
     public bool $finished { get => $this->finishedAt instanceof \DateTimeImmutable; }
 
+    #[ORM\Column(nullable: true)]
+    public ?string $operatorPinHash = null;
+
+    public bool $locked { get => null !== $this->operatorPinHash; }
+
     /** @var Collection<int, Player> */
     #[ORM\OneToMany(targetEntity: Player::class, mappedBy: 'game', cascade: ['persist', 'remove'])]
     public Collection $players;

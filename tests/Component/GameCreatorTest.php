@@ -880,6 +880,50 @@ final class GameCreatorTest extends WebTestCase
         $this->assertFalse($component->canLaunch());
     }
 
+    #[Test]
+    public function anOperatorPinShortOfFourDigitsRefusesLaunchAndCreatesNothing(): void
+    {
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'short-pin-launch')
+            ->set('game.operatorPin', '48')
+        ;
+
+        $component->call('launch');
+
+        $this->assertNotSame(Response::HTTP_FOUND, $component->response()->getStatusCode());
+        $this->assertNull($this->freshEntityManager()->getRepository(Game::class)->findOneBy(['slug' => 'short-pin-launch']));
+    }
+
+    #[Test]
+    public function anEmptyOperatorPinLaunchesAnOpenGame(): void
+    {
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'open-pin-launch')
+            ->set('game.operatorPin', '')
+        ;
+
+        $component->call('launch');
+
+        $this->assertSame(Response::HTTP_FOUND, $component->response()->getStatusCode(), (string) $component->response()->getContent());
+        $game = $this->freshEntityManager()->getRepository(Game::class)->findOneBy(['slug' => 'open-pin-launch']);
+        $this->assertInstanceOf(Game::class, $game);
+        $this->assertNull($game->operatorPinHash);
+    }
+
+    #[Test]
+    public function aFourDigitOperatorPinLaunchesAGameWhoseHashVerifiesIt(): void
+    {
+        $component = $this->creatorWith(self::westRosterNamed('Alice', 'Bob', 'Carol'), slug: 'locked-pin-launch')
+            ->set('game.operatorPin', '4821')
+        ;
+
+        $component->call('launch');
+
+        $this->assertSame(Response::HTTP_FOUND, $component->response()->getStatusCode(), (string) $component->response()->getContent());
+        $game = $this->freshEntityManager()->getRepository(Game::class)->findOneBy(['slug' => 'locked-pin-launch']);
+        $this->assertInstanceOf(Game::class, $game);
+        $this->assertNotNull($game->operatorPinHash);
+        $this->assertTrue(password_verify('4821', $game->operatorPinHash));
+    }
+
     /** @param list<array{name: string, empire: string}> $players */
     private function creatorWith(array $players, int $playerCount = 3, ?string $region = 'west', string $slug = 'a-game'): TestLiveComponent
     {

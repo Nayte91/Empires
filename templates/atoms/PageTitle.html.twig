@@ -1,4 +1,4 @@
-{% props heading, qualifier = null, variant = 'page', back = null, backHref = null, renameFor = null %}
+{% props heading, qualifier = null, variant = 'page', back = null, backHref = null, renameFor = null, lockFor = null %}
 
 <header id="page-title" data-title="{{ variant }}">
     {% if back is not null %}
@@ -14,5 +14,11 @@
 
     {% if renameFor is not null %}
         <button class="button" type="button" commandfor="{{ renameFor }}" command="show-modal" title="Rename"><twig:ux:icon name="lucide:pencil" /></button>
+    {% endif %}
+
+    {% if lockFor is not null %}
+        <form method="post" action="{{ path('app_operator_lock', {slug: lockFor}) }}">
+            <button class="button" type="submit" title="Lock"><twig:ux:icon name="lucide:lock" /></button>
+        </form>
     {% endif %}
 </header>

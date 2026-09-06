@@ -1,12 +1,12 @@
 <nav class="navigation" {{ attributes }}>
     <ul>
         {% for target in this.targets %}
-            <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}>
+            <li{% if target.empire %} data-empire="{{ target.empire }}"{% endif %}{% if not target.empire and game.locked %} data-locked{% endif %}>
                 <a href="{{ target.url }}">
                     {% if target.empire %}
                         <twig:atoms:PlayerIdentity :empire="target.empire" :name="target.label" />
                     {% else %}
-                        <twig:ux:icon name="lucide:settings" />
+                        <twig:ux:icon name="{{ game.locked ? 'lucide:lock' : 'lucide:settings' }}" />
                         <b>{{ target.label }}</b>
                         <small>{{ target.caption }}</small>
                     {% endif %}

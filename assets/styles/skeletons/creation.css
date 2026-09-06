@@ -23,10 +23,14 @@
         }
     }
 
+    input[inputmode='numeric'] {
+        inline-size: calc(4.5ch + 1em + 2px);
+        font-variant-numeric: tabular-nums;
+    }
+
     input[type='number'] {
         max-inline-size: 6rem;
 
-        /* Chrome only draws the spinner on hover: shown at rest, the affordance is discoverable. */
         &::-webkit-inner-spin-button { opacity: 1 }
     }
 
@@ -115,6 +119,13 @@
         font-size: var(--size-small);
         font-family: monospace;
         overflow-wrap: anywhere;
+    }
+
+    .game-creator__pin-preview {
+        margin: 0;
+        color: var(--ink-muted);
+        font-size: var(--size-title);
+        font-variant-numeric: tabular-nums;
     }
 
     .game-creator__scenario {
