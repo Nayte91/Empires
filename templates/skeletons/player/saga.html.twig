@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - {{ player.name }}'s saga{% endblock %}
+{% block title %}{{ player.game.slug|capitalize }} - {{ player.name }}'s saga{% endblock %}
 
 {% block body_attr %}data-empire="{{ player.empire }}"{% endblock %}
 

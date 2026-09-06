@@ -49,16 +49,7 @@ final class Ast
 
     public function medalOf(Player $player): ?string
     {
-        if (0 === $this->scoreOf($player)) {
-            return null;
-        }
-
-        return match ($this->standingsCalculator->rankOf($player)) {
-            1 => 'gold',
-            2 => 'silver',
-            3 => 'bronze',
-            default => null,
-        };
+        return $this->standingsCalculator->medalOf($player);
     }
 
     public function getTrackLength(): int

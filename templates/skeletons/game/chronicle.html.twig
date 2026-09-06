@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - Chronicle{% endblock %}
+{% block title %}{{ game.slug|capitalize }} - Chronicle{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block header %}
-    <twig:atoms:PageTitle variant="celebration" :heading="game.slug" :qualifier="game.astVersion.value|capitalize ~ ' version — Turn ' ~ game.currentTurn ~ ' — Finished'" />
+    <twig:atoms:PageTitle variant="celebration" :heading="game.slug" qualifier="Finished" />
 {% endblock %}
 
 {% block main %}

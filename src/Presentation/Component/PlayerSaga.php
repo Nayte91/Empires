@@ -8,6 +8,7 @@ use App\Rules\Action\Stat;
 use App\Rules\Ruleset\Advance;
 use App\Rules\Ruleset\AdvanceRegistry;
 use App\Rules\ScoreCalculator;
+use App\Rules\StandingsCalculator;
 use App\State\Player;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
@@ -30,7 +31,29 @@ final class PlayerSaga
     public function __construct(
         private readonly AdvanceRegistry $advanceRegistry,
         private readonly ScoreCalculator $scoreCalculator,
+        private readonly StandingsCalculator $standingsCalculator,
     ) {}
+
+    public function getRank(): int
+    {
+        return $this->standingsCalculator->rankOf($this->player);
+    }
+
+    /** The ordinal's tail alone — "th" of "6th" — so the template can set it apart from the figure. */
+    public function getRankSuffix(): string
+    {
+        return ltrim(new \NumberFormatter('en', \NumberFormatter::ORDINAL)->format($this->getRank()), '0123456789');
+    }
+
+    public function getMedal(): ?string
+    {
+        return $this->standingsCalculator->medalOf($this->player);
+    }
+
+    public function getScore(): int
+    {
+        return $this->standingsCalculator->scoreOf($this->player);
+    }
 
     /** @return list<Advance> */
     public function getOwnedAdvances(): array

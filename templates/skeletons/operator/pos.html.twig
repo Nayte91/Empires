@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - Point of sale{% endblock %}
+{% block title %}{{ game.slug|capitalize }} - Point of sale{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}

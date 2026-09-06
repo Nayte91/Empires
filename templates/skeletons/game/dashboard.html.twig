@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires - Game{% endblock %}
+{% block title %}{{ game.slug|capitalize }} - Dashboard{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}

@@ -1,6 +1,14 @@
 <main class="player-saga">
+    <div class="hero">
+        <div>
+            {% set medal = this.medal %}
+            <p><b{% if medal %} data-medal="{{ medal }}"{% endif %}>{{ this.rank }}<sup>{{ this.rankSuffix }}</sup></b> Final rank</p>
+            <p><b>{{ this.score }}</b> Victory Points</p>
+        </div>
+    </div>
+
     <details class="standing panel" open>
-        <summary class="label">Final standing</summary>
+        <summary class="label">Final position</summary>
 
         <twig:Ast :game="player.game" :player="player" />
     </details>
@@ -29,7 +37,6 @@
             {% for advance in this.ownedAdvances %}
                 <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
             {% else %}
-                {# An empty grid is indistinguishable from a page that failed to draw one; a sentence is not. #}
                 <twig:atoms:Hint>No advance owned.</twig:atoms:Hint>
             {% endfor %}
         </div>

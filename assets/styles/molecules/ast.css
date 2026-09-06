@@ -15,6 +15,8 @@
     caption {
         caption-side: top;
         margin-block-end: 0.75rem;
+        /* A label's treatment at the body's size: the board's caption is read, not skimmed. */
+        font-size: var(--size-body);
     }
 
     th, td {
@@ -35,9 +37,9 @@
     td[data-score] {
         color: var(--ink-primary);
 
-        &[data-medal="gold"] { color: gold }
-        &[data-medal="silver"] { color: silver }
-        &[data-medal="bronze"] { color: peru }
+        &[data-medal="gold"] { color: var(--medal-gold) }
+        &[data-medal="silver"] { color: var(--medal-silver) }
+        &[data-medal="bronze"] { color: var(--medal-bronze) }
     }
 
     thead th {
