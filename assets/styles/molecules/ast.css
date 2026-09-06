@@ -2,7 +2,7 @@
     --ast-rule-width: 1px;
     --ast-rule: var(--ast-rule-width) solid var(--rule);
     --turn-edge: 1px double gold;
-    --ast-cell-size: 3rem;
+    --ast-cell-size: var(--board-row-size, 3rem);
     --ast-band-tint: var(--tint);
     isolation: isolate;
     justify-self: center;
@@ -12,7 +12,6 @@
 
     caption {
         margin-block-end: 0.75rem;
-        /* A label's treatment at the body's size: the board's caption is read, not skimmed. */
         font-size: var(--size-body);
     }
 
@@ -53,6 +52,8 @@
 
         &[colspan="1"] { padding: 0 }
     }
+
+    thead tr { block-size: var(--ast-cell-size) }
 
     tbody {
         tr { block-size: var(--ast-cell-size) }

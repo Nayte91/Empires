@@ -8,7 +8,7 @@
 
         <label>
             Players
-            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}" data-loading="addAttribute(disabled)">
+            <input type="number" min="{{ this.minPlayers }}" max="{{ this.maxPlayers }}" data-model="on(change)|min_value({{ this.minPlayers }})|max_value({{ this.maxPlayers }})|game.playerCount" value="{{ game.playerCount }}" data-loading="addAttribute(disabled)">
         </label>
 
         {% set isRegionDisabled = computed.regionChoices|length <= 1 %}

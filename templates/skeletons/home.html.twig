@@ -39,8 +39,8 @@
                     <tr>
                         <th scope="row"><a href="{{ path('app_game_dashboard', {slug: game.slug}) }}">{{ game.slug }}</a></th>
                         <td data-label="Turn">{% if game.finished %}<twig:ux:icon name="mdi:flag-checkered" title="Finished" />{% else %}{{ game.currentTurn }}{% endif %}</td>
-                        <td data-label="Players">{{ game.players|length }}</td>
-                        <td data-label="Region">{{ game.region ? game.region.value|capitalize : '—' }}</td>
+                        <td data-label="Players">{{ game.playerCount }}</td>
+                        <td data-label="Region">{{ game.region ? game.region.value|capitalize : 'East & West' }}</td>
                         <td data-label="AST">{{ game.astVersion.value|capitalize }}</td>
                     </tr>
                 {% endfor %}

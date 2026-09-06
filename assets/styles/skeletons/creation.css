@@ -23,7 +23,12 @@
         }
     }
 
-    input[type='number'] { max-inline-size: 6rem }
+    input[type='number'] {
+        max-inline-size: 6rem;
+
+        /* Chrome only draws the spinner on hover: shown at rest, the affordance is discoverable. */
+        &::-webkit-inner-spin-button { opacity: 1 }
+    }
 
     table {
         --control-size: 1.5rem;
