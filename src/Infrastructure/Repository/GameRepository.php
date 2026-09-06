@@ -29,10 +29,11 @@ final class GameRepository extends ServiceEntityRepository implements GameReposi
     }
 
     /** @return list<Game> */
-    public function findInProgress(): array
+    public function findAllInProgressFirst(): array
     {
         return $this->createQueryBuilder('g')
-            ->andWhere('g.finishedAt IS NULL')
+            ->addSelect('CASE WHEN g.finishedAt IS NULL THEN 0 ELSE 1 END AS HIDDEN finishedRank')
+            ->addOrderBy('finishedRank', 'ASC')
             ->addOrderBy('g.id', 'DESC')
             ->getQuery()
             ->getResult()

@@ -1,8 +1,6 @@
 .game-creator {
     --control-size: 1.75rem;
     display: grid;
-    max-inline-size: 40rem;
-    margin-inline: auto;
     gap: var(--operator-gap);
 
     input, select {

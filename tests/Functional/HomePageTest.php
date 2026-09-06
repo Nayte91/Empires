@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 final class HomePageTest extends WebTestCase
 {
     #[Test]
-    public function homePageListsGamesInProgressButNotFinishedOnes(): void
+    public function homePageListsGamesInProgressAndFinishedOnes(): void
     {
         $client = self::createClient();
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
@@ -25,6 +25,6 @@ final class HomePageTest extends WebTestCase
 
         $this->assertResponseIsSuccessful();
         $this->assertCount(1, $crawler->filter('a[href="/game/in-progress-game"]'));
-        $this->assertCount(0, $crawler->filter('a[href="/game/finished-game"]'));
+        $this->assertCount(1, $crawler->filter('a[href="/game/finished-game"]'));
     }
 }

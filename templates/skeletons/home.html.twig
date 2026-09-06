@@ -1,6 +1,6 @@
 {% extends 'layout.html.twig' %}
 
-{% block title %}Empires — Games in progress{% endblock %}
+{% block title %}Empires — Games{% endblock %}
 
 {% block stylesheets %}
     {{ parent() }}
@@ -8,19 +8,44 @@
 {% endblock %}
 
 {% block header %}
-    <twig:atoms:PageTitle heading="Empires" qualifier="Games in progress" />
+    <header>
+        <a href="{{ path('app_home') }}" title="Empires"><img src="{{ asset('images/favicon.avif') }}" alt="Empires"></a>
+        <nav>
+            <menu>
+                <li><a href="{{ path('app_create') }}">New</a></li>
+            </menu>
+        </nav>
+    </header>
 {% endblock %}
 
 {% block main %}
     <main>
-        <a class="button" href="{{ path('app_create') }}">Create a game</a>
-
-        <ul class="game-grid">
-        {% for game in games %}
-            <li>{% include 'molecules/game_tile.html.twig' with {game} only %}</li>
+        {% if games is empty %}
+            <twig:atoms:Hint>No game yet. <a href="{{ path('app_create') }}">Create a game</a></twig:atoms:Hint>
         {% else %}
-            <twig:atoms:Hint>No game in progress. <a href="{{ path('app_create') }}">Create a game</a></twig:atoms:Hint>
-        {% endfor %}
-        </ul>
+            <table>
+                <caption>Games</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Game</th>
+                        <th scope="col">Turn</th>
+                        <th scope="col">Players</th>
+                        <th scope="col">Region</th>
+                        <th scope="col">AST</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for game in games %}
+                    <tr>
+                        <th scope="row"><a href="{{ path('app_game_dashboard', {slug: game.slug}) }}">{{ game.slug }}</a></th>
+                        <td data-label="Turn">{% if game.finished %}<twig:ux:icon name="mdi:flag-checkered" title="Finished" />{% else %}{{ game.currentTurn }}{% endif %}</td>
+                        <td data-label="Players">{{ game.players|length }}</td>
+                        <td data-label="Region">{{ game.region ? game.region.value|capitalize : '—' }}</td>
+                        <td data-label="AST">{{ game.astVersion.value|capitalize }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
     </main>
 {% endblock %}

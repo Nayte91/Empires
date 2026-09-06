@@ -24,16 +24,17 @@ final class GameRepositoryTest extends WebTestCase
     }
 
     #[Test]
-    public function findInProgressReturnsUnfinishedGamesOrderedFromMostToLeastRecent(): void
+    public function findAllInProgressFirstListsFinishedGamesAfterTheUnfinishedOnesMostRecentFirst(): void
     {
+        $finished = GameBuilder::create()->finished()->persist($this->entityManager);
         $oldest = GameBuilder::create()->persist($this->entityManager);
-        $middle = GameBuilder::create()->persist($this->entityManager);
-        GameBuilder::create()->finished()->persist($this->entityManager);
+        $latest = GameBuilder::create()->persist($this->entityManager);
 
-        $games = $this->gameRepository->findInProgress();
+        $games = $this->gameRepository->findAllInProgressFirst();
 
-        $this->assertCount(2, $games);
-        $this->assertSame($middle->id->toRfc4122(), $games[0]->id->toRfc4122());
+        $this->assertCount(3, $games);
+        $this->assertSame($latest->id->toRfc4122(), $games[0]->id->toRfc4122());
         $this->assertSame($oldest->id->toRfc4122(), $games[1]->id->toRfc4122());
+        $this->assertSame($finished->id->toRfc4122(), $games[2]->id->toRfc4122());
     }
 }

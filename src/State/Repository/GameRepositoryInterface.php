@@ -14,5 +14,5 @@ interface GameRepositoryInterface
     public function findOneBySlug(string $slug): ?Game;
 
     /** @return list<Game> */
-    public function findInProgress(): array;
+    public function findAllInProgressFirst(): array;
 }
