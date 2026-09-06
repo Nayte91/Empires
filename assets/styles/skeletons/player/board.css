@@ -18,6 +18,15 @@
         grid-template-columns: repeat(auto-fill, minmax(min(17rem, 100%), 1fr));
         gap: var(--operator-gap);
 
+        > p {
+            grid-column: 1 / -1;
+
+            &:not(:first-child) {
+                border-block-start: 1px solid var(--rule);
+                padding-block-start: 1rem;
+            }
+        }
+
         img {
             inline-size: 100%;
             aspect-ratio: 5 / 7;

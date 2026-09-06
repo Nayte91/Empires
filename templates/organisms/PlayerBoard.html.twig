@@ -14,12 +14,20 @@
         {% set advancePoints = this.advancePoints %}
         <twig:atoms:SectionTitle>Advances ({{ advancePoints }} Victory Point{{ advancePoints == 1 ? '' : 's' }})</twig:atoms:SectionTitle>
 
-        <div class="advances-grid">
-            {% for advance in this.ownedAdvances %}
-                <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
-            {% else %}
-                <twig:atoms:Hint>No advance owned yet.</twig:atoms:Hint>
-            {% endfor %}
-        </div>
+        {% set sections = this.advanceSections %}
+
+        {% if sections is empty %}
+            <twig:atoms:Hint>No advance owned yet.</twig:atoms:Hint>
+        {% else %}
+            <div class="advances-grid">
+                {% for section in sections %}
+                    <twig:atoms:Hint>{{ section.turn is null ? 'Not bought in the shop' : 'Turn ' ~ section.turn }}</twig:atoms:Hint>
+
+                    {% for advance in section.advances %}
+                        <img id="product-{{ advance.key }}" src="{{ advance.fileName }}" alt="{{ advance.name }} card" loading="lazy">
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        {% endif %}
     </section>
 </main>

@@ -8,32 +8,27 @@ use App\State\Game;
 use App\State\Player;
 use App\State\Repository\OrderRepositoryInterface;
 
-/**
- * What a player spent, turn by turn, read back off their own validated orders — the shop-side
- * counterpart to {@see ScoreHistoryCalculator}, but per player and narrower: how much buying
- * cost, not what it was worth.
- *
- * Two of its answers are product rulings rather than arithmetic: a turn without an order is a
- * zero, never a skipped point; and a game too short to average returns null, a different fact
- * from the genuine zero of a player who played on and bought nothing. The two absences must
- * never collapse into one another, in either direction.
- */
 final readonly class PurchaseHistoryCalculator
 {
-    /**
-     * The average only starts once the shop has been open a few turns: `bretonneux`, the
-     * project's one real finished game, made no purchase before turn 6.
-     */
     public const int AVERAGE_FROM_TURN = 6;
 
     public function __construct(private OrderRepositoryInterface $orderRepository) {}
 
-    /**
-     * One total per turn, turn 1 to the turn the game stopped on. A turn with no validated
-     * order counts as zero rather than being skipped — a gap in buying is still an answer.
-     *
-     * @return list<int>
-     */
+    /** @return array<int, list<string>> */
+    public function keysPerTurn(Player $player): array
+    {
+        $keysByTurn = [];
+
+        foreach ($this->orderRepository->findValidatedByPlayer($player) as $order) {
+            $keysByTurn[$order->turn] = [...($keysByTurn[$order->turn] ?? []), ...$order->keys()];
+        }
+
+        ksort($keysByTurn);
+
+        return $keysByTurn;
+    }
+
+    /** @return list<int> */
     public function totalsPerTurn(Player $player): array
     {
         $totalsByTurn = [];
@@ -51,12 +46,6 @@ final readonly class PurchaseHistoryCalculator
         return $totals;
     }
 
-    /**
-     * Average spend per turn of play from {@see AVERAGE_FROM_TURN} onward — divided by every
-     * turn elapsed since then, not only the turns a purchase happened, so it answers "how much
-     * per turn of play" rather than "how much per turn bought". Null when the game never
-     * reached that turn: there is nothing to average, and a zero would read as a measurement.
-     */
     public function averageFromTurnSix(Player $player): ?float
     {
         $currentTurn = $player->game->currentTurn;
@@ -70,11 +59,6 @@ final readonly class PurchaseHistoryCalculator
         return array_sum($consideredTotals) / \count($consideredTotals);
     }
 
-    /**
-     * The table's average since turn six — the mean of every player's, which every player having
-     * played the same turns is also the mean spend per player-turn. Null when the game never
-     * reached that turn, like the player's own.
-     */
     public function tableAverageFromTurnSix(Game $game): ?float
     {
         $averages = [];
