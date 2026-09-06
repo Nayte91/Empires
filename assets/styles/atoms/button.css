@@ -48,6 +48,8 @@
         &:hover { background: var(--tint) }
     }
 
+    &:has(> svg:only-child) { padding: 0 }
+
     svg {
         inline-size: 1.5rem;
         block-size: 1.5rem;
