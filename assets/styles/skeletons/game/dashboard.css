@@ -10,7 +10,6 @@ body {
     flex-direction: column;
     overflow: hidden;
     padding: 0;
-    background: var(--ground);
     color: var(--ink-primary);
 
     > section {
@@ -25,7 +24,6 @@ body {
     h2 {
         text-align: center;
 
-        a { color: inherit }
     }
 }
 
@@ -41,7 +39,6 @@ body {
         display: grid;
         place-content: start center;
         gap: 1rem;
-        block-size: auto;
         min-block-size: 100vh;
         overflow: visible;
         padding: 1rem;

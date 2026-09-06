@@ -4,7 +4,6 @@
     border-radius: 0.75rem;
     overflow: hidden;
     table-layout: fixed;
-    border-collapse: separate;
     border-spacing: 0;
     background: white;
 
@@ -29,7 +28,6 @@
 
     :is(tbody th, td) {
         border-block-start: 1px solid var(--rule);
-        vertical-align: middle;
     }
 
     th[scope="row"] {
@@ -40,14 +38,9 @@
         white-space: nowrap;
         text-overflow: ellipsis;
 
-        .marker { margin-inline-end: 0.5rem }
-
-        b { text-transform: capitalize }
-        small { color: var(--ink-muted) }
     }
 
     td {
-        inline-size: 3.25rem;
         padding: 0.5rem 0.25rem;
 
         .button {

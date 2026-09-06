@@ -1,6 +1,5 @@
 main {
     display: grid;
-    grid-template-columns: 1fr;
     gap: 1rem;
 }
 
@@ -34,7 +33,6 @@ main {
     & .game-tile__title {
         display: block;
         margin: 0 0 0.35rem;
-        font-size: var(--size-body);
         font-weight: var(--weight-answer);
     }
 
