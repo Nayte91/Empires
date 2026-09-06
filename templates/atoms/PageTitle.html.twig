@@ -2,7 +2,7 @@
 
 <header id="page-title" data-title="{{ variant }}">
     {% if back is not null %}
-        <a href="{{ backHref }}" class="button">{{ back }}</a>
+        <a href="{{ backHref }}" class="button" title="{{ back }}"><twig:ux:icon name="lucide:arrow-left" /></a>
     {% endif %}
 
     <hgroup>
@@ -13,6 +13,6 @@
     </hgroup>
 
     {% if renameFor is not null %}
-        <button class="button" type="button" commandfor="{{ renameFor }}" command="show-modal">Rename</button>
+        <button class="button" type="button" commandfor="{{ renameFor }}" command="show-modal" title="Rename"><twig:ux:icon name="lucide:pencil" /></button>
     {% endif %}
 </header>
