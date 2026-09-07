@@ -1,4 +1,4 @@
-<main {{ attributes }} class="game-creator">
+<div {{ attributes }} class="game-creator">
     {% if error %}
         <p data-error role="alert">{{ error }}</p>
     {% endif %}
@@ -196,4 +196,4 @@
     {% else %}
         <p class="game-creator__conformity game-creator__conformity--error" data-conformity="error" role="alert">{{ issues|join(' ') }}</p>
     {% endif %}
-</main>
+</div>
