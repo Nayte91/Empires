@@ -1,0 +1,37 @@
+body > header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem var(--page-gutter);
+    border-block-end: 1px solid var(--rule);
+
+    img {
+        display: block;
+        block-size: 2.5rem;
+    }
+
+    nav { flex: 1 }
+
+    menu {
+        gap: 1.5rem;
+
+        li:last-child { margin-inline-start: auto }
+
+        a {
+            display: block;
+            padding: 0.5rem 0;
+            font-family: var(--font-title);
+            font-weight: var(--weight-answer);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            text-decoration: none;
+            color: var(--ink-muted);
+
+            &:hover { color: var(--ink-primary) }
+        }
+    }
+
+    @media (width < 40rem) { menu li:first-child { display: none } }
+    @media (width >= 40rem) { > a { pointer-events: none } }
+}

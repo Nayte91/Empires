@@ -4,27 +4,28 @@
 
 {% block stylesheets %}
     {{ parent() }}
+    <link rel="stylesheet" href="{{ asset('styles/organisms/siteHeader.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/skeletons/home.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block header %}
-    <header>
-        <a href="{{ path('app_home') }}" title="Empires"><img src="{{ asset('images/favicon.avif') }}" alt="Empires"></a>
-        <nav>
-            <menu>
-                <li><a href="{{ path('app_create') }}">New</a></li>
-            </menu>
-        </nav>
-    </header>
+    {% include 'organisms/site_header.html.twig' %}
 {% endblock %}
 
 {% block main %}
     <main>
+        <h1>Game index</h1>
+
         {% if games is empty %}
             <twig:atoms:Hint>No game yet. <a href="{{ path('app_create') }}">Create a game</a></twig:atoms:Hint>
         {% else %}
             <table>
-                <caption>Games</caption>
+                <caption>
+                    <div>
+                        <p>Game list with {{ games|length }} elements.</p>
+                        <label><input type="checkbox" id="display-finished"> Display finished <twig:ux:icon name="mdi:flag-checkered" /></label>
+                    </div>
+                </caption>
                 <thead>
                     <tr>
                         <th scope="col">Game</th>
@@ -36,9 +37,9 @@
                 </thead>
                 <tbody>
                 {% for game in games %}
-                    <tr>
+                    <tr{{ game.finished ? ' data-finished' }}>
                         <th scope="row"><a href="{{ path('app_game_dashboard', {slug: game.slug}) }}">{{ game.slug }}</a></th>
-                        <td data-label="Turn">{% if game.finished %}<twig:ux:icon name="mdi:flag-checkered" title="Finished" />{% else %}{{ game.currentTurn }}{% endif %}</td>
+                        <td data-label="Turn">{% if game.finished %}<twig:ux:icon name="mdi:flag-checkered" />{% else %}{{ game.currentTurn }}{% endif %}</td>
                         <td data-label="Players">{{ game.playerCount }}</td>
                         <td data-label="Region">{{ game.region ? game.region.value|capitalize : 'East & West' }}</td>
                         <td data-label="AST">{{ game.astVersion.value|capitalize }}</td>

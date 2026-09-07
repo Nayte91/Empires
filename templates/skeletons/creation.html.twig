@@ -5,13 +5,18 @@
 {% block stylesheets %}
     {{ parent() }}
 
+    <link rel="stylesheet" href="{{ asset('styles/organisms/siteHeader.css') }}" data-turbo-track="dynamic">
     <link rel="stylesheet" href="{{ asset('styles/skeletons/creation.css') }}" data-turbo-track="dynamic">
 {% endblock %}
 
 {% block header %}
-    <twig:atoms:PageTitle heading="Create a game" />
+    {% include 'organisms/site_header.html.twig' %}
 {% endblock %}
 
 {% block main %}
-    {{ component('GameCreator') }}
+    <main>
+        <h1>Create a game</h1>
+
+        {{ component('GameCreator') }}
+    </main>
 {% endblock %}
