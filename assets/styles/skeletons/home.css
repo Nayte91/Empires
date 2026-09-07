@@ -45,6 +45,14 @@ table {
         font-weight: var(--weight-answer);
         text-align: start;
 
+        small {
+            margin-inline-start: 0.5rem;
+            font-weight: var(--weight-body);
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--ink-muted);
+        }
+
         a {
             color: inherit;
             text-decoration: none;
