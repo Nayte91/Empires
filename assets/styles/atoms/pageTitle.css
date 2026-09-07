@@ -15,14 +15,12 @@
 
         &:first-child:nth-last-child(2) { text-align: start }
         &:nth-child(2):last-child { text-align: end }
-
-        h1, p {
-            margin: 0;
-            font-weight: var(--weight-answer);
-        }
+        h1, p { margin: 0 }
+        h1 { font-weight: var(--weight-answer) }
 
         p {
-            font-size: var(--size-small);
+            font-size: var(--size-body);
+            font-weight: var(--weight-body);
             color: var(--ink-muted);
         }
     }
@@ -34,5 +32,7 @@
             font-size: var(--size-hero);
             font-weight: var(--weight-hero);
         }
+
+        p { font-size: var(--size-title) }
     }
 }
