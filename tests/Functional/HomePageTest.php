@@ -27,6 +27,8 @@ final class HomePageTest extends WebTestCase
         $this->assertCount(1, $crawler->filter('a[href="/game/in-progress-game"]'));
         $this->assertCount(1, $crawler->filter('tr[data-finished] a[href="/game/finished-game"]'));
         $this->assertCount(0, $crawler->filter('tr[data-finished] a[href="/game/in-progress-game"]'));
+        $this->assertCount(1, $crawler->filter('tr[data-finished] th small'));
+        $this->assertCount(0, $crawler->filter('tr:not([data-finished]) th small'));
         $this->assertCount(1, $crawler->filter('input#display-finished'));
     }
 }

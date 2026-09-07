@@ -38,7 +38,7 @@
                 <tbody>
                 {% for game in games %}
                     <tr{{ game.finished ? ' data-finished' }}>
-                        <th scope="row"><a href="{{ path('app_game_dashboard', {slug: game.slug}) }}">{{ game.slug }}</a></th>
+                        <th scope="row"><a href="{{ path('app_game_dashboard', {slug: game.slug}) }}">{{ game.slug }}</a>{% if game.finished %} <small>Finished</small>{% endif %}</th>
                         <td data-label="Turn">{% if game.finished %}<twig:ux:icon name="mdi:flag-checkered" />{% else %}{{ game.currentTurn }}{% endif %}</td>
                         <td data-label="Players">{{ game.playerCount }}</td>
                         <td data-label="Region">{{ game.region ? game.region.value|capitalize : 'East & West' }}</td>
