@@ -6,19 +6,13 @@ services:
     mem_limit: 512m
     build:
       target: frankenphp_prod
-    # .env.local (uncommitted) MUST define MERCURE_PUBLISHER_JWT_KEY and
-    # MERCURE_SUBSCRIBER_JWT_KEY (real secrets, distinct from the dev defaults in
-    # compose.dev.yml) — env_file passes them through as container env vars, read
-    # by the Caddyfile's `mercure` block via {env.MERCURE_PUBLISHER_JWT_KEY} /
-    # {env.MERCURE_SUBSCRIBER_JWT_KEY}.
     env_file: .env.local
     environment:
       SERVER_NAME: ":80"
       TRUSTED_PROXIES: REMOTE_ADDR
+      DATABASE_URL: "sqlite:///%kernel.project_dir%/system/database/data/empires.db"
     volumes:
-      # SQLite needs write access to the directory (for -journal/-wal files), not
-      # just the .db file. Named volume persists across deploys/recreates.
-      - db_data:/app/system/database
+      - db_data:/app/system/database/data
     networks:
       - proxy
       - default
